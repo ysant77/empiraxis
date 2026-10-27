@@ -49,6 +49,9 @@ class EarthlabMetrics:
         self.data_qa_issues = self._counter(
             "data_qa_issues", "Data-quality issues found at load", "source category"
         )
+        self.safety_checks = self._counter(
+            "safety_checks", "Safety gate decisions", "stage source outcome"
+        )
         self.investigations = self._counter(
             "investigations", "Finished investigations by outcome", "outcome"
         )
@@ -84,6 +87,9 @@ class EarthlabMetrics:
 
     def record_verification(self, check: str, outcome: str) -> None:
         self.verifications.labels(check, outcome).inc()
+
+    def record_safety(self, stage: str, source: str, outcome: str) -> None:
+        self.safety_checks.labels(stage, source, outcome).inc()
 
     def record_qa(self, source: str, counts: dict[str, int]) -> None:
         for category, count in counts.items():

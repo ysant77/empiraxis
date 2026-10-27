@@ -19,8 +19,10 @@ from earthlab.contracts import Region, TimeWindow
 from earthlab.data.quality import coverage_report
 from earthlab.llm.client import build_client
 from earthlab.llm.providers import load_providers
+from earthlab.llm.raw import RawCompletionClient
 from earthlab.metrics import EarthlabMetrics
 from earthlab.runtime import Workspace, investigate, new_run_dir, open_workspace
+from earthlab.safety.llama_guard import LlamaGuard
 from earthlab.trace import RunTrace
 from earthlab.verify.claims import Claim, ClaimKind
 
@@ -81,8 +83,11 @@ def show_result(run_dir: Path) -> None:
 
 def tab_investigate() -> None:
     configs = {n: c for n, c in load_providers(PROVIDERS).items() if c.enabled}
-    provider = st.selectbox("Meta model endpoint", list(configs))
+    planners = [n for n, c in configs.items() if "guard" not in c.logical_model]
+    provider = st.selectbox("Meta model endpoint", planners)
     reasoning = st.selectbox("Reasoning strength", ["low", "medium", "high"])
+    guards = [n for n, c in configs.items() if "guard" in c.logical_model]
+    guard_name = st.selectbox("Safety model (Meta Llama Guard)", [*guards, "none"])
     question = st.text_area("Research question", DEFAULT_QUESTION, height=110)
     if not st.button("Run investigation", type="primary"):
         return
@@ -94,6 +99,9 @@ def tab_investigate() -> None:
             if record["event"] == "model_turn":
                 names = ", ".join(c["name"] for c in data["tool_calls"]) or "final answer"
                 status.write(f"Turn {data['turn']}: model chose **{names}**")
+            elif record["event"] == "safety_check":
+                verdict = "allowed" if data["allowed"] else f"blocked ({data['reason']})"
+                status.write(f"Safety check on the {data['stage']}: {verdict}")
             elif record["event"] == "tool_result":
                 status.write(f"`{data['name']}` -> {data['outcome']}")
 
@@ -106,6 +114,11 @@ def tab_investigate() -> None:
             budget=Budget(),
             reasoning=reasoning,
             listener=listener,
+            guard=None
+            if guard_name == "none"
+            else LlamaGuard(
+                RawCompletionClient(configs[guard_name]), configs[guard_name].logical_model
+            ),
         )
         write_report(run_dir, DATA_DIR)
         status.update(label="Investigation finished", state="complete")

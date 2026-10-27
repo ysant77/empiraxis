@@ -39,6 +39,16 @@ def _audit_lines(audit: dict[str, Any] | None) -> list[str]:
     return [f"**Answer audit: numbers not found in any tool output: {numbers}.**", ""]
 
 
+def _safety_lines(decisions: list[dict[str, Any]]) -> list[str]:
+    if not decisions:
+        return []
+    lines = ["## Safety checks", ""]
+    for d in decisions:
+        verdict = "allowed" if d["allowed"] else f"blocked by {d['blocked_by']}: {d['reason']}"
+        lines.append(f"- {d['stage']}: {verdict}. Llama Guard: {d.get('guard') or 'not run'}")
+    return [*lines, ""]
+
+
 def _provenance_lines(result: dict[str, Any]) -> list[str]:
     src = result["source"]
     cost = result["estimated_cost_usd"]
@@ -92,5 +102,6 @@ def render_report(result: dict[str, Any], chart_name: str | None = None) -> str:
     ]
     if chart_name:
         lines += ["## Observed data", "", f"![Hourly regional PM2.5]({chart_name})", ""]
+    lines += _safety_lines(result.get("safety", []))
     lines += _provenance_lines(result)
     return "\n".join(lines)

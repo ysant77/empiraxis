@@ -13,13 +13,16 @@ from earthlab.agent.budget import Budget
 from earthlab.contracts import TimeWindow
 from earthlab.data.quality import coverage_report
 from earthlab.evals.runner import ARMS, run_suite
+from earthlab.evals.safety import load_cases, run_case, summarize
 from earthlab.evals.tasks import load_tasks
 from earthlab.llm.client import build_client
 from earthlab.llm.providers import load_providers
+from earthlab.llm.raw import RawCompletionClient
 from earthlab.metrics import EarthlabMetrics
 from earthlab.report.chart import hourly_chart
 from earthlab.report.markdown import render_report
 from earthlab.runtime import investigate, new_run_dir, open_workspace
+from earthlab.safety.llama_guard import LlamaGuard
 from earthlab.trace import RunTrace
 from earthlab.verify.claims import Claim
 
@@ -42,6 +45,9 @@ def _print_event(record: dict[str, Any]) -> None:
         elif data.get("error"):
             line += f" | {data['error'][:120]}"
         print(line)
+    elif event == "safety_check":
+        verdict = "allowed" if data["allowed"] else f"BLOCKED by {data['blocked_by']}"
+        print(f"[safety {data['stage']}] {verdict} | {data.get('guard') or 'rules only'}")
     elif event == "finish":
         print(f"[finish] status={data['status']} ({data['reason']})")
     sys.stdout.flush()
@@ -72,6 +78,14 @@ def write_report(run_dir: Path, workspace_dir: Path) -> Path:
     return path
 
 
+def build_guard(providers: Path, name: str) -> LlamaGuard | None:
+    """The safety model, or None when explicitly disabled with --guard none."""
+    if name == "none":
+        return None
+    config = load_providers(providers)[name]
+    return LlamaGuard(RawCompletionClient(config), config.logical_model)
+
+
 def cmd_investigate(args: argparse.Namespace) -> int:
     config = load_providers(args.providers)[args.provider]
     client = build_client(config)
@@ -92,6 +106,7 @@ def cmd_investigate(args: argparse.Namespace) -> int:
         budget=budget,
         reasoning=args.reasoning,
         listener=_print_event,
+        guard=build_guard(args.providers, args.guard),
     )
     report = write_report(run_dir, args.data_dir)
     print(f"\n{result.answer}\n\nreport: {report}")
@@ -143,6 +158,19 @@ def cmd_eval(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_safety_eval(args: argparse.Namespace) -> int:
+    guard = build_guard(args.providers, args.guard)
+    results = [run_case(case, guard) for case in load_cases(args.cases)]
+    for r in results:
+        print(
+            f"{r.case.id:24} expected={'allow' if r.case.allowed else 'block':5} "
+            f"guard={r.guard_allows} rules={r.rules_allow} gate={r.gate_allows}",
+            flush=True,
+        )
+    print(json.dumps(summarize(results), indent=2))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="earthlab", description=__doc__)
     parser.add_argument("--data-dir", type=Path, default=Path("data/nea"))
@@ -166,6 +194,9 @@ def build_parser() -> argparse.ArgumentParser:
     inv.add_argument("--max-turns", type=int, default=12)
     inv.add_argument("--max-seconds", type=float, default=3600.0)
     inv.add_argument("--metrics-port", type=int, default=0)
+    inv.add_argument(
+        "--guard", default="local-llama-guard", help="safety model provider, or 'none'"
+    )
     inv.set_defaults(func=cmd_investigate)
 
     ev = sub.add_parser("eval", help="score agent, no-tool and scripted arms on fixed tasks")
@@ -177,6 +208,12 @@ def build_parser() -> argparse.ArgumentParser:
     ev.add_argument("--runs-dir", type=Path, default=Path("runs"))
     ev.add_argument("--max-turns", type=int, default=10)
     ev.set_defaults(func=cmd_eval)
+
+    safety = sub.add_parser("safety-eval", help="score Llama Guard and scope rules on labels")
+    safety.add_argument("--cases", type=Path, default=Path("evals/safety_cases.yaml"))
+    safety.add_argument("--providers", type=Path, default=Path("config/providers.yaml"))
+    safety.add_argument("--guard", default="local-llama-guard")
+    safety.set_defaults(func=cmd_safety_eval)
 
     replay = sub.add_parser("replay", help="re-verify a saved run offline, no model needed")
     replay.add_argument("run_dir", type=Path)
