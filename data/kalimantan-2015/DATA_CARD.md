@@ -33,21 +33,19 @@ October has valid data for less than half of the box, most likely because of haz
 
 These are product-mapped values for 500 m cells. They are not destroyed trees, forest loss or emissions.
 
-## Preliminary local cross-check (not yet a committed test)
+## Burned area (computed, verified)
 
-A separate reader (`tifffile` + NumPy, pixel-centre test from the sinusoidal formula) gave these counts, as local / Earth Engine:
+`uv run earthlab burned-area --case config/cases/kalimantan-2015-burned-area.yaml` applies the pre-registered method and tolerances in `config/methods/mcd64a1_burned_area.yaml`.
 
-| Month | Pixels in box | Valid land | Burned | Burned area |
-| --- | --- | --- | --- | --- |
-| 2015-09 | 69,049 / 69,044 | 66,776 / 66,765 | 3,623 / 3,618 | 777.71 km² (count × native pixel area) vs 773.19 km² (EE `pixelArea`) |
-| 2015-10 | 69,049 / 69,044 | 31,677 / 31,640 | 2,158 / 2,154 | 463.23 vs 460.32 km² |
+| Month | Valid land | Burned pixels (tool = verifier / EE) | Primary area (WGS84) | Nominal area (sphere) | C1 / C2 / C3 | Gate (valid ≥ 0.80) |
+| --- | --- | --- | --- | --- | --- | --- |
+| 2015-09 | 0.970 | 3,623 = 3,623 / 3,618 | 77,426.0 ha | 77,770.8 ha | pass / pass / pass | pass |
+| 2015-10 | 0.460 | 2,158 = 2,158 / 2,154 | 46,118.0 ha | 46,323.3 ha | pass / pass / pass | **fail: insufficient_data** |
 
-Two differences are not explained yet:
-
-- **Edge pixels:** about five pixels differ. I believe these are cells near the box edge, but that is not proven.
-- **Area method:** the areas differ by about 0.6%. The likely reason is that EE's `pixelArea` uses the ellipsoid, while the MODIS sinusoidal grid assumes a sphere.
-
-The burned-area PR must explain both, set a tolerance in advance and make the check a test.
+- **C1, counts:** the 5 (September) and 4 (October) extra pixels against Earth Engine all lie within one pixel of the box edge. The allowed differences are 69 and 57.
+- **C2, per-pixel area:** the verifier's closed-form ellipsoid area per burned pixel equals Earth Engine's `pixelArea`: 213,706.79 m² (September) and 213,707.05 m² (October).
+- **Primary vs nominal:** the WGS84 pixel here is 0.44% smaller than the product's nominal sphere pixel (214,658.7 m²), so the primary area is smaller.
+- **October:** less than half the land in the box has valid data, so its area is not a reportable finding.
 
 ## FIRMS MODIS_SP detections
 

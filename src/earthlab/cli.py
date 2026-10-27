@@ -29,6 +29,7 @@ from earthlab.report.chart import hourly_chart
 from earthlab.report.markdown import render_report
 from earthlab.runtime import investigate, new_run_dir, open_workspace
 from earthlab.safety.llama_guard import LlamaGuard
+from earthlab.tools.burned_area_tools import case_report
 from earthlab.trace import RunTrace
 from earthlab.verify.claims import Claim
 
@@ -196,7 +197,29 @@ def cmd_acquire(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_burned_area(args: argparse.Namespace) -> int:
+    """MCD64A1 burned area for every pinned month of a case, with the verifier's checks."""
+    reports = case_report(load_case(args.case, Path.cwd()), Path.cwd())
+    for r in reports:
+        s, c = r["summary"], r["check"]
+        verdict = "PASS" if c["passed"] else "FAIL"
+        gate = "reportable" if s["gate_passed"] else "insufficient_data"
+        print(
+            f"{r['month']}: {s['primary_area_ha']:.1f} ha mapped burned ({s['burned_pixels']} px), "
+            f"valid {s['valid_fraction']:.3f} -> {gate}; checks {verdict} "
+            f"(EE {c['ee_burned_pixels']} px, allowed diff {c['allowed_count_difference']})"
+        )
+    if args.output:
+        args.output.write_text(json.dumps(reports, indent=2) + "\n", encoding="utf-8")
+    return 0 if all(r["check"]["passed"] for r in reports) else 1
+
+
 def _add_acquire_parser(sub: Any) -> None:
+    area = sub.add_parser("burned-area", help="MCD64A1 burned area for a pinned case, verified")
+    area.add_argument("--case", type=Path, required=True)
+    area.add_argument("--output", type=Path, default=None)
+    area.set_defaults(func=cmd_burned_area)
+
     acq = sub.add_parser("acquire", help="download one approved case asset (needs approvals)")
     acq.add_argument("--case", type=Path, required=True)
     acq.add_argument("--asset", required=True)

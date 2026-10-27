@@ -64,7 +64,7 @@ scenarios:
     priority: P0
     title: Burned-area computation (MCD64A1)
     status: blocked_unrun
-    blocked_reason: MCD64A1 data not pinned; burned-area tool and verifier not implemented.
+    blocked_reason: Data pinned and burned_area_summary verified; the agent cannot yet submit typed burned-area claims.
     question: >-
       For a bounded Kalimantan area and an agreed month in 2015, how many hectares were
       mapped as burned in MCD64A1, after quality checks?

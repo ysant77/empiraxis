@@ -20,21 +20,25 @@ ASSESS_TOOL = "assess_case"
 
 
 class CaseLibrary:
-    def __init__(self, cases: dict[str, CaseFile]):
+    def __init__(self, cases: dict[str, CaseFile], root: Path):
         self._cases = cases
+        self.root = root
 
     @classmethod
     def load(cls, cases_dir: Path, root: Path) -> CaseLibrary:
         loaded = [load_case(path, root) for path in sorted(cases_dir.glob("*.yaml"))]
-        return cls({c.case.case_id: c for c in loaded})
+        return cls({c.case.case_id: c for c in loaded}, root)
+
+    def get(self, case_id: str) -> CaseFile:
+        if case_id not in self._cases:
+            raise ValueError(f"unknown case {case_id!r}; known: {', '.join(self.ids())}")
+        return self._cases[case_id]
 
     def ids(self) -> list[str]:
         return sorted(self._cases)
 
     def report(self, case_id: str) -> dict[str, Any]:
-        if case_id not in self._cases:
-            raise ValueError(f"unknown case {case_id!r}; known: {', '.join(self.ids())}")
-        loaded = self._cases[case_id]
+        loaded = self.get(case_id)
         case = loaded.case
         result = assess(case, get_method(case.method_id), loaded.assets)
         return {

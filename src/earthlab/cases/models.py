@@ -310,6 +310,7 @@ class ScientificCase(Strict):
     method_id: str = Field(pattern=IDENT)
     causal_claim_requested: bool = False
     status: Literal["active", "draft"] = "draft"
+    data_dir: str | None = Field(default=None, description="Pinned data folder, repo-relative.")
     notes: str | None = None
 
     def default_causal_status(self) -> CausalStatus:

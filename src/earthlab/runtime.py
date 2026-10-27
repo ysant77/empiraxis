@@ -22,6 +22,7 @@ from earthlab.llm.client import ChatClient
 from earthlab.metrics import EarthlabMetrics
 from earthlab.safety.gate import REFUSAL, SafetyDecision, SafetyGate
 from earthlab.safety.llama_guard import LlamaGuard
+from earthlab.tools.burned_area_tools import burned_area_spec
 from earthlab.tools.pm25_tools import Pm25Toolset
 from earthlab.tools.registry import ToolRegistry
 from earthlab.trace import RunTrace
@@ -68,6 +69,7 @@ def build_registry(
     registry.register(declare_limitation_spec(limitations or LimitationLog()))
     if workspace.cases is not None:
         registry.register(assess_case_spec(workspace.cases))
+        registry.register(burned_area_spec(workspace.cases))
     return registry
 
 
