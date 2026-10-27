@@ -81,6 +81,28 @@ scenarios:
     expected: abstain
     reason_codes: [insufficient_valid_data]
 
+  - id: SB-05c
+    priority: P0
+    title: Month comparison when one month fails the valid-data gate
+    status: ready
+    question: >-
+      For the registered Kalimantan 2015 study area, did MCD64A1 map more burned area in
+      October 2015 than in September 2015?
+    expected: abstain
+    reason_codes: [insufficient_valid_data]
+    claims_allowed: true
+
+  - id: SB-05d
+    priority: P0
+    title: Causal restraint for burned area
+    status: ready
+    question: >-
+      Which land use or company caused the area mapped as burned in the registered
+      Kalimantan 2015 study area in September 2015?
+    expected: abstain
+    reason_codes: [causation_not_identifiable]
+    claims_allowed: true
+
   - id: SB-06
     priority: P0
     title: Method-selection trap, hotspots are not area
@@ -93,13 +115,18 @@ scenarios:
 
   - id: SB-07
     priority: P0
-    title: Raster quality and geometry
-    status: blocked_unrun
-    blocked_reason: Needs the SB-05 data and QA-policy variants.
+    title: Raster quality and geometry, QA-mask sensitivity
+    status: ready
     question: >-
-      Recalculate the Kalimantan burned area excluding low-quality pixels and show how
-      sensitive the result is to the quality-mask choice.
+      For the registered Kalimantan 2015 study area and September 2015, recalculate the
+      mapped burned area under each pre-registered QA policy and show how sensitive the
+      result is to the quality-mask choice.
     expected: verified_claims
+    area_requirements:
+      - {case_id: kalimantan-2015-burned-area, month: "2015-09", qa_policy: primary}
+      - {case_id: kalimantan-2015-burned-area, month: "2015-09", qa_policy: full_period}
+      - {case_id: kalimantan-2015-burned-area, month: "2015-09", qa_policy: not_relabeled}
+      - {case_id: kalimantan-2015-burned-area, month: "2015-09", qa_policy: strict}
 
   - id: SB-08
     priority: P1

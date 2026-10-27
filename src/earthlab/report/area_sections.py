@@ -17,8 +17,8 @@ AREA_LIMITATIONS = (
 )
 
 
-def _ok(value: bool) -> str:
-    return "pass" if value else "**fail**"
+def _ok(value: bool | None) -> str:
+    return "n/a" if value is None else "pass" if value else "**fail**"
 
 
 def _check_row(m: dict[str, Any]) -> str:

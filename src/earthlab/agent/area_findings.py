@@ -15,6 +15,7 @@ from pydantic import Field
 
 from earthlab.cases.tools import CaseLibrary
 from earthlab.contracts import Strict
+from earthlab.science.burned_area import QaPolicy
 from earthlab.tools.burned_area_tools import METHOD_FILE, month_report
 from earthlab.tools.registry import ToolSpec
 from earthlab.verify.burned_area_check import MonthCheck, claim_verdict, load_tolerances
@@ -46,6 +47,9 @@ class AreaClaim(Strict):
     )
     value: float = Field(ge=0)
     statement: str = Field(max_length=300, description="One plain sentence.")
+    qa_policy: QaPolicy = Field(
+        default=QaPolicy.PRIMARY, description="The QA policy the value was computed with."
+    )
 
     @property
     def unit(self) -> str:
@@ -69,7 +73,9 @@ def verify_area_claim(claim: AreaClaim, library: CaseLibrary) -> AreaVerificatio
             claim=claim, verdict=Verdict.UNSUPPORTED, check=Check.LANGUAGE, reason=reason
         )
     try:
-        report = month_report(library.get(claim.case_id), library.root, claim.month)
+        report = month_report(
+            library.get(claim.case_id), library.root, claim.month, claim.qa_policy
+        )
     except (ValueError, OSError, RuntimeError, StopIteration) as exc:
         return AreaVerification(
             claim=claim, verdict=Verdict.INSUFFICIENT_DATA, check=Check.SOURCE, reason=str(exc)
@@ -155,6 +161,7 @@ def submit_area_findings_spec(library: CaseLibrary, ledger: AreaLedger) -> ToolS
                 {
                     "id": i,
                     "quantity": r.claim.quantity.value,
+                    "qa_policy": r.claim.qa_policy.value,
                     "month": r.claim.month,
                     "verdict": r.verdict.value,
                     "observed": r.observed,

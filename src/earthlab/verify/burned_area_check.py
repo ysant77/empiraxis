@@ -71,12 +71,12 @@ class MonthCheck(Strict):
     verifier_burned_pixels: int
     verifier_area_m2: float
     verifier_valid_fraction: float
-    ee_burned_pixels: int
+    ee_burned_pixels: int | None
     verifier_area_per_pixel_m2: float
-    ee_area_per_pixel_m2: float
+    ee_area_per_pixel_m2: float | None
     allowed_count_difference: int
-    c1_count_ok: bool
-    c2_per_pixel_area_ok: bool
+    c1_count_ok: bool | None = Field(description="None: no Earth Engine reference (QA variant).")
+    c2_per_pixel_area_ok: bool | None
     c3_tool_vs_verifier_ok: bool
     gate_ok: bool
     passed: bool
@@ -84,7 +84,11 @@ class MonthCheck(Strict):
 
 
 def _recount(
-    path: Path, entry: dict[str, Any], box: BoundingBox, month_days: tuple[int, int]
+    path: Path,
+    entry: dict[str, Any],
+    box: BoundingBox,
+    month_days: tuple[int, int],
+    exclude_bits: tuple[int, ...],
 ) -> tuple[int, float, float]:
     if file_digest(path) != entry["sha256"]:
         raise ValueError(f"{path.name}: hash mismatch")
@@ -107,22 +111,19 @@ def _recount(
         qa, burn = stack[row, cols, 2], stack[row, cols, 0]
         is_land = (qa >= 0) & (qa % 2 == 1)
         is_valid = is_land & ((qa // 2) % 2 == 1)
-        hits = int((is_valid & (burn >= month_days[0]) & (burn <= month_days[1])).sum())
+        kept = is_valid.copy()
+        for bit in exclude_bits:
+            kept &= (qa // 2**bit) % 2 == 0
+        hits = int((kept & (burn >= month_days[0]) & (burn <= month_days[1])).sum())
         land, valid, burned = land + int(is_land.sum()), valid + int(is_valid.sum()), burned + hits
         area += hits * _band_area(y0 - row * sy, sx, sy)
     return burned, area, (valid / land if land else 0.0)
 
 
-def check_month(
-    summary: MonthSummary,
-    data_dir: Path,
-    entry: dict[str, Any],
-    box: BoundingBox,
-    month_days: tuple[int, int],
-    tol: Tolerances,
-) -> MonthCheck:
-    burned, area, fraction = _recount(data_dir / entry["file"], entry, box, month_days)
-    ref = entry["reference"]
+def _reference_checks(
+    burned: int, area: float, summary: MonthSummary, ref: dict[str, Any], tol: Tolerances
+) -> tuple[bool, bool, float]:
+    """C1 (count vs Earth Engine, edge band) and C2 (area per pixel vs Earth Engine)."""
     allowed = summary.burned_pixels_near_edge
     c1 = abs(burned - ref["burned_valid_pixels"]) <= allowed and burned == summary.burned_pixels
     ee_per_px = (
@@ -132,7 +133,32 @@ def check_month(
     )
     own_per_px = area / burned if burned else 0.0
     c2 = burned == 0 or abs(own_per_px - ee_per_px) <= tol.per_pixel_area_relative_max * ee_per_px
-    c3 = abs(area - summary.primary_area_m2) <= tol.tool_vs_verifier_relative_max * max(area, 1.0)
+    return c1, c2, ee_per_px
+
+
+def check_month(
+    summary: MonthSummary,
+    data_dir: Path,
+    entry: dict[str, Any],
+    box: BoundingBox,
+    month_days: tuple[int, int],
+    tol: Tolerances,
+    exclude_bits: tuple[int, ...] = (),
+) -> MonthCheck:
+    """C1-C3 and the gate. A QA variant (exclude_bits) has no Earth Engine reference, so
+    C1 and C2 are None for it, as pre-registered."""
+    path = data_dir / entry["file"]
+    burned, area, fraction = _recount(path, entry, box, month_days, exclude_bits)
+    c1: bool | None = None
+    c2: bool | None = None
+    ee_pixels: int | None = None
+    ee_per_px: float | None = None
+    if not exclude_bits:
+        ee_pixels = entry["reference"]["burned_valid_pixels"]
+        c1, c2, ee_per_px = _reference_checks(burned, area, summary, entry["reference"], tol)
+    c3 = burned == summary.burned_pixels and abs(
+        area - summary.primary_area_m2
+    ) <= tol.tool_vs_verifier_relative_max * max(area, 1.0)
     gate = fraction >= tol.min_valid_fraction
     notes = [] if gate else [f"valid fraction {fraction:.3f} is below {tol.min_valid_fraction}"]
     return MonthCheck(
@@ -140,15 +166,15 @@ def check_month(
         verifier_burned_pixels=burned,
         verifier_area_m2=round(area, 1),
         verifier_valid_fraction=round(fraction, 6),
-        ee_burned_pixels=ref["burned_valid_pixels"],
-        verifier_area_per_pixel_m2=round(own_per_px, 2),
-        ee_area_per_pixel_m2=round(ee_per_px, 2),
-        allowed_count_difference=allowed,
+        ee_burned_pixels=ee_pixels,
+        verifier_area_per_pixel_m2=round(area / burned if burned else 0.0, 2),
+        ee_area_per_pixel_m2=None if ee_per_px is None else round(ee_per_px, 2),
+        allowed_count_difference=summary.burned_pixels_near_edge,
         c1_count_ok=c1,
         c2_per_pixel_area_ok=c2,
         c3_tool_vs_verifier_ok=c3,
         gate_ok=gate,
-        passed=c1 and c2 and c3,
+        passed=c1 is not False and c2 is not False and c3,
         notes=notes,
     )
 

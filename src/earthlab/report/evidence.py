@@ -16,6 +16,7 @@ from earthlab.cases.tools import CaseLibrary
 from earthlab.data.firms import detections_in_month
 from earthlab.data.mcd64a1 import read_manifest
 from earthlab.digest import file_digest
+from earthlab.science.burned_area import QA_POLICY_FILE
 from earthlab.tools.burned_area_tools import METHOD_FILE, month_report
 
 _ERRORS = (ValueError, OSError, RuntimeError, StopIteration, KeyError)
@@ -29,7 +30,7 @@ def input_files(library: CaseLibrary, case_id: str) -> dict[str, str]:
     """Method file, case file, and every manifest and data file of the case's assets."""
     case_file = library.get(case_id)
     root = library.root
-    paths = [root / METHOD_FILE]
+    paths = [root / METHOD_FILE, root / QA_POLICY_FILE]
     if case_id in library.files:
         paths.append(library.files[case_id])
     if case_file.case.data_dir is not None:

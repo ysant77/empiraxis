@@ -135,6 +135,11 @@ def _provenance_lines(result: dict[str, Any]) -> list[str]:
     ]
 
 
+def _quantity(row: dict[str, Any]) -> str:
+    policy = row.get("qa_policy", "primary")
+    return row["quantity"] if policy == "primary" else f"{row['quantity']} (QA {policy})"
+
+
 def _area_table(rows: list[dict[str, Any]]) -> list[str]:
     """Burned-area claims with every verdict: supported, contradicted or insufficient_data."""
     if not rows:
@@ -148,7 +153,7 @@ def _area_table(rows: list[dict[str, Any]]) -> list[str]:
     for r in rows:
         source = f"`{r['source_sha256'][:12]}`" if r.get("source_sha256") else ""
         lines.append(
-            f"| {r['id']} | {r['case_id']} | {r['month']} | {r['quantity']} | {r['value']:g} "
+            f"| {r['id']} | {r['case_id']} | {r['month']} | {_quantity(r)} | {r['value']:g} "
             f"{r['unit']} | {'' if r['observed'] is None else r['observed']} | "
             f"**{r['verdict']}** | {r['reason']} | {source} |"
         )

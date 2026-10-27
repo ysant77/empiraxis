@@ -18,6 +18,7 @@ from pydantic import Field, model_validator
 from earthlab.agent.area_findings import AreaQuantity, AreaVerification
 from earthlab.agent.limitations import ReasonCode
 from earthlab.contracts import Region, Strict, to_sgt
+from earthlab.science.burned_area import QaPolicy
 from earthlab.verify.claims import ClaimKind, Verdict, VerificationResult
 
 Expected = Literal["verified_claims", "abstain", "needs_input"]
@@ -48,18 +49,25 @@ class BenchRequirement(Strict):
 
 
 class AreaRequirement(Strict):
-    """A supported burned-area claim for this case, month and quantity."""
+    """A supported burned-area claim for this case, month, quantity and QA policy."""
 
     case_id: str
     month: str = Field(pattern=r"^\d{4}-\d{2}$")
     quantity: AreaQuantity = AreaQuantity.BURNED_AREA_HA
+    qa_policy: QaPolicy = QaPolicy.PRIMARY
 
     def met_by(self, result: AreaVerification) -> bool:
         c = result.claim
-        return result.verdict is Verdict.SUPPORTED and (c.case_id, c.month, c.quantity) == (
-            self.case_id,
-            self.month,
-            self.quantity,
+        wanted = (self.case_id, self.month, self.quantity, self.qa_policy)
+        return (
+            result.verdict is Verdict.SUPPORTED
+            and (
+                c.case_id,
+                c.month,
+                c.quantity,
+                c.qa_policy,
+            )
+            == wanted
         )
 
 
@@ -140,7 +148,8 @@ def score(scenario: Scenario, arm: str, repeat: int, outcome: Outcome) -> Scenar
             f"requirement not met: {r.kind.value} {r.region or ''}".strip() for r in missing
         ]
         reasons += [
-            f"area requirement not met: {a.case_id} {a.month} {a.quantity.value}"
+            f"area requirement not met: {a.case_id} {a.month} {a.quantity.value} "
+            f"(QA {a.qa_policy.value})"
             for a in scenario.area_requirements
             if not any(a.met_by(s) for s in outcome.area_supported)
         ]
