@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import csv
 import re
+from bisect import bisect_left
 from collections import Counter
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -56,7 +57,9 @@ class Pm25Dataset:
         return self._index.get(moment)
 
     def in_window(self, window: TimeWindow) -> list[HourRow]:
-        return [row for row in self.rows if window.contains(row.time)]
+        lo = bisect_left(self.rows, window.start, key=lambda r: r.time)
+        hi = bisect_left(self.rows, window.end, key=lambda r: r.time)
+        return list(self.rows[lo:hi])
 
     def issue_counts(self) -> dict[str, int]:
         return dict(Counter(issue.kind.value for issue in self.issues))
