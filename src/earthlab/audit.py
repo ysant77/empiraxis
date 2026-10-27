@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import json
 import os
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -23,8 +23,9 @@ class TraceTamperError(RuntimeError):
 
 
 class RunTrace:
-    def __init__(self, path: Path):
+    def __init__(self, path: Path, listener: Callable[[dict[str, Any]], None] | None = None):
         self.path = path
+        self._listener = listener
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self._seq = 0
         self._last = GENESIS
@@ -60,6 +61,8 @@ class RunTrace:
             os.fsync(fh.fileno())
         self._seq += 1
         self._last = record["hash"]
+        if self._listener is not None:
+            self._listener(record)
         return record
 
     def verify(self) -> int:
