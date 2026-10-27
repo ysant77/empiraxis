@@ -63,7 +63,9 @@ def test_no_tool_arm_failures(workspace: Workspace, tmp_path: Path) -> None:
     summary = run_suite([PEAK_TASK, PEAK_TASK], ["no_tools"], workspace, tmp_path, client)
     assert summary["arms"]["no_tools"]["verified_success"] == 0
     details = [json.loads(r)["detail"] for r in (tmp_path / "runs.jsonl").read_text().splitlines()]
-    assert details == [{"error": "unparseable claims"}, {"error": "timeout"}]
+    assert details[0]["error"] == "unparseable claims"
+    assert details[0]["reply_head"] == "I am not sure." and details[0]["finish_reason"] == "stop"
+    assert details[1] == {"error": "timeout"}
     bad_json = ScriptedClient([say('{"claims": [{"kind": "nonsense"}]}')])
     summary = run_suite([PEAK_TASK], ["no_tools"], workspace, tmp_path / "b", bad_json)
     assert summary["arms"]["no_tools"]["verified_success"] == 0

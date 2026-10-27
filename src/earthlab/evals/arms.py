@@ -27,6 +27,7 @@ region_mean, missing_hours, hours_above. Copy start and end exactly from the que
 Question: {question}"""
 
 _JSON = re.compile(r"\{.*\}", re.DOTALL)
+REPLY_HEAD_CHARS = 300
 
 
 @dataclass(frozen=True)
@@ -68,7 +69,12 @@ def no_tool_arm(task: EvalTask, client: ChatClient, workspace: Workspace) -> Arm
         return ArmOutcome([], 0, 0.0, {"error": exc.kind.value})
     claims = _parse_claims(resp.content)
     if claims is None:
-        return ArmOutcome([], 0, resp.wall_seconds, {"error": "unparseable claims"})
+        detail = {
+            "error": "unparseable claims",
+            "finish_reason": resp.finish_reason,
+            "reply_head": resp.content[:REPLY_HEAD_CHARS],
+        }
+        return ArmOutcome([], 0, resp.wall_seconds, detail)
     final = workspace.verifier.verify_all(claims)
     rejected = sum(1 for r in final if r.verdict is not Verdict.SUPPORTED)
     return ArmOutcome(final, rejected, resp.wall_seconds, {"claims": len(claims)})
