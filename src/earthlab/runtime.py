@@ -102,6 +102,12 @@ def result_payload(
         "estimated_cost_usd": result.cost_usd,
         "source": snapshot.citation(),
         "attribution": snapshot.attribution,
+        "answer_audit": None
+        if result.answer_audit is None
+        else {
+            "numbers_checked": result.answer_audit.numbers_checked,
+            "ungrounded": list(result.answer_audit.ungrounded),
+        },
         "rounds": [[r.model_dump(mode="json") for r in rnd] for rnd in result.ledger.rounds],
     }
 
