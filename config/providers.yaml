@@ -1,0 +1,51 @@
+# Meta open-weight model endpoints. Fill hosted values from each provider dashboard; do not guess.
+# API keys come from the named environment variables, never from this file.
+providers:
+  - name: local-glimmer
+    kind: local
+    base_url: http://127.0.0.1:8080/v1
+    model: muse-glimmer-30B            # alias passed to llama-server with -a
+    logical_model: muse-glimmer-30b
+    timeout_seconds: 900
+    usd_per_mtok_input: 0.0            # local inference; energy and hardware are not priced here
+    usd_per_mtok_output: 0.0
+    price_source: local hardware, not billed
+    extra_body:
+      chat_template_kwargs: {reasoning_strength: medium}
+
+  - name: lan-windows-glimmer
+    kind: lan
+    base_url: http://192.168.1.50:8080/v1   # replace with the Windows node LAN address
+    model: muse-glimmer-30B
+    logical_model: muse-glimmer-30b
+    timeout_seconds: 1800
+    usd_per_mtok_input: 0.0
+    usd_per_mtok_output: 0.0
+    price_source: local hardware, not billed
+    extra_body:
+      chat_template_kwargs: {reasoning_strength: medium}
+    enabled: false
+
+  - name: baseten-spark-open
+    kind: hosted
+    base_url: https://inference.baseten.co/v1
+    model: meta-models/muse-spark-open-1026   # hackathon model ID from the participant guide
+    logical_model: muse-spark-open
+    api_key_env: BASETEN_API_KEY
+    enabled: false                     # enable after credits arrive and a probe passes
+
+  - name: fireworks-spark-open
+    kind: hosted
+    base_url: https://api.fireworks.ai/inference/v1
+    model: REPLACE_WITH_FIREWORKS_MODEL_ID
+    logical_model: muse-spark-open
+    api_key_env: FIREWORKS_API_KEY
+    enabled: false
+
+  - name: modal-spark-open
+    kind: hosted
+    base_url: https://REPLACE-WITH-MODAL-ENDPOINT.modal.run/v1
+    model: REPLACE_WITH_MODAL_MODEL_ID
+    logical_model: muse-spark-open
+    api_key_env: MODAL_API_KEY
+    enabled: false
