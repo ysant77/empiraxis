@@ -108,3 +108,16 @@ def test_report_without_rounds_or_chart() -> None:
     }
     text = render_report(result)
     assert "_None._" in text and "not priced" in text and "Observed data" not in text
+
+
+def test_guard_can_be_disabled_and_safety_events_print(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    assert cli.build_guard(Path("config/providers.yaml"), "none") is None
+    guard = cli.build_guard(
+        Path(__file__).resolve().parents[1] / "config" / "providers.yaml", "local-llama-guard"
+    )
+    assert guard is not None and guard.name == "llama-guard-3-8b"
+    blocked = {"stage": "question", "allowed": False, "blocked_by": "scope_rules", "guard": None}
+    cli._print_event({"event": "safety_check", "data": blocked})
+    assert "BLOCKED by scope_rules | rules only" in capsys.readouterr().out

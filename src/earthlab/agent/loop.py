@@ -16,6 +16,7 @@ from earthlab.agent.prompts import FINAL_ANSWER, NUDGE_SUBMIT, system_prompt
 from earthlab.llm.client import ChatClient
 from earthlab.llm.types import ChatResponse, ProviderError, ToolCall
 from earthlab.metrics import EarthlabMetrics
+from earthlab.safety.gate import SafetyDecision
 from earthlab.tools.registry import ToolOutcome, ToolRegistry
 from earthlab.trace import RunTrace
 from earthlab.verify.answer_audit import AnswerAudit, audit_answer
@@ -28,6 +29,7 @@ class RunStatus(StrEnum):
     NO_SUPPORTED_FINDINGS = "no_supported_findings"
     BUDGET_EXHAUSTED = "budget_exhausted"
     PROVIDER_ERROR = "provider_error"
+    REFUSED = "refused"
 
 
 @dataclass
@@ -60,6 +62,7 @@ class Investigation:
     prompt_tokens: int
     completion_tokens: int
     answer_audit: AnswerAudit | None = None
+    safety: tuple[SafetyDecision, ...] = ()
 
 
 def _assistant_message(resp: ChatResponse) -> dict[str, Any]:

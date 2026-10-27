@@ -21,13 +21,46 @@ flowchart LR
     T & V & M -.-> P[(Prometheus /metrics)]
 ```
 
-1. The model reads the question and chooses a tool from an allowlist. Unknown tools, extra fields and windows over 92 days are rejected before anything runs.
-2. Each tool reads the hash-verified NEA snapshot and returns observations with the source citation.
-3. The model submits typed claims (`peak_region`, `region_max`, `region_mean`, `missing_hours`, `hours_above`). It cannot mark its own claims as true.
-4. The verifier re-reads the raw file with a separate parser, re-checks the hash and recomputes each claim. It also rejects causal, forecast, health, station and PSI/AQI language.
-5. The model must correct or drop rejected claims. Turn, tool-call, submission, time and cost limits are enforced in code.
-6. An answer audit checks every number in the final prose. A number must appear in a tool result, a submitted claim or the question.
-7. Each run writes `trace.jsonl` (hash-chained), `result.json`, `report.md` and a chart. `earthlab replay` re-checks a run without a model or GPU.
+1. A safety gate checks the question first. Out-of-scope questions (health or safety advice, politics or conflict, forecasts) get a refusal and never reach the planner model.
+2. The model reads the question and chooses a tool from an allowlist. Unknown tools, extra fields and windows over 92 days are rejected before anything runs.
+3. Each tool reads the hash-verified NEA snapshot and returns observations with the source citation.
+4. The model submits typed claims (`peak_region`, `region_max`, `region_mean`, `missing_hours`, `hours_above`). It cannot mark its own claims as true.
+5. The verifier re-reads the raw file with a separate parser, re-checks the hash and recomputes each claim. It also rejects causal, forecast, health, station and PSI/AQI language.
+6. The model must correct or drop rejected claims. Turn, tool-call, submission, time and cost limits are enforced in code.
+7. An answer audit checks every number in the final prose. A number must appear in a tool result, a submitted claim or the question. The safety gate then checks the final answer.
+8. Each run writes `trace.jsonl` (hash-chained), `result.json`, `report.md` and a chart. `earthlab replay` re-checks a run without a model or GPU.
+
+## Safety gate
+
+EarthLab reports observations. It does not judge air quality, give health or safety advice, take political positions, forecast, or assert causes. Two independent checks enforce this on the question and on the final answer. Either check can block.
+
+| Check | What it is | Notes |
+| --- | --- | --- |
+| Scope rules | Deterministic patterns for advice, politics, forecasts and asserted causes | Negation-aware on answers: "the data cannot show what caused it" is allowed |
+| Llama Guard 3 8B | Meta's open safety classifier with an EarthLab policy (S1 health advice, S2 safety recommendations, S3 politics or conflict, S4 forecasts, S5 causal attribution, S6 violent crimes, S7 hate) | Sent as a raw prompt through Ollama `/api/generate`; the OpenAI-style `/v1/completions` route re-templates the prompt and weakens the policy |
+
+- A blocked question returns a refusal. The planner model is never called.
+- A blocked final answer is withheld. The verified claims stay in the report.
+- If the safety model is configured but unreachable, the gate fails closed.
+- `--guard none` disables Llama Guard only; the scope rules always run.
+
+### Measured (27 October 2026, `earthlab safety-eval`, 16 labelled cases)
+
+| Check | Correct | Note |
+| --- | --- | --- |
+| Llama Guard 3 8B, EarthLab policy | 10/16 | Misses short advice ("wear masks"), forecasts and one causal answer |
+| Scope rules | 16/16 | One rule was extended after it missed "because fires ... sent smoke" |
+| Combined gate | 16/16 | 0 unsafe allowed, 0 safe blocked |
+
+- The cases were written by the developer and the rules were adjusted on them, so these are in-sample numbers, not a general accuracy claim.
+- Llama Guard 3 1B with its default policy got 3/7 on an earlier subset, including a false "violent crimes" flag on a plain PM2.5 summary. The 8B with the EarthLab policy removed that false positive.
+- On the development Mac, Llama Guard 8B runs next to Muse Glimmer only with a 4k context (5.3 GB); the default 32k context exhausted GPU memory.
+
+```bash
+ollama pull llama-guard3:8b
+ollama create earthlab-guard -f config/ollama/earthlab-guard.Modelfile
+uv run earthlab safety-eval
+```
 
 ## Quick start
 

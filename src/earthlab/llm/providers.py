@@ -28,6 +28,7 @@ def _is_private_host(host: str) -> bool:
 class ProviderConfig(Strict):
     name: str = Field(pattern=r"^[a-z0-9-]+$")
     kind: Literal["local", "lan", "hosted"]
+    api: Literal["openai_chat", "ollama_raw", "llamacpp_raw"] = "openai_chat"
     base_url: str
     model: str
     logical_model: str = Field(description="Meta model family, e.g. muse-glimmer-30b.")

@@ -36,7 +36,7 @@ class ChatClient(Protocol):
     ) -> ChatResponse: ...
 
 
-def _status_error(resp: httpx.Response) -> ProviderError:
+def status_error(resp: httpx.Response) -> ProviderError:
     code = resp.status_code
     if code in (401, 403):
         return ProviderError(ProviderErrorKind.AUTH, f"HTTP {code}")
@@ -113,7 +113,7 @@ class OpenAICompatClient:
         except httpx.HTTPError as exc:
             raise ProviderError(ProviderErrorKind.TRANSPORT, type(exc).__name__) from exc
         if resp.status_code >= 400:
-            raise _status_error(resp)
+            raise status_error(resp)
         return resp
 
     def _parse(self, resp: httpx.Response, wall: float) -> ChatResponse:
