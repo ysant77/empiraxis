@@ -17,6 +17,7 @@ case:
   asset_ids: [mcd64a1-061-kalimantan-2015, firms-modis-sp-kalimantan-2015]
   method_id: mcd64a1_burned_area
   status: active
+  data_dir: data/kalimantan-2015
   notes: FIRMS detections are corroborating context only; they never become burned area.
 assets:
   - asset_id: mcd64a1-061-kalimantan-2015

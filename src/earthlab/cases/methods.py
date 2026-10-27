@@ -80,7 +80,7 @@ CATALOGUE: dict[str, MethodCandidate] = {
             output_units=("ha",),
             min_valid_fraction=0.8,
             needs_quality_policy=True,
-            implemented=False,
+            implemented=True,
             validation_steps=(
                 "QA mask from the product user guide",
                 "equal-area pixel area in the native sinusoidal grid",

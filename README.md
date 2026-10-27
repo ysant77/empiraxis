@@ -240,6 +240,20 @@ A case binds one question to one study area, one period, named source assets and
 
 An evidence claim keeps observation support apart from causal status. Causal status can only be `not_requested`, `not_established` or `insufficient_data`; no "established" value exists. Human approvals (confirm study area, download, hosted spend, sandbox execution, publish) are scoped by asset IDs, bytes or USD, expire, and cannot be created by any model tool. A download must state its asset and size, and a spend its amount; each must fit the approved cap. The agent does not use these contracts yet.
 
+## Burned area (MCD64A1)
+
+`config/methods/mcd64a1_burned_area.yaml` fixes the definitions and tolerances. It was committed before the code that computes the result.
+
+- **Tool:** `burned_area_summary` (read-only) and `earthlab burned-area`. A pixel counts when its centre is in the box and its QA marks valid land. Area is each burned pixel's area on the WGS84 ellipsoid. The nominal sphere-based area is shown next to it.
+- **Verifier:** it re-reads the pinned bytes and recomputes with a closed-form ellipsoid integral, not the tool's code. It then checks three things:
+  - C1: counts agree with the Earth Engine reference, except for pixels within one pixel of the box edge.
+  - C2: area per pixel agrees with Earth Engine `pixelArea` within 0.01%.
+  - C3: the tool's area agrees with the verifier's within 0.01%.
+- **Gate:** a month with valid land below 0.80 is `insufficient_data`.
+- **Kalimantan 2015:** September is 77,426.0 ha with every check passing. October fails the gate, with valid data for 46% of the land. Details are in `data/kalimantan-2015/DATA_CARD.md`.
+
+These are mapped burned areas for 500 m cells. They are not tree loss, forest loss or emissions, and FIRMS hotspot counts are never added to them.
+
 ## ScienceBench (development suite v1)
 
 `evals/sciencebench_dev_v1.yaml` lists 20 scenarios (21 entries: SB-02 has a variant without a threshold). They are visible development fixtures, not a blind holdout. No numeric gold answers are stored. A `verified_claims` scenario names claim shapes, and the verifier recomputes every value from the pinned source. An abstention passes only with the listed reason codes. A scenario whose data or tools do not exist yet is `blocked_unrun`: it is listed with its reason and never scored.

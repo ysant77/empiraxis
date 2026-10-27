@@ -178,7 +178,8 @@ def test_feasible_needs_approval_and_not_implemented() -> None:
     result = assess(case(), BURN_READY, registered)  # F2
     assert result.status == "needs_approval"
     assert result.approvals_needed == ((ApprovalAction.DOWNLOAD, "mcd64a1"),)
-    assert assess(case(), BURN, pinned).status == "not_implemented"  # F7
+    unbuilt = BURN.model_copy(update={"implemented": False})
+    assert assess(case(), unbuilt, pinned).status == "not_implemented"  # F7
 
 
 def test_coverage_and_variable_mismatches_block() -> None:
@@ -216,8 +217,8 @@ def test_case_files_give_their_expected_results() -> None:  # R1, F8
             loaded.case, get_method(loaded.case.method_id), loaded.assets
         )
     assert results["nea-2015-haze"].status == "feasible"
-    # Area confirmed and data pinned on 2026-10-27; only the method remains.
-    assert results["kalimantan-2015-burned-area"].status == "not_implemented"
+    # Area confirmed, data pinned and the method implemented.
+    assert results["kalimantan-2015-burned-area"].status == "feasible"
     assert results["kalimantan-2015-burned-area"].approvals_needed == ()
     india = results["uttarakhand-2024-burned-area"]
     assert india.status == "blocked" and "unavailable" in india.reasons[0]
