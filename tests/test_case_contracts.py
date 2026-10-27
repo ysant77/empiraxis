@@ -75,6 +75,7 @@ def case(**changes: Any) -> ScientificCase:
         "variable": "burned_area",
         "asset_ids": ["mcd64a1"],
         "method_id": "mcd64a1_burned_area",
+        "status": "active",
     }
     return ScientificCase.model_validate({**base, **changes})
 
@@ -264,7 +265,7 @@ def test_claim_rules() -> None:
     assert claim_problems(outside, case(), BURN) == ["claim area lies outside the case area"]
     late = evidence(period={**UTC_PERIOD, "end": "2015-12-01T00:00:00Z"})
     assert claim_problems(late, case(), BURN) == ["claim period lies outside the case period"]
-    assert "differs from method unit" in claim_problems(evidence(unit="km2"), case(), BURN)[0]  # E5
+    assert "is not a method unit" in claim_problems(evidence(unit="km2"), case(), BURN)[0]  # E5
     assert claim_problems(evidence(), case(), BURN) == []
 
 
@@ -304,14 +305,18 @@ def approval(**changes: Any) -> HumanApproval:
 
 
 def test_approval_refusals() -> None:  # H1
-    assert approval().refusal(ApprovalAction.DOWNLOAD, NOW, "mcd64a1") is None
+    ok: dict[str, Any] = {"asset_id": "mcd64a1", "request_bytes": 1_000_000}
+    assert approval().refusal(ApprovalAction.DOWNLOAD, NOW, **ok) is None
     assert (
-        approval(approved=False).refusal(ApprovalAction.DOWNLOAD, NOW)
+        approval(approved=False).refusal(ApprovalAction.DOWNLOAD, NOW, **ok)
         == "the approval was rejected"
     )
     late = datetime.fromisoformat("2026-11-01T00:00:00+00:00")
-    assert "not valid at this time" in (approval().refusal(ApprovalAction.DOWNLOAD, late) or "")
-    assert "not in the approval" in (approval().refusal(ApprovalAction.DOWNLOAD, NOW, "x") or "")
+    assert "not valid at this time" in (
+        approval().refusal(ApprovalAction.DOWNLOAD, late, **ok) or ""
+    )
+    wrong = approval().refusal(ApprovalAction.DOWNLOAD, NOW, asset_id="x", request_bytes=1)
+    assert "not in the approval" in (wrong or "")
     assert "not publish" in (approval().refusal(ApprovalAction.PUBLISH, NOW) or "")
 
 
@@ -379,3 +384,84 @@ def test_peak_region_verdict_reads_its_value() -> None:
     source = workspace.verifier._source
     claim = claim_from_verification(verdict, "R1.1", nea, source, workspace.snapshot.sha256)
     assert claim.value == 471.0 and claim.valid_fraction == 1.0
+
+
+# Fixes from the PR review (F1-F7)
+def test_nea_hours_claims_fit_the_method_unit() -> None:  # F1
+    workspace = open_workspace(REPO_DATA)
+    nea = load_case(CASES / "nea-2015-haze.yaml", ROOT).case
+    raw = {
+        "kind": "hours_above",
+        "region": "west",
+        "value": 44,
+        "threshold": 200,
+        "statement": "Seen.",
+        "start": "2015-09-01T00:00",
+        "end": "2015-11-01T00:00",
+    }
+    verdict = workspace.verifier.verify(Claim.model_validate(raw))
+    source = workspace.verifier._source
+    claim = claim_from_verification(verdict, "R1.1", nea, source, workspace.snapshot.sha256)
+    assert claim.unit == "hours"
+    assert claim_problems(claim, nea, get_method("nea_hourly_episode")) == []
+
+
+def test_peak_region_claim_covers_every_compared_region() -> None:  # F2
+    workspace = open_workspace(REPO_DATA)
+    nea = load_case(CASES / "nea-2015-haze.yaml", ROOT).case
+    raw = {
+        "kind": "peak_region",
+        "region": "west",
+        "statement": "Seen.",
+        "start": "2015-09-01T00:00",
+        "end": "2015-11-01T00:00",
+    }
+    verdict = workspace.verifier.verify(Claim.model_validate(raw))
+    source = workspace.verifier._source
+    claim = claim_from_verification(verdict, "R1.1", nea, source, workspace.snapshot.sha256)
+    assert len(claim.area.regions) == 5
+
+
+def test_approval_amounts_must_fit_the_cap() -> None:  # F3
+    download = approval()
+    assert "lacks the approved cap" in (
+        download.refusal(ApprovalAction.DOWNLOAD, NOW, asset_id="mcd64a1") or ""
+    )
+    too_big = download.refusal(
+        ApprovalAction.DOWNLOAD, NOW, asset_id="mcd64a1", request_bytes=60_000_000
+    )
+    assert "exceeds or lacks" in (too_big or "")
+    spend = approval(action="hosted_model_spend", asset_ids=[], max_bytes=None, max_usd=1.0)
+    assert "lacks the approved cap" in (spend.refusal(ApprovalAction.HOSTED_MODEL_SPEND, NOW) or "")
+    assert spend.refusal(ApprovalAction.HOSTED_MODEL_SPEND, NOW, request_usd=2.0) is not None
+    assert spend.refusal(ApprovalAction.HOSTED_MODEL_SPEND, NOW, request_usd=0.5) is None
+
+
+def test_two_assets_for_one_product_block() -> None:  # F4
+    second = asset(asset_id="mcd64a1-copy")
+    result = assess(
+        case(asset_ids=["mcd64a1", "mcd64a1-copy"]),
+        BURN_READY,
+        {"mcd64a1": asset(), "mcd64a1-copy": second},
+    )
+    assert result.status == "blocked" and "one per product" in result.reasons[0]
+
+
+def test_draft_study_area_needs_confirmation() -> None:  # F5
+    result = assess(case(status="draft"), BURN_READY, {"mcd64a1": asset()})
+    assert result.status == "needs_approval"
+    assert result.approvals_needed == ((ApprovalAction.CONFIRM_STUDY_AREA, "aoi"),)
+    kal = load_case(CASES / "kalimantan-2015-burned-area.yaml", ROOT)
+    needed = assess(kal.case, get_method(kal.case.method_id), kal.assets).approvals_needed
+    assert [a for a, _ in needed] == [ApprovalAction.CONFIRM_STUDY_AREA, ApprovalAction.DOWNLOAD]
+
+
+def test_monthly_product_needs_whole_utc_months() -> None:  # F6
+    local = {**UTC_PERIOD, "start": "2015-09-01T00:00:00+07:00"}
+    cover = {**UTC_PERIOD, "start": "2015-08-01T00:00:00Z"}
+    result = assess(case(period=local), BURN_READY, {"mcd64a1": asset(coverage=cover)})
+    assert result.status == "blocked" and "whole UTC calendar months" in result.reasons[0]
+
+
+def test_tzdata_is_a_declared_dependency() -> None:  # F7
+    assert '"tzdata>=' in (ROOT / "pyproject.toml").read_text(encoding="utf-8")

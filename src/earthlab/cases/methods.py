@@ -2,8 +2,8 @@
 
 A method is chosen by what the case needs and what the assets can support, never by
 place. The check reports every reason it finds. Status order: blocked (a hard data or
-science mismatch), then needs_approval (a download a human must approve), then
-not_implemented, then feasible.
+science mismatch), then needs_approval (a download or a draft study area a human must
+approve), then not_implemented, then feasible.
 """
 
 from __future__ import annotations
@@ -42,7 +42,8 @@ class MethodCandidate(Strict):
     required_products: tuple[str, ...] = Field(min_length=1)
     accepted_crs: tuple[str, ...] = Field(min_length=1)
     max_period_days: int = Field(gt=0)
-    output_unit: str
+    time_unit: Literal["hour", "calendar_month_utc"]
+    output_units: tuple[str, ...] = Field(min_length=1)
     min_valid_fraction: float = Field(ge=0, le=1)
     needs_quality_policy: bool
     implemented: bool
@@ -60,7 +61,8 @@ CATALOGUE: dict[str, MethodCandidate] = {
             required_products=("nea-historical-1hr-pm25",),
             accepted_crs=("named-regions",),
             max_period_days=92,
-            output_unit="ug/m3",
+            time_unit="hour",
+            output_units=("ug/m3", "hours"),
             min_valid_fraction=0.75,
             needs_quality_policy=False,
             implemented=True,
@@ -74,7 +76,8 @@ CATALOGUE: dict[str, MethodCandidate] = {
             required_products=("MODIS/061/MCD64A1",),
             accepted_crs=("SR-ORG:6974",),
             max_period_days=92,
-            output_unit="ha",
+            time_unit="calendar_month_utc",
+            output_units=("ha",),
             min_valid_fraction=0.8,
             needs_quality_policy=True,
             implemented=False,
@@ -95,7 +98,8 @@ CATALOGUE: dict[str, MethodCandidate] = {
             required_products=("ECMWF/ERA5/HOURLY",),
             accepted_crs=("EPSG:4326",),
             max_period_days=92,
-            output_unit="K",
+            time_unit="hour",
+            output_units=("K",),
             min_valid_fraction=0.9,
             needs_quality_policy=False,
             implemented=False,
@@ -126,6 +130,9 @@ def _product_problems(
         notes = {NOT_A_SUBSTITUTE.get((a.variable, method.variable)) for a in assets}
         detail = "; ".join(sorted(n for n in notes if n)) or "no asset of that product"
         return [f"variable mismatch for {product}: {detail}"], []
+    if len(matches) > 1:
+        ids = ", ".join(a.asset_id for a in matches)
+        return [f"{len(matches)} assets for {product} ({ids}); a case uses one per product"], []
     asset = matches[0]
     hard: list[str] = []
     if asset.availability == "unavailable":
@@ -144,16 +151,32 @@ def _product_problems(
     return hard, approvals
 
 
-def assess(
-    case: ScientificCase, method: MethodCandidate, assets: Mapping[str, SourceAsset]
-) -> Feasibility:
-    """Every reason the method cannot run on this case now; feasible only with none."""
+def _whole_utc_months(case: ScientificCase) -> bool:
+    return all(
+        (t.day, t.hour, t.minute, t.second, t.microsecond) == (1, 0, 0, 0, 0)
+        for t in (case.period.start, case.period.end)
+    )
+
+
+def _case_problems(case: ScientificCase, method: MethodCandidate) -> list[str]:
     hard: list[str] = []
-    approvals: list[tuple[ApprovalAction, str]] = []
     if method.variable is not case.variable:
         hard.append(f"method measures {method.variable.value}, case asks {case.variable.value}")
     if case.period.days > method.max_period_days:
         hard.append(f"study period longer than {method.max_period_days} days")
+    if method.time_unit == "calendar_month_utc" and not _whole_utc_months(case):
+        hard.append("a monthly product needs a period of whole UTC calendar months")
+    return hard
+
+
+def assess(
+    case: ScientificCase, method: MethodCandidate, assets: Mapping[str, SourceAsset]
+) -> Feasibility:
+    """Every reason the method cannot run on this case now; feasible only with none."""
+    hard = _case_problems(case, method)
+    approvals: list[tuple[ApprovalAction, str]] = []
+    if case.status == "draft":
+        approvals.append((ApprovalAction.CONFIRM_STUDY_AREA, case.area.area_id))
     missing = [i for i in case.asset_ids if i not in assets]
     hard += [f"asset {i} is not registered" for i in missing]
     case_assets = [assets[i] for i in case.asset_ids if i in assets]
@@ -191,8 +214,8 @@ def claim_problems(
         problems.append("claim area lies outside the case area")
     if not case.period.contains(claim.period):
         problems.append("claim period lies outside the case period")
-    if claim.unit != method.output_unit:
-        problems.append(f"claim unit {claim.unit} differs from method unit {method.output_unit}")
+    if claim.unit not in method.output_units:
+        problems.append(f"claim unit {claim.unit} is not a method unit {method.output_units}")
     if claim.valid_fraction is not None and claim.valid_fraction < method.min_valid_fraction:
         problems.append(f"valid fraction below the method minimum {method.min_valid_fraction}")
     expected = case.default_causal_status()

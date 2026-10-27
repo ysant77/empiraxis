@@ -224,6 +224,7 @@ class EvidenceClaim(Strict):
 
 
 class ApprovalAction(StrEnum):
+    CONFIRM_STUDY_AREA = "confirm_study_area"
     DOWNLOAD = "download"
     HOSTED_MODEL_SPEND = "hosted_model_spend"
     SANDBOX_EXECUTION = "sandbox_execution"
@@ -260,17 +261,39 @@ class HumanApproval(Strict):
         return self
 
     def refusal(
-        self, action: ApprovalAction, at: datetime, asset_id: str | None = None
+        self,
+        action: ApprovalAction,
+        at: datetime,
+        *,
+        asset_id: str | None = None,
+        request_bytes: int | None = None,
+        request_usd: float | None = None,
     ) -> str | None:
-        """Why this approval does not cover the action, or None when it does."""
+        """Why this approval does not cover the request, or None when it does.
+
+        A download must name its asset and size, and a spend its amount; each must fit
+        inside the approved scope.
+        """
         if not self.approved:
             return "the approval was rejected"
         if action is not self.action:
             return f"approval covers {self.action.value}, not {action.value}"
         if not self.decided_at_utc <= _aware_utc(at) < self.expires_at_utc:
             return "the approval is not valid at this time"
-        if asset_id is not None and asset_id not in self.asset_ids:
-            return f"asset {asset_id} is not in the approval"
+        return self._scope_refusal(asset_id, request_bytes, request_usd)
+
+    def _scope_refusal(
+        self, asset_id: str | None, request_bytes: int | None, request_usd: float | None
+    ) -> str | None:
+        if self.action is ApprovalAction.DOWNLOAD:
+            if asset_id is None or asset_id not in self.asset_ids:
+                return f"asset {asset_id} is not in the approval"
+            if request_bytes is None or self.max_bytes is None or request_bytes > self.max_bytes:
+                return f"download of {request_bytes} bytes exceeds or lacks the approved cap"
+        if self.action is ApprovalAction.HOSTED_MODEL_SPEND and (
+            request_usd is None or self.max_usd is None or request_usd > self.max_usd
+        ):
+            return f"spend of {request_usd} USD exceeds or lacks the approved cap"
         return None
 
 

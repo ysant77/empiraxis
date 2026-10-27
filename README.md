@@ -230,15 +230,15 @@ CI runs the same checks, a dependency audit and a gitleaks secret scan of every 
 
 ## Scientific cases
 
-A case binds one question to one study area, one period, named source assets and one method from a small catalogue. `assess` reports whether the method can run now: `feasible`, `needs_approval` (a download a human must approve), `not_implemented`, or `blocked` with every reason. It checks variable match, time and space coverage, CRS, quality-flag policy and period length. Some data never substitute for others: active-fire detections are not burned area, and land-surface temperature is not 2 m air temperature.
+A case binds one question to one study area, one period, named source assets and one method from a small catalogue. `assess` reports whether the method can run now: `feasible`, `needs_approval` (a download a human must approve), `not_implemented`, or `blocked` with every reason. It checks variable match, time and space coverage, CRS, quality-flag policy, period length, whole UTC months for monthly products, and one asset per product. A draft study area needs confirmation. Some data never substitute for others: active-fire detections are not burned area, and land-surface temperature is not 2 m air temperature.
 
 | Case file | Result today |
 | --- | --- |
 | `nea-2015-haze.yaml` | `feasible`. The asset comes from the pinned NEA manifest. |
-| `kalimantan-2015-burned-area.yaml` | `needs_approval`. MCD64A1 and FIRMS are registered, not downloaded; the burned-area method is not implemented yet. The study area is a draft. |
+| `kalimantan-2015-burned-area.yaml` | `needs_approval`: a human must confirm the draft study area, then approve the MCD64A1 download. The burned-area method is not implemented yet. |
 | `uttarakhand-2024-burned-area.yaml` | `blocked`. Coverage, QA and licence for this area and period are not verified. Same method and code path as the Indonesia case. |
 
-An evidence claim keeps observation support apart from causal status. Causal status can only be `not_requested`, `not_established` or `insufficient_data`; no "established" value exists. Human approvals (download, hosted spend, sandbox execution, publish) are scoped by asset IDs, bytes or USD, expire, and cannot be created by any model tool. The agent does not use these contracts yet.
+An evidence claim keeps observation support apart from causal status. Causal status can only be `not_requested`, `not_established` or `insufficient_data`; no "established" value exists. Human approvals (confirm study area, download, hosted spend, sandbox execution, publish) are scoped by asset IDs, bytes or USD, expire, and cannot be created by any model tool. A download must state its asset and size, and a spend its amount; each must fit the approved cap. The agent does not use these contracts yet.
 
 ## Limitations
 

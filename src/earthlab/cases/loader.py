@@ -105,7 +105,9 @@ def claim_from_verification(
         method_id=case.method_id,
         variable=case.variable,
         area=StudyArea(
-            area_id=f"nea-{claim.region.value}", name=claim.region.value, regions=(claim.region,)
+            area_id="nea-" + "-".join(r.value for r in regions),
+            name=", ".join(r.value for r in regions),
+            regions=regions,
         ),
         period=StudyPeriod(start=window.start, end=window.end, local_zone=NEA_ZONE),
         value=value,

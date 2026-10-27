@@ -11,6 +11,7 @@ dependencies = [
     "prometheus-client>=0.21",
     "pydantic>=2.8",
     "pyyaml>=6.0",
+    "tzdata>=2024.1",  # IANA zones for zoneinfo on Windows, which has no system database
 ]
 
 [project.optional-dependencies]
