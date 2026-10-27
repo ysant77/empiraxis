@@ -6,6 +6,7 @@ Run with:  uv run --extra ui streamlit run src/earthlab/ui/app.py
 from __future__ import annotations
 
 import json
+import os
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -26,7 +27,7 @@ from earthlab.verify.claims import Claim, ClaimKind
 DATA_DIR = Path("data/nea")
 RUNS_DIR = Path("runs")
 PROVIDERS = Path("config/providers.yaml")
-METRICS_PORT = 9464
+METRICS_PORT = int(os.environ.get("EARTHLAB_METRICS_PORT", "9464"))
 DEFAULT_QUESTION = (
     "During the September to October 2015 haze, which NEA region recorded the highest hourly "
     "PM2.5, and at what hour? A colleague claims the central region had the highest peak. "
