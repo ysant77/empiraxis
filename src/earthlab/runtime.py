@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import secrets
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -65,12 +66,13 @@ def investigate(
     metrics: EarthlabMetrics | None = None,
     budget: Budget | None = None,
     reasoning: str = "medium",
+    listener: Callable[[dict[str, Any]], None] | None = None,
 ) -> Investigation:
     ledger = FindingsLedger()
     registry = build_registry(workspace, ledger)
     metrics = metrics or EarthlabMetrics(tool_names=set(registry.names()))
     metrics.record_qa(SOURCE_LABEL, workspace.dataset.issue_counts())
-    trace = RunTrace(run_dir / "trace.jsonl")
+    trace = RunTrace(run_dir / "trace.jsonl", listener)
     trace.append("source", "runtime", **workspace.snapshot.citation())
     investigator = Investigator(
         client, registry, ledger, metrics=metrics, trace=trace, budget=budget, reasoning=reasoning
