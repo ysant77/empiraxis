@@ -32,6 +32,12 @@ _CAUSE = re.compile(
     r"attributed to|came from|blown from|driven by|smoke from|sent smoke)\b",
     _I,
 )
+# A cause word about missing data or methods ("blocked because the dataset is unavailable")
+# is not a claim about what caused an observation.
+_AVAILABILITY = re.compile(
+    r"\b(unavailab\w*|not available|not implemented|not pinned|approval|missing|no data)\b", _I
+)
+_CLAUSE_CHARS = 80
 _FORECAST_CLAIM = re.compile(
     r"\b(will (rise|fall|increase|decrease|return|happen|be)|forecast)\b", _I
 )
@@ -42,6 +48,15 @@ def _asserted(pattern: re.Pattern[str], text: str) -> bool:
     for match in pattern.finditer(text):
         window = text[max(0, match.start() - _NEGATION_WINDOW) : match.start()]
         if not _NEGATION.search(window):
+            return True
+    return False
+
+
+def _asserted_cause(text: str) -> bool:
+    for match in _CAUSE.finditer(text):
+        before = text[max(0, match.start() - _NEGATION_WINDOW) : match.start()]
+        clause = text[match.end() : match.end() + _CLAUSE_CHARS].split(".")[0]
+        if not _NEGATION.search(before) and not _AVAILABILITY.search(clause):
             return True
     return False
 
@@ -63,7 +78,7 @@ def answer_out_of_scope(answer: str) -> str | None:
         return "the answer gives health, safety or air-quality judgements"
     if _POLITICS.search(answer):
         return "the answer takes up political or conflict topics"
-    if _asserted(_CAUSE, answer):
+    if _asserted_cause(answer):
         return "the answer asserts a cause the data cannot show"
     if _asserted(_FORECAST_CLAIM, answer):
         return "the answer makes a forecast"

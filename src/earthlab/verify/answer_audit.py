@@ -18,8 +18,9 @@ from earthlab.safety.scope import answer_out_of_scope
 from earthlab.verify.claims import ClaimKind, Verdict, VerificationResult
 
 _CITATION = re.compile(r"\bR\d+\.\d+\b")
-_NAMES = re.compile(r"\bPM\s?2[._]?5\b|[µu]g\s*/\s*m(?:3|³)", re.IGNORECASE)
-_DIGITS = re.compile(r"\d+(?:[.,:/-]\d+)*")
+_NAMES = re.compile(r"\bPM\s?2[._]?5\b|[µu]g\s*/\s*m(?:3|³)|\b1[- ]?(?:hour|hr)\b", re.IGNORECASE)
+# Digits after a letter belong to an identifier (mcd64a1); ordinals such as 19th still count.
+_DIGITS = re.compile(r"(?<![A-Za-z_\d])\d+(?:[.,:/-]\d+)*")
 _NUMBER_WORDS = re.compile(
     r"\b(twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundreds?|thousands?|"
     r"millions?|billions?|dozens?)\b",

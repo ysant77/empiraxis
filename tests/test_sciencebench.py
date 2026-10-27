@@ -235,3 +235,27 @@ def test_metadata_and_cli(
         cli.main(["bench", "--arms", "Z"])
     with pytest.raises(ValueError, match="arm B without a model client"):
         run_bench(SCENARIOS, ["B"], workspace, tmp_path / "b", repo=ROOT)
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        # Observed in the live ScienceBench arm B run of 2026-10-27 (SB-08).
+        "The case is blocked because the required burned-area dataset is unavailable.",
+        "The study is blocked due to data unavailability and a missing approval.",
+    ],
+)
+def test_availability_reasons_are_not_causal_claims(text: str) -> None:
+    from earthlab.safety.scope import answer_out_of_scope
+
+    assert answer_out_of_scope(text) is None
+    assert answer_out_of_scope("The haze was caused by fires in Kalimantan.") is not None
+    assert answer_out_of_scope("Readings rose because smoke arrived from the south.") is not None
+
+
+def test_identifiers_and_product_names_are_not_numbers() -> None:
+    from earthlab.verify.answer_audit import text_numbers
+
+    # Observed live: "mcd64a1_burned_area" and "NEA historical 1-hour PM2.5" (SB-08, SB-03).
+    assert text_numbers("The mcd64a1_burned_area method and the NEA 1-hour PM2.5 record.") == []
+    assert text_numbers("It peaked in 2015 at 471.") == ["2015", "471"]
