@@ -216,8 +216,9 @@ def test_case_files_give_their_expected_results() -> None:  # R1, F8
             loaded.case, get_method(loaded.case.method_id), loaded.assets
         )
     assert results["nea-2015-haze"].status == "feasible"
-    assert results["kalimantan-2015-burned-area"].status == "needs_approval"
-    assert "not implemented yet" in results["kalimantan-2015-burned-area"].reasons[-1]
+    # Area confirmed and data pinned on 2026-10-27; only the method remains.
+    assert results["kalimantan-2015-burned-area"].status == "not_implemented"
+    assert results["kalimantan-2015-burned-area"].approvals_needed == ()
     india = results["uttarakhand-2024-burned-area"]
     assert india.status == "blocked" and "unavailable" in india.reasons[0]
     kal = load_case(CASES / "kalimantan-2015-burned-area.yaml", ROOT).case
@@ -451,8 +452,10 @@ def test_draft_study_area_needs_confirmation() -> None:  # F5
     result = assess(case(status="draft"), BURN_READY, {"mcd64a1": asset()})
     assert result.status == "needs_approval"
     assert result.approvals_needed == ((ApprovalAction.CONFIRM_STUDY_AREA, "aoi"),)
-    kal = load_case(CASES / "kalimantan-2015-burned-area.yaml", ROOT)
-    needed = assess(kal.case, get_method(kal.case.method_id), kal.assets).approvals_needed
+    registered = asset(
+        availability="registered_not_downloaded", sha256=None, bytes=None, retrieved_at_utc=None
+    )
+    needed = assess(case(status="draft"), BURN_READY, {"mcd64a1": registered}).approvals_needed
     assert [a for a, _ in needed] == [ApprovalAction.CONFIRM_STUDY_AREA, ApprovalAction.DOWNLOAD]
 
 

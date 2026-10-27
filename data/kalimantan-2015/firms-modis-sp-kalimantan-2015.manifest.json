@@ -1,0 +1,33 @@
+{
+  "asset_id": "firms-modis-sp-kalimantan-2015",
+  "product": "FIRMS/MODIS_SP",
+  "version": "Collection 6.1 standard processing",
+  "provider": "NASA FIRMS",
+  "source_url": "https://firms.modaps.eosdis.nasa.gov/download/",
+  "licence": "NASA Earth science data, no restrictions on use",
+  "licence_url": "https://www.earthdata.nasa.gov/engage/open-data-services-software-policies/data-use-guidance",
+  "crs": "EPSG:4326",
+  "extent": {
+    "min_lon": 113.8,
+    "min_lat": -3.2,
+    "max_lon": 114.8,
+    "max_lat": -2.0
+  },
+  "coverage": {
+    "start": "2015-09-01T00:00:00Z",
+    "end": "2015-11-01T00:00:00Z",
+    "local_zone": "UTC"
+  },
+  "approval_id": "kal-2015-download-firms",
+  "retrieved_at_utc": "2026-10-27T12:01:19+00:00",
+  "files": [
+    {
+      "file": "firms_modis_sp_2015_09_2015_11.csv",
+      "sha256": "75bf1fbcbc9a550a996ba00ba3262bc21a6c78f71a6ac5bbe415835449988fb8",
+      "bytes": 807287,
+      "rows": 10257,
+      "requests": 13
+    }
+  ],
+  "total_bytes": 807287
+}

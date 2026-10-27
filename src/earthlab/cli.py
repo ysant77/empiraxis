@@ -9,7 +9,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from earthlab.acquire.gate import load_approvals
+from earthlab.acquire.run import acquire_firms, acquire_mcd64a1, write_manifest
 from earthlab.agent.budget import Budget
+from earthlab.cases.loader import load_case
 from earthlab.contracts import TimeWindow
 from earthlab.data.quality import coverage_report
 from earthlab.evals.runner import ARMS, run_suite
@@ -169,6 +172,36 @@ def cmd_eval(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_acquire(args: argparse.Namespace) -> int:
+    """Download one case asset after its recorded approvals are checked; write a manifest."""
+    case_file = load_case(args.case, Path.cwd())
+    approvals = load_approvals(args.approvals)
+    product = case_file.assets[args.asset].product
+    if product.startswith("MODIS/061/MCD64A1"):
+        import os
+
+        import ee  # optional extra: uv sync --extra acquire
+
+        ee.Initialize(project=os.environ["EE_PROJECT"])
+        manifest = acquire_mcd64a1(case_file, args.asset, approvals, args.out, ee)
+    elif product.startswith("FIRMS/"):
+        manifest = acquire_firms(case_file, args.asset, approvals, args.out)
+    else:
+        raise SystemExit(f"no acquisition route for {product}")
+    path = write_manifest(manifest, args.out)
+    print(json.dumps({"manifest": str(path), "files": manifest["files"]}, indent=2, default=str))
+    return 0
+
+
+def _add_acquire_parser(sub: Any) -> None:
+    acq = sub.add_parser("acquire", help="download one approved case asset (needs approvals)")
+    acq.add_argument("--case", type=Path, required=True)
+    acq.add_argument("--asset", required=True)
+    acq.add_argument("--approvals", type=Path, default=Path("config/approvals"))
+    acq.add_argument("--out", type=Path, required=True)
+    acq.set_defaults(func=cmd_acquire)
+
+
 def cmd_safety_eval(args: argparse.Namespace) -> int:
     guard = build_guard(args.providers, args.guard)
     results = [run_case(case, guard) for case in load_cases(args.cases)]
@@ -219,6 +252,8 @@ def build_parser() -> argparse.ArgumentParser:
     ev.add_argument("--runs-dir", type=Path, default=Path("runs"))
     ev.add_argument("--max-turns", type=int, default=10)
     ev.set_defaults(func=cmd_eval)
+
+    _add_acquire_parser(sub)
 
     safety = sub.add_parser("safety-eval", help="score Llama Guard and scope rules on labels")
     safety.add_argument("--cases", type=Path, default=Path("evals/safety_cases.yaml"))

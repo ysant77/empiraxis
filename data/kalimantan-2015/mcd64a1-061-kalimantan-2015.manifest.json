@@ -1,0 +1,100 @@
+{
+  "asset_id": "mcd64a1-061-kalimantan-2015",
+  "product": "MODIS/061/MCD64A1",
+  "version": "6.1",
+  "provider": "NASA LP DAAC (via Google Earth Engine)",
+  "source_url": "https://developers.google.com/earth-engine/datasets/catalog/MODIS_061_MCD64A1",
+  "licence": "NASA Earth science data, no restrictions on use",
+  "licence_url": "https://www.earthdata.nasa.gov/engage/open-data-services-software-policies/data-use-guidance",
+  "crs": "SR-ORG:6974",
+  "extent": {
+    "min_lon": 113.8,
+    "min_lat": -3.2,
+    "max_lon": 114.8,
+    "max_lat": -2.0
+  },
+  "coverage": {
+    "start": "2015-09-01T00:00:00Z",
+    "end": "2015-11-01T00:00:00Z",
+    "local_zone": "UTC"
+  },
+  "approval_id": "kal-2015-download-mcd64a1",
+  "retrieved_at_utc": "2026-10-27T12:00:12+00:00",
+  "files": [
+    {
+      "file": "mcd64a1_2015_09.tif",
+      "month": "2015-09",
+      "sha256": "126a6c506d0d05b7f913f36ea98925de67773c68ce19194b1759a9b9acc6bfe2",
+      "bytes": 88070,
+      "grid": {
+        "crs": "SR-ORG:6974",
+        "crs_transform": [
+          463.3127165279165,
+          0,
+          -20015109.354,
+          0,
+          -463.3127165279167,
+          7783653.6376640005
+        ]
+      },
+      "fill_value": -1,
+      "fill_meaning": "masked in Earth Engine: unburned or unmapped; QA bits decide",
+      "bands": [
+        "BurnDate",
+        "Uncertainty",
+        "QA",
+        "FirstDay",
+        "LastDay"
+      ],
+      "reference": {
+        "pixels_in_box": 69044,
+        "burndate_masked_pixels": 65426,
+        "qa_masked_pixels": 0,
+        "land_pixels": 68826,
+        "valid_land_pixels": 66765,
+        "burned_valid_pixels": 3618,
+        "burned_any_pixels": 3618,
+        "burned_valid_area_m2": 773191171.78125,
+        "method": "ee reduceRegion, unweighted sum, native grid, pixel centres inside the box"
+      }
+    },
+    {
+      "file": "mcd64a1_2015_10.tif",
+      "month": "2015-10",
+      "sha256": "daf5546584de91a14cccf6636a2c3c225575ae188471894f35460530eedd0145",
+      "bytes": 60592,
+      "grid": {
+        "crs": "SR-ORG:6974",
+        "crs_transform": [
+          463.3127165279165,
+          0,
+          -20015109.354,
+          0,
+          -463.3127165279167,
+          7783653.6376640005
+        ]
+      },
+      "fill_value": -1,
+      "fill_meaning": "masked in Earth Engine: unburned or unmapped; QA bits decide",
+      "bands": [
+        "BurnDate",
+        "Uncertainty",
+        "QA",
+        "FirstDay",
+        "LastDay"
+      ],
+      "reference": {
+        "pixels_in_box": 69044,
+        "burndate_masked_pixels": 66890,
+        "qa_masked_pixels": 0,
+        "land_pixels": 68826,
+        "valid_land_pixels": 31640,
+        "burned_valid_pixels": 2154,
+        "burned_any_pixels": 2154,
+        "burned_valid_area_m2": 460324992.921875,
+        "method": "ee reduceRegion, unweighted sum, native grid, pixel centres inside the box"
+      }
+    }
+  ],
+  "total_bytes": 148662
+}
