@@ -18,7 +18,7 @@ from earthlab.data.nea_pm25 import Pm25Dataset, load_pm25
 from earthlab.data.snapshot import open_snapshot
 from earthlab.llm.client import ChatClient
 from earthlab.metrics import EarthlabMetrics
-from earthlab.safety.gate import REFUSAL, WITHHELD, SafetyDecision, SafetyGate
+from earthlab.safety.gate import REFUSAL, SafetyDecision, SafetyGate
 from earthlab.safety.llama_guard import LlamaGuard
 from earthlab.tools.pm25_tools import Pm25Toolset
 from earthlab.tools.registry import ToolRegistry
@@ -91,8 +91,10 @@ def investigate(
             trace=trace,
             budget=budget,
             reasoning=reasoning,
+            answer_gate=gate.check_answer,
         )
-        result = _gate_answer(gate, question, investigator.run(question), asked)
+        result = investigator.run(question)
+        result = replace(result, safety=(asked, *result.safety))
     save_result(run_dir, question, result, workspace.snapshot)
     return result
 
@@ -126,16 +128,6 @@ def _refused(
     )
 
 
-def _gate_answer(
-    gate: SafetyGate, question: str, result: Investigation, asked: SafetyDecision
-) -> Investigation:
-    if not result.answer:
-        return replace(result, safety=(asked,))
-    checked = gate.check_answer(question, result.answer)
-    answer = result.answer if checked.allowed else WITHHELD
-    return replace(result, answer=answer, safety=(asked, checked))
-
-
 def result_payload(
     question: str, result: Investigation, snapshot: SourceSnapshot
 ) -> dict[str, Any]:
@@ -157,12 +149,11 @@ def result_payload(
         "source": snapshot.citation(),
         "attribution": snapshot.attribution,
         "safety": [d.model_dump(mode="json") for d in result.safety],
+        "answer_issues": list(result.answer_issues),
         "answer_audit": None
         if result.answer_audit is None
-        else {
-            "numbers_checked": result.answer_audit.numbers_checked,
-            "ungrounded": list(result.answer_audit.ungrounded),
-        },
+        else result.answer_audit.model_dump(mode="json"),
+        "findings": result.ledger.records(snapshot.sha256),
         "rounds": [[r.model_dump(mode="json") for r in rnd] for rnd in result.ledger.rounds],
     }
 

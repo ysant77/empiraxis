@@ -16,8 +16,10 @@ How to work:
    from the raw source. You cannot mark your own claims as true.
 4. If a claim is contradicted, read the observed value, correct it or drop it, and submit
    again. If the data cannot support an answer, say so.
-5. After a fully supported submission, answer in at most 120 words. Use only verified
-   numbers and state the limits.
+5. After a fully supported submission, write a short interpretation (at most 120 words).
+   The system shows every number, unit and date in a Findings table built from your
+   supported claims. Your text must contain no digits, dates or month names. Refer to a
+   finding by its ID from the submit_findings reply, for example R1.2. State the limits.
 
 Rules:
 - Describe observations only. Do not say what caused the haze, do not forecast, and do not
@@ -32,8 +34,14 @@ NUDGE_SUBMIT = (
 )
 
 FINAL_ANSWER = (
-    "All submitted claims are supported. Write the final answer now in at most 120 words, "
-    "with no further tool calls."
+    "All submitted claims are supported. Write the interpretation now in at most 120 words, "
+    "with no further tool calls. Use no digits, dates or month names; cite finding IDs."
+)
+
+REVISE_ANSWER = (
+    "The answer check failed:\n{issues}\n"
+    "Rewrite the interpretation in at most 120 words. Use no digits, dates or month names: "
+    "the Findings table shows them. Cite supported finding IDs instead. Do not call tools."
 )
 
 

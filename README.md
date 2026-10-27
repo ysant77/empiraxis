@@ -26,9 +26,10 @@ flowchart LR
 3. Each tool reads the hash-verified NEA snapshot and returns observations with the source citation.
 4. The model submits typed claims (`peak_region`, `region_max`, `region_mean`, `missing_hours`, `hours_above`). It cannot mark its own claims as true.
 5. The verifier re-reads the raw file with a separate parser, re-checks the hash and recomputes each claim. It also rejects causal, forecast, health, station and PSI/AQI language.
-6. The model must correct or drop rejected claims. Turn, tool-call, submission, time and cost limits are enforced in code.
-7. An answer audit checks every number in the final prose. A number must appear in a tool result, a submitted claim or the question. The safety gate then checks the final answer.
-8. Each run writes `trace.jsonl` (hash-chained), `result.json`, `report.md` and a chart. `earthlab replay` re-checks a run without a model or GPU.
+6. The model must correct or drop rejected claims. The code checks turn, tool-call, time and cost limits before each model turn, and the submission limit after each submission. It does not yet check them before each tool call in a batch, and an unpriced provider counts as zero cost. A later change fixes both.
+7. The model then writes a short interpretation. It may cite finding IDs (for example `R1.2`) but may not contain digits, dates or month names: every number, unit and date comes from the Findings table, which the code renders from supported claims. The check also rejects "highest" without a supported `peak_region` claim for that region, "higher than" that the claims do not support, citations of unsupported findings, and out-of-scope wording. If the check fails, the model gets one text-only revision. The safety gate then checks the text.
+8. The status is `verified` only when every claim is supported and a final text exists and passes step 7. If the claims pass but the text is missing or fails, the status is `answer_unverified`. The CLI exits with code 0 only for `verified`. The report shows the **Findings** table, then the model text under a separate **Interpretation** heading.
+9. Each run writes `trace.jsonl` (hash-chained), `result.json`, `report.md` and a chart. `earthlab replay` re-checks a run without a model or GPU.
 
 ## Safety gate
 

@@ -22,7 +22,7 @@ _ADVICE = re.compile(
     _I,
 )
 _POLITICS = re.compile(
-    r"\b(election\w*|political|party|parties|government\w*|minister\w*|blame\w*|"
+    r"\b(election\w*|political|(?<!-)party|(?<!-)parties|government\w*|minister\w*|blame\w*|"
     r"war|wars|military|retaliat\w*|sanction\w*|boycott\w*|protest\w*)\b",
     _I,
 )

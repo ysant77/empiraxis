@@ -68,6 +68,12 @@ def _verdict_rows(rounds: list[list[dict[str, Any]]]) -> list[dict[str, Any]]:
 def show_result(run_dir: Path) -> None:
     result = json.loads((run_dir / "result.json").read_text(encoding="utf-8"))
     st.subheader(f"Status: {result['status']}")
+    findings = [f for f in result.get("findings", []) if f["verdict"] == "supported"]
+    st.markdown("**Findings (verified claims)**")
+    st.dataframe(findings, use_container_width=True)
+    st.markdown("**Interpretation (model text)**")
+    for issue in result.get("answer_issues", []):
+        st.error(f"Not verified: {issue}")
     st.write(result["answer"] or "_No final answer._")
     st.dataframe(_verdict_rows(result["rounds"]), use_container_width=True)
     chart = run_dir / "pm25_hourly.png"

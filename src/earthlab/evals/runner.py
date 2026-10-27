@@ -64,7 +64,7 @@ def run_suite(
         for task in tasks:
             for arm in arms:
                 outcome = _run_arm(arm, task, client, workspace, out_dir, budget or Budget())
-                result = score(task, arm, outcome.final, outcome.rejected_total)
+                result = score(task, arm, outcome.final, outcome.rejected_total, outcome.answer_ok)
                 scores.append(result)
                 row = {
                     **result.model_dump(),

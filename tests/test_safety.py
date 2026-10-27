@@ -132,7 +132,11 @@ def test_unsafe_final_answer_is_withheld_but_claims_stand(
     workspace: Workspace, tmp_path: Path
 ) -> None:
     planner = ScriptedClient(
-        [call("submit_findings", claims=[CLAIM]), say("West hit 471; people should stay indoors.")]
+        [
+            call("submit_findings", claims=[CLAIM]),
+            say("West hit 471; people should stay indoors."),
+            say("West hit 471; people should stay indoors."),
+        ]
     )
     result = investigate(
         "Which region peaked?",
@@ -141,7 +145,8 @@ def test_unsafe_final_answer_is_withheld_but_claims_stand(
         new_run_dir(tmp_path),
         guard=guard("safe", "safe"),
     )
-    assert result.status == RunStatus.VERIFIED and result.answer == WITHHELD
+    assert result.status == RunStatus.ANSWER_UNVERIFIED and result.answer == WITHHELD
+    assert "safety check withheld the text" in result.answer_issues[-1]
     question_check, answer_check = result.safety
     assert question_check.allowed and not answer_check.allowed
     assert answer_check.blocked_by == "scope_rules"
@@ -149,7 +154,9 @@ def test_unsafe_final_answer_is_withheld_but_claims_stand(
 
 
 def test_clean_run_passes_both_gates(workspace: Workspace, tmp_path: Path) -> None:
-    planner = ScriptedClient([call("submit_findings", claims=[CLAIM]), say("West peaked at 471.")])
+    planner = ScriptedClient(
+        [call("submit_findings", claims=[CLAIM]), say("West had the highest value (R1.1).")]
+    )
     result = investigate(
         "Which region peaked?",
         planner,
@@ -157,5 +164,7 @@ def test_clean_run_passes_both_gates(workspace: Workspace, tmp_path: Path) -> No
         new_run_dir(tmp_path),
         guard=guard("safe", "safe"),
     )
-    assert result.answer == "West peaked at 471." and all(d.allowed for d in result.safety)
+    assert result.answer == "West had the highest value (R1.1)." and all(
+        d.allowed for d in result.safety
+    )
     assert result.safety[1].guard == "llama-guard-3-8b: safe"
