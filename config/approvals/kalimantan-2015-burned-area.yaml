@@ -1,0 +1,30 @@
+# Human approvals given by the repository owner in chat on 2026-10-27, recorded as typed
+# HumanApproval records. Each is scoped and expires at the end of 31 October 2026 (SGT).
+approvals:
+  - approval_id: kal-2015-confirm-area
+    case_id: kalimantan-2015-burned-area
+    action: confirm_study_area
+    approved: true
+    approver: ysant77 (repository owner)
+    decided_at_utc: "2026-10-27T11:55:00Z"
+    expires_at_utc: "2026-10-31T16:00:00Z"
+
+  - approval_id: kal-2015-download-mcd64a1
+    case_id: kalimantan-2015-burned-area
+    action: download
+    approved: true
+    approver: ysant77 (repository owner)
+    decided_at_utc: "2026-10-27T11:55:00Z"
+    expires_at_utc: "2026-10-31T16:00:00Z"
+    asset_ids: [mcd64a1-061-kalimantan-2015]
+    max_bytes: 10000000
+
+  - approval_id: kal-2015-download-firms
+    case_id: kalimantan-2015-burned-area
+    action: download
+    approved: true
+    approver: ysant77 (repository owner)
+    decided_at_utc: "2026-10-27T11:55:00Z"
+    expires_at_utc: "2026-10-31T16:00:00Z"
+    asset_ids: [firms-modis-sp-kalimantan-2015]
+    max_bytes: 10000000
