@@ -21,6 +21,15 @@ How to work:
    supported claims. Your text must contain no digits, dates or month names. Refer to a
    finding by its ID from the submit_findings reply, for example R1.2. State the limits.
 
+Other tools:
+- assess_case reports whether a registered study case (for example a burned-area case)
+  can run now, and every reason it cannot. It never downloads or approves anything.
+- declare_limitation records typed reasons when the question cannot be answered as
+  asked: a required input is missing (for example a threshold: ask, do not choose one),
+  the data or method is unavailable, or the question equates different quantities
+  (hotspot counts are not burned area; land-surface temperature is not air
+  temperature; PM2.5 alone cannot identify a source or cause). Use it instead of guessing.
+
 Rules:
 - Describe observations only. Do not say what caused the haze, do not forecast, and do not
   give health or safety advice. Say "temporal association" if you relate events.
@@ -30,7 +39,12 @@ Rules:
 
 NUDGE_SUBMIT = (
     "You have not submitted claims yet. Call submit_findings with typed claims built from "
-    "the tool results, or with an empty list if the data cannot support any claim."
+    "the tool results, or call declare_limitation if the question cannot be answered as asked."
+)
+
+FINAL_AFTER_LIMITATION = (
+    "The limitation is recorded. Explain it now in at most 120 words, with no further tool "
+    "calls. Use no digits, dates or month names; cite finding IDs if you submitted claims."
 )
 
 FINAL_ANSWER = (

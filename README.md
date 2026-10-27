@@ -240,6 +240,24 @@ A case binds one question to one study area, one period, named source assets and
 
 An evidence claim keeps observation support apart from causal status. Causal status can only be `not_requested`, `not_established` or `insufficient_data`; no "established" value exists. Human approvals (confirm study area, download, hosted spend, sandbox execution, publish) are scoped by asset IDs, bytes or USD, expire, and cannot be created by any model tool. A download must state its asset and size, and a spend its amount; each must fit the approved cap. The agent does not use these contracts yet.
 
+## ScienceBench (development suite v1)
+
+`evals/sciencebench_dev_v1.yaml` lists 20 scenarios (21 entries: SB-02 has a variant without a threshold). They are visible development fixtures, not a blind holdout. No numeric gold answers are stored. A `verified_claims` scenario names claim shapes, and the verifier recomputes every value from the pinned source. An abstention passes only with the listed reason codes. A scenario whose data or tools do not exist yet is `blocked_unrun`: it is listed with its reason and never scored.
+
+| Arm | What it is |
+| --- | --- |
+| A | Rule-based dispatcher. It reads only the question text and calls the same registered tools. Its rules were written after reading these questions, which favours it here. |
+| B | The single Meta agent (Muse) with the same tools, data and budget. |
+
+The agent can abstain through `declare_limitation`, with typed reason codes such as `needs_input`, `hotspot_count_is_not_burned_area` or `land_surface_temperature_is_not_air_temperature`. It can check a registered study case through `assess_case`. Neither tool downloads, approves or computes anything.
+
+```bash
+uv run earthlab bench --arms A                 # rule dispatcher only, no model
+uv run earthlab bench --arms A,B --repeats 3   # with the local Meta model
+```
+
+Each run writes `results.jsonl` (one row per scenario, arm and repeat, with code revision, data and case-file hashes, provider and budget) and `summary.json` (passes, false-verified counts, per-scenario results and the blocked list).
+
 ## Limitations
 
 - The tools describe observations. They do not attribute the haze to specific fires.

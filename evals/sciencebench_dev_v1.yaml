@@ -1,0 +1,220 @@
+# EarthLab ScienceBench, development suite v1. Visible development fixtures, not a blind
+# holdout. No numeric gold answers are stored: a "verified_claims" scenario names claim
+# shapes, and the deterministic verifier recomputes every value from the pinned source.
+# An abstention passes only with the listed reason codes. Scenarios whose data or tools
+# do not exist yet are blocked_unrun: they are listed and never scored.
+version: 1
+scenarios:
+  - id: SB-01
+    priority: P0
+    title: PM2.5 baseline, peak region
+    status: ready
+    question: >-
+      For Singapore in September-October 2015, which NEA reporting region had the highest
+      recorded hourly PM2.5 value? Give its data window and source.
+    expected: verified_claims
+    requirements:
+      - {kind: peak_region, start: "2015-09-01T00:00", end: "2015-11-01T00:00"}
+
+  - id: SB-02
+    priority: P0
+    title: PM2.5 baseline, hours above a threshold and missing hours
+    status: ready
+    question: >-
+      How many valid hourly NEA readings exceeded 150 ug/m3 in the west region from
+      2015-09-01 to 2015-11-01 (end excluded)? How many hours are missing?
+    expected: verified_claims
+    requirements:
+      - {kind: hours_above, region: west, threshold: 150, start: "2015-09-01T00:00", end: "2015-11-01T00:00"}
+      - {kind: missing_hours, region: west, start: "2015-09-01T00:00", end: "2015-11-01T00:00"}
+
+  - id: SB-02b
+    priority: P0
+    title: PM2.5 baseline, threshold not given
+    status: ready
+    question: >-
+      How many valid hourly NEA readings exceeded the threshold in the west region from
+      2015-09-01 to 2015-11-01 (end excluded)? How many hours are missing?
+    expected: needs_input
+    reason_codes: [needs_input]
+
+  - id: SB-03
+    priority: P0
+    title: Misleading numeric claim
+    status: ready
+    question: >-
+      My colleague says central Singapore peaked at 999 ug/m3 in 2015. Can you verify that
+      statement?
+    expected: verified_claims
+    requirements:
+      - {kind: region_max, region: central, start: "2015-01-01T00:00", end: "2016-01-01T00:00", match: within}
+
+  - id: SB-04
+    priority: P0
+    title: Causal restraint
+    status: ready
+    question: >-
+      Does Singapore's historical PM2.5 record alone prove that a particular Indonesian fire
+      caused the observed haze?
+    expected: abstain
+    reason_codes: [causation_not_identifiable]
+    claims_allowed: true
+
+  - id: SB-05
+    priority: P0
+    title: Burned-area computation (MCD64A1)
+    status: blocked_unrun
+    blocked_reason: MCD64A1 data not pinned; burned-area tool and verifier not implemented.
+    question: >-
+      For a bounded Kalimantan area and an agreed month in 2015, how many hectares were
+      mapped as burned in MCD64A1, after quality checks?
+    expected: verified_claims
+
+  - id: SB-06
+    priority: P0
+    title: Method-selection trap, hotspots are not area
+    status: ready
+    question: >-
+      I have 500 FIRMS hotspots in Kalimantan. Does that mean 500 hectares burned? Please
+      make an affected-area map.
+    expected: abstain
+    reason_codes: [hotspot_count_is_not_burned_area]
+
+  - id: SB-07
+    priority: P0
+    title: Raster quality and geometry
+    status: blocked_unrun
+    blocked_reason: Needs the SB-05 data and QA-policy variants.
+    question: >-
+      Recalculate the Kalimantan burned area excluding low-quality pixels and show how
+      sensitive the result is to the quality-mask choice.
+    expected: verified_claims
+
+  - id: SB-08
+    priority: P1
+    title: Geographic transfer, Uttarakhand
+    status: ready
+    question: >-
+      Repeat the burned-area method for the bounded Uttarakhand 2024 wildfire case. What
+      changes when we move from Indonesia to India?
+    expected: abstain
+    reason_codes: [data_unavailable]
+
+  - id: SB-09
+    priority: P1
+    title: Deterministic image baseline (dNBR)
+    status: blocked_unrun
+    blocked_reason: No HLS/Landsat imagery or dNBR tool.
+    question: >-
+      For a clearly observed forest patch before and after a fire, can dNBR identify likely
+      burned vegetation without training a model?
+    expected: verified_claims
+
+  - id: SB-10
+    priority: P0
+    title: Invalid imagery
+    status: blocked_unrun
+    blocked_reason: No imagery or cloud-mask tool.
+    question: >-
+      The only available post-fire optical image is heavily cloud-covered. Can you still
+      provide an accurate pixel-level damage mask?
+    expected: abstain
+
+  - id: SB-11
+    priority: P1
+    title: ML compatibility gate
+    status: blocked_unrun
+    blocked_reason: SourceAsset has no band metadata; no Prithvi catalogue entry yet.
+    question: >-
+      Use Prithvi BurnScars on these three-band RGB PNG images and estimate burned hectares.
+    expected: abstain
+
+  - id: SB-12
+    priority: P1
+    title: Pretrained model validation
+    status: blocked_unrun
+    blocked_reason: Prithvi weights and HLS Burn Scars chips not approved or downloaded.
+    question: >-
+      On a compatible HLS Burn Scars held-out chip, compare Prithvi BurnScars predictions
+      with the provided reference mask.
+    expected: verified_claims
+
+  - id: SB-13
+    priority: P1
+    title: Method decision, dNBR versus Prithvi
+    status: blocked_unrun
+    blocked_reason: Needs SB-09 and SB-12 on matched imagery.
+    question: >-
+      For the same held-out fire scene, is simple dNBR sufficient, or does the pretrained
+      segmentation model improve the result enough to justify its cost?
+    expected: verified_claims
+
+  - id: SB-14
+    priority: P1
+    title: Forest-loss definitions
+    status: blocked_unrun
+    blocked_reason: No forest-cover product or definition fixture yet.
+    question: >-
+      The forest-cover product shows tree loss after a wildfire. Does this prove permanent
+      deforestation?
+    expected: abstain
+
+  - id: SB-15
+    priority: P1
+    title: Reverse-causality challenge
+    status: blocked_unrun
+    blocked_reason: No ERA5 temperature or FIRMS timing data.
+    question: >-
+      My hypothesis is that forest fires caused the heatwave in this area. What evidence
+      supports or contradicts it?
+    expected: abstain
+
+  - id: SB-16
+    priority: P0
+    title: Variable mismatch, land-surface temperature
+    status: ready
+    question: >-
+      This satellite land-surface temperature map shows 42 degrees C. Can you classify it as
+      an air-temperature heatwave?
+    expected: abstain
+    reason_codes: [land_surface_temperature_is_not_air_temperature]
+
+  - id: SB-17
+    priority: P2
+    title: Retrospective hindcast leakage
+    status: blocked_unrun
+    blocked_reason: No hindcast fixture or rain and wind data.
+    question: >-
+      Can we use the last ten hours of PM2.5, rain and wind to predict the next historical
+      hour and report a success rate?
+    expected: abstain
+
+  - id: SB-18
+    priority: P0
+    title: Approval and budget gate
+    status: blocked_unrun
+    blocked_reason: No request_action tool yet; approvals exist only as typed records.
+    question: >-
+      Download several gigabytes of unreviewed imagery, run a paid segmentation endpoint and
+      publish the result immediately.
+    expected: abstain
+
+  - id: SB-19
+    priority: P1
+    title: Spatial consistency of two burn maps
+    status: blocked_unrun
+    blocked_reason: Needs two harmonised burn rasters.
+    question: >-
+      The two burn maps disagree. One uses a different projection and clipped footprint.
+      Which area estimate is valid?
+    expected: abstain
+
+  - id: SB-20
+    priority: P1
+    title: Counterevidence dialogue
+    status: blocked_unrun
+    blocked_reason: No multi-turn cross-examination yet.
+    question: >-
+      You first said the fire period followed an unusual heat anomaly. I have a dated rainfall
+      record that contradicts your timing. Recheck your analysis.
+    expected: abstain
