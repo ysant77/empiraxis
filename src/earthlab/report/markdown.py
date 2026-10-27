@@ -30,34 +30,19 @@ def _claims_table(rows: list[dict[str, Any]]) -> list[str]:
     return [*lines, ""]
 
 
-def render_report(result: dict[str, Any], chart_name: str | None = None) -> str:
-    rounds: list[list[dict[str, Any]]] = result["rounds"]
-    latest = rounds[-1] if rounds else []
-    supported = [r for r in latest if r["verdict"] == "supported"]
-    rejected = [r for rnd in rounds for r in rnd if r["verdict"] != "supported"]
+def _audit_lines(audit: dict[str, Any] | None) -> list[str]:
+    if audit is None:
+        return []
+    if not audit["ungrounded"]:
+        return [f"_Answer audit: all {audit['numbers_checked']} numbers trace to tool output._", ""]
+    numbers = ", ".join(f"{n:g}" for n in audit["ungrounded"])
+    return [f"**Answer audit: numbers not found in any tool output: {numbers}.**", ""]
+
+
+def _provenance_lines(result: dict[str, Any]) -> list[str]:
     src = result["source"]
     cost = result["estimated_cost_usd"]
-    lines = [
-        "# Axiom EarthLab evidence report",
-        "",
-        f"**Question:** {result['question']}",
-        "",
-        f"**Status:** `{result['status']}` ({result['stop_reason']})",
-        "",
-        "## Answer",
-        "",
-        result["answer"] or "_The model gave no final answer._",
-        "",
-        "## Verified claims (latest submission)",
-        "",
-        *_claims_table(supported),
-        "## Rejected claims (all submissions)",
-        "",
-        *_claims_table(rejected),
-    ]
-    if chart_name:
-        lines += ["## Observed data", "", f"![Hourly regional PM2.5]({chart_name})", ""]
-    lines += [
+    return [
         "## Model and run",
         "",
         f"- Provider: `{result['provider']}`; model: `{result['model']}`; "
@@ -79,4 +64,33 @@ def render_report(result: dict[str, Any], chart_name: str | None = None) -> str:
         *[f"- {item}" for item in LIMITATIONS],
         "",
     ]
+
+
+def render_report(result: dict[str, Any], chart_name: str | None = None) -> str:
+    rounds: list[list[dict[str, Any]]] = result["rounds"]
+    latest = rounds[-1] if rounds else []
+    supported = [r for r in latest if r["verdict"] == "supported"]
+    rejected = [r for rnd in rounds for r in rnd if r["verdict"] != "supported"]
+    lines = [
+        "# Axiom EarthLab evidence report",
+        "",
+        f"**Question:** {result['question']}",
+        "",
+        f"**Status:** `{result['status']}` ({result['stop_reason']})",
+        "",
+        "## Answer",
+        "",
+        result["answer"] or "_The model gave no final answer._",
+        "",
+        *_audit_lines(result.get("answer_audit")),
+        "## Verified claims (latest submission)",
+        "",
+        *_claims_table(supported),
+        "## Rejected claims (all submissions)",
+        "",
+        *_claims_table(rejected),
+    ]
+    if chart_name:
+        lines += ["## Observed data", "", f"![Hourly regional PM2.5]({chart_name})", ""]
+    lines += _provenance_lines(result)
     return "\n".join(lines)
