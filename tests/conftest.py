@@ -8,7 +8,7 @@ import pytest
 
 from earthlab.data.nea_pm25 import Pm25Dataset, load_pm25
 from earthlab.data.snapshot import open_snapshot
-from earthlab.hashing import file_sha256
+from earthlab.digest import file_digest
 
 REPO_DATA = Path(__file__).resolve().parents[1] / "data" / "nea"
 HEADER = "1hr_pm25,north,south,east,west,central"
@@ -25,7 +25,7 @@ def make_data_dir(tmp_path: Path) -> DatasetFactory:
         csv_path.write_text("\n".join([HEADER, *lines]) + "\n", encoding="utf-8")
         manifest = json.loads((REPO_DATA / "manifest.json").read_text(encoding="utf-8"))
         manifest.update(
-            file="pm25.csv", sha256=file_sha256(csv_path), bytes=csv_path.stat().st_size
+            file="pm25.csv", sha256=file_digest(csv_path), bytes=csv_path.stat().st_size
         )
         (tmp_path / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
         return tmp_path

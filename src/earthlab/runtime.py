@@ -13,7 +13,6 @@ from typing import Any
 from earthlab.agent.budget import Budget
 from earthlab.agent.findings import FindingsLedger, submit_findings_spec
 from earthlab.agent.loop import Investigation, Investigator
-from earthlab.audit import RunTrace
 from earthlab.contracts import SourceSnapshot
 from earthlab.data.nea_pm25 import Pm25Dataset, load_pm25
 from earthlab.data.snapshot import open_snapshot
@@ -21,6 +20,7 @@ from earthlab.llm.client import ChatClient
 from earthlab.metrics import EarthlabMetrics
 from earthlab.tools.pm25_tools import Pm25Toolset
 from earthlab.tools.registry import ToolRegistry
+from earthlab.trace import RunTrace
 from earthlab.verify.recompute import IndependentSource
 from earthlab.verify.verifier import Verifier
 

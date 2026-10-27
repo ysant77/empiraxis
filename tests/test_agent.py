@@ -10,10 +10,10 @@ from fake_client import ScriptedClient, call, say
 
 from earthlab.agent.budget import Budget
 from earthlab.agent.loop import RunStatus
-from earthlab.audit import RunTrace
 from earthlab.llm.types import ProviderError, ProviderErrorKind
 from earthlab.metrics import EarthlabMetrics
 from earthlab.runtime import Workspace, investigate, new_run_dir, open_workspace
+from earthlab.trace import RunTrace
 from earthlab.verify.claims import Verdict
 
 HAZE = {"start": "2015-09-01T00:00", "end": "2015-11-01T00:00"}

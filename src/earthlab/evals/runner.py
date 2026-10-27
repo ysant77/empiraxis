@@ -8,9 +8,9 @@ from pathlib import Path
 from typing import Any
 
 from earthlab.agent.budget import Budget
+from earthlab.digest import payload_digest
 from earthlab.evals.arms import ArmOutcome, agent_arm, no_tool_arm, scripted_arm
 from earthlab.evals.tasks import EvalTask, TaskScore, score
-from earthlab.hashing import content_hash
 from earthlab.llm.client import ChatClient
 from earthlab.runtime import Workspace
 
@@ -70,7 +70,7 @@ def run_suite(
                     **result.model_dump(),
                     "seconds": outcome.seconds,
                     "detail": outcome.detail,
-                    "question_hash": content_hash(task.question),
+                    "question_hash": payload_digest(task.question),
                     "provider": client.config.name if client and arm != "scripted" else None,
                     "verdicts": [r.verdict.value for r in outcome.final],
                 }

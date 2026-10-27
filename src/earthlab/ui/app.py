@@ -14,7 +14,6 @@ from typing import Any
 import streamlit as st
 
 from earthlab.agent.budget import Budget
-from earthlab.audit import RunTrace
 from earthlab.cli import DEFAULT_WINDOW, write_report
 from earthlab.contracts import Region, TimeWindow
 from earthlab.data.quality import coverage_report
@@ -22,6 +21,7 @@ from earthlab.llm.client import build_client
 from earthlab.llm.providers import load_providers
 from earthlab.metrics import EarthlabMetrics
 from earthlab.runtime import Workspace, investigate, new_run_dir, open_workspace
+from earthlab.trace import RunTrace
 from earthlab.verify.claims import Claim, ClaimKind
 
 DATA_DIR = Path("data/nea")

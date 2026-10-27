@@ -5,8 +5,8 @@ from pathlib import Path
 
 import pytest
 
-from earthlab.audit import RunTrace, TraceTamperError
 from earthlab.metrics import EarthlabMetrics
+from earthlab.trace import RunTrace, TraceIntegrityError
 
 
 def test_metrics_exposition_uses_bounded_labels() -> None:
@@ -50,7 +50,7 @@ def test_trace_chain_detects_edits(tmp_path: Path) -> None:
     record["data"]["name"] = "run_shell"
     lines[1] = json.dumps(record, sort_keys=True)
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    with pytest.raises(TraceTamperError, match="hash mismatch"):
+    with pytest.raises(TraceIntegrityError, match="does not match its digest"):
         RunTrace(path).verify()
 
 
@@ -61,10 +61,10 @@ def test_trace_detects_deletion_and_corruption(tmp_path: Path) -> None:
         trace.append("e", "runtime", i=i)
     lines = path.read_text(encoding="utf-8").splitlines()
     path.write_text("\n".join([lines[0], lines[2]]) + "\n", encoding="utf-8")
-    with pytest.raises(TraceTamperError, match="broken chain"):
+    with pytest.raises(TraceIntegrityError, match="entry 1 has sequence 2"):
         RunTrace(path).verify()
     path.write_text("{not json\n", encoding="utf-8")
-    with pytest.raises(TraceTamperError, match="corrupt"):
+    with pytest.raises(TraceIntegrityError, match="not valid JSON"):
         RunTrace(path).verify()
 
 
@@ -74,5 +74,19 @@ def test_trace_detects_reordered_sequence(tmp_path: Path) -> None:
     record = json.loads(path.read_text(encoding="utf-8"))
     record["seq"] = 5
     path.write_text(json.dumps(record) + "\n\n", encoding="utf-8")
-    with pytest.raises(TraceTamperError, match="out-of-order"):
+    with pytest.raises(TraceIntegrityError, match="has sequence"):
+        RunTrace(path).verify()
+
+
+def test_trace_detects_a_relinked_entry(tmp_path: Path) -> None:
+    path = tmp_path / "trace.jsonl"
+    trace = RunTrace(path)
+    trace.append("e", "runtime")
+    trace.append("e", "runtime")
+    lines = path.read_text(encoding="utf-8").splitlines()
+    record = json.loads(lines[1])
+    record["prev"] = "f" * 64
+    lines[1] = json.dumps(record)
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    with pytest.raises(TraceIntegrityError, match="does not link"):
         RunTrace(path).verify()

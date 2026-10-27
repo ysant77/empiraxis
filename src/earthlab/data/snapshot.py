@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 
 from earthlab.contracts import SourceSnapshot
-from earthlab.hashing import file_sha256
+from earthlab.digest import file_digest
 
 MANIFEST_NAME = "manifest.json"
 
@@ -27,7 +27,7 @@ def open_snapshot(data_dir: Path) -> tuple[SourceSnapshot, Path]:
     path = data_dir / snapshot.file
     if not path.is_file():
         raise SourceMismatchError(f"source file missing: {path}")
-    actual = file_sha256(path)
+    actual = file_digest(path)
     if actual != snapshot.sha256:
         raise SourceMismatchError(
             f"{snapshot.file}: sha256 {actual[:12]}... does not match manifest "
