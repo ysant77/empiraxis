@@ -30,6 +30,12 @@ def test_names_and_finding_ids_are_not_numbers() -> None:
     assert text_numbers(text) == ["2015", "471"]
 
 
+def test_spelled_out_numbers_are_numbers() -> None:
+    """Observed in a live Muse run: 'far below nine hundred ninety-nine'."""
+    assert text_numbers("far below nine hundred ninety-nine (R1.1)") == ["hundred", "ninety"]
+    assert text_numbers("one region, two findings") == []
+
+
 def test_a_clean_text_passes_and_problems_are_listed() -> None:
     assert audit_answer("West had the highest value (R1.1).", FINDINGS).passed
     bad = audit_answer("East peaked in Oct at 999 (R1.3); central was the cleanest.", FINDINGS)

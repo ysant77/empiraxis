@@ -20,6 +20,11 @@ from earthlab.verify.claims import ClaimKind, Verdict, VerificationResult
 _CITATION = re.compile(r"\bR\d+\.\d+\b")
 _NAMES = re.compile(r"\bPM\s?2[._]?5\b|[µu]g\s*/\s*m(?:3|³)", re.IGNORECASE)
 _DIGITS = re.compile(r"\d+(?:[.,:/-]\d+)*")
+_NUMBER_WORDS = re.compile(
+    r"\b(twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundreds?|thousands?|"
+    r"millions?|billions?|dozens?)\b",
+    re.IGNORECASE,
+)
 _MONTH = re.compile(
     r"\b(january|february|march|april|june|july|august|september|october|november|"
     r"december|jan|feb|apr|jun|jul|aug|sept?|oct|nov|dec)\b",
@@ -64,8 +69,12 @@ class AnswerAudit(Strict):
 
 
 def text_numbers(text: str) -> list[str]:
-    """Digit runs left after removing finding IDs and the names PM2.5 and ug/m3."""
-    return _DIGITS.findall(_NAMES.sub(" ", _CITATION.sub(" ", text)))
+    """Digit runs and large number words, after removing finding IDs, PM2.5 and ug/m3.
+
+    Small number words (one, two) are common in plain text and are not counted.
+    """
+    plain = _NAMES.sub(" ", _CITATION.sub(" ", text))
+    return _DIGITS.findall(plain) + [m.group(0) for m in _NUMBER_WORDS.finditer(plain)]
 
 
 def _regions(sentence: str) -> list[tuple[int, Region]]:
