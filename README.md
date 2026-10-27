@@ -210,7 +210,7 @@ uv run ruff check . && uv run ruff format --check . && uv run mypy \
   && uv run python scripts/check_limits.py src tests scripts && uv run pytest
 ```
 
-CI runs the same checks, a dependency audit and a secret scan. Coverage must stay at or above 85%.
+CI runs the same checks, a dependency audit and a gitleaks secret scan of every commit on every ref. Coverage must stay at or above 85%.
 
 ## Layout
 
