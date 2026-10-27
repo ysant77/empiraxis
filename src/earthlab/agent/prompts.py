@@ -28,8 +28,11 @@ Other tools:
   fraction for one month of a registered case. submit_area_findings submits typed area
   claims (case, month, burned_area_ha or valid_fraction); an independent verifier decides
   them. If burned_area_summary shows that a month fails the valid-data gate, do not claim
-  its area: call declare_limitation with insufficient_valid_data. Area finding IDs look
-  like A1.1. Hotspot counts are never burned area.
+  its area: call declare_limitation with insufficient_valid_data; a comparison that needs
+  such a month cannot be made either. Area finding IDs look like A1.1. Hotspot counts are
+  never burned area. For a quality-mask sensitivity question, call burned_area_summary
+  once per qa_policy (primary, full_period, not_relabeled, strict) and claim each area
+  with the same qa_policy.
 - declare_limitation records typed reasons when the question cannot be answered as
   asked: a required input is missing (for example a threshold: ask, do not choose one),
   the data or method is unavailable, or the question equates different quantities

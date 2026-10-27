@@ -10,8 +10,11 @@ from __future__ import annotations
 
 from calendar import monthrange
 from datetime import date
+from enum import StrEnum
+from pathlib import Path
 
 import numpy as np
+import yaml
 from pydantic import Field
 from pyproj import Geod
 
@@ -21,7 +24,27 @@ from earthlab.data.mcd64a1 import Grid, MonthRaster
 
 SPHERE_RADIUS_M = 6371007.181  # MODIS sinusoidal grid sphere
 QA_LAND, QA_VALID = 1, 2
+QA_POLICY_FILE = Path("config") / "methods" / "mcd64a1_qa_sensitivity.yaml"
 _WGS84 = Geod(ellps="WGS84")
+
+
+class QaPolicy(StrEnum):
+    """Pre-registered QA policies (config/methods/mcd64a1_qa_sensitivity.yaml)."""
+
+    PRIMARY = "primary"
+    FULL_PERIOD = "full_period"
+    NOT_RELABELED = "not_relabeled"
+    STRICT = "strict"
+
+
+def load_qa_policies(path: Path) -> dict[QaPolicy, tuple[int, ...]]:
+    """Each policy's excluded QA bits; the file must define exactly the known policies."""
+    raw = yaml.safe_load(path.read_text(encoding="utf-8"))["policies"]
+    if set(raw) != {p.value for p in QaPolicy}:
+        raise ValueError(f"{path.name}: policies must be exactly {[p.value for p in QaPolicy]}")
+    return {
+        QaPolicy(name): tuple(int(b) for b in item["exclude_bits"]) for name, item in raw.items()
+    }
 
 
 class MonthSummary(Strict):
@@ -86,15 +109,22 @@ def month_doy_range(month: str) -> tuple[int, int]:
 
 
 def summarize_month(
-    raster: MonthRaster, box: BoundingBox, min_valid_fraction: float
+    raster: MonthRaster,
+    box: BoundingBox,
+    min_valid_fraction: float,
+    exclude_bits: tuple[int, ...] = (),
 ) -> MonthSummary:
+    """exclude_bits drops burned pixels with any of these QA bits set; the gate is unchanged."""
     burn, qa = raster.bands["BurnDate"], raster.bands["QA"]
     lon, lat = pixel_centres(burn.shape, raster.grid)
     inside = in_box(lon, lat, box)
     land = inside & (qa >= 0) & ((qa & QA_LAND) > 0)
     valid = land & ((qa & QA_VALID) > 0)
     first, last = month_doy_range(raster.month)
-    burned = valid & (burn >= first) & (burn <= last)
+    flagged = np.zeros_like(valid)
+    for bit in exclude_bits:
+        flagged |= (qa & (1 << bit)) > 0
+    burned = valid & ~flagged & (burn >= first) & (burn <= last)
     outside_month = valid & (burn > 0) & ((burn < first) | (burn > last))
     rows, cols = np.nonzero(burned)
     primary = sum(

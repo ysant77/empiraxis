@@ -46,7 +46,7 @@ def supported(raw: dict[str, Any]) -> VerificationResult:
 
 def test_scenario_file_is_complete_and_honest() -> None:
     ids = [s.id for s in SCENARIOS]
-    assert len(ids) == len(set(ids)) == 22 and {f"SB-{i:02d}" for i in range(1, 21)} <= set(ids)
+    assert len(ids) == len(set(ids)) == 24 and {f"SB-{i:02d}" for i in range(1, 21)} <= set(ids)
     ready = {s.id for s in SCENARIOS if s.status == "ready"}
     assert ready == {
         "SB-01",
@@ -56,7 +56,10 @@ def test_scenario_file_is_complete_and_honest() -> None:
         "SB-04",
         "SB-05",
         "SB-05b",
+        "SB-05c",
+        "SB-05d",
         "SB-06",
+        "SB-07",
         "SB-08",
         "SB-16",
     }
@@ -80,8 +83,8 @@ def test_blocked_scenarios_are_listed_never_run(workspace: Workspace, tmp_path: 
     rows = [json.loads(line) for line in (tmp_path / "results.jsonl").read_text().splitlines()]
     blocked = {s.id for s in SCENARIOS if s.status == "blocked_unrun"}
     assert not blocked & {r["scenario_id"] for r in rows}
-    assert set(summary["blocked_unrun"]) == blocked and len(blocked) == 12
-    assert summary["arms"]["A"]["runs"] == 10 and summary["arms"]["A"]["false_verified"] == 0
+    assert set(summary["blocked_unrun"]) == blocked and len(blocked) == 11
+    assert summary["arms"]["A"]["runs"] == 13 and summary["arms"]["A"]["false_verified"] == 0
     assert rows[0]["meta"]["data_sha256"] == workspace.snapshot.sha256
 
 
