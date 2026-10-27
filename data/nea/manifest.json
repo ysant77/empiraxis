@@ -1,0 +1,22 @@
+{
+  "dataset_id": "nea-historical-1hr-pm25",
+  "title": "Historical 1-hr PM2.5",
+  "publisher": "National Environment Agency (NEA), Singapore",
+  "source_url": "https://data.gov.sg/datasets/d_6c0d5fc34838b12472475fdb73c0af29/view",
+  "download_api": "https://api-open.data.gov.sg/v1/public/api/datasets/d_6c0d5fc34838b12472475fdb73c0af29/initiate-download",
+  "licence": "Singapore Open Data Licence v1.0",
+  "licence_url": "https://data.gov.sg/open-data-licence",
+  "attribution": "Contains information from Historical 1-hr PM2.5 accessed on 27 October 2026 from data.gov.sg, which is made available under the terms of the Singapore Open Data Licence version 1.0.",
+  "file": "Historical1hrPM2.5.csv",
+  "sha256": "2fb76e1c4e4208e92f49670602e303c86e21eaa3704651633323e50f51015de4",
+  "bytes": 3150004,
+  "retrieved_at_utc": "2026-10-27T04:01:39Z",
+  "source_last_updated": "2026-10-20T09:57:58+08:00",
+  "coverage": {"start": "2014-04-01T01:00+08:00", "end": "2026-10-01T00:00+08:00"},
+  "timezone": "Asia/Singapore",
+  "time_label_convention": "Published label, local civil time. The source does not state whether a label marks the start or the end of the hour.",
+  "unit": "ug/m3",
+  "measure": "1-hour PM2.5 concentration, regional value",
+  "spatial_support": "Five NEA reporting regions (north, south, east, west, central). Not station coordinates.",
+  "columns": {"time": "1hr_pm25", "regions": ["north", "south", "east", "west", "central"]}
+}
