@@ -13,6 +13,8 @@ from earthlab.agent.budget import Budget
 from earthlab.audit import RunTrace
 from earthlab.contracts import TimeWindow
 from earthlab.data.quality import coverage_report
+from earthlab.evals.runner import ARMS, run_suite
+from earthlab.evals.tasks import load_tasks
 from earthlab.llm.client import build_client
 from earthlab.llm.providers import load_providers
 from earthlab.metrics import EarthlabMetrics
@@ -113,6 +115,34 @@ def cmd_replay(args: argparse.Namespace) -> int:
     return 0 if same == total else 1
 
 
+def cmd_eval(args: argparse.Namespace) -> int:
+    arms = args.arms.split(",")
+    unknown = set(arms) - set(ARMS)
+    if unknown:
+        raise SystemExit(f"unknown arms: {sorted(unknown)}")
+    needs_model = any(arm != "scripted" for arm in arms)
+    client = build_client(load_providers(args.providers)[args.provider]) if needs_model else None
+    tasks = load_tasks(args.tasks)
+    if args.only:
+        tasks = [t for t in tasks if t.id in args.only.split(",")]
+    out_dir = new_run_dir(args.runs_dir / "evals")
+    summary = run_suite(
+        tasks,
+        arms,
+        open_workspace(args.data_dir),
+        out_dir,
+        client,
+        budget=Budget(max_turns=args.max_turns),
+        on_score=lambda s: print(
+            f"{s.task_id} [{s.arm}] met {s.met}/{s.required} success={s.verified_success}",
+            flush=True,
+        ),
+    )
+    print(json.dumps(summary, indent=2))
+    print(f"results: {out_dir}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="earthlab", description=__doc__)
     parser.add_argument("--data-dir", type=Path, default=Path("data/nea"))
@@ -137,6 +167,16 @@ def build_parser() -> argparse.ArgumentParser:
     inv.add_argument("--max-seconds", type=float, default=3600.0)
     inv.add_argument("--metrics-port", type=int, default=0)
     inv.set_defaults(func=cmd_investigate)
+
+    ev = sub.add_parser("eval", help="score agent, no-tool and scripted arms on fixed tasks")
+    ev.add_argument("--tasks", type=Path, default=Path("evals/tasks.yaml"))
+    ev.add_argument("--arms", default="scripted")
+    ev.add_argument("--only", default="")
+    ev.add_argument("--provider", default="local-glimmer")
+    ev.add_argument("--providers", type=Path, default=Path("config/providers.yaml"))
+    ev.add_argument("--runs-dir", type=Path, default=Path("runs"))
+    ev.add_argument("--max-turns", type=int, default=10)
+    ev.set_defaults(func=cmd_eval)
 
     replay = sub.add_parser("replay", help="re-verify a saved run offline, no model needed")
     replay.add_argument("run_dir", type=Path)
