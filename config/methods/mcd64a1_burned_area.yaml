@@ -12,15 +12,22 @@ version: "1"
 product: MODIS/061/MCD64A1 (Collection 6.1, monthly, 500 m)
 
 definitions:
-  pixel_in_area: the pixel centre, converted from the sinusoidal grid on a sphere of
+  pixel_in_area: >-
+    the pixel centre, converted from the sinusoidal grid on a sphere of
     radius 6371007.181 m to longitude and latitude, lies inside the study box (edges included)
-  valid_land: QA bit 0 (land) and QA bit 1 (enough valid data) are both set
-  burned: BurnDate between 1 and 366, on a valid_land pixel, in the month of the file
-  not_counted: BurnDate -1 (masked in Earth Engine: unburned or unmapped), nodata
+  valid_land: >-
+    QA bit 0 (land) and QA bit 1 (enough valid data) are both set
+  burned: >-
+    BurnDate between 1 and 366, on a valid_land pixel, in the month of the file
+  not_counted: >-
+    BurnDate -1 (masked in Earth Engine: unburned or unmapped), nodata
     -32768 (outside the export polygon), water, and cells without valid data
-  valid_fraction: valid_land pixels / land pixels, inside the box
-  primary_area: sum over burned pixels of each pixel's area on the WGS84 ellipsoid
-  nominal_area: burned pixels x (463.3127165 m)^2, the product's sphere-based pixel area;
+  valid_fraction: >-
+    valid_land pixels / land pixels, inside the box
+  primary_area: >-
+    sum over burned pixels of each pixel's area on the WGS84 ellipsoid
+  nominal_area: >-
+    burned pixels x (463.3127165 m)^2, the product's sphere-based pixel area;
     reported next to the primary area, never instead of it
 
 reporting_gate:
