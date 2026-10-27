@@ -20,14 +20,21 @@ ASSESS_TOOL = "assess_case"
 
 
 class CaseLibrary:
-    def __init__(self, cases: dict[str, CaseFile], root: Path):
+    def __init__(
+        self, cases: dict[str, CaseFile], root: Path, files: dict[str, Path] | None = None
+    ):
         self._cases = cases
         self.root = root
+        self.files = files or {}
 
     @classmethod
     def load(cls, cases_dir: Path, root: Path) -> CaseLibrary:
-        loaded = [load_case(path, root) for path in sorted(cases_dir.glob("*.yaml"))]
-        return cls({c.case.case_id: c for c in loaded}, root)
+        loaded = [(load_case(path, root), path) for path in sorted(cases_dir.glob("*.yaml"))]
+        return cls(
+            {c.case.case_id: c for c, _ in loaded},
+            root,
+            {c.case.case_id: path for c, path in loaded},
+        )
 
     def get(self, case_id: str) -> CaseFile:
         if case_id not in self._cases:

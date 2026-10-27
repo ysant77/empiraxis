@@ -106,6 +106,7 @@ class AreaLedger:
     """Every area verdict from every submission, in order. Nothing is ever removed."""
 
     rounds: list[list[AreaVerification]] = field(default_factory=list)
+    consulted: list[tuple[str, str]] = field(default_factory=list)  # (case_id, month) read
 
     @property
     def latest(self) -> list[AreaVerification]:

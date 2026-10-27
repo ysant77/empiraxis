@@ -4,6 +4,13 @@ from __future__ import annotations
 
 from typing import Any
 
+from earthlab.report.area_sections import (
+    AREA_LIMITATIONS,
+    check_lines,
+    declared_lines,
+    input_lines,
+)
+
 LIMITATIONS = (
     "Observations only. The report makes no claim about what caused the haze.",
     "Values are NEA regional aggregates, not station measurements.",
@@ -81,8 +88,34 @@ def _safety_lines(decisions: list[dict[str, Any]]) -> list[str]:
     return [*lines, ""]
 
 
-def _provenance_lines(result: dict[str, Any]) -> list[str]:
+def _uses_pm25(result: dict[str, Any]) -> bool:
+    """PM2.5 sections apply unless the run is about burned area only."""
+    return bool(result["rounds"]) or not result.get("evidence")
+
+
+def _source_lines(result: dict[str, Any]) -> list[str]:
+    if not _uses_pm25(result):
+        return []
     src = result["source"]
+    return [
+        "## Source",
+        "",
+        f"- Dataset: {src['source_url']}",
+        f"- SHA-256: `{src['sha256']}`",
+        f"- Unit: {src['unit']}; time zone: {src['timezone']}; licence: {src['licence']}",
+        f"- {result['attribution']}",
+        "",
+    ]
+
+
+def _limitation_lines(result: dict[str, Any]) -> list[str]:
+    items = list(AREA_LIMITATIONS) if result.get("evidence") else []
+    if _uses_pm25(result):
+        items += LIMITATIONS
+    return ["## Limitations", "", *[f"- {item}" for item in items], ""]
+
+
+def _provenance_lines(result: dict[str, Any]) -> list[str]:
     cost = result["estimated_cost_usd"]
     return [
         "## Model and run",
@@ -96,17 +129,9 @@ def _provenance_lines(result: dict[str, Any]) -> list[str]:
         f"- Tokens reported: {result['prompt_tokens']} input, {result['completion_tokens']} output",
         f"- Estimated cost: {'not priced' if cost is None else f'{cost:.6f} USD (estimate)'}",
         "",
-        "## Source",
-        "",
-        f"- Dataset: {src['source_url']}",
-        f"- SHA-256: `{src['sha256']}`",
-        f"- Unit: {src['unit']}; time zone: {src['timezone']}; licence: {src['licence']}",
-        f"- {result['attribution']}",
-        "",
-        "## Limitations",
-        "",
-        *[f"- {item}" for item in LIMITATIONS],
-        "",
+        *_source_lines(result),
+        *input_lines(result.get("evidence")),
+        *_limitation_lines(result),
     ]
 
 
@@ -144,6 +169,8 @@ def render_report(result: dict[str, Any], chart_name: str | None = None) -> str:
         "",
         *_findings_table(result.get("findings", [])),
         *_area_table(result.get("area_findings", [])),
+        *check_lines(result.get("evidence")),
+        *declared_lines(result.get("limitations", [])),
         *_interpretation_lines(result),
         "## Rejected claims (all submissions)",
         "",

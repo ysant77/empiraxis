@@ -30,8 +30,8 @@ from earthlab.report.markdown import render_report
 from earthlab.runtime import investigate, new_run_dir, open_workspace
 from earthlab.safety.llama_guard import LlamaGuard
 from earthlab.tools.burned_area_tools import case_report
-from earthlab.trace import RunTrace
 from earthlab.verify.claims import Claim
+from earthlab.verify.replay import replay_run
 
 DEFAULT_WINDOW = TimeWindow(start=datetime(2015, 9, 1), end=datetime(2015, 11, 1))
 
@@ -77,12 +77,21 @@ def cmd_verify(args: argparse.Namespace) -> int:
 
 
 def write_report(run_dir: Path, workspace_dir: Path) -> Path:
+    """report.md for a saved run; the PM2.5 chart only for runs that are not burned-area only."""
     result = json.loads((run_dir / "result.json").read_text(encoding="utf-8"))
-    workspace = open_workspace(workspace_dir)
-    hourly_chart(workspace.dataset, DEFAULT_WINDOW, run_dir / "pm25_hourly.png")
+    chart = None
+    if result["rounds"] or not result.get("evidence"):
+        workspace = open_workspace(workspace_dir)
+        chart = "pm25_hourly.png"
+        hourly_chart(workspace.dataset, DEFAULT_WINDOW, run_dir / chart)
     path = run_dir / "report.md"
-    path.write_text(render_report(result, "pm25_hourly.png"), encoding="utf-8")
+    path.write_text(render_report(result, chart), encoding="utf-8")
     return path
+
+
+def cmd_report(args: argparse.Namespace) -> int:
+    print(f"report: {write_report(args.run_dir, args.data_dir)}")
+    return 0
 
 
 def build_guard(providers: Path, name: str) -> LlamaGuard | None:
@@ -132,20 +141,23 @@ def cmd_investigate(args: argparse.Namespace) -> int:
 
 
 def cmd_replay(args: argparse.Namespace) -> int:
-    """Re-check a saved run without any model: trace chain plus every verdict."""
-    records = RunTrace(args.run_dir / "trace.jsonl").verify()
-    result = json.loads((args.run_dir / "result.json").read_text(encoding="utf-8"))
-    workspace = open_workspace(args.data_dir)
-    total = same = 0
-    for rnd in result["rounds"]:
-        for saved in rnd:
-            fresh = workspace.verifier.verify(Claim.model_validate(saved["claim"]))
-            total += 1
-            same += fresh.verdict.value == saved["verdict"]
-    print(f"trace: {records} records, hash chain intact")
-    print(f"verdicts reproduced: {same}/{total}")
-    print(f"status: {result['status']}; provider: {result['provider']} ({result['model']})")
-    return 0 if same == total else 1
+    """Re-check a saved run without any model: trace chain, verdicts and input hashes."""
+    out = replay_run(args.run_dir, open_workspace(args.data_dir))
+    print(f"trace: {out.trace_records} records, hash chain intact")
+    print(f"verdicts reproduced: {out.pm25[0]}/{out.pm25[1]}")
+    print(f"area verdicts reproduced: {out.area[0]}/{out.area[1]}")
+    print(f"month checks reproduced: {out.months[0]}/{out.months[1]}")
+    if not out.files_checked:
+        print("input hashes: none recorded")
+    elif not out.changed_files:
+        print(f"input hashes: all match ({out.files_checked} files)")
+    else:
+        print(f"input hashes: {len(out.changed_files)} of {out.files_checked} files CHANGED")
+    for rel in out.changed_files:
+        print(f"changed: {rel}")
+    for problem in out.problems:
+        print(f"problem: {problem}")
+    return 0 if out.ok else 1
 
 
 def cmd_eval(args: argparse.Namespace) -> int:
@@ -341,6 +353,9 @@ def build_parser() -> argparse.ArgumentParser:
     replay = sub.add_parser("replay", help="re-verify a saved run offline, no model needed")
     replay.add_argument("run_dir", type=Path)
     replay.set_defaults(func=cmd_replay)
+    report = sub.add_parser("report", help="render report.md for a saved run, no model needed")
+    report.add_argument("run_dir", type=Path)
+    report.set_defaults(func=cmd_report)
     return parser
 
 

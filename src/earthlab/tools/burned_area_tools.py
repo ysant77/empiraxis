@@ -70,9 +70,16 @@ class BurnedAreaArgs(Strict):
     month: str = Field(pattern=r"^\d{4}-\d{2}$", description="UTC calendar month, YYYY-MM.")
 
 
-def burned_area_spec(library: CaseLibrary) -> ToolSpec:
+def burned_area_spec(
+    library: CaseLibrary, consulted: list[tuple[str, str]] | None = None
+) -> ToolSpec:
+    """consulted, when given, records each (case_id, month) the tool answered."""
+
     def handle(args: BurnedAreaArgs) -> dict[str, Any]:
-        return month_report(library.get(args.case_id), library.root, args.month)
+        report = month_report(library.get(args.case_id), library.root, args.month)
+        if consulted is not None:
+            consulted.append((args.case_id, args.month))
+        return report
 
     return ToolSpec(
         BURNED_AREA_TOOL,

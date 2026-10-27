@@ -21,6 +21,7 @@ from earthlab.data.nea_pm25 import Pm25Dataset, load_pm25
 from earthlab.data.snapshot import open_snapshot
 from earthlab.llm.client import ChatClient
 from earthlab.metrics import EarthlabMetrics
+from earthlab.report.evidence import collect_evidence
 from earthlab.safety.gate import REFUSAL, SafetyDecision, SafetyGate
 from earthlab.safety.llama_guard import LlamaGuard
 from earthlab.tools.burned_area_tools import burned_area_spec
@@ -72,9 +73,10 @@ def build_registry(
     registry.register(submit_findings_spec(workspace.verifier, ledger))
     registry.register(declare_limitation_spec(limitations or LimitationLog()))
     if workspace.cases is not None:
+        area_ledger = area_ledger or AreaLedger()
         registry.register(assess_case_spec(workspace.cases))
-        registry.register(burned_area_spec(workspace.cases))
-        registry.register(submit_area_findings_spec(workspace.cases, area_ledger or AreaLedger()))
+        registry.register(burned_area_spec(workspace.cases, area_ledger.consulted))
+        registry.register(submit_area_findings_spec(workspace.cases, area_ledger))
     return registry
 
 
@@ -125,7 +127,7 @@ def investigate(
         )
         result = investigator.run(question)
         result = replace(result, safety=(asked, *result.safety))
-    save_result(run_dir, question, result, workspace.snapshot)
+    save_result(run_dir, question, result, workspace.snapshot, workspace.cases)
     return result
 
 
@@ -159,8 +161,12 @@ def _refused(
 
 
 def result_payload(
-    question: str, result: Investigation, snapshot: SourceSnapshot
+    question: str,
+    result: Investigation,
+    snapshot: SourceSnapshot,
+    cases: CaseLibrary | None = None,
 ) -> dict[str, Any]:
+    """The saved run. With cases, evidence holds the hash of every burned-area input read."""
     return {
         "question": question,
         "status": result.status.value,
@@ -191,14 +197,20 @@ def result_payload(
             [r.model_dump(mode="json") for r in rnd] for rnd in result.area_ledger.rounds
         ],
         "rounds": [[r.model_dump(mode="json") for r in rnd] for rnd in result.ledger.rounds],
+        "evidence": collect_evidence(cases, result.area_ledger),
     }
 
 
 def save_result(
-    run_dir: Path, question: str, result: Investigation, snapshot: SourceSnapshot
+    run_dir: Path,
+    question: str,
+    result: Investigation,
+    snapshot: SourceSnapshot,
+    cases: CaseLibrary | None = None,
 ) -> Path:
     path = run_dir / "result.json"
     tmp = path.with_suffix(".tmp")
-    tmp.write_text(json.dumps(result_payload(question, result, snapshot), indent=2), "utf-8")
+    payload = result_payload(question, result, snapshot, cases)
+    tmp.write_text(json.dumps(payload, indent=2), "utf-8")
     tmp.replace(path)
     return path
