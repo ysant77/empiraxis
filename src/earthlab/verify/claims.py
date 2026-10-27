@@ -87,6 +87,7 @@ class Check(StrEnum):
     LANGUAGE = "language"
     COVERAGE = "coverage"
     SOURCE = "source"
+    ANSWER = "answer"
 
 
 class VerificationResult(Strict):
