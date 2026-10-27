@@ -6,7 +6,7 @@ limits each call, and only the deterministic verifier decides whether a claim st
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Any
 
@@ -18,6 +18,8 @@ from earthlab.llm.client import ChatClient
 from earthlab.llm.types import ChatResponse, ProviderError, ToolCall
 from earthlab.metrics import EarthlabMetrics
 from earthlab.tools.registry import ToolOutcome, ToolRegistry
+from earthlab.verify.answer_audit import AnswerAudit, audit_answer
+from earthlab.verify.claims import Check
 
 
 class RunStatus(StrEnum):
@@ -38,6 +40,7 @@ class RunState:
     served_model: str | None = None
     prompt_tokens: int = 0
     completion_tokens: int = 0
+    evidence: list[Any] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -56,6 +59,7 @@ class Investigation:
     served_model: str | None
     prompt_tokens: int
     completion_tokens: int
+    answer_audit: AnswerAudit | None = None
 
 
 def _assistant_message(resp: ChatResponse) -> dict[str, Any]:
@@ -111,7 +115,8 @@ class Investigator:
         finally:
             self._metrics.active.dec()
         self._metrics.investigations.labels(status.value).inc()
-        result = self._result(status, state)
+        audit = self._audit_answer(question, state)
+        result = self._result(status, state, audit)
         self._trace.append(
             "finish",
             "runtime",
@@ -122,6 +127,21 @@ class Investigator:
             cost_usd=result.cost_usd,
         )
         return result
+
+    def _audit_answer(self, question: str, state: RunState) -> AnswerAudit | None:
+        if not state.answer:
+            return None
+        claims = [r.claim.model_dump(mode="json") for rnd in self._ledger.rounds for r in rnd]
+        audit = audit_answer(state.answer, [*state.evidence, *claims], question)
+        outcome = "supported" if audit.grounded else "unsupported"
+        self._metrics.record_verification(Check.ANSWER.value, outcome)
+        self._trace.append(
+            "answer_audit",
+            "verifier",
+            numbers_checked=audit.numbers_checked,
+            ungrounded=list(audit.ungrounded),
+        )
+        return audit
 
     def _loop(self, state: RunState) -> RunStatus:
         while True:
@@ -210,6 +230,8 @@ class Investigator:
                 self._meter.submissions += 1
             result = self._registry.execute(call.name, call.arguments)
             self._metrics.record_tool(call.name, result.outcome.value)
+            if result.data is not None:
+                state.evidence.append(result.data)
             self._trace.append(
                 "tool_result",
                 "runtime",
@@ -251,7 +273,9 @@ class Investigator:
             return RunStatus.PARTIAL
         return RunStatus.BUDGET_EXHAUSTED if budget_hit else RunStatus.NO_SUPPORTED_FINDINGS
 
-    def _result(self, status: RunStatus, state: RunState) -> Investigation:
+    def _result(
+        self, status: RunStatus, state: RunState, audit: AnswerAudit | None
+    ) -> Investigation:
         cfg = self._client.config
         priced = cfg.usd_per_mtok_input is not None and cfg.usd_per_mtok_output is not None
         return Investigation(
@@ -269,4 +293,5 @@ class Investigator:
             served_model=state.served_model,
             prompt_tokens=state.prompt_tokens,
             completion_tokens=state.completion_tokens,
+            answer_audit=audit,
         )
