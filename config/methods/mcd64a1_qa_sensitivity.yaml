@@ -1,0 +1,44 @@
+# Pre-registered QA-policy sensitivity analysis for MCD64A1 burned area (ScienceBench SB-07).
+# Committed before the code that computes it, on 2026-10-27.
+#
+# Disclosure: no variant area and no count of QA bit 2 or bit 3 was computed for the
+# Kalimantan files before this file was written. The base method's September 2015 area
+# (77,426.0 ha) was known. QA bit meanings are from the Earth Engine catalog page for
+# MODIS/061/MCD64A1, read on 2026-10-27.
+method_id: mcd64a1_qa_sensitivity
+version: "1"
+base_method: config/methods/mcd64a1_burned_area.yaml
+
+policies:
+  primary:
+    exclude_bits: []
+    meaning: the base method (QA bit 0 land and bit 1 valid data both set)
+  full_period:
+    exclude_bits: [2]
+    meaning: also drop burned cells whose reliable mapping period is shorter than the month
+  not_relabeled:
+    exclude_bits: [3]
+    meaning: also drop burned cells relabeled in the contextual relabeling phase
+  strict:
+    exclude_bits: [2, 3]
+    meaning: drop both
+
+rules:
+  - >-
+    A policy only removes burned pixels. Land pixels, valid_land pixels, the valid
+    fraction and the reporting gate stay as defined in the base method.
+  - >-
+    The tool computes each policy's area and the independent verifier recomputes it.
+    The base method's C3 and C4 tolerances apply to every policy.
+  - >-
+    C1 and C2 compare with the Earth Engine reference, which exists only for the primary
+    policy. They are not applied to the other policies.
+  - >-
+    A month that fails the base reporting gate gives insufficient_data for every policy.
+  - >-
+    Sensitivity is (primary area - strict area) / primary area, reported as a fraction.
+    No threshold labels a result robust or sensitive.
+
+not_used:
+  - The Uncertainty band. The catalog page gives no unit for it.
+  - QA bits 5-7. They are reserved for unburned cells and cannot remove a burned pixel.
