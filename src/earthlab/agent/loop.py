@@ -13,11 +13,11 @@ from typing import Any
 from earthlab.agent.budget import Budget, BudgetMeter
 from earthlab.agent.findings import SUBMIT_TOOL, FindingsLedger
 from earthlab.agent.prompts import FINAL_ANSWER, NUDGE_SUBMIT, system_prompt
-from earthlab.audit import RunTrace
 from earthlab.llm.client import ChatClient
 from earthlab.llm.types import ChatResponse, ProviderError, ToolCall
 from earthlab.metrics import EarthlabMetrics
 from earthlab.tools.registry import ToolOutcome, ToolRegistry
+from earthlab.trace import RunTrace
 from earthlab.verify.answer_audit import AnswerAudit, audit_answer
 from earthlab.verify.claims import Check
 

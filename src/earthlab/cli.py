@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import Any
 
 from earthlab.agent.budget import Budget
-from earthlab.audit import RunTrace
 from earthlab.contracts import TimeWindow
 from earthlab.data.quality import coverage_report
 from earthlab.evals.runner import ARMS, run_suite
@@ -21,6 +20,7 @@ from earthlab.metrics import EarthlabMetrics
 from earthlab.report.chart import hourly_chart
 from earthlab.report.markdown import render_report
 from earthlab.runtime import investigate, new_run_dir, open_workspace
+from earthlab.trace import RunTrace
 from earthlab.verify.claims import Claim
 
 DEFAULT_WINDOW = TimeWindow(start=datetime(2015, 9, 1), end=datetime(2015, 11, 1))

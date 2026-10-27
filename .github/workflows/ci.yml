@@ -1,4 +1,4 @@
-name: CI
+name: ci
 
 on:
   pull_request:
@@ -9,11 +9,15 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  UV_LOCKED: "1"
+
 jobs:
-  pr-hygiene:
+  hygiene:
+    name: branch and commit hygiene
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -21,56 +25,62 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-      - name: Branch name
+      - name: Branch follows <type>/<kebab-name>
         env:
-          HEAD_REF: ${{ github.head_ref }}
+          BRANCH: ${{ github.head_ref }}
         run: |
-          [[ "$HEAD_REF" =~ ^(feat|fix|chore|docs|refactor|test|ci|perf|release)/[a-z0-9]+(-[a-z0-9]+)*$ ]] \
-            || { echo "branch '$HEAD_REF' must match <type>/<kebab-case>"; exit 1; }
-      - name: No co-author trailers
+          pattern='^(feat|fix|chore|docs|refactor|test|ci|perf|release)/[a-z0-9]+(-[a-z0-9]+)*$'
+          if ! [[ "$BRANCH" =~ $pattern ]]; then
+            echo "::error::branch '$BRANCH' does not match <type>/<kebab-name>"
+            exit 1
+          fi
+      - name: Commits carry no co-author trailers
         env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
         run: |
-          if git log --format=%B "$BASE_SHA..$HEAD_SHA" | grep -qiE '^co-authored-by:'; then
-            echo "co-author trailers are not allowed"; exit 1
+          if git log --format=%B "$RANGE" | grep -qiE '^[[:space:]]*co-authored-by:'; then
+            echo "::error::remove co-author trailers from the pull request commits"
+            exit 1
           fi
 
-  checks:
+  quality:
+    name: lint, types, size, tests
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
         with:
           enable-cache: true
-      - name: Install
-        run: uv sync --locked --all-extras
-      - name: Lint
+      - run: uv sync --all-extras
+      - name: Ruff lint
         run: uv run ruff check .
-      - name: Format
+      - name: Ruff format
         run: uv run ruff format --check .
-      - name: Type check
+      - name: Mypy (strict)
         run: uv run mypy
-      - name: Size limits (500 lines/file, 50 lines/function)
-        run: uv run python scripts/check_size.py src tests scripts
-      - name: Tests with coverage gate (>= 85%)
+      - name: Size limits (500 lines per file, 50 per function)
+        run: uv run python scripts/check_limits.py src tests scripts
+      - name: Pytest with 85% coverage gate
         run: uv run pytest
 
-  security:
+  supply-chain:
+    name: dependency audit and secret scan
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
       contents: read
-      pull-requests: read  # gitleaks-action lists the PR's commits to scan
+      pull-requests: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
       - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
-      - name: Dependency audit
-        run: uvx pip-audit --strict -r <(uv export --no-hashes --no-dev --no-emit-project --all-extras)
-      - name: Secret scan
+      - name: Audit runtime and extra dependencies
+        run: |
+          uv export --no-hashes --no-dev --no-emit-project --all-extras > requirements.audit.txt
+          uvx pip-audit --strict -r requirements.audit.txt
+      - name: Scan for secrets
         uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

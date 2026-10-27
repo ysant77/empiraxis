@@ -173,7 +173,7 @@ A short demo gives few samples. Read the raw counts as well as the rates.
 ```bash
 uv sync --extra ui
 uv run ruff check . && uv run ruff format --check . && uv run mypy \
-  && uv run python scripts/check_size.py src tests scripts && uv run pytest
+  && uv run python scripts/check_limits.py src tests scripts && uv run pytest
 ```
 
 CI runs the same checks, a dependency audit and a secret scan. Coverage must stay at or above 85%.
@@ -189,7 +189,7 @@ CI runs the same checks, a dependency audit and a secret scan. Coverage must sta
 | `src/earthlab/llm/` | Endpoint config and OpenAI-compatible client |
 | `src/earthlab/agent/` | Budget, prompts, findings ledger, investigation loop |
 | `src/earthlab/report/` | Chart and Markdown evidence report |
-| `src/earthlab/metrics.py`, `audit.py` | Prometheus metrics, hash-chained trace |
+| `src/earthlab/metrics.py`, `trace.py`, `digest.py` | Prometheus metrics, hash-chained run trace, SHA-256 digests |
 | `data/nea/` | Pinned NEA snapshot, manifest and data card |
 
 ## Limitations
@@ -201,4 +201,11 @@ CI runs the same checks, a dependency audit and a secret scan. Coverage must sta
 
 ## Data and licences
 
-NEA data: see `data/nea/DATA_CARD.md`. Model and library licences and the provenance of all code: see `ORIGINS.md`.
+| Component | Source | Licence |
+| --- | --- | --- |
+| NEA Historical 1-hr PM2.5 | https://data.gov.sg/datasets/d_6c0d5fc34838b12472475fdb73c0af29/view | Singapore Open Data Licence v1.0 (see `data/nea/DATA_CARD.md`) |
+| Muse Glimmer 30B (GGUF) | https://huggingface.co/meta-models/Muse-Glimmer-30B-GGUF | Apache 2.0 and the Meta usage policy |
+| Muse Spark Open (hosted) | Baseten, Fireworks or Modal | Provider terms and the Meta licence |
+| Python libraries | `uv.lock` | Each package's own licence |
+
+The repository was created on 27 October 2026, inside the Meta Global AI Developer Hackathon build window. The design builds on ideas from the author's earlier private work on policy-gated, verified agents.
