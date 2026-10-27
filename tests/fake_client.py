@@ -44,9 +44,15 @@ class ScriptedClient:
         max_tokens: int,
         temperature: float,
         tool_choice: str = "auto",
+        timeout: float | None = None,
     ) -> ChatResponse:
         self.requests.append(
-            {"messages": list(messages), "tools": tools, "tool_choice": tool_choice}
+            {
+                "messages": list(messages),
+                "tools": tools,
+                "tool_choice": tool_choice,
+                "timeout": timeout,
+            }
         )
         step = self._steps.pop(0) if self._steps else ("done", [])
         if isinstance(step, ProviderError):

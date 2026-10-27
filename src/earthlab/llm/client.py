@@ -33,6 +33,7 @@ class ChatClient(Protocol):
         max_tokens: int,
         temperature: float,
         tool_choice: str = "auto",
+        timeout: float | None = None,
     ) -> ChatResponse: ...
 
 
@@ -88,7 +89,9 @@ class OpenAICompatClient:
         max_tokens: int,
         temperature: float,
         tool_choice: str = "auto",
+        timeout: float | None = None,
     ) -> ChatResponse:
+        """timeout, when given, caps this request below the configured timeout."""
         payload: dict[str, Any] = {
             "model": self.config.model,
             "messages": messages,
@@ -101,13 +104,16 @@ class OpenAICompatClient:
             payload["tools"] = tools
             payload["tool_choice"] = tool_choice
         started = time.perf_counter()
-        resp = self._post(payload)
+        resp = self._post(payload, timeout)
         wall = time.perf_counter() - started
         return self._parse(resp, wall)
 
-    def _post(self, payload: dict[str, Any]) -> httpx.Response:
+    def _post(self, payload: dict[str, Any], timeout: float | None = None) -> httpx.Response:
+        limit = self.config.timeout_seconds if timeout is None else timeout
         try:
-            resp = self._client.post("/chat/completions", json=payload, headers=self._headers())
+            resp = self._client.post(
+                "/chat/completions", json=payload, headers=self._headers(), timeout=limit
+            )
         except httpx.TimeoutException as exc:
             raise ProviderError(ProviderErrorKind.TIMEOUT, type(exc).__name__) from exc
         except httpx.HTTPError as exc:

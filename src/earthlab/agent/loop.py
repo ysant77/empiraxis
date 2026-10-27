@@ -6,12 +6,13 @@ limits each call, and only the deterministic verifier decides whether a claim st
 
 from __future__ import annotations
 
+import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Any
 
-from earthlab.agent.budget import Budget, BudgetMeter
+from earthlab.agent.budget import Budget, BudgetMeter, BudgetStop, prompt_bytes
 from earthlab.agent.findings import SUBMIT_TOOL, FindingsLedger
 from earthlab.agent.prompts import FINAL_ANSWER, NUDGE_SUBMIT, REVISE_ANSWER, system_prompt
 from earthlab.llm.client import ChatClient
@@ -47,6 +48,7 @@ class RunState:
     finalising: bool = False
     stop_reason: str = ""
     revision_note: str | None = None
+    skipped_tool_calls: int = 0
     served_model: str | None = None
     prompt_tokens: int = 0
     completion_tokens: int = 0
@@ -72,6 +74,7 @@ class Investigation:
     answer_audit: AnswerAudit | None = None
     safety: tuple[SafetyDecision, ...] = ()
     answer_issues: tuple[str, ...] = ()
+    skipped_tool_calls: int = 0
 
 
 def _assistant_message(resp: ChatResponse) -> dict[str, Any]:
@@ -96,13 +99,14 @@ class Investigator:
         budget: Budget | None = None,
         reasoning: str = "medium",
         answer_gate: AnswerGate | None = None,
+        clock: Callable[[], float] = time.monotonic,
     ):
         self._client = client
         self._registry = registry
         self._ledger = ledger
         self._metrics = metrics
         self._trace = trace
-        self._meter = BudgetMeter(budget or Budget())
+        self._meter = BudgetMeter(budget or Budget(), clock)
         self._reasoning = reasoning
         self._answer_gate = answer_gate
 
@@ -173,6 +177,9 @@ class Investigator:
         state.finalising = True  # tool_choice "none": a revision can never run a tool
         try:
             resp = self._call_model(state)
+        except BudgetStop as exc:
+            state.revision_note = f"revision not run: {exc}"
+            return audit
         except ProviderError as exc:
             state.revision_note = f"revision failed: {exc.kind.value}"
             return audit
@@ -200,6 +207,9 @@ class Investigator:
                 return self._status_after_stop(budget_hit=True)
             try:
                 resp = self._call_model(state)
+            except BudgetStop as exc:
+                state.stop_reason = str(exc)
+                return self._status_after_stop(budget_hit=True)
             except ProviderError as exc:
                 state.stop_reason = str(exc)
                 return RunStatus.PROVIDER_ERROR
@@ -224,30 +234,37 @@ class Investigator:
         return False
 
     def _call_model(self, state: RunState) -> ChatResponse:
+        """Reserve the worst-case cost and check every limit, then call the model.
+
+        Raises BudgetStop, without calling, when the call could cross a limit.
+        """
         cfg = self._client.config
-        self._meter.turns += 1
+        schemas = self._registry.schemas()
+        worst = self._meter.reserve_model_call(cfg, prompt_bytes(state.messages, schemas))
         # Keep the same tool schemas on the final turn so the server can reuse its prompt cache.
         tool_choice = "none" if state.finalising else "auto"
         try:
             resp = self._client.chat(
                 state.messages,
-                self._registry.schemas(),
+                schemas,
                 max_tokens=self._meter.budget.max_output_tokens,
                 temperature=1.0,
                 tool_choice=tool_choice,
+                timeout=min(cfg.timeout_seconds, self._meter.remaining_seconds()),
             )
         except ProviderError as exc:
             self._metrics.record_inference(cfg.name, cfg.logical_model, exc.kind.value, 0.0)
             self._trace.append("model_error", "runtime", kind=exc.kind.value)
             raise
-        self._account(state, resp)
+        self._account(state, resp, worst)
         return resp
 
-    def _account(self, state: RunState, resp: ChatResponse) -> None:
+    def _account(self, state: RunState, resp: ChatResponse, worst: float) -> None:
         cfg = self._client.config
         usage = resp.usage
+        charged = self._meter.settle_model_call(cfg, usage, worst)
         cost = cfg.estimate_cost_usd(usage.prompt_tokens, usage.completion_tokens)
-        self._meter.cost_usd += cost or 0.0
+        cost = charged if cost is None and charged > 0 else cost
         state.prompt_tokens += usage.prompt_tokens or 0
         state.completion_tokens += usage.completion_tokens or 0
         state.served_model = resp.served_model or state.served_model
@@ -273,12 +290,17 @@ class Investigator:
         )
 
     def _run_tool_calls(self, state: RunState, calls: tuple[ToolCall, ...]) -> None:
+        """Check the limits before each call in the batch; skip, never run, the rest."""
         for call in calls:
-            self._meter.tool_calls += 1
             self._metrics.record_tool(call.name, "requested")
-            if call.name == SUBMIT_TOOL:
-                self._meter.submissions += 1
+            reason = self._meter.check_tool_call(call.name == SUBMIT_TOOL)
+            if reason is not None:
+                self._skip_tool_call(state, call, reason)
+                continue
+            self._meter.tool_calls += 1
             result = self._registry.execute(call.name, call.arguments)
+            if call.name == SUBMIT_TOOL and result.outcome is ToolOutcome.EXECUTED:
+                self._meter.submissions += 1
             self._metrics.record_tool(call.name, result.outcome.value)
             if result.data is not None:
                 state.evidence.append(result.data)
@@ -296,6 +318,14 @@ class Investigator:
             )
             if call.name == SUBMIT_TOOL and result.outcome is ToolOutcome.EXECUTED:
                 self._after_submission(state)
+
+    def _skip_tool_call(self, state: RunState, call: ToolCall, reason: str) -> None:
+        self._metrics.record_tool(call.name, "skipped")
+        self._trace.append("tool_skipped", "runtime", name=call.name, reason=reason)
+        state.skipped_tool_calls += 1
+        state.messages.append(
+            {"role": "tool", "tool_call_id": call.id, "content": f"not run: {reason}"}
+        )
 
     def _after_submission(self, state: RunState) -> None:
         for verdict in self._ledger.latest:
@@ -351,6 +381,7 @@ class Investigator:
             answer_audit=audit,
             safety=() if decision is None else (decision,),
             answer_issues=issues,
+            skipped_tool_calls=state.skipped_tool_calls,
         )
 
 
