@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+dist/
+build/
+
+# Investigation runs (traces, reports, charts). Publish curated runs under examples/ only.
+runs/
+
+# Local developer files (never committed)
+.agent/
+CLAUDE.md
+AGENTS.md
+.env
+.env.*
+!.env.example
+.DS_Store
