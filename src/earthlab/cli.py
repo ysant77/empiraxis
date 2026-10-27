@@ -12,6 +12,9 @@ from typing import Any
 from earthlab.acquire.gate import load_approvals
 from earthlab.acquire.run import acquire_firms, acquire_mcd64a1, write_manifest
 from earthlab.agent.budget import Budget
+from earthlab.bench.runner import ARMS as BENCH_ARMS
+from earthlab.bench.runner import run_bench
+from earthlab.bench.scenarios import load_scenarios
 from earthlab.cases.loader import load_case
 from earthlab.contracts import TimeWindow
 from earthlab.data.quality import coverage_report
@@ -202,6 +205,36 @@ def _add_acquire_parser(sub: Any) -> None:
     acq.set_defaults(func=cmd_acquire)
 
 
+def cmd_bench(args: argparse.Namespace) -> int:
+    """ScienceBench: arm A (rule dispatcher) and arm B (Meta agent) on ready scenarios."""
+    arms = args.arms.split(",")
+    if set(arms) - set(BENCH_ARMS):
+        raise SystemExit(f"unknown arms: {sorted(set(arms) - set(BENCH_ARMS))}")
+    client = build_client(load_providers(args.providers)[args.provider]) if "B" in arms else None
+    scenarios = load_scenarios(args.scenarios)
+    if args.only:
+        scenarios = [s for s in scenarios if s.id in args.only.split(",")]
+    out_dir = new_run_dir(args.runs_dir / "bench")
+    summary = run_bench(
+        scenarios,
+        arms,
+        open_workspace(args.data_dir),
+        out_dir,
+        repo=Path.cwd(),
+        client=client,
+        guard=build_guard(args.providers, args.guard) if client else None,
+        budget=Budget(max_turns=args.max_turns),
+        repeats=args.repeats,
+        on_score=lambda s: print(
+            f"{s.scenario_id} [{s.arm}] r{s.repeat} passed={s.passed} {'; '.join(s.reasons)}",
+            flush=True,
+        ),
+    )
+    print(json.dumps({k: v for k, v in summary.items() if k != "meta"}, indent=2))
+    print(f"results: {out_dir}")
+    return 0
+
+
 def cmd_safety_eval(args: argparse.Namespace) -> int:
     guard = build_guard(args.providers, args.guard)
     results = [run_case(case, guard) for case in load_cases(args.cases)]
@@ -213,6 +246,34 @@ def cmd_safety_eval(args: argparse.Namespace) -> int:
         )
     print(json.dumps(summarize(results), indent=2))
     return 0
+
+
+def _add_eval_parser(sub: Any) -> None:
+    ev = sub.add_parser(
+        "eval", help="older smoke eval; its scripted arm is an oracle that reads requirements"
+    )
+    ev.add_argument("--tasks", type=Path, default=Path("evals/tasks.yaml"))
+    ev.add_argument("--arms", default="scripted")
+    ev.add_argument("--only", default="")
+    ev.add_argument("--provider", default="local-glimmer")
+    ev.add_argument("--providers", type=Path, default=Path("config/providers.yaml"))
+    ev.add_argument("--runs-dir", type=Path, default=Path("runs"))
+    ev.add_argument("--max-turns", type=int, default=10)
+    ev.set_defaults(func=cmd_eval)
+
+
+def _add_bench_parser(sub: Any) -> None:
+    bench = sub.add_parser("bench", help="ScienceBench: rule dispatcher vs Meta agent")
+    bench.add_argument("--scenarios", type=Path, default=Path("evals/sciencebench_dev_v1.yaml"))
+    bench.add_argument("--arms", default="A")
+    bench.add_argument("--only", default="")
+    bench.add_argument("--repeats", type=int, default=1)
+    bench.add_argument("--provider", default="local-glimmer")
+    bench.add_argument("--providers", type=Path, default=Path("config/providers.yaml"))
+    bench.add_argument("--guard", default="local-llama-guard")
+    bench.add_argument("--runs-dir", type=Path, default=Path("runs"))
+    bench.add_argument("--max-turns", type=int, default=12)
+    bench.set_defaults(func=cmd_bench)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -243,15 +304,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     inv.set_defaults(func=cmd_investigate)
 
-    ev = sub.add_parser("eval", help="score agent, no-tool and scripted arms on fixed tasks")
-    ev.add_argument("--tasks", type=Path, default=Path("evals/tasks.yaml"))
-    ev.add_argument("--arms", default="scripted")
-    ev.add_argument("--only", default="")
-    ev.add_argument("--provider", default="local-glimmer")
-    ev.add_argument("--providers", type=Path, default=Path("config/providers.yaml"))
-    ev.add_argument("--runs-dir", type=Path, default=Path("runs"))
-    ev.add_argument("--max-turns", type=int, default=10)
-    ev.set_defaults(func=cmd_eval)
+    _add_eval_parser(sub)
+    _add_bench_parser(sub)
 
     _add_acquire_parser(sub)
 
