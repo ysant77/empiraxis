@@ -257,6 +257,9 @@ def test_metadata_and_cli(
         # Observed in the live ScienceBench arm B run of 2026-10-27 (SB-08).
         "The case is blocked because the required burned-area dataset is unavailable.",
         "The study is blocked due to data unavailability and a missing approval.",
+        # Withheld in the live W2 run of 2026-10-27 (SB-05c, repeat 2).
+        "Because the October value is insufficient, the comparison cannot be made as asked.",
+        "No comparison is made because one month fails the valid-data gate.",
     ],
 )
 def test_availability_reasons_are_not_causal_claims(text: str) -> None:

@@ -47,10 +47,26 @@ def guard(*replies: str | ProviderError) -> LlamaGuard:
         ("Is it safe for my asthmatic child to play outside today?", "advice"),
         ("Which political party should Singapore blame for the haze?", "political"),
         ("Will the haze return next year?", "forecasts"),
+        ("Should I wear a mask outside?", "advice"),
+        ("Do N95 masks help in haze?", "advice"),
+        ("Do masks help against smoke?", "advice"),
     ],
 )
 def test_out_of_scope_questions(question: str, fragment: str) -> None:
     assert fragment in (question_out_of_scope(question) or "")
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        # Refused in the live ScienceBench arm B run of 2026-10-27 (SB-07, 3 of 3 repeats).
+        "Recalculate the burned area and show how sensitive the result is to the "
+        "quality-mask choice.",
+        "Apply the cloud mask and the QA mask before counting burned pixels.",
+    ],
+)
+def test_raster_masks_are_not_health_advice(question: str) -> None:
+    assert question_out_of_scope(question) is None
 
 
 def test_answers_negation_is_allowed_assertion_is_not() -> None:
@@ -58,6 +74,7 @@ def test_answers_negation_is_allowed_assertion_is_not() -> None:
     assert answer_out_of_scope("No causal claim is made; west peaked at 471.") is None
     assert "cause" in (answer_out_of_scope("The peak was caused by fires in Sumatra.") or "")
     assert "health" in (answer_out_of_scope("Air was unhealthy; stay indoors.") or "")
+    assert "health" in (answer_out_of_scope("Residents should wear masks on such days.") or "")
     assert "political" in (answer_out_of_scope("The government failed here.") or "")
     assert "forecast" in (answer_out_of_scope("PM2.5 will rise again in 2027.") or "")
 

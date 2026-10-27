@@ -16,8 +16,9 @@ _NEGATION = re.compile(
 _NEGATION_WINDOW = 60
 
 _ADVICE = re.compile(
-    r"\b(is it safe|safe to|should (i|we|you|people|residents|they)|stay indoors|wear (a )?mask|"
-    r"masks?|asthma\w*|medic\w*|medicine|symptom\w*|doctor|hospital|disease|patients?|"
+    r"\b(is it safe|safe to|should (i|we|you|people|residents|they)|stay indoors|"
+    r"wear (?:an? |\w+ )?masks?|(?:face|n95|surgical) masks?|masks? (?:help|work|protect)\w*|"
+    r"asthma\w*|medic\w*|medicine|symptom\w*|doctor|hospital|disease|patients?|"
     r"pregnan\w*|health\w*|unhealthy|hazardous|dangerous|harmful)\b",
     _I,
 )
@@ -35,7 +36,9 @@ _CAUSE = re.compile(
 # A cause word about missing data or methods ("blocked because the dataset is unavailable")
 # is not a claim about what caused an observation.
 _AVAILABILITY = re.compile(
-    r"\b(unavailab\w*|not available|not implemented|not pinned|approval|missing|no data)\b", _I
+    r"\b(unavailab\w*|not available|not implemented|not pinned|approval|missing|no data|"
+    r"insufficient|quality gate|valid-data gate)\b",
+    _I,
 )
 _CLAUSE_CHARS = 80
 _FORECAST_CLAIM = re.compile(
