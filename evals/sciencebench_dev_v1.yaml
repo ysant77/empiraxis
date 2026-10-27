@@ -63,12 +63,23 @@ scenarios:
   - id: SB-05
     priority: P0
     title: Burned-area computation (MCD64A1)
-    status: blocked_unrun
-    blocked_reason: Data pinned and burned_area_summary verified; the agent cannot yet submit typed burned-area claims.
+    status: ready
     question: >-
-      For a bounded Kalimantan area and an agreed month in 2015, how many hectares were
-      mapped as burned in MCD64A1, after quality checks?
+      For the registered Kalimantan 2015 study area and September 2015, how many hectares
+      were mapped as burned in MCD64A1, after quality checks?
     expected: verified_claims
+    area_requirements:
+      - {case_id: kalimantan-2015-burned-area, month: "2015-09", quantity: burned_area_ha}
+
+  - id: SB-05b
+    priority: P0
+    title: Burned-area computation when valid data are too sparse
+    status: ready
+    question: >-
+      For the registered Kalimantan 2015 study area and October 2015, how many hectares
+      were mapped as burned in MCD64A1, after quality checks?
+    expected: abstain
+    reason_codes: [insufficient_valid_data]
 
   - id: SB-06
     priority: P0

@@ -110,6 +110,26 @@ def _provenance_lines(result: dict[str, Any]) -> list[str]:
     ]
 
 
+def _area_table(rows: list[dict[str, Any]]) -> list[str]:
+    """Burned-area claims with every verdict: supported, contradicted or insufficient_data."""
+    if not rows:
+        return []
+    lines = [
+        "## Burned-area findings (MCD64A1, independent verifier)",
+        "",
+        "| ID | Case | Month (UTC) | Quantity | Claimed | Recomputed | Verdict | Reason | Source |",
+        "|---|---|---|---|---|---|---|---|---|",
+    ]
+    for r in rows:
+        source = f"`{r['source_sha256'][:12]}`" if r.get("source_sha256") else ""
+        lines.append(
+            f"| {r['id']} | {r['case_id']} | {r['month']} | {r['quantity']} | {r['value']:g} "
+            f"{r['unit']} | {'' if r['observed'] is None else r['observed']} | "
+            f"**{r['verdict']}** | {r['reason']} | {source} |"
+        )
+    return [*lines, ""]
+
+
 def render_report(result: dict[str, Any], chart_name: str | None = None) -> str:
     rounds: list[list[dict[str, Any]]] = result["rounds"]
     rejected = [r for rnd in rounds for r in rnd if r["verdict"] != "supported"]
@@ -123,6 +143,7 @@ def render_report(result: dict[str, Any], chart_name: str | None = None) -> str:
         "## Findings (verified claims)",
         "",
         *_findings_table(result.get("findings", [])),
+        *_area_table(result.get("area_findings", [])),
         *_interpretation_lines(result),
         "## Rejected claims (all submissions)",
         "",

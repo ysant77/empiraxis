@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Any
 
+from earthlab.agent.area_findings import SUBMIT_AREA_TOOL, AreaLedger
 from earthlab.agent.budget import Budget, BudgetMeter, BudgetStop, prompt_bytes
 from earthlab.agent.findings import SUBMIT_TOOL, FindingsLedger
 from earthlab.agent.limitations import DECLARE_TOOL, LimitationArgs, LimitationLog
@@ -84,6 +85,10 @@ class Investigation:
     answer_issues: tuple[str, ...] = ()
     skipped_tool_calls: int = 0
     limitations: tuple[LimitationArgs, ...] = ()
+    area_ledger: AreaLedger = field(default_factory=AreaLedger)
+
+
+_SUBMIT_TOOLS = (SUBMIT_TOOL, SUBMIT_AREA_TOOL)
 
 
 def _assistant_message(resp: ChatResponse) -> dict[str, Any]:
@@ -110,6 +115,7 @@ class Investigator:
         answer_gate: AnswerGate | None = None,
         clock: Callable[[], float] = time.monotonic,
         limitations: LimitationLog | None = None,
+        area_ledger: AreaLedger | None = None,
     ):
         self._client = client
         self._registry = registry
@@ -120,6 +126,7 @@ class Investigator:
         self._reasoning = reasoning
         self._answer_gate = answer_gate
         self._limitations = limitations or LimitationLog()
+        self._area = area_ledger or AreaLedger()
 
     def run(self, question: str) -> Investigation:
         cfg = self._client.config
@@ -205,7 +212,8 @@ class Investigator:
     def _audit_answer(self, state: RunState) -> AnswerAudit | None:
         if not state.answer:
             return None
-        audit = audit_answer(state.answer, self._ledger.latest_by_id())
+        area_ok = {i for i, r in self._area.latest_by_id().items() if r in self._area.supported()}
+        audit = audit_answer(state.answer, self._ledger.latest_by_id(), area_ok)
         outcome = "supported" if audit.passed else "unsupported"
         self._metrics.record_verification(Check.ANSWER.value, outcome)
         self._trace.append("answer_audit", "verifier", **audit.model_dump(mode="json"))
@@ -233,7 +241,7 @@ class Investigator:
 
     def _settle_text_turn(self, state: RunState, resp: ChatResponse) -> bool:
         """Return True when the run should end after a turn without tool calls."""
-        if state.finalising or self._ledger.rounds:
+        if state.finalising or self._ledger.rounds or self._area.rounds:
             state.answer = resp.content.strip()
             state.stop_reason = state.stop_reason or "final answer given"
             return True
@@ -304,13 +312,13 @@ class Investigator:
         """Check the limits before each call in the batch; skip, never run, the rest."""
         for call in calls:
             self._metrics.record_tool(call.name, "requested")
-            reason = self._meter.check_tool_call(call.name == SUBMIT_TOOL)
+            reason = self._meter.check_tool_call(call.name in _SUBMIT_TOOLS)
             if reason is not None:
                 self._skip_tool_call(state, call, reason)
                 continue
             self._meter.tool_calls += 1
             result = self._registry.execute(call.name, call.arguments)
-            if call.name == SUBMIT_TOOL and result.outcome is ToolOutcome.EXECUTED:
+            if call.name in _SUBMIT_TOOLS and result.outcome is ToolOutcome.EXECUTED:
                 self._meter.submissions += 1
             self._metrics.record_tool(call.name, result.outcome.value)
             if result.data is not None:
@@ -327,8 +335,8 @@ class Investigator:
             state.messages.append(
                 {"role": "tool", "tool_call_id": call.id, "content": result.for_model()}
             )
-            if call.name == SUBMIT_TOOL and result.outcome is ToolOutcome.EXECUTED:
-                self._after_submission(state)
+            if call.name in _SUBMIT_TOOLS and result.outcome is ToolOutcome.EXECUTED:
+                self._after_submission(state, call.name)
             if call.name == DECLARE_TOOL and result.outcome is ToolOutcome.EXECUTED:
                 state.finalising = True
                 state.stop_reason = state.stop_reason or "limitation declared"
@@ -342,10 +350,16 @@ class Investigator:
             {"role": "tool", "tool_call_id": call.id, "content": f"not run: {reason}"}
         )
 
-    def _after_submission(self, state: RunState) -> None:
-        for verdict in self._ledger.latest:
+    def _all_supported(self) -> bool:
+        """Every ledger with submissions is fully supported, and at least one has some."""
+        used = [led for led in (self._ledger, self._area) if led.rounds]
+        return bool(used) and all(led.all_supported() for led in used)
+
+    def _after_submission(self, state: RunState, tool: str) -> None:
+        latest = self._ledger.latest if tool == SUBMIT_TOOL else self._area.latest
+        for verdict in latest:
             self._metrics.record_verification(verdict.check.value, verdict.verdict.value)
-        if self._ledger.all_supported():
+        if self._all_supported():
             state.finalising = True
             state.messages.append({"role": "user", "content": FINAL_ANSWER})
         elif self._meter.submissions >= self._meter.budget.max_submissions:
@@ -364,9 +378,9 @@ class Investigator:
     def _status_after_stop(self, *, budget_hit: bool) -> RunStatus:
         if self._limitations.entries:
             return RunStatus.ABSTAINED
-        if self._ledger.all_supported():
+        if self._all_supported():
             return RunStatus.VERIFIED
-        if self._ledger.supported():
+        if self._ledger.supported() or self._area.supported():
             return RunStatus.PARTIAL
         return RunStatus.BUDGET_EXHAUSTED if budget_hit else RunStatus.NO_SUPPORTED_FINDINGS
 
@@ -400,6 +414,7 @@ class Investigator:
             answer_issues=issues,
             skipped_tool_calls=state.skipped_tool_calls,
             limitations=tuple(self._limitations.entries),
+            area_ledger=self._area,
         )
 
 

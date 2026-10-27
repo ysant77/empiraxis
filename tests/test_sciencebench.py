@@ -46,9 +46,20 @@ def supported(raw: dict[str, Any]) -> VerificationResult:
 
 def test_scenario_file_is_complete_and_honest() -> None:
     ids = [s.id for s in SCENARIOS]
-    assert len(ids) == len(set(ids)) == 21 and {f"SB-{i:02d}" for i in range(1, 21)} <= set(ids)
+    assert len(ids) == len(set(ids)) == 22 and {f"SB-{i:02d}" for i in range(1, 21)} <= set(ids)
     ready = {s.id for s in SCENARIOS if s.status == "ready"}
-    assert ready == {"SB-01", "SB-02", "SB-02b", "SB-03", "SB-04", "SB-06", "SB-08", "SB-16"}
+    assert ready == {
+        "SB-01",
+        "SB-02",
+        "SB-02b",
+        "SB-03",
+        "SB-04",
+        "SB-05",
+        "SB-05b",
+        "SB-06",
+        "SB-08",
+        "SB-16",
+    }
     assert all(s.blocked_reason for s in SCENARIOS if s.status == "blocked_unrun")
     text = (ROOT / "evals" / "sciencebench_dev_v1.yaml").read_text(encoding="utf-8")
     assert "value:" not in text  # no numeric gold answers are stored
@@ -69,8 +80,8 @@ def test_blocked_scenarios_are_listed_never_run(workspace: Workspace, tmp_path: 
     rows = [json.loads(line) for line in (tmp_path / "results.jsonl").read_text().splitlines()]
     blocked = {s.id for s in SCENARIOS if s.status == "blocked_unrun"}
     assert not blocked & {r["scenario_id"] for r in rows}
-    assert set(summary["blocked_unrun"]) == blocked and len(blocked) == 13
-    assert summary["arms"]["A"]["runs"] == 8 and summary["arms"]["A"]["false_verified"] == 0
+    assert set(summary["blocked_unrun"]) == blocked and len(blocked) == 12
+    assert summary["arms"]["A"]["runs"] == 10 and summary["arms"]["A"]["false_verified"] == 0
     assert rows[0]["meta"]["data_sha256"] == workspace.snapshot.sha256
 
 

@@ -24,6 +24,12 @@ How to work:
 Other tools:
 - assess_case reports whether a registered study case (for example a burned-area case)
   can run now, and every reason it cannot. It never downloads or approves anything.
+- burned_area_summary gives MCD64A1 mapped burned area (after QA) and the valid-data
+  fraction for one month of a registered case. submit_area_findings submits typed area
+  claims (case, month, burned_area_ha or valid_fraction); an independent verifier decides
+  them. If burned_area_summary shows that a month fails the valid-data gate, do not claim
+  its area: call declare_limitation with insufficient_valid_data. Area finding IDs look
+  like A1.1. Hotspot counts are never burned area.
 - declare_limitation records typed reasons when the question cannot be answered as
   asked: a required input is missing (for example a threshold: ask, do not choose one),
   the data or method is unavailable, or the question equates different quantities

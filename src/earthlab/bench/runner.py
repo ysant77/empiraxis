@@ -76,6 +76,7 @@ def agent_outcome(
     return Outcome(
         status=result.status.value,
         supported=result.ledger.supported(),
+        area_supported=result.area_ledger.supported(),
         rejected_claims=len(result.ledger.rejected()),
         reason_codes=sorted({c for entry in result.limitations for c in entry.reasons}),
         answer_issues=list(result.answer_issues),
