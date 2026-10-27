@@ -43,8 +43,11 @@ class ScriptedClient:
         *,
         max_tokens: int,
         temperature: float,
+        tool_choice: str = "auto",
     ) -> ChatResponse:
-        self.requests.append({"messages": list(messages), "tools": tools})
+        self.requests.append(
+            {"messages": list(messages), "tools": tools, "tool_choice": tool_choice}
+        )
         step = self._steps.pop(0) if self._steps else ("done", [])
         if isinstance(step, ProviderError):
             raise step
