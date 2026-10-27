@@ -40,6 +40,27 @@ class FindingsLedger:
     def supported(self) -> list[VerificationResult]:
         return [r for r in self.latest if r.verdict is Verdict.SUPPORTED]
 
+    def records(self, source_sha256: str) -> list[dict[str, Any]]:
+        """The latest submission as report rows; ID R<round>.<n> is stable for one run."""
+        number = len(self.rounds)
+        return [
+            {
+                "id": f"R{number}.{i}",
+                "kind": r.claim.kind.value,
+                "region": r.claim.region.value,
+                "start": r.claim.start.isoformat(),
+                "end": r.claim.end.isoformat(),
+                "value": r.claim.value,
+                "threshold": r.claim.threshold,
+                "unit": r.claim.unit,
+                "observed": r.observed,
+                "check": r.check.value,
+                "verdict": r.verdict.value,
+                "source_sha256": source_sha256,
+            }
+            for i, r in enumerate(self.latest, start=1)
+        ]
+
 
 def submit_findings_spec(verifier: Verifier, ledger: FindingsLedger) -> ToolSpec:
     def handle(args: SubmitArgs) -> dict[str, Any]:

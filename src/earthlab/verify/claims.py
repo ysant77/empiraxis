@@ -31,6 +31,7 @@ _NEEDS_VALUE = {
     ClaimKind.MISSING_HOURS,
     ClaimKind.HOURS_ABOVE,
 }
+_COUNTS = {ClaimKind.MISSING_HOURS, ClaimKind.HOURS_ABOVE}
 
 
 class Claim(Strict):
@@ -71,6 +72,10 @@ class Claim(Strict):
     @property
     def window(self) -> TimeWindow:
         return TimeWindow(start=self.start, end=self.end)
+
+    @property
+    def unit(self) -> str:
+        return "hours" if self.kind in _COUNTS else "ug/m3"
 
 
 class Verdict(StrEnum):

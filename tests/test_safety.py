@@ -141,7 +141,8 @@ def test_unsafe_final_answer_is_withheld_but_claims_stand(
         new_run_dir(tmp_path),
         guard=guard("safe", "safe"),
     )
-    assert result.status == RunStatus.VERIFIED and result.answer == WITHHELD
+    assert result.status == RunStatus.ANSWER_UNVERIFIED and result.answer == WITHHELD
+    assert "safety check withheld the text" in result.answer_issues[-1]
     question_check, answer_check = result.safety
     assert question_check.allowed and not answer_check.allowed
     assert answer_check.blocked_by == "scope_rules"

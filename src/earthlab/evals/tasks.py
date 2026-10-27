@@ -55,9 +55,13 @@ def load_tasks(path: Path) -> list[EvalTask]:
 
 
 def score(
-    task: EvalTask, arm: str, final: list[VerificationResult], rejected_total: int
+    task: EvalTask,
+    arm: str,
+    final: list[VerificationResult],
+    rejected_total: int,
+    answer_ok: bool = True,
 ) -> TaskScore:
-    """Verified success: every requirement met and no rejected claim in the final answer."""
+    """Verified success: every requirement met, no rejected final claim, a verified text."""
     met = sum(1 for req in task.requirements if any(req.met_by(r) for r in final))
     rejected_final = sum(1 for r in final if r.verdict is not Verdict.SUPPORTED)
     return TaskScore(
@@ -66,5 +70,5 @@ def score(
         required=len(task.requirements),
         met=met,
         rejected_claims=rejected_total,
-        verified_success=met == len(task.requirements) and rejected_final == 0,
+        verified_success=met == len(task.requirements) and rejected_final == 0 and answer_ok,
     )

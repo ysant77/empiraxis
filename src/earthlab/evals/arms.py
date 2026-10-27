@@ -11,6 +11,7 @@ from typing import Any
 from pydantic import ValidationError
 
 from earthlab.agent.budget import Budget
+from earthlab.agent.loop import RunStatus
 from earthlab.evals.tasks import EvalTask, Requirement
 from earthlab.llm.client import ChatClient
 from earthlab.llm.types import ProviderError
@@ -36,6 +37,7 @@ class ArmOutcome:
     rejected_total: int
     seconds: float
     detail: dict[str, Any]
+    answer_ok: bool = True
 
 
 def agent_arm(
@@ -47,6 +49,7 @@ def agent_arm(
         rejected_total=len(result.ledger.rejected()),
         seconds=result.seconds,
         detail={"status": result.status.value, "turns": result.turns, "run_dir": str(run_dir)},
+        answer_ok=result.status is not RunStatus.ANSWER_UNVERIFIED,
     )
 
 

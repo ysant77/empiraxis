@@ -86,6 +86,11 @@ def build_guard(providers: Path, name: str) -> LlamaGuard | None:
     return LlamaGuard(RawCompletionClient(config), config.logical_model)
 
 
+def exit_code(status: str) -> int:
+    """0 only when the claims and the final text both passed; 2 for every other outcome."""
+    return 0 if status in ("verified", "partial") else 2
+
+
 def cmd_investigate(args: argparse.Namespace) -> int:
     config = load_providers(args.providers)[args.provider]
     client = build_client(config)
@@ -110,7 +115,9 @@ def cmd_investigate(args: argparse.Namespace) -> int:
     )
     report = write_report(run_dir, args.data_dir)
     print(f"\n{result.answer}\n\nreport: {report}")
-    return 0 if result.status.value in ("verified", "partial") else 2
+    for issue in result.answer_issues:
+        print(f"answer not verified: {issue}")
+    return exit_code(result.status.value)
 
 
 def cmd_replay(args: argparse.Namespace) -> int:

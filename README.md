@@ -27,8 +27,9 @@ flowchart LR
 4. The model submits typed claims (`peak_region`, `region_max`, `region_mean`, `missing_hours`, `hours_above`). It cannot mark its own claims as true.
 5. The verifier re-reads the raw file with a separate parser, re-checks the hash and recomputes each claim. It also rejects causal, forecast, health, station and PSI/AQI language.
 6. The model must correct or drop rejected claims. Turn, tool-call, submission, time and cost limits are enforced in code.
-7. An answer audit checks every number in the final prose. A number must appear in a tool result, a submitted claim or the question. The safety gate then checks the final answer.
-8. Each run writes `trace.jsonl` (hash-chained), `result.json`, `report.md` and a chart. `earthlab replay` re-checks a run without a model or GPU.
+7. An answer audit checks the final prose sentence by sentence. Each number must equal the value or threshold of a supported claim, and the region named with it must be that claim's region. A number seen only in a tool result does not count. Numbers from the question count as a hypothesis under test. The scope rules and the safety gate then check the text.
+8. The status is `verified` only when every claim is supported and the final text passes all of step 7. If the claims pass but the text fails, the status is `answer_unverified`, and the CLI exits with code 2. The report shows a **Findings** table built from the supported claims, then the model text under a separate **Interpretation** heading.
+9. Each run writes `trace.jsonl` (hash-chained), `result.json`, `report.md` and a chart. `earthlab replay` re-checks a run without a model or GPU.
 
 ## Safety gate
 

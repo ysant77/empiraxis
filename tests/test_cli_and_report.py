@@ -35,7 +35,8 @@ def test_report_and_replay_from_saved_run(
     run_dir = run_scripted(tmp_path)
     report = cli.write_report(run_dir, REPO_DATA)
     text = report.read_text(encoding="utf-8")
-    assert "**contradicted**" in text and "**supported**" in text
+    assert "**contradicted**" in text and "## Findings (verified claims)" in text
+    assert "_No supported findings._" not in text
     assert "pm25_hourly.png" in text and (run_dir / "pm25_hourly.png").stat().st_size > 1000
     assert "not health advice" in text.lower()
     assert cli.main(["--data-dir", str(REPO_DATA), "replay", str(run_dir)]) == 0

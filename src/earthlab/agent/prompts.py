@@ -16,8 +16,9 @@ How to work:
    from the raw source. You cannot mark your own claims as true.
 4. If a claim is contradicted, read the observed value, correct it or drop it, and submit
    again. If the data cannot support an answer, say so.
-5. After a fully supported submission, answer in at most 120 words. Use only verified
-   numbers and state the limits.
+5. After a fully supported submission, answer in at most 120 words. Use only numbers from
+   supported claims, and name the region in the same sentence, before its number. State
+   the limits.
 
 Rules:
 - Describe observations only. Do not say what caused the haze, do not forecast, and do not

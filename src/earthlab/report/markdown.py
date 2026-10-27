@@ -30,13 +30,46 @@ def _claims_table(rows: list[dict[str, Any]]) -> list[str]:
     return [*lines, ""]
 
 
-def _audit_lines(audit: dict[str, Any] | None) -> list[str]:
-    if audit is None:
-        return []
-    if not audit["ungrounded"]:
-        return [f"_Answer audit: all {audit['numbers_checked']} numbers trace to tool output._", ""]
-    numbers = ", ".join(f"{n:g}" for n in audit["ungrounded"])
-    return [f"**Answer audit: numbers not found in any tool output: {numbers}.**", ""]
+def _findings_table(rows: list[dict[str, Any]]) -> list[str]:
+    """Supported claims only, rendered from the ledger, never from model prose."""
+    supported = [r for r in rows if r["verdict"] == "supported"]
+    if not supported:
+        return ["_No supported findings._", ""]
+    lines = [
+        "| ID | Kind | Region | Window (SGT, end excluded) | Value | Unit | Check | Source |",
+        "|---|---|---|---|---|---|---|---|",
+    ]
+    for r in supported:
+        value = "" if r["value"] is None else f"{r['value']:g}"
+        if r["threshold"] is not None:
+            value += f" (above {r['threshold']:g})"
+        lines.append(
+            f"| {r['id']} | {r['kind']} | {r['region']} | {r['start']} to {r['end']} | "
+            f"{value or r['observed']} | {r['unit']} | {r['check']} | "
+            f"`{r['source_sha256'][:12]}` |"
+        )
+    return [*lines, ""]
+
+
+def _interpretation_lines(result: dict[str, Any]) -> list[str]:
+    lines = ["## Interpretation (model text)", ""]
+    issues: list[str] = result.get("answer_issues", [])
+    if issues:
+        lines += [
+            "**NOT VERIFIED.** This text failed the evidence check. Use the Findings table.",
+            "",
+            *[f"- {issue}" for issue in issues],
+            "",
+        ]
+    lines += [result["answer"] or "_The model gave no final answer._", ""]
+    audit = result.get("answer_audit")
+    if audit is not None and not issues:
+        lines += [
+            f"_Answer check: all {audit['numbers_checked']} numbers match a supported claim "
+            "for the same region._",
+            "",
+        ]
+    return lines
 
 
 def _safety_lines(decisions: list[dict[str, Any]]) -> list[str]:
@@ -78,8 +111,6 @@ def _provenance_lines(result: dict[str, Any]) -> list[str]:
 
 def render_report(result: dict[str, Any], chart_name: str | None = None) -> str:
     rounds: list[list[dict[str, Any]]] = result["rounds"]
-    latest = rounds[-1] if rounds else []
-    supported = [r for r in latest if r["verdict"] == "supported"]
     rejected = [r for rnd in rounds for r in rnd if r["verdict"] != "supported"]
     lines = [
         "# Axiom EarthLab evidence report",
@@ -88,14 +119,10 @@ def render_report(result: dict[str, Any], chart_name: str | None = None) -> str:
         "",
         f"**Status:** `{result['status']}` ({result['stop_reason']})",
         "",
-        "## Answer",
+        "## Findings (verified claims)",
         "",
-        result["answer"] or "_The model gave no final answer._",
-        "",
-        *_audit_lines(result.get("answer_audit")),
-        "## Verified claims (latest submission)",
-        "",
-        *_claims_table(supported),
+        *_findings_table(result.get("findings", [])),
+        *_interpretation_lines(result),
         "## Rejected claims (all submissions)",
         "",
         *_claims_table(rejected),

@@ -6,6 +6,7 @@ limits each call, and only the deterministic verifier decides whether a claim st
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Any
@@ -16,16 +17,19 @@ from earthlab.agent.prompts import FINAL_ANSWER, NUDGE_SUBMIT, system_prompt
 from earthlab.llm.client import ChatClient
 from earthlab.llm.types import ChatResponse, ProviderError, ToolCall
 from earthlab.metrics import EarthlabMetrics
-from earthlab.safety.gate import SafetyDecision
+from earthlab.safety.gate import WITHHELD, SafetyDecision
 from earthlab.tools.registry import ToolOutcome, ToolRegistry
 from earthlab.trace import RunTrace
 from earthlab.verify.answer_audit import AnswerAudit, audit_answer
 from earthlab.verify.claims import Check
 
+AnswerGate = Callable[[str, str], SafetyDecision]
+
 
 class RunStatus(StrEnum):
     VERIFIED = "verified"
     PARTIAL = "partial"
+    ANSWER_UNVERIFIED = "answer_unverified"
     NO_SUPPORTED_FINDINGS = "no_supported_findings"
     BUDGET_EXHAUSTED = "budget_exhausted"
     PROVIDER_ERROR = "provider_error"
@@ -63,6 +67,7 @@ class Investigation:
     completion_tokens: int
     answer_audit: AnswerAudit | None = None
     safety: tuple[SafetyDecision, ...] = ()
+    answer_issues: tuple[str, ...] = ()
 
 
 def _assistant_message(resp: ChatResponse) -> dict[str, Any]:
@@ -86,6 +91,7 @@ class Investigator:
         trace: RunTrace,
         budget: Budget | None = None,
         reasoning: str = "medium",
+        answer_gate: AnswerGate | None = None,
     ):
         self._client = client
         self._registry = registry
@@ -94,6 +100,7 @@ class Investigator:
         self._trace = trace
         self._meter = BudgetMeter(budget or Budget())
         self._reasoning = reasoning
+        self._answer_gate = answer_gate
 
     def run(self, question: str) -> Investigation:
         cfg = self._client.config
@@ -117,32 +124,47 @@ class Investigator:
             status = self._loop(state)
         finally:
             self._metrics.active.dec()
-        self._metrics.investigations.labels(status.value).inc()
         audit = self._audit_answer(question, state)
-        result = self._result(status, state, audit)
+        decision = self._gate_answer(question, state)
+        issues = _answer_issues(audit, decision)
+        if issues and status in (RunStatus.VERIFIED, RunStatus.PARTIAL):
+            status = RunStatus.ANSWER_UNVERIFIED
+        self._metrics.investigations.labels(status.value).inc()
+        result = self._result(status, state, audit, decision, issues)
         self._trace.append(
             "finish",
             "runtime",
             status=status.value,
             reason=state.stop_reason,
             answer=state.answer,
+            answer_issues=list(issues),
             turns=result.turns,
             cost_usd=result.cost_usd,
         )
         return result
 
+    def _gate_answer(self, question: str, state: RunState) -> SafetyDecision | None:
+        """Run the safety gate on the final text; a blocked text is replaced, never shown."""
+        if self._answer_gate is None or not state.answer:
+            return None
+        decision = self._answer_gate(question, state.answer)
+        if not decision.allowed:
+            state.answer = WITHHELD
+        return decision
+
     def _audit_answer(self, question: str, state: RunState) -> AnswerAudit | None:
         if not state.answer:
             return None
-        claims = [r.claim.model_dump(mode="json") for rnd in self._ledger.rounds for r in rnd]
-        audit = audit_answer(state.answer, [*state.evidence, *claims], question)
-        outcome = "supported" if audit.grounded else "unsupported"
+        audit = audit_answer(state.answer, self._ledger.supported(), question)
+        outcome = "supported" if audit.passed else "unsupported"
         self._metrics.record_verification(Check.ANSWER.value, outcome)
         self._trace.append(
             "answer_audit",
             "verifier",
             numbers_checked=audit.numbers_checked,
             ungrounded=list(audit.ungrounded),
+            misattributed=list(audit.misattributed),
+            language=audit.language,
         )
         return audit
 
@@ -277,7 +299,12 @@ class Investigator:
         return RunStatus.BUDGET_EXHAUSTED if budget_hit else RunStatus.NO_SUPPORTED_FINDINGS
 
     def _result(
-        self, status: RunStatus, state: RunState, audit: AnswerAudit | None
+        self,
+        status: RunStatus,
+        state: RunState,
+        audit: AnswerAudit | None,
+        decision: SafetyDecision | None,
+        issues: tuple[str, ...],
     ) -> Investigation:
         cfg = self._client.config
         priced = cfg.usd_per_mtok_input is not None and cfg.usd_per_mtok_output is not None
@@ -297,4 +324,14 @@ class Investigator:
             prompt_tokens=state.prompt_tokens,
             completion_tokens=state.completion_tokens,
             answer_audit=audit,
+            safety=() if decision is None else (decision,),
+            answer_issues=issues,
         )
+
+
+def _answer_issues(audit: AnswerAudit | None, decision: SafetyDecision | None) -> tuple[str, ...]:
+    """Why the final text cannot be called verified; empty when it can."""
+    issues = [] if audit is None else audit.problems()
+    if decision is not None and not decision.allowed:
+        issues.append(f"safety check withheld the text: {decision.reason}")
+    return tuple(issues)
