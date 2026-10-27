@@ -224,7 +224,21 @@ CI runs the same checks, a dependency audit and a gitleaks secret scan of every 
 | `src/earthlab/agent/` | Budget, prompts, findings ledger, investigation loop |
 | `src/earthlab/report/` | Chart and Markdown evidence report |
 | `src/earthlab/metrics.py`, `trace.py`, `digest.py` | Prometheus metrics, hash-chained run trace, SHA-256 digests |
+| `src/earthlab/cases/` | Typed case contracts, method catalogue, feasibility check, case loader |
+| `config/cases/` | Case files: the working NEA case and two burned-area cases (draft, blocked) |
 | `data/nea/` | Pinned NEA snapshot, manifest and data card |
+
+## Scientific cases
+
+A case binds one question to one study area, one period, named source assets and one method from a small catalogue. `assess` reports whether the method can run now: `feasible`, `needs_approval` (a download a human must approve), `not_implemented`, or `blocked` with every reason. It checks variable match, time and space coverage, CRS, quality-flag policy and period length. Some data never substitute for others: active-fire detections are not burned area, and land-surface temperature is not 2 m air temperature.
+
+| Case file | Result today |
+| --- | --- |
+| `nea-2015-haze.yaml` | `feasible`. The asset comes from the pinned NEA manifest. |
+| `kalimantan-2015-burned-area.yaml` | `needs_approval`. MCD64A1 and FIRMS are registered, not downloaded; the burned-area method is not implemented yet. The study area is a draft. |
+| `uttarakhand-2024-burned-area.yaml` | `blocked`. Coverage, QA and licence for this area and period are not verified. Same method and code path as the Indonesia case. |
+
+An evidence claim keeps observation support apart from causal status. Causal status can only be `not_requested`, `not_established` or `insufficient_data`; no "established" value exists. Human approvals (download, hosted spend, sandbox execution, publish) are scoped by asset IDs, bytes or USD, expire, and cannot be created by any model tool. The agent does not use these contracts yet.
 
 ## Limitations
 

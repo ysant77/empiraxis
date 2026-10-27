@@ -1,0 +1,37 @@
+# BLOCKED transfer case. Same method and code path as the Indonesia case; only the area,
+# period, time zone and assets differ. Archive coverage, QA and licence for this area and
+# period are not verified yet, so the asset is marked unavailable. The case must report
+# that it is blocked, not invent a result.
+case:
+  case_id: uttarakhand-2024-burned-area
+  title: Mapped burned area, Uttarakhand, April-May 2024 (blocked)
+  question: How much area did MODIS map as burned in the study area in April and May 2024?
+  area:
+    area_id: uttarakhand-draft
+    name: Uttarakhand draft box
+    bbox: {min_lon: 77.5, min_lat: 28.7, max_lon: 81.1, max_lat: 31.5}
+  period:  # MCD64A1 months are UTC calendar months; labels use local time (IST)
+    start: "2024-04-01T00:00:00Z"
+    end: "2024-06-01T00:00:00Z"
+    local_zone: Asia/Kolkata
+  variable: burned_area
+  asset_ids: [mcd64a1-061-uttarakhand-2024]
+  method_id: mcd64a1_burned_area
+assets:
+  - asset_id: mcd64a1-061-uttarakhand-2024
+    product: MODIS/061/MCD64A1
+    version: "6.1"
+    provider: NASA LP DAAC (via Google Earth Engine)
+    variable: burned_area
+    units: BurnDate (day of year); area computed in ha
+    licence: NASA Earth science data, no restrictions on use
+    licence_url: https://www.earthdata.nasa.gov/engage/open-data-services-software-policies/data-use-guidance
+    url: https://developers.google.com/earth-engine/datasets/catalog/MODIS_061_MCD64A1
+    availability: unavailable
+    crs: SR-ORG:6974
+    resolution_m: 463.3127
+    coverage: {start: "2024-04-01T00:00:00Z", end: "2024-06-01T00:00:00Z", local_zone: UTC}
+    extent: {min_lon: 77.5, min_lat: 28.7, max_lon: 81.1, max_lat: 31.5}
+    quality_policy: QA bits per the MCD64A1 C6.1 user guide; unmapped and water pixels excluded
+    limitations:
+      - Not verified for this case; no burned-area value may be reported.
