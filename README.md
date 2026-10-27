@@ -26,7 +26,8 @@ flowchart LR
 3. The model submits typed claims (`peak_region`, `region_max`, `region_mean`, `missing_hours`, `hours_above`). It cannot mark its own claims as true.
 4. The verifier re-reads the raw file with a separate parser, re-checks the hash and recomputes each claim. It also rejects causal, forecast, health, station and PSI/AQI language.
 5. The model must correct or drop rejected claims. Turn, tool-call, submission, time and cost limits are enforced in code.
-6. Each run writes `trace.jsonl` (hash-chained), `result.json`, `report.md` and a chart. `earthlab replay` re-checks a run without a model or GPU.
+6. An answer audit checks every number in the final prose. A number must appear in a tool result, a submitted claim or the question.
+7. Each run writes `trace.jsonl` (hash-chained), `result.json`, `report.md` and a chart. `earthlab replay` re-checks a run without a model or GPU.
 
 ## Quick start
 
@@ -62,7 +63,7 @@ uv run earthlab replay runs/<run-id>
 Or open the demo UI:
 
 ```bash
-uv run --extra ui streamlit run src/earthlab/ui/app.py
+uv run --extra ui streamlit run src/earthlab/ui/app.py --server.address 127.0.0.1
 ```
 
 ### Measured on the development Mac (MacBook Air M5, 32 GB)
@@ -103,6 +104,18 @@ Totals: 6 turns, 5 tool calls, 394 s wall time, 19,578 input and 1,284 output to
 uv run earthlab eval --arms scripted                     # no model needed
 uv run earthlab eval --arms agent,no_tools,scripted      # needs a model endpoint
 ```
+
+### First evaluation (27 October 2026, `local-glimmer`, 5 tasks, 1 repeat)
+
+| Arm | Verified success | Requirements met | Rejected claims | Wall time per task |
+| --- | --- | --- | --- | --- |
+| `agent` | 5/5 | 6/6 | 0 | 125–291 s (3–5 turns) |
+| `no_tools` | 1/5 | 1/6 | 1 | 144–382 s (1 call) |
+| `scripted` | 5/5 | 6/6 | 0 | < 1 s |
+
+- Without tools, the model gave a wrong count for west hours above 200 (contradicted). It passed only the missing-hours task, where the answer is 0.
+- Three `no_tools` replies did not parse as claims. This run did not record the reply text, so the cause (format or token limit) is not known. Later runs record it.
+- Five tasks and one repeat are a smoke test. The numbers describe this run only.
 
 A task counts as verified success only when every requirement is met by a supported claim and no rejected claim remains. The scripted arm meets 6 of 6 requirements by design: these fixed tasks are solvable without an agent. The agent's value is that it reads a free-text question, chooses the steps and recovers from rejected claims. Small samples are descriptive only.
 
