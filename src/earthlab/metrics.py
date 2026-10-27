@@ -26,56 +26,38 @@ class EarthlabMetrics:
     ):
         self.registry = registry or CollectorRegistry()
         self._tool_names = tool_names or set()
-        r = self.registry
-        self.inference_requests = Counter(
-            "earthlab_inference_requests",
-            "Provider requests, including errors",
-            ["provider", "model", "outcome"],
-            registry=r,
+        self.inference_requests = self._counter(
+            "inference_requests", "Provider requests, including errors", "provider model outcome"
         )
         self.inference_duration = Histogram(
             "earthlab_inference_duration_seconds",
             "Wall time of one provider request",
             ["provider", "model"],
             buckets=DURATION_BUCKETS,
-            registry=r,
+            registry=self.registry,
         )
-        self.inference_tokens = Counter(
-            "earthlab_inference_tokens",
-            "Tokens reported by the provider",
-            ["provider", "model", "direction"],
-            registry=r,
+        self.inference_tokens = self._counter(
+            "inference_tokens", "Tokens reported by the provider", "provider model direction"
         )
-        self.estimated_cost = Counter(
-            "earthlab_inference_estimated_cost_usd",
-            "Estimate from a dated price table, not a bill",
-            ["provider", "model"],
-            registry=r,
+        self.estimated_cost = self._counter(
+            "inference_estimated_cost_usd", "Estimate from a dated price table", "provider model"
         )
-        self.tools = Counter(
-            "earthlab_tools", "Tool calls by outcome", ["tool", "outcome"], registry=r
+        self.tools = self._counter("tools", "Tool calls by outcome", "tool outcome")
+        self.verifications = self._counter(
+            "verifications", "Deterministic verifier verdicts", "check outcome"
         )
-        self.verifications = Counter(
-            "earthlab_verifications",
-            "Deterministic verifier verdicts",
-            ["check", "outcome"],
-            registry=r,
+        self.data_qa_issues = self._counter(
+            "data_qa_issues", "Data-quality issues found at load", "source category"
         )
-        self.data_qa_issues = Counter(
-            "earthlab_data_qa_issues",
-            "Data-quality issues found at load",
-            ["source", "category"],
-            registry=r,
-        )
-        self.investigations = Counter(
-            "earthlab_investigations",
-            "Finished investigations by outcome",
-            ["outcome"],
-            registry=r,
+        self.investigations = self._counter(
+            "investigations", "Finished investigations by outcome", "outcome"
         )
         self.active = Gauge(
-            "earthlab_active_investigations", "Investigations in progress", registry=r
+            "earthlab_active_investigations", "Investigations in progress", registry=self.registry
         )
+
+    def _counter(self, name: str, documentation: str, labels: str) -> Counter:
+        return Counter(f"earthlab_{name}", documentation, labels.split(), registry=self.registry)
 
     def tool_label(self, name: str) -> str:
         return name if name in self._tool_names else UNKNOWN
