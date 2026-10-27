@@ -160,7 +160,10 @@ def _area_table(rows: list[dict[str, Any]]) -> list[str]:
     return [*lines, ""]
 
 
-def render_report(result: dict[str, Any], chart_name: str | None = None) -> str:
+def render_report(
+    result: dict[str, Any], chart_name: str | None = None, maps: dict[str, str] | None = None
+) -> str:
+    """maps: month -> image file name of a burned-area quick-look map in the run folder."""
     rounds: list[list[dict[str, Any]]] = result["rounds"]
     rejected = [r for rnd in rounds for r in rnd if r["verdict"] != "supported"]
     lines = [
@@ -175,6 +178,7 @@ def render_report(result: dict[str, Any], chart_name: str | None = None) -> str:
         *_findings_table(result.get("findings", [])),
         *_area_table(result.get("area_findings", [])),
         *check_lines(result.get("evidence")),
+        *[f"![Burned-area map {month}]({name})\n" for month, name in (maps or {}).items()],
         *declared_lines(result.get("limitations", [])),
         *_interpretation_lines(result),
         "## Rejected claims (all submissions)",

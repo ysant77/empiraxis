@@ -10,6 +10,7 @@ from fake_client import ScriptedClient, call, say
 
 from earthlab import cli
 from earthlab.report.markdown import render_report
+from earthlab.report.write import write_report
 from earthlab.runtime import investigate, new_run_dir, open_workspace
 
 HAZE = {"start": "2015-09-01T00:00", "end": "2015-11-01T00:00"}
@@ -33,7 +34,7 @@ def test_report_and_replay_from_saved_run(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     run_dir = run_scripted(tmp_path)
-    report = cli.write_report(run_dir, REPO_DATA)
+    report = write_report(run_dir, REPO_DATA)
     text = report.read_text(encoding="utf-8")
     assert "**contradicted**" in text and "## Findings (verified claims)" in text
     assert "_No supported findings._" not in text
