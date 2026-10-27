@@ -14,7 +14,14 @@ from typing import Any
 
 from earthlab.agent.budget import Budget, BudgetMeter, BudgetStop, prompt_bytes
 from earthlab.agent.findings import SUBMIT_TOOL, FindingsLedger
-from earthlab.agent.prompts import FINAL_ANSWER, NUDGE_SUBMIT, REVISE_ANSWER, system_prompt
+from earthlab.agent.limitations import DECLARE_TOOL, LimitationArgs, LimitationLog
+from earthlab.agent.prompts import (
+    FINAL_AFTER_LIMITATION,
+    FINAL_ANSWER,
+    NUDGE_SUBMIT,
+    REVISE_ANSWER,
+    system_prompt,
+)
 from earthlab.llm.client import ChatClient
 from earthlab.llm.types import ChatResponse, ProviderError, ToolCall
 from earthlab.metrics import EarthlabMetrics
@@ -31,13 +38,14 @@ class RunStatus(StrEnum):
     VERIFIED = "verified"
     PARTIAL = "partial"
     ANSWER_UNVERIFIED = "answer_unverified"
+    ABSTAINED = "abstained"
     NO_SUPPORTED_FINDINGS = "no_supported_findings"
     BUDGET_EXHAUSTED = "budget_exhausted"
     PROVIDER_ERROR = "provider_error"
     REFUSED = "refused"
 
 
-_ANSWERED = (RunStatus.VERIFIED, RunStatus.PARTIAL)
+_ANSWERED = (RunStatus.VERIFIED, RunStatus.PARTIAL, RunStatus.ABSTAINED)
 
 
 @dataclass
@@ -75,6 +83,7 @@ class Investigation:
     safety: tuple[SafetyDecision, ...] = ()
     answer_issues: tuple[str, ...] = ()
     skipped_tool_calls: int = 0
+    limitations: tuple[LimitationArgs, ...] = ()
 
 
 def _assistant_message(resp: ChatResponse) -> dict[str, Any]:
@@ -100,6 +109,7 @@ class Investigator:
         reasoning: str = "medium",
         answer_gate: AnswerGate | None = None,
         clock: Callable[[], float] = time.monotonic,
+        limitations: LimitationLog | None = None,
     ):
         self._client = client
         self._registry = registry
@@ -109,6 +119,7 @@ class Investigator:
         self._meter = BudgetMeter(budget or Budget(), clock)
         self._reasoning = reasoning
         self._answer_gate = answer_gate
+        self._limitations = limitations or LimitationLog()
 
     def run(self, question: str) -> Investigation:
         cfg = self._client.config
@@ -318,6 +329,10 @@ class Investigator:
             )
             if call.name == SUBMIT_TOOL and result.outcome is ToolOutcome.EXECUTED:
                 self._after_submission(state)
+            if call.name == DECLARE_TOOL and result.outcome is ToolOutcome.EXECUTED:
+                state.finalising = True
+                state.stop_reason = state.stop_reason or "limitation declared"
+                state.messages.append({"role": "user", "content": FINAL_AFTER_LIMITATION})
 
     def _skip_tool_call(self, state: RunState, call: ToolCall, reason: str) -> None:
         self._metrics.record_tool(call.name, "skipped")
@@ -347,6 +362,8 @@ class Investigator:
             )
 
     def _status_after_stop(self, *, budget_hit: bool) -> RunStatus:
+        if self._limitations.entries:
+            return RunStatus.ABSTAINED
         if self._ledger.all_supported():
             return RunStatus.VERIFIED
         if self._ledger.supported():
@@ -382,6 +399,7 @@ class Investigator:
             safety=() if decision is None else (decision,),
             answer_issues=issues,
             skipped_tool_calls=state.skipped_tool_calls,
+            limitations=tuple(self._limitations.entries),
         )
 
 

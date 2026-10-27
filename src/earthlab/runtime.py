@@ -12,7 +12,9 @@ from typing import Any
 
 from earthlab.agent.budget import Budget
 from earthlab.agent.findings import FindingsLedger, submit_findings_spec
+from earthlab.agent.limitations import LimitationLog, declare_limitation_spec
 from earthlab.agent.loop import Investigation, Investigator, RunStatus
+from earthlab.cases.tools import CaseLibrary, assess_case_spec
 from earthlab.contracts import SourceSnapshot
 from earthlab.data.nea_pm25 import Pm25Dataset, load_pm25
 from earthlab.data.snapshot import open_snapshot
@@ -34,21 +36,38 @@ class Workspace:
     snapshot: SourceSnapshot
     dataset: Pm25Dataset
     verifier: Verifier
+    cases: CaseLibrary | None = None
 
 
-def open_workspace(data_dir: Path) -> Workspace:
+def open_workspace(data_dir: Path, cases_dir: Path | None = None) -> Workspace:
+    """Open the pinned NEA data and, when present, the case files in config/cases.
+
+    The default case folder sits two levels above the data folder (repo/data/nea ->
+    repo/config/cases); manifest paths in case files are relative to that repo root.
+    """
     snapshot, path = open_snapshot(data_dir)
+    root = data_dir.resolve().parents[1]
+    cases_dir = cases_dir or root / "config" / "cases"
+    cases = (
+        CaseLibrary.load(cases_dir, cases_dir.resolve().parents[1]) if cases_dir.is_dir() else None
+    )
     return Workspace(
         snapshot=snapshot,
         dataset=load_pm25(path, snapshot),
         verifier=Verifier(IndependentSource.from_file(path, snapshot.sha256)),
+        cases=cases,
     )
 
 
-def build_registry(workspace: Workspace, ledger: FindingsLedger) -> ToolRegistry:
+def build_registry(
+    workspace: Workspace, ledger: FindingsLedger, limitations: LimitationLog | None = None
+) -> ToolRegistry:
     registry = ToolRegistry()
     Pm25Toolset(workspace.dataset).register(registry)
     registry.register(submit_findings_spec(workspace.verifier, ledger))
+    registry.register(declare_limitation_spec(limitations or LimitationLog()))
+    if workspace.cases is not None:
+        registry.register(assess_case_spec(workspace.cases))
     return registry
 
 
@@ -73,7 +92,8 @@ def investigate(
 ) -> Investigation:
     """Gate the question, run the agent, then gate the final answer before saving."""
     ledger = FindingsLedger()
-    registry = build_registry(workspace, ledger)
+    limitations = LimitationLog()
+    registry = build_registry(workspace, ledger, limitations)
     metrics = metrics or EarthlabMetrics(tool_names=set(registry.names()))
     metrics.record_qa(SOURCE_LABEL, workspace.dataset.issue_counts())
     trace = RunTrace(run_dir / "trace.jsonl", listener)
@@ -92,6 +112,7 @@ def investigate(
             budget=budget,
             reasoning=reasoning,
             answer_gate=gate.check_answer,
+            limitations=limitations,
         )
         result = investigator.run(question)
         result = replace(result, safety=(asked, *result.safety))
@@ -155,6 +176,7 @@ def result_payload(
         if result.answer_audit is None
         else result.answer_audit.model_dump(mode="json"),
         "findings": result.ledger.records(snapshot.sha256),
+        "limitations": [entry.model_dump(mode="json") for entry in result.limitations],
         "rounds": [[r.model_dump(mode="json") for r in rnd] for rnd in result.ledger.rounds],
     }
 

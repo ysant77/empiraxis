@@ -330,9 +330,24 @@ def test_approval_scope_rules() -> None:  # H2
 
 
 def test_no_tool_can_create_an_approval() -> None:  # H3
+    """No tool parameter can carry an approval; descriptions may mention one."""
     registry = build_registry(open_workspace(REPO_DATA), FindingsLedger())
-    text = str(registry.schemas()).lower()
-    assert "approval" not in text and "approver" not in text
+
+    def names(node: Any) -> set[str]:
+        if isinstance(node, dict):
+            keys = (
+                set(node.get("properties", {}))
+                if isinstance(node.get("properties"), dict)
+                else set()
+            )
+            return keys | {n for v in node.values() for n in names(v)}
+        if isinstance(node, list):
+            return {n for v in node for n in names(v)}
+        return set()
+
+    fields = names([s["function"]["parameters"] for s in registry.schemas()])
+    assert fields and not {f for f in fields if "approv" in f.lower()}
+    assert "assess_case" in registry.names()
 
 
 # R2: every record is strict and frozen
