@@ -45,7 +45,7 @@ jobs:
         with:
           enable-cache: true
       - name: Install
-        run: uv sync --locked
+        run: uv sync --locked --all-extras
       - name: Lint
         run: uv run ruff check .
       - name: Format
@@ -69,7 +69,7 @@ jobs:
           fetch-depth: 0
       - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
       - name: Dependency audit
-        run: uvx pip-audit --strict -r <(uv export --no-hashes --no-dev --no-emit-project)
+        run: uvx pip-audit --strict -r <(uv export --no-hashes --no-dev --no-emit-project --all-extras)
       - name: Secret scan
         uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
         env:
