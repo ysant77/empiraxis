@@ -1,0 +1,35 @@
+# Fixed smoke-evaluation tasks. Expected facts are not stored here: the verifier recomputes
+# them from the pinned source. A requirement is met only by a supported claim of that shape.
+version: 1
+tasks:
+  - id: peak-region-haze-2015
+    question: >-
+      Which NEA region recorded the highest hourly PM2.5 between 1 September and 1 November
+      2015 (end excluded), and what was the value?
+    requirements:
+      - {kind: peak_region, start: "2015-09-01T00:00", end: "2015-11-01T00:00"}
+  - id: central-hypothesis
+    question: >-
+      A colleague says the central region had the highest hourly PM2.5 in September and
+      October 2015. Test the claim and give the central maximum for 2015-09-01 to 2015-11-01.
+    requirements:
+      - {kind: peak_region, start: "2015-09-01T00:00", end: "2015-11-01T00:00"}
+      - {kind: region_max, region: central, start: "2015-09-01T00:00", end: "2015-11-01T00:00"}
+  - id: west-hours-above-200
+    question: >-
+      For 2015-09-01 to 2015-11-01 (end excluded), how many hours was the west region strictly
+      above 200 ug/m3?
+    requirements:
+      - {kind: hours_above, region: west, threshold: 200, start: "2015-09-01T00:00", end: "2015-11-01T00:00"}
+  - id: east-october-mean
+    question: >-
+      What was the mean hourly PM2.5 in the east region in October 2015 (2015-10-01 to
+      2015-11-01, end excluded)? Give one decimal.
+    requirements:
+      - {kind: region_mean, region: east, start: "2015-10-01T00:00", end: "2015-11-01T00:00"}
+  - id: september-coverage
+    question: >-
+      How many hours of north-region PM2.5 data are missing in September 2015
+      (2015-09-01 to 2015-10-01)?
+    requirements:
+      - {kind: missing_hours, region: north, start: "2015-09-01T00:00", end: "2015-10-01T00:00"}
