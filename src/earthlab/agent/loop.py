@@ -156,13 +156,15 @@ class Investigator:
     def _call_model(self, state: RunState) -> ChatResponse:
         cfg = self._client.config
         self._meter.turns += 1
-        tools = [] if state.finalising else self._registry.schemas()
+        # Keep the same tool schemas on the final turn so the server can reuse its prompt cache.
+        tool_choice = "none" if state.finalising else "auto"
         try:
             resp = self._client.chat(
                 state.messages,
-                tools,
+                self._registry.schemas(),
                 max_tokens=self._meter.budget.max_output_tokens,
                 temperature=1.0,
+                tool_choice=tool_choice,
             )
         except ProviderError as exc:
             self._metrics.record_inference(cfg.name, cfg.logical_model, exc.kind.value, 0.0)

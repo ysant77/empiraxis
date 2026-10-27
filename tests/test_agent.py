@@ -57,7 +57,8 @@ def test_agent_revises_a_contradicted_claim_and_verifies(
     assert result.answer.startswith("West")
     assert [r.verdict for r in result.ledger.rejected()] == [Verdict.CONTRADICTED]
     assert result.turns == 5 and result.submissions == 2 and result.cost_usd == 0.0
-    assert client.requests[-1]["tools"] == []  # final answer turn offers no tools
+    assert client.requests[-1]["tool_choice"] == "none"  # final turn: same tools, no calls
+    assert client.requests[-1]["tools"] == client.requests[0]["tools"]
     tool_msgs = [m for m in client.requests[2]["messages"] if m["role"] == "tool"]
     assert "contradicted" in tool_msgs[-1]["content"]
     assert RunTrace(run_dir / "trace.jsonl").verify() >= 8

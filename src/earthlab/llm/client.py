@@ -32,6 +32,7 @@ class ChatClient(Protocol):
         *,
         max_tokens: int,
         temperature: float,
+        tool_choice: str = "auto",
     ) -> ChatResponse: ...
 
 
@@ -86,6 +87,7 @@ class OpenAICompatClient:
         *,
         max_tokens: int,
         temperature: float,
+        tool_choice: str = "auto",
     ) -> ChatResponse:
         payload: dict[str, Any] = {
             "model": self.config.model,
@@ -97,7 +99,7 @@ class OpenAICompatClient:
         }
         if tools:
             payload["tools"] = tools
-            payload["tool_choice"] = "auto"
+            payload["tool_choice"] = tool_choice
         started = time.perf_counter()
         resp = self._post(payload)
         wall = time.perf_counter() - started
