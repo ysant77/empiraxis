@@ -10,9 +10,9 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Self
 
-from pydantic import Field, model_validator
+from pydantic import Field, field_validator, model_validator
 
-from earthlab.contracts import Region, Strict, TimeWindow
+from earthlab.contracts import Region, Strict, TimeWindow, to_sgt
 
 MAX_STATEMENT_CHARS = 300
 
@@ -50,6 +50,12 @@ class Claim(Strict):
     threshold: float | None = Field(default=None, ge=0, description="Only for hours_above.")
     at: datetime | None = Field(default=None, description="Optional hour of the max (region_max).")
     statement: str = Field(max_length=MAX_STATEMENT_CHARS, description="One plain sentence.")
+
+    @field_validator("start", "end", "at")
+    @classmethod
+    def _localise(cls, value: datetime | None) -> datetime | None:
+        """Read naive times as Singapore time, never as the host's local zone."""
+        return None if value is None else to_sgt(value)
 
     @model_validator(mode="after")
     def _fields_match_kind(self) -> Self:

@@ -79,7 +79,7 @@ class Verifier:
         peak = max(value for _, value in pairs)
         result = _compare(claim, peak, EXACT_TOLERANCE, "maximum")
         if result.verdict is Verdict.SUPPORTED and claim.at is not None:
-            claimed_hour = claim.at.astimezone(claim.window.start.tzinfo).replace(tzinfo=None)
+            claimed_hour = claim.at.replace(tzinfo=None)  # already Singapore time
             peak_hours = {h for h, v in pairs if v == peak}
             if claimed_hour not in peak_hours:
                 first = min(peak_hours).isoformat()

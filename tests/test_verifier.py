@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -134,3 +135,21 @@ def test_bad_rows_are_skipped_by_independent_reader(make_data_dir: DatasetFactor
     assert north == [] and expected == 1
     east, _ = source.series(ALL_REGIONS[2], window)
     assert [v for _, v in east] == [3.0]
+
+
+def test_naive_claim_times_do_not_depend_on_host_time_zone(
+    verifier: Verifier, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Regression: a naive 'at' was read in the host zone, so CI (UTC) disagreed with SGT."""
+    monkeypatch.setenv("TZ", "UTC")
+    time.tzset()
+    try:
+        result = verifier.verify(
+            claim(kind="region_max", region="west", value=471, at="2015-10-19T23:00")
+        )
+        assert result.verdict == Verdict.SUPPORTED
+        aware = claim(kind="region_max", region="west", value=471, at="2015-10-19T15:00Z")
+        assert verifier.verify(aware).verdict == Verdict.SUPPORTED
+    finally:
+        monkeypatch.undo()
+        time.tzset()
