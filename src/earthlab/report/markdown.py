@@ -90,7 +90,9 @@ def _provenance_lines(result: dict[str, Any]) -> list[str]:
         f"- Provider: `{result['provider']}`; model: `{result['model']}`; "
         f"served model: `{result['served_model']}`",
         f"- Turns: {result['turns']}; tool calls: {result['tool_calls']}; "
-        f"submissions: {result['submissions']}; wall time: {result['seconds']:.1f} s",
+        f"submissions: {result['submissions']}; "
+        f"skipped by limits: {result.get('skipped_tool_calls', 0)}; "
+        f"wall time: {result['seconds']:.1f} s",
         f"- Tokens reported: {result['prompt_tokens']} input, {result['completion_tokens']} output",
         f"- Estimated cost: {'not priced' if cost is None else f'{cost:.6f} USD (estimate)'}",
         "",

@@ -142,6 +142,7 @@ def result_payload(
         "turns": result.turns,
         "tool_calls": result.tool_calls,
         "submissions": result.submissions,
+        "skipped_tool_calls": result.skipped_tool_calls,
         "seconds": result.seconds,
         "prompt_tokens": result.prompt_tokens,
         "completion_tokens": result.completion_tokens,
