@@ -46,6 +46,7 @@ class RunState:
     nudged: bool = False
     finalising: bool = False
     stop_reason: str = ""
+    revision_note: str | None = None
     served_model: str | None = None
     prompt_tokens: int = 0
     completion_tokens: int = 0
@@ -125,13 +126,15 @@ class Investigator:
         self._metrics.active.inc()
         try:
             status = self._loop(state)
-            audit = self._audit_answer(question, state)
+            audit = self._audit_answer(state)
             if audit is not None and not audit.passed and status in _ANSWERED:
                 audit = self._revise_answer(question, state, audit)
         finally:
             self._metrics.active.dec()
         decision = self._gate_answer(question, state)
-        issues = _answer_issues(audit, decision)
+        issues = _answer_issues(audit, decision, state)
+        if status in _ANSWERED and not state.answer:
+            issues = ("no final text was produced", *issues)
         if issues and status in _ANSWERED:
             status = RunStatus.ANSWER_UNVERIFIED
         self._metrics.investigations.labels(status.value).inc()
@@ -158,34 +161,36 @@ class Investigator:
         return decision
 
     def _revise_answer(self, question: str, state: RunState, audit: AnswerAudit) -> AnswerAudit:
-        """Give the model one chance to fix a failed text; the new text is checked again."""
+        """Give the model one text-only chance to fix a failed text, then check it again.
+
+        A failed or empty revision keeps the original text and its issues.
+        """
         if self._meter.exhausted() is not None:
             return audit
         self._trace.append("answer_revision", "verifier", issues=audit.problems())
         issues = "\n".join(f"- {issue}" for issue in audit.problems())
         state.messages.append({"role": "user", "content": REVISE_ANSWER.format(issues=issues)})
+        state.finalising = True  # tool_choice "none": a revision can never run a tool
         try:
             resp = self._call_model(state)
-        except ProviderError:
+        except ProviderError as exc:
+            state.revision_note = f"revision failed: {exc.kind.value}"
             return audit
         state.messages.append(_assistant_message(resp))
-        state.answer = resp.content.strip()
-        return self._audit_answer(question, state) or audit
+        revised = resp.content.strip()
+        if not revised:
+            state.revision_note = "revision returned no text"
+            return audit
+        state.answer = revised
+        return self._audit_answer(state) or audit
 
-    def _audit_answer(self, question: str, state: RunState) -> AnswerAudit | None:
+    def _audit_answer(self, state: RunState) -> AnswerAudit | None:
         if not state.answer:
             return None
-        audit = audit_answer(state.answer, self._ledger.supported(), question)
+        audit = audit_answer(state.answer, self._ledger.latest_by_id())
         outcome = "supported" if audit.passed else "unsupported"
         self._metrics.record_verification(Check.ANSWER.value, outcome)
-        self._trace.append(
-            "answer_audit",
-            "verifier",
-            numbers_checked=audit.numbers_checked,
-            ungrounded=list(audit.ungrounded),
-            misattributed=list(audit.misattributed),
-            language=audit.language,
-        )
+        self._trace.append("answer_audit", "verifier", **audit.model_dump(mode="json"))
         return audit
 
     def _loop(self, state: RunState) -> RunStatus:
@@ -349,9 +354,13 @@ class Investigator:
         )
 
 
-def _answer_issues(audit: AnswerAudit | None, decision: SafetyDecision | None) -> tuple[str, ...]:
+def _answer_issues(
+    audit: AnswerAudit | None, decision: SafetyDecision | None, state: RunState
+) -> tuple[str, ...]:
     """Why the final text cannot be called verified; empty when it can."""
     issues = [] if audit is None else audit.problems()
+    if state.revision_note is not None and issues:
+        issues.append(state.revision_note)
     if decision is not None and not decision.allowed:
         issues.append(f"safety check withheld the text: {decision.reason}")
     return tuple(issues)

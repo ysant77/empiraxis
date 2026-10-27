@@ -40,12 +40,16 @@ class FindingsLedger:
     def supported(self) -> list[VerificationResult]:
         return [r for r in self.latest if r.verdict is Verdict.SUPPORTED]
 
+    def latest_by_id(self) -> dict[str, VerificationResult]:
+        """The latest submission keyed by finding ID R<round>.<n>, as the model sees it."""
+        number = len(self.rounds)
+        return {f"R{number}.{i}": r for i, r in enumerate(self.latest, start=1)}
+
     def records(self, source_sha256: str) -> list[dict[str, Any]]:
         """The latest submission as report rows; ID R<round>.<n> is stable for one run."""
-        number = len(self.rounds)
         return [
             {
-                "id": f"R{number}.{i}",
+                "id": finding_id,
                 "kind": r.claim.kind.value,
                 "region": r.claim.region.value,
                 "start": r.claim.start.isoformat(),
@@ -58,7 +62,7 @@ class FindingsLedger:
                 "verdict": r.verdict.value,
                 "source_sha256": source_sha256,
             }
-            for i, r in enumerate(self.latest, start=1)
+            for finding_id, r in self.latest_by_id().items()
         ]
 
 
@@ -71,13 +75,14 @@ def submit_findings_spec(verifier: Verifier, ledger: FindingsLedger) -> ToolSpec
             "all_supported": ledger.all_supported(),
             "verdicts": [
                 {
+                    "id": finding_id,
                     "kind": r.claim.kind.value,
                     "region": r.claim.region.value,
                     "verdict": r.verdict.value,
                     "observed": r.observed,
                     "reason": r.reason,
                 }
-                for r in results
+                for finding_id, r in ledger.latest_by_id().items()
             ],
         }
 

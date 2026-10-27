@@ -49,7 +49,7 @@ def agent_arm(
         rejected_total=len(result.ledger.rejected()),
         seconds=result.seconds,
         detail={"status": result.status.value, "turns": result.turns, "run_dir": str(run_dir)},
-        answer_ok=result.status is not RunStatus.ANSWER_UNVERIFIED,
+        answer_ok=result.status is RunStatus.VERIFIED,
     )
 
 

@@ -21,7 +21,7 @@ def run_scripted(tmp_path: Path) -> Path:
         [
             call("submit_findings", claims=[{**CLAIM, "region": "central", "value": None}]),
             call("submit_findings", claims=[CLAIM]),
-            say("West peaked at 471 ug/m3."),
+            say("West had the highest value (R2.1)."),
         ]
     )
     run_dir = new_run_dir(tmp_path)

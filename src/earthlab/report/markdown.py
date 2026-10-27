@@ -62,11 +62,10 @@ def _interpretation_lines(result: dict[str, Any]) -> list[str]:
             "",
         ]
     lines += [result["answer"] or "_The model gave no final answer._", ""]
-    audit = result.get("answer_audit")
-    if audit is not None and not issues:
+    if result.get("answer_audit") is not None and not issues:
         lines += [
-            f"_Answer check: all {audit['numbers_checked']} numbers match a supported claim "
-            "for the same region._",
+            "_Answer check passed: no numbers or dates in the text; every cited finding is "
+            "supported; no superlative or comparison goes beyond the findings._",
             "",
         ]
     return lines

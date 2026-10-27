@@ -41,7 +41,7 @@ def test_agent_revises_a_contradicted_claim_and_verifies(
             call("submit_findings", claims=[peak("central")]),
             call("rank_regions", **HAZE, statistic="max"),
             call("submit_findings", claims=[peak("west", 471)]),
-            say("West had the highest hourly PM2.5 (471 ug/m3)."),
+            say("West had the highest hourly PM2.5 (R2.1)."),
         ]
     )
     metrics = EarthlabMetrics()
@@ -98,7 +98,7 @@ def test_submission_limit_keeps_only_supported_claims(workspace: Workspace, tmp_
         [
             call("submit_findings", claims=[good, bad]),
             call("submit_findings", claims=[good, causal]),
-            say("West peaked at 471 ug/m3; other claims were not supported."),
+            say("West had the highest value (R2.1); other claims were not supported."),
         ]
     )
     result = investigate(
@@ -109,6 +109,7 @@ def test_submission_limit_keeps_only_supported_claims(workspace: Workspace, tmp_
     verdicts = [r.verdict for r in result.ledger.rejected()]
     assert verdicts == [Verdict.CONTRADICTED, Verdict.UNSUPPORTED]
     assert "No more submissions" in client.requests[-1]["messages"][-1]["content"]
+    assert result.answer_issues == ()
 
 
 def test_empty_submission_then_answer_is_no_supported_findings(

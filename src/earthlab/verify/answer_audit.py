@@ -1,137 +1,145 @@
-"""Bind every number in the model's final prose to a supported claim about the same region.
+"""Check the model's interpretation text against the supported claims.
 
-The verifier checks typed claims. The final answer is free text, so this audit checks it
-sentence by sentence. A number must equal the value or threshold of a supported claim, and
-the region it belongs to (the last one named before it, else the next one) must be that
-claim's region. A number seen only in raw tool
-output does not count. Numbers quoted from the question count as a hypothesis under test.
-Dates, hours, years and unit names are skipped. The text must also pass the scope rules.
+Numbers, units, windows and times live only in the Findings table, which is rendered from
+supported claims. The interpretation text may refer to a finding by its ID (R1.2) but may
+not contain any digit, date or month name. Its remaining factual words are checked too:
+"highest" needs a supported peak_region claim for that region, and "higher than" needs two
+supported claims of the same kind and window, in the stated order. The text must also pass
+the answer scope rules.
 """
 
 from __future__ import annotations
 
 import re
-from collections.abc import Iterable
+from collections.abc import Mapping
 
 from earthlab.contracts import Region, Strict
 from earthlab.safety.scope import answer_out_of_scope
-from earthlab.verify.claims import Verdict, VerificationResult
+from earthlab.verify.claims import ClaimKind, Verdict, VerificationResult
 
-ROUNDING_TOLERANCE = 0.05 + 1e-9
-_MONTHS = (
-    r"jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|"
-    r"sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?"
+_CITATION = re.compile(r"\bR\d+\.\d+\b")
+_NAMES = re.compile(r"\bPM\s?2[._]?5\b|[µu]g\s*/\s*m(?:3|³)", re.IGNORECASE)
+_DIGITS = re.compile(r"\d+(?:[.,:/-]\d+)*")
+_MONTH = re.compile(
+    r"\b(january|february|march|april|june|july|august|september|october|november|"
+    r"december|jan|feb|apr|jun|jul|aug|sept?|oct|nov|dec)\b",
+    re.IGNORECASE,
 )
-_IGNORED = (
-    re.compile(r"\d{4}-\d{2}-\d{2}(?:[T ]\d{1,2}:\d{2}(?::\d{2})?(?:[+-]\d{2}:?\d{2}|Z)?)?"),
-    re.compile(r"\b\d{1,2}:\d{2}\b"),
-    re.compile(r"\bPM\s?2[._]?5\b", re.IGNORECASE),
-    re.compile(r"[µu]g\s*/\s*m(?:3|³)", re.IGNORECASE),
-    re.compile(r"\b1[- ]?h(?:ou)?r\b", re.IGNORECASE),
-    re.compile(rf"\b\d{{1,2}}\s+(?:{_MONTHS})\b", re.IGNORECASE),
-    re.compile(rf"\b(?:{_MONTHS})\s+\d{{1,2}}\b", re.IGNORECASE),
-    re.compile(r"\b(?:19|20)\d{2}\b"),
-)
-_NUMBER = re.compile(r"(?<![\w.])\d{1,3}(?:,\d{3})+(?:\.\d+)?|(?<![\w.])\d+(?:\.\d+)?")
 _REGION = re.compile(r"\b(north|south|east|west|central)(?:ern)?\b", re.IGNORECASE)
+_TOP = re.compile(r"\b(highest|greatest|worst|most polluted)\b", re.IGNORECASE)
+_BOTTOM = re.compile(r"\b(lowest|cleanest)\b", re.IGNORECASE)
+_MORE = re.compile(r"\b(higher|greater|more|larger|worse)\s+than\b", re.IGNORECASE)
+_LESS = re.compile(r"\b(lower|less|smaller|better)\s+than\b", re.IGNORECASE)
+_MEAN = re.compile(r"\b(mean|average)\b", re.IGNORECASE)
 _SENTENCE_END = re.compile(r"(?<=[.!?;])\s+|\n+")
-
-Fact = tuple[Region, float]
+_COMPARABLE = (ClaimKind.REGION_MAX, ClaimKind.REGION_MEAN)
 
 
 class AnswerAudit(Strict):
-    numbers_checked: int
-    ungrounded: tuple[float, ...] = ()
-    misattributed: tuple[str, ...] = ()
+    numbers: tuple[str, ...] = ()
+    dates: tuple[str, ...] = ()
+    unknown_citations: tuple[str, ...] = ()
+    misleading: tuple[str, ...] = ()
     language: str | None = None
 
     @property
     def passed(self) -> bool:
-        return not self.ungrounded and not self.misattributed and self.language is None
+        return not self.problems()
 
     def problems(self) -> list[str]:
-        issues = [f"number {n:g} matches no supported claim" for n in self.ungrounded]
-        issues += list(self.misattributed)
+        issues: list[str] = []
+        if self.numbers:
+            issues.append(f"numbers in the text ({', '.join(self.numbers)}); use the Findings")
+        if self.dates:
+            issues.append(f"dates in the text ({', '.join(self.dates)}); use the Findings")
+        issues += [f"{c} is not a supported finding" for c in self.unknown_citations]
+        issues += list(self.misleading)
         if self.language is not None:
             issues.append(self.language)
         return issues
 
 
-def _mask(text: str) -> str:
-    """Blank out dates, times and units, keeping every other character in place."""
-    for pattern in _IGNORED:
-        text = pattern.sub(lambda m: " " * len(m.group(0)), text)
-    return text
+def text_numbers(text: str) -> list[str]:
+    """Digit runs left after removing finding IDs and the names PM2.5 and ug/m3."""
+    return _DIGITS.findall(_NAMES.sub(" ", _CITATION.sub(" ", text)))
 
 
-def _numbers(text: str) -> list[tuple[int, float]]:
-    return [(m.start(), float(m.group(0).replace(",", ""))) for m in _NUMBER.finditer(_mask(text))]
+def _regions(sentence: str) -> list[tuple[int, Region]]:
+    return [(m.start(), Region(m.group(1).lower())) for m in _REGION.finditer(sentence)]
 
 
-def answer_numbers(text: str) -> list[float]:
-    return [value for _, value in _numbers(text)]
-
-
-def claim_facts(results: Iterable[VerificationResult]) -> list[Fact]:
-    """(region, number) pairs that supported claims establish: values and thresholds."""
-    facts: list[Fact] = []
-    for r in results:
-        if r.verdict is not Verdict.SUPPORTED:
-            continue
-        facts += [(r.claim.region, n) for n in (r.claim.value, r.claim.threshold) if n is not None]
-    return facts
-
-
-def _close(a: float, b: float) -> bool:
-    return abs(a - b) <= ROUNDING_TOLERANCE
-
-
-def _subject(regions: list[tuple[int, Region]], pos: int) -> Region:
-    """The region a number belongs to: the last one named before it, else the next one."""
+def _subject(regions: list[tuple[int, Region]], pos: int) -> Region | None:
+    """The region a phrase is about: the last one named before it, else the next one."""
     before = [region for start, region in regions if start < pos]
     if before:
         return before[-1]
-    return min(regions, key=lambda item: item[0] - pos)[1]
+    after = [region for start, region in regions if start > pos]
+    return after[0] if after else None
 
 
-def _check_sentence(
-    sentence: str, facts: list[Fact], quoted: list[float]
-) -> tuple[list[float], list[str], int]:
-    regions = [(m.start(), Region(m.group(1).lower())) for m in _REGION.finditer(sentence)]
-    ungrounded: list[float] = []
-    misattributed: list[str] = []
-    numbers = _numbers(sentence)
-    for pos, number in numbers:
-        owners = {region for region, value in facts if _close(value, number)}
-        if not owners:
-            if not any(_close(number, q) for q in quoted):
-                ungrounded.append(number)
-            continue
-        if not regions:
-            continue
-        nearest = _subject(regions, pos)
-        if nearest not in owners:
-            names = ", ".join(sorted(r.value for r in owners))
-            misattributed.append(f"{number:g} is next to {nearest.value}; supported for {names}")
-    return ungrounded, misattributed, len(numbers)
+def _superlatives(sentence: str, supported: list[VerificationResult]) -> list[str]:
+    regions = _regions(sentence)
+    issues: list[str] = []
+    for m in _TOP.finditer(sentence):
+        region = _subject(regions, m.start())
+        tops = {r.claim.region for r in supported if r.claim.kind is ClaimKind.PEAK_REGION}
+        if region is not None and region not in tops:
+            issues.append(f"'{m.group(0)}' for {region.value} has no supported peak_region claim")
+    for m in _BOTTOM.finditer(sentence):
+        if _subject(regions, m.start()) is not None:
+            issues.append(f"'{m.group(0)}' has no supported claim kind")
+    return issues
 
 
-def audit_answer(
-    answer: str, supported: Iterable[VerificationResult], question: str = ""
-) -> AnswerAudit:
-    facts = claim_facts(supported)
-    quoted = answer_numbers(question)
-    ungrounded: list[float] = []
-    misattributed: list[str] = []
-    checked = 0
+def _values(
+    region: Region, supported: list[VerificationResult], kinds: tuple[ClaimKind, ...]
+) -> dict[tuple[ClaimKind, str], float]:
+    return {
+        (r.claim.kind, r.claim.window.model_dump_json()): r.claim.value
+        for r in supported
+        if r.claim.region is region and r.claim.kind in kinds and r.claim.value is not None
+    }
+
+
+def _comparison(sentence: str, supported: list[VerificationResult]) -> list[str]:
+    match = _MORE.search(sentence) or _LESS.search(sentence)
+    if match is None:
+        return []
+    regions = _regions(sentence)
+    left = _subject([(p, r) for p, r in regions if p < match.start()], match.start())
+    right = next((r for p, r in regions if p > match.start()), None)
+    if left is None or right is None:
+        return []
+    more = match.re is _MORE
+    top, low = (left, right) if more else (right, left)
+    peaks = {r.claim.region for r in supported if r.claim.kind is ClaimKind.PEAK_REGION}
+    what = f"comparison of {left.value} and {right.value}"
+    if not _MEAN.search(sentence) and (top in peaks or low in peaks):
+        return [] if top in peaks else [f"{what} contradicts the supported claims"]
+    kinds = (ClaimKind.REGION_MEAN,) if _MEAN.search(sentence) else _COMPARABLE
+    a, b = _values(left, supported, kinds), _values(right, supported, kinds)
+    pairs = [(a[key], b[key]) for key in a.keys() & b.keys()]
+    if not pairs:
+        return [f"{what} has no pair of supported claims with the same kind and window"]
+    if all((x > y) if more else (x < y) for x, y in pairs):
+        return []
+    return [f"{what} contradicts the supported claims"]
+
+
+def audit_answer(answer: str, findings: Mapping[str, VerificationResult]) -> AnswerAudit:
+    """Audit the text against the latest submission, keyed by finding ID (R<round>.<n>)."""
+    supported = [r for r in findings.values() if r.verdict is Verdict.SUPPORTED]
+    cited = _CITATION.findall(answer)
+    unknown = [
+        c for c in cited if c not in findings or findings[c].verdict is not Verdict.SUPPORTED
+    ]
+    misleading: list[str] = []
     for sentence in _SENTENCE_END.split(answer):
-        bad, wrong, count = _check_sentence(sentence, facts, quoted)
-        ungrounded += bad
-        misattributed += wrong
-        checked += count
+        misleading += _superlatives(sentence, supported) + _comparison(sentence, supported)
     return AnswerAudit(
-        numbers_checked=checked,
-        ungrounded=tuple(ungrounded),
-        misattributed=tuple(misattributed),
+        numbers=tuple(text_numbers(answer)),
+        dates=tuple(m.group(0) for m in _MONTH.finditer(answer)),
+        unknown_citations=tuple(dict.fromkeys(unknown)),
+        misleading=tuple(misleading),
         language=answer_out_of_scope(answer),
     )
