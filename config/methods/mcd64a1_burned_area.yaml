@@ -1,0 +1,47 @@
+# Pre-registered method and acceptance tolerances for MCD64A1 mapped burned area.
+# Committed before the burned-area tool and verifier, on 2026-10-27.
+#
+# Disclosure: before this file was written, an uncommitted diagnostic script compared
+# the pinned Kalimantan 2015 files with the Earth Engine reference in their manifest.
+# It found (a) burned-pixel counts that differ by 4-5 pixels, all within one pixel of
+# the box edge, and (b) a per-pixel WGS84 ellipsoid area of 213,706.8 m2 that equals
+# Earth Engine's pixelArea, against 214,658.7 m2 for the nominal sinusoidal (sphere)
+# pixel. The tolerances below follow from those causes, not from the Kalimantan totals.
+method_id: mcd64a1_burned_area
+version: "1"
+product: MODIS/061/MCD64A1 (Collection 6.1, monthly, 500 m)
+
+definitions:
+  pixel_in_area: the pixel centre, converted from the sinusoidal grid on a sphere of
+    radius 6371007.181 m to longitude and latitude, lies inside the study box (edges included)
+  valid_land: QA bit 0 (land) and QA bit 1 (enough valid data) are both set
+  burned: BurnDate between 1 and 366, on a valid_land pixel, in the month of the file
+  not_counted: BurnDate -1 (masked in Earth Engine: unburned or unmapped), nodata
+    -32768 (outside the export polygon), water, and cells without valid data
+  valid_fraction: valid_land pixels / land pixels, inside the box
+  primary_area: sum over burned pixels of each pixel's area on the WGS84 ellipsoid
+  nominal_area: burned pixels x (463.3127165 m)^2, the product's sphere-based pixel area;
+    reported next to the primary area, never instead of it
+
+reporting_gate:
+  min_valid_fraction: 0.80  # below this a month's area is insufficient_data, not a finding
+
+acceptance:
+  # C1: a local count may differ from the Earth Engine count only through pixels whose
+  #     centres lie within one pixel width of the box edge (boundary rules differ).
+  count_difference_max: burned_valid_pixels_within_one_pixel_of_edge
+  # C2: the mean WGS84 area per burned pixel must equal Earth Engine's pixelArea per
+  #     burned pixel within this relative difference.
+  per_pixel_area_relative_max: 0.0001
+  # C3: the tool's primary area and the verifier's independent area (closed-form
+  #     ellipsoid formula, separate reader path) must agree within this relative difference.
+  tool_vs_verifier_relative_max: 0.0001
+  # C4: a claimed area is supported when it is within this relative difference of the
+  #     verifier's recomputed primary area.
+  claim_relative_max: 0.001
+
+limitations:
+  - Mapped burned area at 500 m; not destroyed trees, forest loss or emissions.
+  - Small or understorey burns below the detection limit are missed; edge pixels are
+    counted whole.
+  - FIRMS hotspot counts are not burned area and are never added to it.
