@@ -41,6 +41,24 @@ def test_a_clean_text_passes_and_problems_are_listed() -> None:
     ]
 
 
+@pytest.mark.parametrize(
+    ("text", "passed"),
+    [
+        # Observed in live Muse runs on 2026-10-27: denials, not assertions.
+        ("Therefore, on observed data central is not the worst region in the window.", True),
+        (
+            "Therefore the colleague's claim that central had the highest hourly PM2.5 is "
+            "not supported by the observed data.",
+            True,
+        ),
+        ("Central had the highest value, not west.", False),
+        ("Central had the highest value.", False),
+    ],
+)
+def test_denied_superlatives_pass_and_asserted_ones_fail(text: str, passed: bool) -> None:
+    assert audit_answer(text, FINDINGS).passed is passed
+
+
 def test_superlative_without_a_region_and_ordinary_words_pass() -> None:
     text = "The highest values may reflect at least one smoke episode; the data show no cause."
     assert audit_answer(text, FINDINGS).passed

@@ -31,6 +31,10 @@ _BOTTOM = re.compile(r"\b(lowest|cleanest)\b", re.IGNORECASE)
 _MORE = re.compile(r"\b(higher|greater|more|larger|worse)\s+than\b", re.IGNORECASE)
 _LESS = re.compile(r"\b(lower|less|smaller|better)\s+than\b", re.IGNORECASE)
 _MEAN = re.compile(r"\b(mean|average)\b", re.IGNORECASE)
+_NOT = re.compile(r"\b(not|no|never|neither|nor|isn't|wasn't|unsupported|contradicted)\b", re.I)
+_HYPOTHESIS = re.compile(
+    r"\b(claim\w*|hypothes\w*|colleague\w*|question|suggest\w*|said|says)\b", re.I
+)
 _SENTENCE_END = re.compile(r"(?<=[.!?;])\s+|\n+")
 _COMPARABLE = (ClaimKind.REGION_MAX, ClaimKind.REGION_MEAN)
 
@@ -77,13 +81,22 @@ def _subject(regions: list[tuple[int, Region]], pos: int) -> Region | None:
     return after[0] if after else None
 
 
+def _denied(sentence: str, regions: list[tuple[int, Region]], pos: int) -> bool:
+    """True for 'central is not the worst' and 'the claim that central was highest is not
+    supported'. A negation after the phrase alone ('highest, not west') does not count."""
+    if _HYPOTHESIS.search(sentence) and _NOT.search(sentence):
+        return True
+    start = max((p for p, _ in regions if p < pos), default=0)
+    return bool(_NOT.search(sentence[start:pos]))
+
+
 def _superlatives(sentence: str, supported: list[VerificationResult]) -> list[str]:
     regions = _regions(sentence)
     issues: list[str] = []
     for m in _TOP.finditer(sentence):
         region = _subject(regions, m.start())
         tops = {r.claim.region for r in supported if r.claim.kind is ClaimKind.PEAK_REGION}
-        if region is not None and region not in tops:
+        if region is not None and region not in tops and not _denied(sentence, regions, m.start()):
             issues.append(f"'{m.group(0)}' for {region.value} has no supported peak_region claim")
     for m in _BOTTOM.finditer(sentence):
         if _subject(regions, m.start()) is not None:
