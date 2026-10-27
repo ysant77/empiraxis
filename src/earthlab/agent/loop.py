@@ -13,7 +13,7 @@ from typing import Any
 
 from earthlab.agent.budget import Budget, BudgetMeter
 from earthlab.agent.findings import SUBMIT_TOOL, FindingsLedger
-from earthlab.agent.prompts import FINAL_ANSWER, NUDGE_SUBMIT, system_prompt
+from earthlab.agent.prompts import FINAL_ANSWER, NUDGE_SUBMIT, REVISE_ANSWER, system_prompt
 from earthlab.llm.client import ChatClient
 from earthlab.llm.types import ChatResponse, ProviderError, ToolCall
 from earthlab.metrics import EarthlabMetrics
@@ -34,6 +34,9 @@ class RunStatus(StrEnum):
     BUDGET_EXHAUSTED = "budget_exhausted"
     PROVIDER_ERROR = "provider_error"
     REFUSED = "refused"
+
+
+_ANSWERED = (RunStatus.VERIFIED, RunStatus.PARTIAL)
 
 
 @dataclass
@@ -122,12 +125,14 @@ class Investigator:
         self._metrics.active.inc()
         try:
             status = self._loop(state)
+            audit = self._audit_answer(question, state)
+            if audit is not None and not audit.passed and status in _ANSWERED:
+                audit = self._revise_answer(question, state, audit)
         finally:
             self._metrics.active.dec()
-        audit = self._audit_answer(question, state)
         decision = self._gate_answer(question, state)
         issues = _answer_issues(audit, decision)
-        if issues and status in (RunStatus.VERIFIED, RunStatus.PARTIAL):
+        if issues and status in _ANSWERED:
             status = RunStatus.ANSWER_UNVERIFIED
         self._metrics.investigations.labels(status.value).inc()
         result = self._result(status, state, audit, decision, issues)
@@ -151,6 +156,21 @@ class Investigator:
         if not decision.allowed:
             state.answer = WITHHELD
         return decision
+
+    def _revise_answer(self, question: str, state: RunState, audit: AnswerAudit) -> AnswerAudit:
+        """Give the model one chance to fix a failed text; the new text is checked again."""
+        if self._meter.exhausted() is not None:
+            return audit
+        self._trace.append("answer_revision", "verifier", issues=audit.problems())
+        issues = "\n".join(f"- {issue}" for issue in audit.problems())
+        state.messages.append({"role": "user", "content": REVISE_ANSWER.format(issues=issues)})
+        try:
+            resp = self._call_model(state)
+        except ProviderError:
+            return audit
+        state.messages.append(_assistant_message(resp))
+        state.answer = resp.content.strip()
+        return self._audit_answer(question, state) or audit
 
     def _audit_answer(self, question: str, state: RunState) -> AnswerAudit | None:
         if not state.answer:

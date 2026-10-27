@@ -35,6 +35,7 @@ def test_invented_number_in_final_answer_is_flagged(tmp_path: Path) -> None:
             call("rank_regions", **HAZE, statistic="max"),
             call("submit_findings", claims=[claim]),
             say("West peaked at 471 ug/m3, about 12 times the 38 ug/m3 norm."),
+            say("West peaked at 471 ug/m3, about 12 times the 38 ug/m3 norm."),
         ]
     )
     workspace = open_workspace(REPO_DATA)

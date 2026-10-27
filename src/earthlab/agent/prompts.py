@@ -37,6 +37,13 @@ FINAL_ANSWER = (
     "with no further tool calls."
 )
 
+REVISE_ANSWER = (
+    "The answer check failed:\n{issues}\n"
+    "Rewrite the final answer in at most 120 words. Use only numbers from supported claims, "
+    "and name each number's region before it in the same sentence. Remove any other number. "
+    "Do not call tools."
+)
+
 
 def system_prompt(reasoning: str = "medium") -> str:
     return SYSTEM_PROMPT.format(reasoning=reasoning)

@@ -10,6 +10,7 @@ from conftest import REPO_DATA
 from fake_client import ScriptedClient, call, say
 
 from earthlab import cli
+from earthlab.agent.budget import Budget
 from earthlab.agent.loop import RunStatus
 from earthlab.report.markdown import render_report
 from earthlab.runtime import Workspace, investigate, new_run_dir, open_workspace, result_payload
@@ -33,7 +34,10 @@ def workspace() -> Workspace:
 
 
 def run(workspace: Workspace, tmp_path: Path, answer: str, *claims: dict[str, Any]) -> Any:
-    client = ScriptedClient([call("submit_findings", claims=list(claims)), say(answer)])
+    """The scripted model repeats its text when asked to revise it."""
+    client = ScriptedClient(
+        [call("submit_findings", claims=list(claims)), say(answer), say(answer)]
+    )
     return investigate("Which region peaked?", client, workspace, new_run_dir(tmp_path))
 
 
@@ -66,6 +70,7 @@ def test_a_number_seen_only_in_tool_output_does_not_ground_the_answer(
             call("rank_regions", **HAZE, statistic="max"),
             call("submit_findings", claims=[WEST_PEAK]),
             say("West peaked at 471; south reached 353."),
+            say("West peaked at 471; south reached 353."),
         ]
     )
     result = investigate("Which region peaked?", client, workspace, new_run_dir(tmp_path))
@@ -81,11 +86,34 @@ def test_partial_run_with_unbound_text_is_downgraded(workspace: Workspace, tmp_p
             call("submit_findings", claims=[WEST_PEAK, wrong]),
             call("submit_findings", claims=[WEST_PEAK, wrong]),
             say("West peaked at 471 and east at 999."),
+            say("West peaked at 471 and east at 999."),
         ]
     )
     result = investigate("Which region peaked?", client, workspace, new_run_dir(tmp_path))
     assert result.status is RunStatus.ANSWER_UNVERIFIED
     assert result.answer_audit is not None and result.answer_audit.ungrounded == (999.0,)
+
+
+def test_one_revision_can_fix_the_text(workspace: Workspace, tmp_path: Path) -> None:
+    client = ScriptedClient(
+        [
+            call("submit_findings", claims=[WEST_PEAK]),
+            say("West peaked at 471; south reached 353."),
+            say("West peaked at 471."),
+        ]
+    )
+    run_dir = new_run_dir(tmp_path)
+    result = investigate("Which region peaked?", client, workspace, run_dir)
+    assert result.status is RunStatus.VERIFIED and result.answer == "West peaked at 471."
+    assert result.turns == 3 and "353 matches no supported claim" in str(client.requests[-1])
+    assert '"answer_revision"' in (run_dir / "trace.jsonl").read_text(encoding="utf-8")
+
+
+def test_no_revision_once_the_budget_is_spent(workspace: Workspace, tmp_path: Path) -> None:
+    client = ScriptedClient([call("submit_findings", claims=[WEST_PEAK]), say("West 471, east 9.")])
+    budget = Budget(max_turns=2)
+    result = investigate("q", client, workspace, new_run_dir(tmp_path), budget=budget)
+    assert result.status is RunStatus.ANSWER_UNVERIFIED and result.turns == 2
 
 
 def test_audit_binds_each_number_to_the_nearest_region() -> None:

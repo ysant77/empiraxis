@@ -132,7 +132,11 @@ def test_unsafe_final_answer_is_withheld_but_claims_stand(
     workspace: Workspace, tmp_path: Path
 ) -> None:
     planner = ScriptedClient(
-        [call("submit_findings", claims=[CLAIM]), say("West hit 471; people should stay indoors.")]
+        [
+            call("submit_findings", claims=[CLAIM]),
+            say("West hit 471; people should stay indoors."),
+            say("West hit 471; people should stay indoors."),
+        ]
     )
     result = investigate(
         "Which region peaked?",
