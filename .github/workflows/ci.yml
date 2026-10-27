@@ -70,7 +70,6 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: read
-      pull-requests: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -80,7 +79,16 @@ jobs:
         run: |
           uv export --no-hashes --no-dev --no-emit-project --all-extras > requirements.audit.txt
           uvx pip-audit --strict -r requirements.audit.txt
-      - name: Scan for secrets
-        uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
+      # The gitleaks action scans only the pushed range, and fails when that range's base
+      # is gone (for example after a history rewrite). Scan every commit on every ref.
+      - name: Scan the full Git history for secrets
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_VERSION: 8.24.3
+          GITLEAKS_SHA256: 9991e0b2903da4c8f6122b5c3186448b927a5da4deef1fe45271c3793f4ee29c
+        run: |
+          archive="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -fsSL -o "$RUNNER_TEMP/$archive" \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${archive}"
+          echo "${GITLEAKS_SHA256}  $RUNNER_TEMP/${archive}" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/$archive" -C "$RUNNER_TEMP" gitleaks
+          "$RUNNER_TEMP/gitleaks" git --redact --no-banner --exit-code 1 --log-opts="--all" .
