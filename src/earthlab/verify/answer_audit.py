@@ -11,13 +11,13 @@ the answer scope rules.
 from __future__ import annotations
 
 import re
-from collections.abc import Mapping
+from collections.abc import Collection, Mapping
 
 from earthlab.contracts import Region, Strict
 from earthlab.safety.scope import answer_out_of_scope
 from earthlab.verify.claims import ClaimKind, Verdict, VerificationResult
 
-_CITATION = re.compile(r"\bR\d+\.\d+\b")
+_CITATION = re.compile(r"\b[RA]\d+\.\d+\b")  # R: PM2.5 findings, A: area findings
 _NAMES = re.compile(r"\bPM\s?2[._]?5\b|[µu]g\s*/\s*m(?:3|³)|\b1[- ]?(?:hour|hr)\b", re.IGNORECASE)
 # Digits after a letter belong to an identifier (mcd64a1); ordinals such as 19th still count.
 _DIGITS = re.compile(r"(?<![A-Za-z_\d])\d+(?:[.,:/-]\d+)*")
@@ -149,13 +149,17 @@ def _comparison(sentence: str, supported: list[VerificationResult]) -> list[str]
     return [f"{what} contradicts the supported claims"]
 
 
-def audit_answer(answer: str, findings: Mapping[str, VerificationResult]) -> AnswerAudit:
-    """Audit the text against the latest submission, keyed by finding ID (R<round>.<n>)."""
+def audit_answer(
+    answer: str, findings: Mapping[str, VerificationResult], other_supported: Collection[str] = ()
+) -> AnswerAudit:
+    """Audit the text against the latest submission, keyed by finding ID (R<round>.<n>).
+
+    other_supported lists supported finding IDs from other ledgers (A<round>.<n>).
+    """
     supported = [r for r in findings.values() if r.verdict is Verdict.SUPPORTED]
     cited = _CITATION.findall(answer)
-    unknown = [
-        c for c in cited if c not in findings or findings[c].verdict is not Verdict.SUPPORTED
-    ]
+    ok = {i for i, r in findings.items() if r.verdict is Verdict.SUPPORTED} | set(other_supported)
+    unknown = [c for c in cited if c not in ok]
     misleading: list[str] = []
     for sentence in _SENTENCE_END.split(answer):
         misleading += _superlatives(sentence, supported) + _comparison(sentence, supported)

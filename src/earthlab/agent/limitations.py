@@ -23,6 +23,7 @@ class ReasonCode(StrEnum):
     NEEDS_INPUT = "needs_input"
     DATA_UNAVAILABLE = "data_unavailable"
     METHOD_NOT_IMPLEMENTED = "method_not_implemented"
+    INSUFFICIENT_VALID_DATA = "insufficient_valid_data"
     NEEDS_APPROVAL = "needs_approval"
     CAUSATION_NOT_IDENTIFIABLE = "causation_not_identifiable"
     HOTSPOT_NOT_AREA = "hotspot_count_is_not_burned_area"
@@ -35,6 +36,7 @@ class ReasonCode(StrEnum):
 _HELP = (
     "needs_input: a required value (for example a threshold) is missing; ask, do not choose. "
     "data_unavailable / method_not_implemented / needs_approval: from assess_case. "
+    "insufficient_valid_data: the data exist but too few cells are valid (quality gate). "
     "causation_not_identifiable: observations alone cannot show a cause. "
     "hotspot_count_is_not_burned_area, land_surface_temperature_is_not_air_temperature, "
     "definition_mismatch: the question equates different quantities. "

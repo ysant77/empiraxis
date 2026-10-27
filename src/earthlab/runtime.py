@@ -10,6 +10,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from earthlab.agent.area_findings import AreaLedger, submit_area_findings_spec
 from earthlab.agent.budget import Budget
 from earthlab.agent.findings import FindingsLedger, submit_findings_spec
 from earthlab.agent.limitations import LimitationLog, declare_limitation_spec
@@ -61,7 +62,10 @@ def open_workspace(data_dir: Path, cases_dir: Path | None = None) -> Workspace:
 
 
 def build_registry(
-    workspace: Workspace, ledger: FindingsLedger, limitations: LimitationLog | None = None
+    workspace: Workspace,
+    ledger: FindingsLedger,
+    limitations: LimitationLog | None = None,
+    area_ledger: AreaLedger | None = None,
 ) -> ToolRegistry:
     registry = ToolRegistry()
     Pm25Toolset(workspace.dataset).register(registry)
@@ -70,6 +74,7 @@ def build_registry(
     if workspace.cases is not None:
         registry.register(assess_case_spec(workspace.cases))
         registry.register(burned_area_spec(workspace.cases))
+        registry.register(submit_area_findings_spec(workspace.cases, area_ledger or AreaLedger()))
     return registry
 
 
@@ -95,7 +100,8 @@ def investigate(
     """Gate the question, run the agent, then gate the final answer before saving."""
     ledger = FindingsLedger()
     limitations = LimitationLog()
-    registry = build_registry(workspace, ledger, limitations)
+    area_ledger = AreaLedger()
+    registry = build_registry(workspace, ledger, limitations, area_ledger)
     metrics = metrics or EarthlabMetrics(tool_names=set(registry.names()))
     metrics.record_qa(SOURCE_LABEL, workspace.dataset.issue_counts())
     trace = RunTrace(run_dir / "trace.jsonl", listener)
@@ -115,6 +121,7 @@ def investigate(
             reasoning=reasoning,
             answer_gate=gate.check_answer,
             limitations=limitations,
+            area_ledger=area_ledger,
         )
         result = investigator.run(question)
         result = replace(result, safety=(asked, *result.safety))
@@ -179,6 +186,10 @@ def result_payload(
         else result.answer_audit.model_dump(mode="json"),
         "findings": result.ledger.records(snapshot.sha256),
         "limitations": [entry.model_dump(mode="json") for entry in result.limitations],
+        "area_findings": result.area_ledger.records(),
+        "area_rounds": [
+            [r.model_dump(mode="json") for r in rnd] for rnd in result.area_ledger.rounds
+        ],
         "rounds": [[r.model_dump(mode="json") for r in rnd] for rnd in result.ledger.rounds],
     }
 

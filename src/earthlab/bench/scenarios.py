@@ -15,6 +15,7 @@ from typing import Any, Literal, Self
 import yaml
 from pydantic import Field, model_validator
 
+from earthlab.agent.area_findings import AreaQuantity, AreaVerification
 from earthlab.agent.limitations import ReasonCode
 from earthlab.contracts import Region, Strict, to_sgt
 from earthlab.verify.claims import ClaimKind, Verdict, VerificationResult
@@ -46,6 +47,22 @@ class BenchRequirement(Strict):
         return start <= claim.start and claim.end <= end
 
 
+class AreaRequirement(Strict):
+    """A supported burned-area claim for this case, month and quantity."""
+
+    case_id: str
+    month: str = Field(pattern=r"^\d{4}-\d{2}$")
+    quantity: AreaQuantity = AreaQuantity.BURNED_AREA_HA
+
+    def met_by(self, result: AreaVerification) -> bool:
+        c = result.claim
+        return result.verdict is Verdict.SUPPORTED and (c.case_id, c.month, c.quantity) == (
+            self.case_id,
+            self.month,
+            self.quantity,
+        )
+
+
 class Scenario(Strict):
     id: str = Field(pattern=r"^SB-\d{2}[a-z]?$")
     priority: Literal["P0", "P1", "P2"]
@@ -55,6 +72,7 @@ class Scenario(Strict):
     question: str = Field(min_length=10)
     expected: Expected
     requirements: list[BenchRequirement] = Field(default_factory=list)
+    area_requirements: list[AreaRequirement] = Field(default_factory=list)
     reason_codes: list[ReasonCode] = Field(default_factory=list)
     claims_allowed: bool = False
 
@@ -64,7 +82,7 @@ class Scenario(Strict):
             if not self.blocked_reason:
                 raise ValueError(f"{self.id}: a blocked scenario needs blocked_reason")
             return self
-        if self.expected == "verified_claims" and not self.requirements:
+        if self.expected == "verified_claims" and not (self.requirements or self.area_requirements):
             raise ValueError(f"{self.id}: verified_claims needs requirements")
         if self.expected != "verified_claims" and not self.reason_codes:
             raise ValueError(f"{self.id}: an abstention needs reason_codes")
@@ -85,6 +103,7 @@ class Outcome(Strict):
 
     status: str
     supported: list[VerificationResult] = Field(default_factory=list)
+    area_supported: list[AreaVerification] = Field(default_factory=list)
     rejected_claims: int = 0
     reason_codes: list[ReasonCode] = Field(default_factory=list)
     answer_issues: list[str] = Field(default_factory=list)
@@ -120,6 +139,11 @@ def score(scenario: Scenario, arm: str, repeat: int, outcome: Outcome) -> Scenar
         reasons += [
             f"requirement not met: {r.kind.value} {r.region or ''}".strip() for r in missing
         ]
+        reasons += [
+            f"area requirement not met: {a.case_id} {a.month} {a.quantity.value}"
+            for a in scenario.area_requirements
+            if not any(a.met_by(s) for s in outcome.area_supported)
+        ]
     else:
         if outcome.status != "abstained":
             reasons.append(f"status {outcome.status}, expected abstained")
@@ -128,9 +152,10 @@ def score(scenario: Scenario, arm: str, repeat: int, outcome: Outcome) -> Scenar
         absent = [c.value for c in scenario.reason_codes if c not in codes]
         if absent:
             reasons.append(f"missing reason codes: {', '.join(absent)}")
-        if outcome.supported and not scenario.claims_allowed:
-            false_verified += len(outcome.supported)
-            reasons.append(f"{len(outcome.supported)} claims where none should be made")
+        made = len(outcome.supported) + len(outcome.area_supported)
+        if made and not scenario.claims_allowed:
+            false_verified += made
+            reasons.append(f"{made} claims where none should be made")
     return ScenarioScore(
         scenario_id=scenario.id,
         arm=arm,

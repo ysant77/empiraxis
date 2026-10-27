@@ -15,6 +15,7 @@ import time
 from datetime import datetime, timedelta
 from typing import Any
 
+from earthlab.agent.area_findings import AreaLedger
 from earthlab.agent.findings import FindingsLedger
 from earthlab.agent.limitations import LimitationLog, ReasonCode
 from earthlab.bench.scenarios import Outcome
@@ -45,6 +46,7 @@ _CASES = {
     "uttarakhand": "uttarakhand-2024-burned-area",
     "kalimantan": "kalimantan-2015-burned-area",
 }
+_AREA_CUE = re.compile(r"\bhectares?\b|\bburned area\b|mapped as burned", re.I)
 _CASE_CODES = {
     "blocked": ReasonCode.DATA_UNAVAILABLE,
     "needs_approval": ReasonCode.NEEDS_APPROVAL,
@@ -81,22 +83,18 @@ class Dispatcher:
 
     def run(self, question: str) -> Outcome:
         started = time.monotonic()
-        ledger, limits = FindingsLedger(), LimitationLog()
-        registry = build_registry(self._workspace, ledger, limits)
+        ledger, limits, area = FindingsLedger(), LimitationLog(), AreaLedger()
+        registry = build_registry(self._workspace, ledger, limits, area)
         calls = self._route(question, registry)
-        supported = ledger.supported()
         codes = sorted(limits.codes())
-        status = (
-            "abstained"
-            if codes
-            else "verified"
-            if ledger.all_supported()
-            else "no_supported_findings"
-        )
+        used = [led for led in (ledger, area) if led.rounds]
+        verified = bool(used) and all(led.all_supported() for led in used)
+        status = "abstained" if codes else "verified" if verified else "no_supported_findings"
         return Outcome(
             status=status,
-            supported=supported,
-            rejected_claims=len(ledger.rejected()),
+            supported=ledger.supported(),
+            area_supported=area.supported(),
+            rejected_claims=len(ledger.rejected()) + len(area.rejected()),
             reason_codes=codes,
             seconds=round(time.monotonic() - started, 3),
             tool_calls=calls,
@@ -109,6 +107,8 @@ class Dispatcher:
         for word, case_id in _CASES.items():
             if word in question.lower():
                 report = self._call(registry, "assess_case", {"case_id": case_id})
+                if report.get("status") == "feasible" and _AREA_CUE.search(question):
+                    return 1 + self._burned_area(question, case_id, registry)
                 code = _CASE_CODES.get(report.get("status", ""), ReasonCode.OUT_OF_SCOPE)
                 return 1 + self._abstain(registry, [code])
         windows = parse_windows(question)
@@ -164,6 +164,25 @@ class Dispatcher:
         ]
         self._call(registry, "submit_findings", {"claims": claims})
         return 3
+
+    def _burned_area(self, question: str, case_id: str, registry: ToolRegistry) -> int:
+        windows = parse_windows(question)
+        if len(windows) != 1:
+            return self._abstain(registry, [ReasonCode.NEEDS_INPUT])
+        month = f"{windows[0][0]:%Y-%m}"
+        report = self._call(registry, "burned_area_summary", {"case_id": case_id, "month": month})
+        summary = report.get("summary", {})
+        if not summary.get("gate_passed"):
+            return 1 + self._abstain(registry, [ReasonCode.INSUFFICIENT_VALID_DATA])
+        claim = {
+            "case_id": case_id,
+            "month": month,
+            "quantity": "burned_area_ha",
+            "value": summary["primary_area_ha"],
+            "statement": "Dispatcher value.",
+        }
+        self._call(registry, "submit_area_findings", {"claims": [claim]})
+        return 2
 
     @staticmethod
     def _abstain(registry: ToolRegistry, codes: list[ReasonCode]) -> int:
