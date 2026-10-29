@@ -1,0 +1,131 @@
+# Frozen measurement protocol for the sealed held-out set v1. Every official run reads
+# its settings from this file and stops before the first question if the code, data or
+# model servers differ. The question file stays outside the repo; its lock is below.
+protocol_id: heldout-v1-protocol
+set_id: heldout-v1
+lock: evals/heldout_v1.lock.yaml
+lock_sha256: bb335f7b815322fae90b0271f52076565872751098197ec96dbc870e7400d2d1
+frozen_at: '2026-10-29'
+arms:
+- A
+- B
+repeats: 3
+provider: local-glimmer
+guard: local-llama-guard
+reasoning_prompt: low
+budget:
+  max_turns: 12
+  max_tool_calls: 24
+  max_submissions: 3
+  max_seconds: 3600.0
+  max_usd: 1.0
+  max_output_tokens: 4096
+data_sha256: 2fb76e1c4e4208e92f49670602e303c86e21eaa3704651633323e50f51015de4
+planner_server:
+  model_path: Muse-Glimmer-30B-KQuant-17GB-Q4_K_M.gguf
+  build_info: b11669-620d2225c
+  n_ctx: 32768
+  sampling_defaults:
+    temperature: 1.0
+    top_p: 0.949999988079071
+    top_k: 64
+    min_p: 0.05000000074505806
+    seed: 4294967295
+guard_model_digest: ddc07af15606ec3342a3878b5631e58a1d8b42642a00a42efe4a8e81550c4f19
+official_dir: runs/heldout/heldout-v1
+notes:
+- 'Settings match the T9 development run (20261029T020831Z-78451c): arms A and B, 3 repeats, reasoning
+  prompt low, reasoning_strength medium in config/providers.yaml, default budget.'
+- No setting was chosen from a held-out result. No question in the held-out set was run before this freeze.
+- The planner server also loads a speculative draft model, which is meant to change speed only. The server
+  does not report it, so the protocol cannot check it.
+- The server seed is 4294967295 (random per request). Outputs are not reproducible token for token; the
+  3 repeats measure this variation.
+- 'Run: earthlab bench-official --protocol evals/heldout_v1.protocol.yaml --scenarios <sealed file>. Use
+  --check-only first.'
+- A change to any hashed file, the data, the budget or the servers stops the run. To change one, open
+  a new protocol PR.
+config_sha256:
+  config/cases/kalimantan-2015-burned-area.yaml: 477e74381225ea0a77b7cd9c3220dca32ef4da1a7e10f67f832efc5f082f8d67
+  config/cases/nea-2015-haze.yaml: c97fbf231c835bcf907e2106ecb0a473104dd53700a6c5489474aeb9650bd556
+  config/cases/uttarakhand-2024-burned-area.yaml: 2c7dc63bf07325c9833bb68ed4eccd314432674627c3341800d70f24ec6f2b5b
+  config/methods/mcd64a1_burned_area.yaml: 5cb0735405c1c6a8b55889c8bb4eef4107a5e9b16ccfa4db73da600f0b8ced71
+  config/methods/mcd64a1_qa_sensitivity.yaml: 47359a7d51ba54d510e4d477f92ca28a792cd58eef2d195ca69fd61405bd2e3e
+  config/ollama/earthlab-guard.Modelfile: 62e5b727876af7e6b733b68e343404a431d4293db6402260dc0a86ccf030045b
+  config/providers.yaml: b863b96697da0b049b171b1848c539b8c781a11a27dd951ae9163403a0b9e33b
+  src/earthlab/__init__.py: 4c124aa54a952c81b6c920012801518880a18b2352a3e9f2ae511152895e355b
+  src/earthlab/acquire/__init__.py: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  src/earthlab/acquire/firms.py: e01a1c9fb4ced828b4549ee0a58a1ea939f609176e4111a5f0b65f43cc6f4d3e
+  src/earthlab/acquire/gate.py: e1b83f2de727e3c5f2883761c77ce2a6458a97a561421c701196a73627400ffe
+  src/earthlab/acquire/mcd64a1.py: e505e965aa71f8721408d0ee97c4bc317db0830711e0293e2529da483a4c415a
+  src/earthlab/acquire/run.py: 4be6566de264d541f3a715e70814409c61ef706071fa3a6d7d4d6ff0a1c58c33
+  src/earthlab/agent/__init__.py: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  src/earthlab/agent/area_findings.py: eeebc37c37ded5c8ca1aa9566fb3a5a5409db38c6e36ea4479a621930ecce9e1
+  src/earthlab/agent/budget.py: 583ba5d0cc2b027773081ecc8a83116154143e40f67209f0ebce102d5dda34fc
+  src/earthlab/agent/findings.py: 7377988852c4745645bd5f187b624e7bbb56f8ae7e4ce65a9b6a138859b0d9c6
+  src/earthlab/agent/limitations.py: b31dba2bbd3370dd92a8f0080096a044cdd90a7b5bdc651c51900d1e9e1f6001
+  src/earthlab/agent/loop.py: 30e9a981983e4b8ec2406723a26199694480fb29c581f7a58c6cddfaeb69dcd3
+  src/earthlab/agent/prompts.py: 9ed8ab7ced4d01b52637f6ac693e2dc10e13bf9f0696349c9dd48173ed0c1e15
+  src/earthlab/bench/__init__.py: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  src/earthlab/bench/dispatcher.py: 29bf4d238cfc25d44a28a113da70eb0b710fe3e8ee149129a03ee28ff6b333dc
+  src/earthlab/bench/heldout.py: a042f18248a1f786efe2c2f7e34909b6653d812cc865aab1289631bff3687768
+  src/earthlab/bench/metrics.py: 6d59985f39646793f56532dc282781aaa47e3822e1f4e17d86df4822f666e3d1
+  src/earthlab/bench/official.py: fc51a38588bfa1b1410d619ec9c168e83b601583e1adf3215486dd600ac81992
+  src/earthlab/bench/protocol.py: 8d0b4501c95381a9878cdb087696e4b7b1ab8d4428ab74c2f6b0dfca412fcb28
+  src/earthlab/bench/runner.py: 43db673a10a424333b44cdd6a2bca9effd282fe964bfd86df27ce6879ba6757c
+  src/earthlab/bench/runtime_info.py: c88ed5d69b06ce752b98dce4772c4cbd2e71157d71dc916e28f93335ec136411
+  src/earthlab/bench/scenarios.py: 502995f615fd1eb50958a87f2cc352a8926917b05e4ffe80b89dd58fe7ef6ad5
+  src/earthlab/cases/__init__.py: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  src/earthlab/cases/loader.py: 2dc36bdb479d1c541f62e3cf332d476180718e9902987b4c43f330c739f62049
+  src/earthlab/cases/methods.py: 7ad2312476b155e83db5529c03700d32fe28a030fdb124391bf52b2b020e19a9
+  src/earthlab/cases/models.py: 629ad6435a3d958fd9df545d554a202c6d371a03221efbb5ddf3e87df1562a1b
+  src/earthlab/cases/tools.py: 96ca03be083d12bc94b8c870621c8654a7ac1546bf8238c4e4e52d5867ff3f68
+  src/earthlab/cli.py: 9f1149f7dca76e1314fa6a030d92820fb96ff02e027d84ebc970c46f34e3595b
+  src/earthlab/contracts.py: 2b91f69f340698710bf5ac7ff7079f16bdada58adb9bebedc376fe22803cb1e1
+  src/earthlab/data/__init__.py: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  src/earthlab/data/firms.py: fd83faa78b6d787869f323589979f585eb8d711ee82986c4d04a15d9fd957d42
+  src/earthlab/data/mcd64a1.py: 7e99928c57d065bbf2ef93f0658586b262b6a19aa0ac284d4654a2d4bcb438dc
+  src/earthlab/data/nea_pm25.py: ff9bd03de948b6d20d35e904f6a933a5a49c7bbc00a0ffaba69fbbf5433d7b81
+  src/earthlab/data/quality.py: f9920d1d26a1f613c8b78c17a7b1bd1830694492d11223c5a9beed019fc47896
+  src/earthlab/data/snapshot.py: 91fcf415618880d3ba19e610c3b7082223feb993e16ce63054904897a60f4e4b
+  src/earthlab/demo.py: 4c9b4063319692138e6ea32beabc1a1261a77f7a7bfc823b361d265638dc7193
+  src/earthlab/digest.py: 82c8452b9bd37631d97a0c73a6f958b148f13b89280f13c60175e4e42f55b98f
+  src/earthlab/evals/__init__.py: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  src/earthlab/evals/arms.py: 6c41cb6f283e87c8ab6a1502c43d1b4c1effb95632c2078087ea66978a1e1ceb
+  src/earthlab/evals/runner.py: 99c5fd9cc349bc1f0d7e59f61cde261ddf9d28e05623387519ef03209cd1ecd2
+  src/earthlab/evals/safety.py: a93b091a6d32e5f567690968827c579ee13632e403e502689401d32bcb1c89d6
+  src/earthlab/evals/tasks.py: 3bca25c796b38f47957534402eb46603baa86e2ccbd4f62f68e1d9985647338c
+  src/earthlab/llm/__init__.py: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  src/earthlab/llm/client.py: fe2ba986907574a62f465bdcfa526bfabdaae5de7e8b85c86987db9ab49e3ffd
+  src/earthlab/llm/providers.py: ee255278e74c3c60330450d4f9dd47b7fca2c0182a70b04bfb7eb79f3abce9c3
+  src/earthlab/llm/raw.py: 4731223be961819c69626ef9bd6a460965902e08ea031632d88a0a17a571b0dd
+  src/earthlab/llm/types.py: 30258f4a92268335b61c1da8a60bf4c147de44bd3d176ccea2955d2d40c922bc
+  src/earthlab/metrics.py: 4fd7f20c887eaff7d888d9e456bce6a28bb2ef478dfb240bd6c19238db5430af
+  src/earthlab/report/__init__.py: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  src/earthlab/report/area_sections.py: 9fa6e04de88037eb4fcc34cefbaec4bd857385beeb4fbf80724afc4f4562f574
+  src/earthlab/report/burn_map.py: 65844b1b663de4df3db79928435a28f538aa776bf37e915e23101278f26e9b29
+  src/earthlab/report/chart.py: 17ebc6dbc15c5039aed491c7e7e2f2b10a49f42ae923fa65d941e81c5fec92f4
+  src/earthlab/report/evidence.py: 7e7267898732a2ca1030412e5b4e9d2252aa878dac26df91d6872e941026d523
+  src/earthlab/report/markdown.py: 0d34cab4c9dd3623d1c4865ecb79a9e1110139ef32b44e34ea08543f21f23c86
+  src/earthlab/report/write.py: 090d19ad30745bd5a3da6e72678d168bfbd935d80f47faad435c443133f2d03a
+  src/earthlab/runtime.py: e4a3a211fa137475d3e97b1f4e77f09cd9ff420067670194ca13b93323ae0fa0
+  src/earthlab/safety/__init__.py: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  src/earthlab/safety/gate.py: 18158f21b4a6df54fd1d7c781231ef8ee83cfd9534194d90f691fc8f81765c16
+  src/earthlab/safety/llama_guard.py: e68245f88b485362ee8bd122d086441097d0b946e645aae505331984ec2cf913
+  src/earthlab/safety/scope.py: b404f7e331b865bba25fed4e735fa7e3d315537802f0eee124a16b011c0b4c66
+  src/earthlab/science/__init__.py: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  src/earthlab/science/burned_area.py: 4dd32566f289d90ec32b7552175470c15f3a56d1891e443b47b0100f46c203bb
+  src/earthlab/science/episode.py: 01082b6ccac245a227638d4790b707236691cee8fa73b376db04ae66fc1c5ec6
+  src/earthlab/tools/__init__.py: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  src/earthlab/tools/burned_area_tools.py: 44bb13c98f6980192d512f11b3466ffba7d276163c38cf646937d7187e1ae1a9
+  src/earthlab/tools/pm25_tools.py: 2a58089986bcaab466af5afdcb45dcf56c76ebb7eac960d74d41952d09253e70
+  src/earthlab/tools/registry.py: ddfef06af5fc4789070a1b40267d09e9b9074e0f221ddc2e9d6d38745d775160
+  src/earthlab/trace.py: b2fc15765d227d8a12a146a52927bb43695fd6115288ee2b881c4fdf0e19d5a8
+  src/earthlab/verify/__init__.py: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  src/earthlab/verify/answer_audit.py: dd6060a7529eb6b0680092d661a06d640db74f8d481b123ae49bd037632d10ce
+  src/earthlab/verify/burned_area_check.py: 497eeb92ba964ba56a569af2fde5fd473d48a29d723984c60cc0cb79abc9ecc6
+  src/earthlab/verify/claims.py: b6b6d317767c20adf169006fb5b3b510dcbd8036da53a5637f0ff70d3b9f8a4d
+  src/earthlab/verify/language.py: 034f11aadf66849fb3ed93ba4f94252d5ca0cda95a2d7082c14bef45cf8952aa
+  src/earthlab/verify/recompute.py: b806a6d18a0a3cbba2626d32bf8dd8c7b56400eae5ae9a7e557819dea8e6301e
+  src/earthlab/verify/replay.py: 276bc7d753e69a0586681650fbdc3c1383eda28acf0ed33d7de220e6ae019e3d
+  src/earthlab/verify/verifier.py: 31098f55b82de790b5a9ad694a7b17b16edcbfa1c7012d3465c0f740024c6e41

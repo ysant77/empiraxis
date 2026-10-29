@@ -13,20 +13,16 @@ from earthlab.bench.scenarios import Outcome, Scenario, ScenarioScore
 from earthlab.digest import file_digest
 from earthlab.trace import RunTrace
 
-# Files whose change can change a score. A protocol freeze pins these hashes.
-CONFIG_FILES = (
-    "src/earthlab/agent/prompts.py",
-    "src/earthlab/agent/loop.py",
-    "src/earthlab/bench/dispatcher.py",
-    "src/earthlab/bench/runner.py",
-    "src/earthlab/bench/scenarios.py",
-    "src/earthlab/verify/answer_audit.py",
-    "src/earthlab/safety/gate.py",
-    "src/earthlab/safety/scope.py",
-    "src/earthlab/safety/llama_guard.py",
+# Files whose change can change a score: all runtime code (the UI only displays results)
+# and the config. A protocol freeze pins these hashes.
+CONFIG_GLOBS = (
+    "src/earthlab/**/*.py",
     "config/providers.yaml",
-    "config/ollama/earthlab-guard.Modelfile",
+    "config/ollama/*.Modelfile",
+    "config/methods/*.yaml",
+    "config/cases/*.yaml",
 )
+NOT_HASHED = ("src/earthlab/ui/",)
 CAVEAT = "Counts from a small question set. They do not estimate general performance."
 INTERVENTIONS_NOTE = (
     "Bench mode has no human approval or edit step; each row records an empty list. "
@@ -63,9 +59,9 @@ def trace_counts(run_dir: Path) -> dict[str, int]:
 
 
 def config_hashes(repo: Path) -> dict[str, str]:
-    files = [repo / name for name in CONFIG_FILES]
-    files += sorted((repo / "config" / "methods").glob("*.yaml"))
-    return {str(p.relative_to(repo)): file_digest(p) for p in files if p.is_file()}
+    names = {str(p.relative_to(repo)) for pattern in CONFIG_GLOBS for p in repo.glob(pattern)}
+    kept = sorted(n for n in names if not n.startswith(NOT_HASHED))
+    return {name: file_digest(repo / name) for name in kept}
 
 
 def _total_cost(outcomes: list[Outcome]) -> float | None:
