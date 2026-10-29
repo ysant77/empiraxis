@@ -1,0 +1,126 @@
+# Reverse-causality hypothesis: "the fires caused the heatwave". Heat and drought also
+# make fires more likely, so the plan states both directions and a common cause, uses
+# ERA5 2 m temperature as a reanalysis and keeps land-surface temperature as context.
+# Expected: needs_evidence (fuel moisture is a declared gap).
+plan_id: heatwave-fire-reverse-causality
+plan_revision: 1
+task: {task_id: heat-fire-2024, role_id: orchestrator, visibility: authenticated_reviewer}
+research_question: Did the May 2024 Uttarakhand forest fires cause the high air temperatures?
+requested_intent: causal_inference
+research_intent: association
+intent_note: The plan tests lead-lag association in both directions; cause stays not established.
+aoi:
+  area:
+    area_id: uttarakhand-draft
+    name: Uttarakhand draft box
+    bbox: {min_lon: 77.5, min_lat: 28.7, max_lon: 81.1, max_lat: 31.5}
+  spatial_support: grid_cell
+  boundary_source: Draft box, not an administrative boundary
+  boundary_version: draft-1
+time_range:
+  period: {start: "2024-04-01T00:00:00Z", end: "2024-06-01T00:00:00Z", local_zone: Asia/Kolkata}
+target:
+  quantity: air_temperature_anomaly
+  unit: K
+  temporal_resolution: day
+  spatial_support: grid_cell
+  spatial_resolution_m: 31000
+data_candidates:
+  - dataset_id: era5-t2m-uttarakhand-2024
+    product: ECMWF/ERA5/HOURLY
+    version: ERA5
+    publisher: ECMWF Copernicus Climate Change Service
+    uri: https://cds.climate.copernicus.eu/
+    licence: Copernicus licence
+    availability: registered_not_downloaded
+    quantity: air_temperature_anomaly
+    units: K
+    product_kind: reanalysis
+    native_variables: [t2m]
+    crs: EPSG:4326
+    resolution_m: 31000
+    coverage: {start: "1940-01-01T00:00:00Z", end: "2026-01-01T00:00:00Z", local_zone: UTC}
+    extent: {min_lon: 77.0, min_lat: 28.0, max_lon: 82.0, max_lat: 32.0}
+    availability_latency_hours: 120
+    valid_fraction: 1.0
+    missing_data_policy: Gridded reanalysis has no gaps; it is a model estimate, not an observation.
+  - dataset_id: viirs-firms-uttarakhand-2024
+    product: FIRMS/VIIRS_SNPP_SP
+    version: Collection 2 standard processing
+    publisher: NASA FIRMS
+    uri: https://firms.modaps.eosdis.nasa.gov/download/
+    licence: NASA Earth science data, no restrictions on use
+    availability: registered_not_downloaded
+    quantity: active_fire
+    units: detections
+    product_kind: satellite_retrieval
+    native_variables: [frp, confidence, acq_date]
+    crs: EPSG:4326
+    resolution_m: 375
+    coverage: {start: "2024-04-01T00:00:00Z", end: "2024-06-01T00:00:00Z", local_zone: UTC}
+    extent: {min_lon: 77.5, min_lat: 28.7, max_lon: 81.1, max_lat: 31.5}
+    availability_latency_hours: 2160
+    valid_fraction: 0.9
+    missing_data_policy: Overpass and cloud gaps are not zero fire.
+  - dataset_id: mod11a1-lst-uttarakhand-2024
+    product: MODIS/061/MOD11A1
+    version: "6.1"
+    publisher: NASA LP DAAC
+    uri: https://lpdaac.usgs.gov/products/mod11a1v061/
+    licence: NASA Earth science data, no restrictions on use
+    availability: registered_not_downloaded
+    quantity: land_surface_temperature
+    units: K
+    product_kind: satellite_retrieval
+    native_variables: [LST_Day_1km, QC_Day]
+    crs: SR-ORG:6974
+    resolution_m: 1000
+    coverage: {start: "2024-04-01T00:00:00Z", end: "2024-06-01T00:00:00Z", local_zone: UTC}
+    extent: {min_lon: 77.5, min_lat: 28.7, max_lon: 81.1, max_lat: 31.5}
+    availability_latency_hours: 48
+    missing_data_policy: Cloud-masked pixels stay missing.
+method_candidates:
+  - method_id: bidirectional-lead-lag
+    method_class: deterministic
+    technique: lagged_association
+    inputs:
+      - {dataset_id: era5-t2m-uttarakhand-2024, used_as: air_temperature_anomaly, assumed_kind: reanalysis}
+      - {dataset_id: viirs-firms-uttarakhand-2024, used_as: active_fire, assumed_kind: satellite_retrieval}
+      - {dataset_id: mod11a1-lst-uttarakhand-2024, used_as: land_surface_temperature, assumed_kind: satellite_retrieval, role: context}
+    feasibility: needs_approval
+    assumptions: [Daily lead-lag in both directions; no claim of cause.]
+    failure_modes: [Fire smoke cools the surface; a shared dry spell drives both series.]
+    runtime_estimate_s: 30
+method_choice:
+  selected_id: bidirectional-lead-lag
+  rationale: Lead-lag in both directions separates the hypotheses better than one correlation.
+  evidence_refs: ["dataset:era5-t2m-uttarakhand-2024#metadata"]
+hypotheses:
+  - {hypothesis_id: h-fire-heat, statement: Fires raised 2 m air temperature., direction: forward}
+  - {hypothesis_id: h-heat-fire, statement: Heat and drought raised fire activity., direction: reverse}
+  - {hypothesis_id: h-ridge, statement: A dry high-pressure spell drove both., direction: common_cause}
+evidence_gaps:
+  - gap_id: fuel-moisture
+    needed: fuel_moisture
+    why: Dead fuel moisture would show whether drought preceded the fire increase.
+abstentions:
+  - reason: causation_not_identifiable
+    note: Fire and heat share drivers; lead-lag cannot identify the causal direction.
+approval_scope: [download]
+approval_requests:
+  - request_id: dl-heat-fire
+    action: download
+    dataset_ids: [era5-t2m-uttarakhand-2024, viirs-firms-uttarakhand-2024, mod11a1-lst-uttarakhand-2024]
+    max_bytes: 500000000
+    reason: Daily inputs for the draft box, April-May 2024.
+verification_plan:
+  checks:
+    - check_id: recompute-daily-means
+      description: Recompute daily box means from the raw grid with an independent reader.
+      independent_of_method: true
+      acceptance_threshold: 0.05
+      threshold_unit: K
+  abstain_when:
+    - {kind: coverage_gap}
+    - {kind: verifier_disagrees}
+  uncertainty_statement: Reanalysis 2 m temperature is a model estimate at 31 km.

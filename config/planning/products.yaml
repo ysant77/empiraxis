@@ -1,0 +1,20 @@
+# Planning profile for each product that a case file registers. The registry joins this
+# profile with the case asset and its download manifest to build the dataset record that
+# the plan critic trusts. Delays are nominal planning bounds from provider documentation,
+# not measured values. Add a product here before a case may register it.
+products:
+  nea-historical-1hr-pm25:
+    product_kind: in_situ_observation
+    availability_latency_hours: 1
+    native_variables: [pm25_one_hourly]
+    missing_data_policy: Missing hours stay missing; no interpolation.
+  MODIS/061/MCD64A1:
+    product_kind: derived_product
+    availability_latency_hours: 1440
+    native_variables: [BurnDate, Uncertainty, QA, FirstDay, LastDay]
+    missing_data_policy: Unmapped and water pixels are excluded; the valid fraction is reported per month.
+  FIRMS/MODIS_SP:
+    product_kind: satellite_retrieval
+    availability_latency_hours: 2160
+    native_variables: [frp, confidence, acq_date]
+    missing_data_policy: Overpass and cloud gaps are not zero fire.

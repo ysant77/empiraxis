@@ -1,0 +1,237 @@
+# Test-only registry records for datasets that no case file registers yet.
+# Values are illustrative; nothing here was downloaded or measured.
+datasets:
+- dataset_id: cpcb-aqi-mumbai-2023
+  product: CPCB daily AQI bulletin
+  version: unknown
+  publisher: Central Pollution Control Board (India)
+  uri: https://cpcb.nic.in/
+  licence: not verified
+  availability: unavailable
+  quantity: air_quality_index
+  units: index
+  product_kind: derived_product
+  native_variables:
+  - aqi
+  - prominent_pollutant
+  crs: station-points
+  coverage:
+    start: '2022-12-31T18:30:00Z'
+    end: '2023-12-31T18:30:00Z'
+    local_zone: Asia/Kolkata
+  extent:
+    min_lon: 72.75
+    min_lat: 18.85
+    max_lon: 73.05
+    max_lat: 19.3
+  availability_latency_hours: 24.0
+  missing_data_policy: Station-days without a bulletin stay missing.
+- dataset_id: era5-t2m-uttarakhand-2024
+  product: ECMWF/ERA5/HOURLY
+  version: ERA5
+  publisher: ECMWF Copernicus Climate Change Service
+  uri: https://cds.climate.copernicus.eu/
+  licence: Copernicus licence
+  availability: registered_not_downloaded
+  quantity: air_temperature_anomaly
+  units: K
+  product_kind: reanalysis
+  native_variables:
+  - t2m
+  crs: EPSG:4326
+  resolution_m: 31000.0
+  coverage:
+    start: '1940-01-01T00:00:00Z'
+    end: '2026-01-01T00:00:00Z'
+    local_zone: UTC
+  extent:
+    min_lon: 77.0
+    min_lat: 28.0
+    max_lon: 82.0
+    max_lat: 32.0
+  availability_latency_hours: 120.0
+  valid_fraction: 1.0
+  missing_data_policy: Gridded reanalysis has no gaps; it is a model estimate, not an observation.
+- dataset_id: era5-wind-2015
+  product: ECMWF/ERA5/HOURLY
+  version: ERA5
+  publisher: ECMWF Copernicus Climate Change Service
+  uri: https://cds.climate.copernicus.eu/
+  licence: Copernicus licence
+  availability: registered_not_downloaded
+  quantity: wind_vector
+  units: m/s
+  product_kind: reanalysis
+  native_variables:
+  - u10
+  - v10
+  crs: EPSG:4326
+  coverage:
+    start: '1940-01-01T00:00:00Z'
+    end: '2026-01-01T00:00:00Z'
+    local_zone: UTC
+  regions:
+  - north
+  - south
+  - east
+  - west
+  - central
+  availability_latency_hours: 120.0
+  missing_data_policy: Gridded reanalysis has no gaps; it is a model estimate.
+- dataset_id: firms-modis-sp-sumatra-kalimantan-2015
+  product: FIRMS/MODIS_SP
+  version: Collection 6.1 standard processing
+  publisher: NASA FIRMS
+  uri: https://firms.modaps.eosdis.nasa.gov/download/
+  licence: NASA Earth science data, no restrictions on use
+  availability: registered_not_downloaded
+  quantity: active_fire
+  units: detections
+  product_kind: satellite_retrieval
+  native_variables:
+  - frp
+  - confidence
+  - acq_date
+  crs: EPSG:4326
+  coverage:
+    start: '2015-09-01T00:00:00Z'
+    end: '2015-11-01T00:00:00Z'
+    local_zone: UTC
+  extent:
+    min_lon: 100.0
+    min_lat: -4.0
+    max_lon: 104.9
+    max_lat: 0.9
+  availability_latency_hours: 2160.0
+  missing_data_policy: Overpass gaps are not zero fire.
+- dataset_id: gfs-wind-forecast-2015
+  product: NOAA GFS 0.25 degree forecast archive
+  version: GFS v13
+  publisher: NOAA NCEP
+  uri: https://www.ncei.noaa.gov/products/weather-climate-models/global-forecast
+  licence: US government work
+  availability: registered_not_downloaded
+  quantity: wind_vector
+  units: m/s
+  product_kind: operational_forecast
+  native_variables:
+  - u10
+  - v10
+  crs: EPSG:4326
+  coverage:
+    start: '2015-01-01T00:00:00Z'
+    end: '2016-01-01T00:00:00Z'
+    local_zone: UTC
+  regions:
+  - north
+  - south
+  - east
+  - west
+  - central
+  availability_latency_hours: 4.0
+  missing_data_policy: A missing forecast cycle falls back to the previous cycle.
+- dataset_id: hansen-gfc-v1-11
+  product: Hansen Global Forest Change
+  version: v1.11
+  publisher: University of Maryland
+  uri: https://glad.earthengine.app/view/global-forest-change
+  licence: CC BY 4.0
+  availability: registered_not_downloaded
+  quantity: land_cover_change
+  units: lossyear
+  product_kind: derived_product
+  native_variables:
+  - treecover2000
+  - lossyear
+  crs: EPSG:4326
+  resolution_m: 30.0
+  coverage:
+    start: '2000-01-01T00:00:00Z'
+    end: '2024-01-01T00:00:00Z'
+    local_zone: UTC
+  extent:
+    min_lon: 72.0
+    min_lat: 18.0
+    max_lon: 74.0
+    max_lat: 20.0
+  availability_latency_hours: 4380.0
+  missing_data_policy: Tree-cover loss year only; no regrowth or species information.
+- dataset_id: mod11a1-lst-uttarakhand-2024
+  product: MODIS/061/MOD11A1
+  version: '6.1'
+  publisher: NASA LP DAAC
+  uri: https://lpdaac.usgs.gov/products/mod11a1v061/
+  licence: NASA Earth science data, no restrictions on use
+  availability: registered_not_downloaded
+  quantity: land_surface_temperature
+  units: K
+  product_kind: satellite_retrieval
+  native_variables:
+  - LST_Day_1km
+  - QC_Day
+  crs: SR-ORG:6974
+  resolution_m: 1000.0
+  coverage:
+    start: '2024-04-01T00:00:00Z'
+    end: '2024-06-01T00:00:00Z'
+    local_zone: UTC
+  extent:
+    min_lon: 77.5
+    min_lat: 28.7
+    max_lon: 81.1
+    max_lat: 31.5
+  availability_latency_hours: 48.0
+  missing_data_policy: Cloud-masked pixels stay missing.
+- dataset_id: nea-pm25-2019-holdout
+  product: nea-historical-1hr-pm25
+  version: data.gov.sg snapshot, 2019 haze months only
+  publisher: National Environment Agency (NEA), Singapore
+  uri: https://data.gov.sg/datasets/d_6c0d5fc34838b12472475fdb73c0af29/view
+  licence: Singapore Open Data Licence v1.0
+  availability: registered_not_downloaded
+  quantity: air_pollution_observation
+  units: ug/m3
+  product_kind: in_situ_observation
+  native_variables:
+  - pm25_one_hourly
+  crs: named-regions
+  coverage:
+    start: '2019-08-31T16:00:00Z'
+    end: '2019-09-30T16:00:00Z'
+    local_zone: Asia/Singapore
+  regions:
+  - north
+  - south
+  - east
+  - west
+  - central
+  availability_latency_hours: 1.0
+  missing_data_policy: Missing hours stay missing.
+- dataset_id: viirs-firms-uttarakhand-2024
+  product: FIRMS/VIIRS_SNPP_SP
+  version: Collection 2 standard processing
+  publisher: NASA FIRMS
+  uri: https://firms.modaps.eosdis.nasa.gov/download/
+  licence: NASA Earth science data, no restrictions on use
+  availability: registered_not_downloaded
+  quantity: active_fire
+  units: detections
+  product_kind: satellite_retrieval
+  native_variables:
+  - frp
+  - confidence
+  - acq_date
+  crs: EPSG:4326
+  resolution_m: 375.0
+  coverage:
+    start: '2024-04-01T00:00:00Z'
+    end: '2024-06-01T00:00:00Z'
+    local_zone: UTC
+  extent:
+    min_lon: 77.5
+    min_lat: 28.7
+    max_lon: 81.1
+    max_lat: 31.5
+  availability_latency_hours: 2160.0
+  valid_fraction: 0.9
+  missing_data_policy: Overpass and cloud gaps are not zero fire.
