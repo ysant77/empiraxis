@@ -28,7 +28,7 @@ FIRMS active-fire detections in the box (context only, not burned area):
 
 ## Interpretation (model text)
 
-The verified mapped burned area for the study box is in A1.1.
+Finding A1.1 shows the mapped burned area for the registered Kalimantan study area in the requested period after quality checks, with a valid-data fraction above the required gate. The area is reported in hectares using the primary MCD64A1 quality policy for the case. No further tool calls are needed.
 
 _Answer check passed: no numbers or dates in the text; every cited finding is supported; no superlative or comparison goes beyond the findings._
 
@@ -38,14 +38,14 @@ _None._
 
 ## Safety checks
 
-- question: allowed. Llama Guard: not run
-- answer: allowed. Llama Guard: not run
+- question: allowed. Llama Guard: llama-guard-3-8b: safe
+- answer: allowed. Llama Guard: llama-guard-3-8b: safe
 
 ## Model and run
 
-- Provider: `scripted-fixture`; model: `scripted-test-client`; served model: `scripted-test-client`
-- Turns: 3; tool calls: 2; submissions: 1; skipped by limits: 0; wall time: 0.3 s
-- Tokens reported: 300 input, 30 output
+- Provider: `local-glimmer`; model: `muse-glimmer-30B`; served model: `muse-glimmer-30B`
+- Turns: 4; tool calls: 3; submissions: 1; skipped by limits: 0; wall time: 155.5 s
+- Tokens reported: 18996 input, 593 output
 - Estimated cost: 0.000000 USD (estimate)
 
 ## Burned-area inputs

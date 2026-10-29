@@ -22,11 +22,11 @@ FIRMS active-fire detections in the box (context only, not burned area):
 
 ## Declared limitations
 
-- `insufficient_valid_data`: Too little valid land data in the requested month.
+- `insufficient_valid_data`: Valid data fraction for October 2015 is below the quality gate for the Kalimantan 2015 case, so a reliable burned area estimate cannot be provided.
 
 ## Interpretation (model text)
 
-The requested month fails the valid-data gate, so no area is reported.
+The quality check for the study area in the requested period fails the valid-data gate. The summary shows a valid-data fraction below the required threshold, so mapped burned area from MCD64A1 cannot be reliably quantified for that month under the primary QA policy. Therefore a supported hectare value cannot be provided; the limitation was recorded as insufficient valid data.
 
 _Answer check passed: no numbers or dates in the text; every cited finding is supported; no superlative or comparison goes beyond the findings._
 
@@ -36,14 +36,14 @@ _None._
 
 ## Safety checks
 
-- question: allowed. Llama Guard: not run
-- answer: allowed. Llama Guard: not run
+- question: allowed. Llama Guard: llama-guard-3-8b: safe
+- answer: allowed. Llama Guard: llama-guard-3-8b: safe
 
 ## Model and run
 
-- Provider: `scripted-fixture`; model: `scripted-test-client`; served model: `scripted-test-client`
-- Turns: 3; tool calls: 2; submissions: 0; skipped by limits: 0; wall time: 0.1 s
-- Tokens reported: 300 input, 30 output
+- Provider: `local-glimmer`; model: `muse-glimmer-30B`; served model: `muse-glimmer-30B`
+- Turns: 4; tool calls: 3; submissions: 0; skipped by limits: 0; wall time: 188.2 s
+- Tokens reported: 18942 input, 606 output
 - Estimated cost: 0.000000 USD (estimate)
 
 ## Burned-area inputs

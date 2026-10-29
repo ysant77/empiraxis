@@ -62,7 +62,7 @@ def test_fixture_runs_pass_the_manifest_and_map_to_events() -> None:
     assert [r["run"] for r in listed_runs(REPLAY)] == [SEPT, OCT]
     run = load_run(verified_run(REPLAY, SEPT))
     assert run.closed and run.status == "verified" and not run.heldout
-    assert run.trace_records == 11
+    assert run.trace_records == 13
     assert {e.actor_role for e in run.events} <= IMPLEMENTED_ROLES
     assert not {e.actor_role for e in run.events} & PLANNED_ROLES
     verdict = next(e for e in run.events if e.event_id.endswith(".v"))
@@ -81,13 +81,16 @@ def test_october_fixture_abstains_on_the_coverage_gate() -> None:
     )
 
 
-def test_events_never_copy_model_text_or_reasoning() -> None:
-    run = load_run(verified_run(REPLAY, SEPT))
-    trace = [json.loads(line) for line in (REPLAY / SEPT / "trace.jsonl").read_text().splitlines()]
-    raw = [r["data"] for r in trace if r["event"] == "model_turn"]
-    secret_text = {d["content"] for d in raw if d["content"]} | {d["reasoning"] for d in raw}
-    for e in run.events:
-        assert not any(text in e.message_summary for text in secret_text)
+def test_events_never_copy_model_text_or_reasoning(tmp_path: Path) -> None:
+    run_dir = tmp_path / "raw"
+    trace = RunTrace(run_dir / "trace.jsonl")
+    secret = "Private chain of reasoning about the case"
+    draft = "Raw draft text the model wrote"
+    calls = [{"id": "c1", "name": "burned_area_summary", "arguments": "{}"}]
+    trace.append("model_turn", "model", turn=1, content=draft, reasoning=secret, tool_calls=calls)
+    trace.append("model_turn", "model", turn=2, content=draft, reasoning=secret, tool_calls=[])
+    for e in load_run(run_dir).events:
+        assert secret not in e.message_summary and draft not in e.message_summary
 
 
 def test_a_tool_or_the_verifier_is_never_a_model_agent() -> None:
@@ -105,7 +108,8 @@ def test_tampered_trace_fails_closed(tmp_path: Path) -> None:
     run_dir = copy_run(tmp_path)
     path = run_dir / "trace.jsonl"
     lines = path.read_text().splitlines()
-    lines[4] = lines[4].replace("2015-09", "2015-08")
+    index = next(i for i, line in enumerate(lines) if "77426" in line)
+    lines[index] = lines[index].replace("77426", "77427")
     path.write_text("\n".join(lines) + "\n")
     with pytest.raises(TraceIntegrityError):
         load_run(run_dir)

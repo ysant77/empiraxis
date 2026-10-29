@@ -76,9 +76,9 @@ def test_sample_recorded_run_loads_offline(offline: None) -> None:
     app = open_view("control")
     assert not app.exception and not app.error
     timeline = app.dataframe[0].value
-    assert len(timeline) == 13
+    assert len(timeline) == 15
     assert "Round 1: A1.1 supported" in timeline.to_string()
-    assert any("scripted test client" in c.value for c in app.caption)
+    assert any("real Muse Glimmer run; redacted copy" in c.value for c in app.caption)
 
 
 def test_tampered_trace_is_not_displayed(
@@ -165,7 +165,7 @@ def test_recorded_run_tab_replays_both_months(offline: None) -> None:
     app = open_view("workspace")
     picker = next(s for s in app.selectbox if s.label == "Recorded run")
     assert picker.options == ["replay/sb05-september", "replay/sb05b-october"]
-    assert any(s.value == "Trace hash chain intact (11 records)." for s in app.success)
+    assert any(s.value == "Trace hash chain intact (13 records)." for s in app.success)
     picker.set_value("replay/sb05b-october").run()
     assert any("insufficient_valid_data" in w.value for w in app.warning)
 

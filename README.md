@@ -105,7 +105,11 @@ The UI has three routes: `?view=workspace` (Research Workspace), `?view=control`
 (Control Room, recorded events from the hash-chained trace) and `?view=lab`
 (Engineering Lab, method, data QA and benchmark status). Each panel states its status:
 implemented, experimental, planned or unavailable. Planned roles and controls are disabled.
-The replay runs in `examples/replay/` use the scripted test client, not a Meta model.
+The replay runs in `examples/replay/` are redacted copies of two real Muse Glimmer runs
+from a development bench (SB-05 September, verified; SB-05b October, abstained). Model
+reasoning, raw model message text and provider request IDs are removed, and the trace is
+re-chained. `MANIFEST.json` records each source run, its trace SHA-256 and the removed
+fields. Rebuild with `uv run python scripts/make_replay_fixture.py runs/bench/<bench id>`.
 Set `EARTHLAB_UI_MODE=operator` on a local machine to turn on live investigation.
 
 ### Measured on the development Mac (MacBook Air M5, 32 GB)

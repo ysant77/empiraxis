@@ -2,17 +2,17 @@
   "question": "For the registered Kalimantan 2015 study area and September 2015, how many hectares were mapped as burned in MCD64A1, after quality checks?",
   "status": "verified",
   "stop_reason": "final answer given",
-  "answer": "The verified mapped burned area for the study box is in A1.1.",
-  "provider": "scripted-fixture",
-  "model": "scripted-test-client",
-  "served_model": "scripted-test-client",
-  "turns": 3,
-  "tool_calls": 2,
+  "answer": "Finding A1.1 shows the mapped burned area for the registered Kalimantan study area in the requested period after quality checks, with a valid-data fraction above the required gate. The area is reported in hectares using the primary MCD64A1 quality policy for the case. No further tool calls are needed.",
+  "provider": "local-glimmer",
+  "model": "muse-glimmer-30B",
+  "served_model": "muse-glimmer-30B",
+  "turns": 4,
+  "tool_calls": 3,
   "submissions": 1,
   "skipped_tool_calls": 0,
-  "seconds": 0.326,
-  "prompt_tokens": 300,
-  "completion_tokens": 30,
+  "seconds": 155.549,
+  "prompt_tokens": 18996,
+  "completion_tokens": 593,
   "estimated_cost_usd": 0.0,
   "source": {
     "dataset_id": "nea-historical-1hr-pm25",
@@ -30,14 +30,14 @@
       "allowed": true,
       "blocked_by": null,
       "reason": null,
-      "guard": null
+      "guard": "llama-guard-3-8b: safe"
     },
     {
       "stage": "answer",
       "allowed": true,
       "blocked_by": null,
       "reason": null,
-      "guard": null
+      "guard": "llama-guard-3-8b: safe"
     }
   ],
   "answer_issues": [],
@@ -57,7 +57,7 @@
       "month": "2015-09",
       "quantity": "burned_area_ha",
       "value": 77426.0,
-      "statement": "Mapped burned area after quality checks.",
+      "statement": "Mapped burned area in the registered Kalimantan 2015 study area for September 2015 after quality checks is 77426.0 hectares.",
       "qa_policy": "primary",
       "unit": "ha",
       "observed": 77426.0,
@@ -75,7 +75,7 @@
           "month": "2015-09",
           "quantity": "burned_area_ha",
           "value": 77426.0,
-          "statement": "Mapped burned area after quality checks.",
+          "statement": "Mapped burned area in the registered Kalimantan 2015 study area for September 2015 after quality checks is 77426.0 hectares.",
           "qa_policy": "primary"
         },
         "verdict": "supported",

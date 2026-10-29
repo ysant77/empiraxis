@@ -2,17 +2,17 @@
   "question": "For the registered Kalimantan 2015 study area and October 2015, how many hectares were mapped as burned in MCD64A1, after quality checks?",
   "status": "abstained",
   "stop_reason": "limitation declared",
-  "answer": "The requested month fails the valid-data gate, so no area is reported.",
-  "provider": "scripted-fixture",
-  "model": "scripted-test-client",
-  "served_model": "scripted-test-client",
-  "turns": 3,
-  "tool_calls": 2,
+  "answer": "The quality check for the study area in the requested period fails the valid-data gate. The summary shows a valid-data fraction below the required threshold, so mapped burned area from MCD64A1 cannot be reliably quantified for that month under the primary QA policy. Therefore a supported hectare value cannot be provided; the limitation was recorded as insufficient valid data.",
+  "provider": "local-glimmer",
+  "model": "muse-glimmer-30B",
+  "served_model": "muse-glimmer-30B",
+  "turns": 4,
+  "tool_calls": 3,
   "submissions": 0,
   "skipped_tool_calls": 0,
-  "seconds": 0.089,
-  "prompt_tokens": 300,
-  "completion_tokens": 30,
+  "seconds": 188.202,
+  "prompt_tokens": 18942,
+  "completion_tokens": 606,
   "estimated_cost_usd": 0.0,
   "source": {
     "dataset_id": "nea-historical-1hr-pm25",
@@ -30,14 +30,14 @@
       "allowed": true,
       "blocked_by": null,
       "reason": null,
-      "guard": null
+      "guard": "llama-guard-3-8b: safe"
     },
     {
       "stage": "answer",
       "allowed": true,
       "blocked_by": null,
       "reason": null,
-      "guard": null
+      "guard": "llama-guard-3-8b: safe"
     }
   ],
   "answer_issues": [],
@@ -54,7 +54,7 @@
       "reasons": [
         "insufficient_valid_data"
       ],
-      "explanation": "Too little valid land data in the requested month."
+      "explanation": "Valid data fraction for October 2015 is below the quality gate for the Kalimantan 2015 case, so a reliable burned area estimate cannot be provided."
     }
   ],
   "area_findings": [],
