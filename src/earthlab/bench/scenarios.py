@@ -120,6 +120,14 @@ class Outcome(Strict):
     tool_calls: int = 0
     prompt_tokens: int = 0
     completion_tokens: int = 0
+    model_calls: int = 0
+    provider_errors: int = 0
+    rejected_tool_calls: int = 0
+    guard_blocks: int = 0
+    cost_usd: float | None = Field(
+        default=0.0, description="None when the price or the usage is not known; never guessed."
+    )
+    interventions: list[str] = Field(default_factory=list)
     detail: dict[str, Any] = Field(default_factory=dict)
 
 
