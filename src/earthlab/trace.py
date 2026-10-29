@@ -60,10 +60,13 @@ class RunTrace:
     def records(self) -> Iterator[dict[str, Any]]:
         return _read_entries(self.path)
 
-    def append(self, event: str, actor: str, **data: Any) -> dict[str, Any]:
+    def append(
+        self, event: str, actor: str, *, timestamp: str | None = None, **data: Any
+    ) -> dict[str, Any]:
+        """Add one entry. ``timestamp`` keeps a source time when a trace is copied."""
         body = {
             "seq": self._next_seq,
-            "ts": datetime.now(UTC).isoformat(),
+            "ts": timestamp or datetime.now(UTC).isoformat(),
             "event": event,
             "actor": actor,
             "data": json.loads(json.dumps(data, default=str)),

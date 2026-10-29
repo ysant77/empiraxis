@@ -94,11 +94,23 @@ uv run earthlab investigate "Which NEA region recorded the highest hourly PM2.5 
 uv run earthlab replay runs/<run-id>
 ```
 
-Or open the demo UI:
+Or open the demo UI. It starts in replay mode: it reads the recorded runs in
+`examples/replay/` and calls no model.
 
 ```bash
 uv run --extra ui streamlit run src/earthlab/ui/app.py --server.address 127.0.0.1
 ```
+
+The UI has three routes: `?view=workspace` (Research Workspace), `?view=control`
+(Control Room, recorded events from the hash-chained trace) and `?view=lab`
+(Engineering Lab, method, data QA and benchmark status). Each panel states its status:
+implemented, experimental, planned or unavailable. Planned roles and controls are disabled.
+The replay runs in `examples/replay/` are redacted copies of two real Muse Glimmer runs
+from a development bench (SB-05 September, verified; SB-05b October, abstained). Model
+reasoning, raw model message text and provider request IDs are removed, and the trace is
+re-chained. `MANIFEST.json` records each source run, its trace SHA-256 and the removed
+fields. Rebuild with `uv run python scripts/make_replay_fixture.py runs/bench/<bench id>`.
+Set `EARTHLAB_UI_MODE=operator` on a local machine to turn on live investigation.
 
 ### Measured on the development Mac (MacBook Air M5, 32 GB)
 
@@ -223,6 +235,9 @@ CI runs the same checks, a dependency audit and a gitleaks secret scan of every 
 | `src/earthlab/llm/` | Endpoint config and OpenAI-compatible client |
 | `src/earthlab/agent/` | Budget, prompts, findings ledger, investigation loop |
 | `src/earthlab/report/` | Chart and Markdown evidence report |
+| `src/earthlab/events/` | Read-only EventV1 adapter, replay manifest, redaction |
+| `src/earthlab/ui/` | Streamlit app: Research Workspace, Control Room, Engineering Lab |
+| `examples/replay/` | Hash-pinned recorded runs for offline replay |
 | `src/earthlab/metrics.py`, `trace.py`, `digest.py` | Prometheus metrics, hash-chained run trace, SHA-256 digests |
 | `src/earthlab/cases/` | Typed case contracts, method catalogue, feasibility check, case loader |
 | `config/cases/` | Case files: the working NEA case and two burned-area cases (draft, blocked) |

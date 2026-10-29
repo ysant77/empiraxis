@@ -1,0 +1,49 @@
+{
+  "note": "development, visible questions; real Muse Glimmer run; redacted copy. Model reasoning, raw model message text and provider request IDs are removed; the trace is re-chained with the source timestamps. The research questions are visible development questions and are kept.",
+  "runs": [
+    {
+      "run": "sb05-september",
+      "scenario_id": "SB-05",
+      "split": "development",
+      "label": "development, visible questions; real Muse Glimmer run; redacted copy",
+      "source_bench": "20261029T020831Z-78451c",
+      "source_run": "SB-05-r0",
+      "source_trace_sha256": "f104da95b85ac2f40ec4f9a7c528e782de9c319c64442fb4b54e634dbcef3e27",
+      "source_result_sha256": "bfda911c914445e929f2f4271bd17527371122b9859f86434c453fee8dbfacfd",
+      "removed_fields": [
+        "model_turn.content",
+        "model_turn.reasoning",
+        "model_turn.request_id"
+      ],
+      "redaction_version": "1",
+      "files": {
+        "burn_map_2015-09.png": "0b07b619fab732d3440ae31c95388e0153b622ee5606299f1b8521658b4d3fe9",
+        "report.md": "2a9835d28cd4faf4f8bd45bba3619407d05c8a642049d7cefe0bdfeafe688274",
+        "result.json": "bfda911c914445e929f2f4271bd17527371122b9859f86434c453fee8dbfacfd",
+        "trace.jsonl": "496ed3cc65e8eaa47da22fd016c5646abd6550ae93afc1f055da75a1bbe7126f"
+      }
+    },
+    {
+      "run": "sb05b-october",
+      "scenario_id": "SB-05b",
+      "split": "development",
+      "label": "development, visible questions; real Muse Glimmer run; redacted copy",
+      "source_bench": "20261029T020831Z-78451c",
+      "source_run": "SB-05b-r2",
+      "source_trace_sha256": "fec5f8e0e34f7a0d25a90864600ff28e9a74165604ad4e27048b2e0090e99df3",
+      "source_result_sha256": "1c3027a664dd39b05f9580c8f9911c12c35494029faf5cc7591dcbcc0c73e845",
+      "removed_fields": [
+        "model_turn.content",
+        "model_turn.reasoning",
+        "model_turn.request_id"
+      ],
+      "redaction_version": "1",
+      "files": {
+        "burn_map_2015-10.png": "2c5977648c549607053d3a8539d956f4faebad47d585a19b64d2dfed9f4bff19",
+        "report.md": "b4bb728ed167e5ead9b2d096a97f83f5dca6adefc29bcb1be9d70a61c4410654",
+        "result.json": "1c3027a664dd39b05f9580c8f9911c12c35494029faf5cc7591dcbcc0c73e845",
+        "trace.jsonl": "2068f2f94fcaa81702d5e1f2bc68be220975cb87445a325fcc729a62efe9eb71"
+      }
+    }
+  ]
+}

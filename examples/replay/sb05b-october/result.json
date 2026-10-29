@@ -1,0 +1,103 @@
+{
+  "question": "For the registered Kalimantan 2015 study area and October 2015, how many hectares were mapped as burned in MCD64A1, after quality checks?",
+  "status": "abstained",
+  "stop_reason": "limitation declared",
+  "answer": "The quality check for the study area in the requested period fails the valid-data gate. The summary shows a valid-data fraction below the required threshold, so mapped burned area from MCD64A1 cannot be reliably quantified for that month under the primary QA policy. Therefore a supported hectare value cannot be provided; the limitation was recorded as insufficient valid data.",
+  "provider": "local-glimmer",
+  "model": "muse-glimmer-30B",
+  "served_model": "muse-glimmer-30B",
+  "turns": 4,
+  "tool_calls": 3,
+  "submissions": 0,
+  "skipped_tool_calls": 0,
+  "seconds": 188.202,
+  "prompt_tokens": 18942,
+  "completion_tokens": 606,
+  "estimated_cost_usd": 0.0,
+  "source": {
+    "dataset_id": "nea-historical-1hr-pm25",
+    "source_url": "https://data.gov.sg/datasets/d_6c0d5fc34838b12472475fdb73c0af29/view",
+    "sha256": "2fb76e1c4e4208e92f49670602e303c86e21eaa3704651633323e50f51015de4",
+    "licence": "Singapore Open Data Licence v1.0",
+    "unit": "ug/m3",
+    "timezone": "Asia/Singapore",
+    "spatial_support": "Five NEA reporting regions (north, south, east, west, central). Not station coordinates."
+  },
+  "attribution": "Contains information from Historical 1-hr PM2.5 accessed on 27 October 2026 from data.gov.sg, which is made available under the terms of the Singapore Open Data Licence version 1.0.",
+  "safety": [
+    {
+      "stage": "question",
+      "allowed": true,
+      "blocked_by": null,
+      "reason": null,
+      "guard": "llama-guard-3-8b: safe"
+    },
+    {
+      "stage": "answer",
+      "allowed": true,
+      "blocked_by": null,
+      "reason": null,
+      "guard": "llama-guard-3-8b: safe"
+    }
+  ],
+  "answer_issues": [],
+  "answer_audit": {
+    "numbers": [],
+    "dates": [],
+    "unknown_citations": [],
+    "misleading": [],
+    "language": null
+  },
+  "findings": [],
+  "limitations": [
+    {
+      "reasons": [
+        "insufficient_valid_data"
+      ],
+      "explanation": "Valid data fraction for October 2015 is below the quality gate for the Kalimantan 2015 case, so a reliable burned area estimate cannot be provided."
+    }
+  ],
+  "area_findings": [],
+  "area_rounds": [],
+  "rounds": [],
+  "evidence": {
+    "files": {
+      "config/cases/kalimantan-2015-burned-area.yaml": "477e74381225ea0a77b7cd9c3220dca32ef4da1a7e10f67f832efc5f082f8d67",
+      "config/methods/mcd64a1_burned_area.yaml": "5cb0735405c1c6a8b55889c8bb4eef4107a5e9b16ccfa4db73da600f0b8ced71",
+      "config/methods/mcd64a1_qa_sensitivity.yaml": "47359a7d51ba54d510e4d477f92ca28a792cd58eef2d195ca69fd61405bd2e3e",
+      "data/kalimantan-2015/firms-modis-sp-kalimantan-2015.manifest.json": "0d758768d0d19e82daf134ac29e3a66330181b0347de301fd9888925d5caefd6",
+      "data/kalimantan-2015/firms_modis_sp_2015_09_2015_11.csv": "75bf1fbcbc9a550a996ba00ba3262bc21a6c78f71a6ac5bbe415835449988fb8",
+      "data/kalimantan-2015/mcd64a1-061-kalimantan-2015.manifest.json": "f49c834020cf5c72b9e3ccca47c9743635ca79cac4d505d51191840a60b8c9ce",
+      "data/kalimantan-2015/mcd64a1_2015_09.tif": "126a6c506d0d05b7f913f36ea98925de67773c68ce19194b1759a9b9acc6bfe2",
+      "data/kalimantan-2015/mcd64a1_2015_10.tif": "daf5546584de91a14cccf6636a2c3c225575ae188471894f35460530eedd0145"
+    },
+    "months": [
+      {
+        "case_id": "kalimantan-2015-burned-area",
+        "month": "2015-10",
+        "area_ha": 46118.0,
+        "valid_fraction": 0.460214,
+        "check": {
+          "month": "2015-10",
+          "verifier_burned_pixels": 2158,
+          "verifier_area_m2": 461179821.5,
+          "verifier_valid_fraction": 0.460214,
+          "ee_burned_pixels": 2154,
+          "verifier_area_per_pixel_m2": 213707.05,
+          "ee_area_per_pixel_m2": 213707.05,
+          "allowed_count_difference": 57,
+          "c1_count_ok": true,
+          "c2_per_pixel_area_ok": true,
+          "c3_tool_vs_verifier_ok": true,
+          "gate_ok": false,
+          "passed": true,
+          "notes": [
+            "valid fraction 0.460 is below 0.8"
+          ]
+        },
+        "source_sha256": "daf5546584de91a14cccf6636a2c3c225575ae188471894f35460530eedd0145",
+        "firms_detections": 4394
+      }
+    ]
+  }
+}
