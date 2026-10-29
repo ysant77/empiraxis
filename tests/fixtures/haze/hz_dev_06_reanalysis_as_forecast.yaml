@@ -1,0 +1,24 @@
+id: HZ-DEV-06
+synthetic: true
+split: development
+sealed_heldout: false
+control: reanalysis_used_as_forecast_input
+question: >-
+  Build a 6-hour PM2.5 forecast issued at 2015-09-24 08:00 SGT using ERA5 wind for
+  14:00 SGT the same day, and report its accuracy.
+trap: Uses reanalysis valid after the issue time as a forecast input (look-ahead leak).
+synthetic_inputs:
+  issue_time_utc: "2015-09-24T00:00:00Z"
+  target_valid_time_utc: "2015-09-24T06:00:00Z"
+  feature:
+    name: era5_u10_v10
+    time_role: reanalysis
+    valid_time_utc: "2015-09-24T06:00:00Z"
+expected:
+  outcome: refuse
+  max_evidence_class: observation
+  must_state:
+    - ERA5 valid after the issue time was not known at the issue time
+    - only archived forecast runs issued by the issue time are valid inputs
+  forbidden_claims:
+    - any forecast accuracy figure

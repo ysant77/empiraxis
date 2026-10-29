@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from earthlab.acquire.gate import load_approvals
-from earthlab.acquire.run import acquire_firms, acquire_mcd64a1, write_manifest
+from earthlab.acquire.run import acquire_era5, acquire_firms, acquire_mcd64a1, write_manifest
 from earthlab.agent.budget import Budget
 from earthlab.bench.heldout import HeldoutError, load_lock, scenario_file_record
 from earthlab.bench.official import OfficialSetup, check_only, run_official
@@ -25,6 +25,7 @@ from earthlab.demo import DEMO_IDS, run_demo
 from earthlab.evals.runner import ARMS, run_suite
 from earthlab.evals.safety import load_cases, run_case, summarize
 from earthlab.evals.tasks import load_tasks
+from earthlab.haze.cli import add_haze_parsers
 from earthlab.llm.client import build_client
 from earthlab.llm.providers import load_providers
 from earthlab.llm.raw import RawCompletionClient
@@ -209,6 +210,8 @@ def cmd_acquire(args: argparse.Namespace) -> int:
         manifest = acquire_mcd64a1(case_file, args.asset, approvals, args.out, ee)
     elif product.startswith("FIRMS/"):
         manifest = acquire_firms(case_file, args.asset, approvals, args.out)
+    elif product.startswith("ERA5/"):
+        manifest = acquire_era5(case_file, args.asset, approvals, args.out)
     else:
         raise SystemExit(f"no acquisition route for {product}")
     path = write_manifest(manifest, args.out)
@@ -405,6 +408,7 @@ def build_parser() -> argparse.ArgumentParser:
     _add_official_parser(sub)
 
     _add_acquire_parser(sub)
+    add_haze_parsers(sub)
 
     safety = sub.add_parser("safety-eval", help="score Llama Guard and scope rules on labels")
     safety.add_argument("--cases", type=Path, default=Path("evals/safety_cases.yaml"))

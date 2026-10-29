@@ -1,0 +1,84 @@
+# Acquisition-only case for the 2015 haze H1 wind-consistency check. It lives outside
+# config/cases on purpose: the agent's case tools and the bench config hash do not read
+# it. Downloads are approved in config/approvals/haze-2015-h1.yaml and start only on the
+# owner's instruction after the official held-out results are archived.
+case:
+  case_id: haze-2015-h1-sources
+  title: Wind, rain and fire detections for the Singapore haze, September-October 2015
+  question: Were low-level wind and rain consistent with smoke transport from each source box to Singapore?
+  area:
+    area_id: singapore-receptor
+    name: Singapore receptor box (NEA reporting regions lie inside)
+    bbox: {min_lon: 103.6, min_lat: 1.15, max_lon: 104.1, max_lat: 1.48}
+  period:
+    start: "2015-09-01T00:00:00Z"
+    end: "2015-11-01T00:00:00Z"
+    local_zone: Asia/Singapore
+  variable: wind_consistency
+  asset_ids:
+    - era5-sl-haze-2015
+    - era5-pl850-haze-2015
+    - firms-modis-sp-haze-2015-box-a
+    - firms-modis-sp-haze-2015-box-b
+    - firms-modis-sp-haze-2015-box-c
+  method_id: haze_wind_consistency
+  status: draft
+  data_dir: data/haze-2015
+  notes: Transport plausibility only. No PM2.5 forecast and no source attribution.
+assets:
+  - asset_id: era5-sl-haze-2015
+    product: ERA5/reanalysis-era5-single-levels
+    version: ERA5 final (expver 1)
+    provider: Copernicus Climate Change Service (C3S) Climate Data Store
+    variable: wind_consistency
+    units: m/s (10 m u, v); m (hourly precipitation, boundary layer height)
+    licence: CC-BY 4.0
+    licence_url: https://creativecommons.org/licenses/by/4.0/
+    url: https://cds.climate.copernicus.eu/datasets/reanalysis-era5-single-levels
+    availability: registered_not_downloaded
+    crs: EPSG:4326
+    resolution_m: 27750
+    coverage: {start: "2015-09-01T00:00:00Z", end: "2015-11-01T00:00:00Z", local_zone: UTC}
+    extent: {min_lon: 95.0, min_lat: -6.0, max_lon: 118.0, max_lat: 4.0}
+    limitations:
+      - Reanalysis, not observation and not a forecast available in 2015.
+      - Precipitation is accumulated over the hour that ends at the time stamp.
+  - asset_id: era5-pl850-haze-2015
+    product: ERA5/reanalysis-era5-pressure-levels
+    version: ERA5 final (expver 1)
+    provider: Copernicus Climate Change Service (C3S) Climate Data Store
+    variable: wind_consistency
+    units: m/s (u, v at 850 hPa)
+    licence: CC-BY 4.0
+    licence_url: https://creativecommons.org/licenses/by/4.0/
+    url: https://cds.climate.copernicus.eu/datasets/reanalysis-era5-pressure-levels
+    availability: registered_not_downloaded
+    crs: EPSG:4326
+    resolution_m: 27750
+    coverage: {start: "2015-09-01T00:00:00Z", end: "2015-11-01T00:00:00Z", local_zone: UTC}
+    extent: {min_lon: 95.0, min_lat: -6.0, max_lon: 118.0, max_lat: 4.0}
+    limitations:
+      - Smoke height is not known; 850 hPa is one transport level, not the plume level.
+  - &firms
+    asset_id: firms-modis-sp-haze-2015-box-a
+    product: FIRMS/MODIS_SP
+    version: Collection 6.1 standard processing
+    provider: NASA FIRMS
+    variable: active_fire
+    units: detections
+    licence: NASA Earth science data, no restrictions on use
+    licence_url: https://www.earthdata.nasa.gov/engage/open-data-services-software-policies/data-use-guidance
+    url: https://firms.modaps.eosdis.nasa.gov/api/area/
+    availability: registered_not_downloaded
+    crs: EPSG:4326
+    coverage: {start: "2015-08-25T00:00:00Z", end: "2015-11-01T00:00:00Z", local_zone: UTC}
+    extent: {min_lon: 100.0, min_lat: -1.5, max_lon: 103.5, max_lat: 2.0}  # A: Riau / central Sumatra
+    limitations:
+      - A detection is a thermal anomaly at overpass time, not emissions or burned area.
+      - Cloud and thick smoke hide fires; zero detections is not zero fires.
+  - <<: *firms
+    asset_id: firms-modis-sp-haze-2015-box-b
+    extent: {min_lon: 102.5, min_lat: -4.5, max_lon: 106.5, max_lat: -1.0}  # B: Jambi / South Sumatra
+  - <<: *firms
+    asset_id: firms-modis-sp-haze-2015-box-c
+    extent: {min_lon: 108.5, min_lat: -3.5, max_lon: 115.0, max_lat: 1.0}  # C: Central / West Kalimantan

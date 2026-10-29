@@ -13,7 +13,7 @@ from pathlib import Path
 
 import yaml
 
-from earthlab.cases.models import ApprovalAction, HumanApproval
+from earthlab.cases.models import ApprovalAction, HumanApproval, RequestScope
 from earthlab.digest import file_digest
 
 
@@ -40,6 +40,7 @@ def authorize(
     *,
     asset_id: str | None = None,
     request_bytes: int | None = None,
+    request: RequestScope | None = None,
     at: datetime | None = None,
 ) -> HumanApproval:
     """Return the approval that covers the request, or raise with every refusal reason."""
@@ -48,7 +49,9 @@ def authorize(
     for approval in approvals:
         if approval.case_id != case_id:
             continue
-        refusal = approval.refusal(action, moment, asset_id=asset_id, request_bytes=request_bytes)
+        refusal = approval.refusal(
+            action, moment, asset_id=asset_id, request_bytes=request_bytes, request=request
+        )
         if refusal is None:
             return approval
         reasons.append(f"{approval.approval_id}: {refusal}")

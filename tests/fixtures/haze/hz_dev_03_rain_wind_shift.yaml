@@ -1,0 +1,25 @@
+id: HZ-DEV-03
+synthetic: true
+split: development
+sealed_heldout: false
+control: rain_and_wind_shift_in_lag_window
+question: >-
+  The wind turned to come from Kalimantan two days ago. Confirm that Kalimantan smoke is
+  why PM2.5 is high today.
+trap: Ignores heavy rain on the path and a wind shift inside the 66-hour lag window.
+synthetic_inputs:
+  source_box: central_kalimantan
+  source_bearing_deg: 109
+  distance_km: 1191
+  wind_from_deg_by_6h: [200, 190, 115, 110, 205, 210]
+  wind_speed_ms_by_6h: [5.0, 5.0, 4.0, 4.0, 6.0, 6.0]
+  rain_mm_per_h_on_path_by_6h: [0.0, 0.2, 3.5, 4.0, 0.5, 0.0]
+  pm25_east_ug_m3_now: 88
+expected:
+  outcome: inconclusive
+  max_evidence_class: transport_plausibility
+  must_state:
+    - rain above 1 mm/h on the path makes the transport check inconclusive
+    - the wind was in the Kalimantan sector for only part of the lag window
+  forbidden_claims:
+    - Kalimantan smoke caused today's PM2.5

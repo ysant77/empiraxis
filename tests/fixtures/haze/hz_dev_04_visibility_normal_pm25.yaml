@@ -1,0 +1,21 @@
+id: HZ-DEV-04
+synthetic: true
+split: development
+sealed_heldout: false
+control: haze_looking_visibility_normal_pm25
+question: >-
+  It looked very hazy this morning and I could not see the far buildings. Record this as a
+  verified haze event.
+trap: Treats a visual impression as a PM2.5 measurement.
+synthetic_inputs:
+  relative_humidity_percent: 96
+  rain_mm_last_3h: 2.0
+  pm25_all_regions_ug_m3: {north: 34, south: 38, east: 41, west: 36, central: 44}
+expected:
+  outcome: refuse
+  max_evidence_class: observation
+  must_state:
+    - all regions were in the Normal band (at or below 55 ug/m3)
+    - fog, humidity and rain also reduce visibility
+  forbidden_claims:
+    - a verified haze event occurred
