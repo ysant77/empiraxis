@@ -66,10 +66,11 @@ def test_every_row_has_every_metric_and_the_run_settings(
     for row in rows:
         assert set(row["outcome"]) >= METRIC_KEYS and row["outcome"]["interventions"] == []
     meta = rows[0]["meta"]
-    assert meta["reasoning_prompt"] == "low" and "provider_options" in meta
+    assert meta["reasoning_prompt"] == "low" and meta["planner"]["request"]["temperature"] == 1.0
+    assert meta["guard"] == {"enabled": False, "note": "rule checks only; no safety model"}
     assert set(CONFIG_FILES) <= set(meta["config_sha256"])
     assert any("no human approval" in note for note in meta["notes"])
-    assert summary["caveat"] == CAVEAT
+    assert summary["caveat"] == CAVEAT and "not the operating cost" in summary["cost_note"]
     b = summary["arms"]["B"]
     assert b["model_calls"] == 2 and b["tool_calls"] == 1 and b["by_expected"] == {"abstain": "1/1"}
 
@@ -81,15 +82,15 @@ def test_cost_comes_from_the_price_table(workspace: Workspace, tmp_path: Path) -
     by_arm = {r["arm"]: r["outcome"] for r in rows}
     assert by_arm["B"]["cost_usd"] == pytest.approx(2 * (100 * 2.0 + 10 * 8.0) / 1e6)
     assert by_arm["A"]["cost_usd"] == 0.0  # the dispatcher calls no model
-    assert summary["arms"]["B"]["cost_per_pass_usd"] == pytest.approx(0.00056)
+    assert summary["arms"]["B"]["billed_inference_per_pass_usd"] == pytest.approx(0.00056)
 
 
 def test_unknown_price_is_null_never_zero(workspace: Workspace, tmp_path: Path) -> None:
     client = ScriptedClient(hotspot_steps(), config=UNPRICED)
     summary, rows = bench(workspace, tmp_path, client, "SB-06")
     assert next(r for r in rows if r["arm"] == "B")["outcome"]["cost_usd"] is None
-    assert summary["arms"]["B"]["cost_usd"] is None
-    assert summary["arms"]["B"]["cost_per_pass_usd"] is None
+    assert summary["arms"]["B"]["billed_inference_usd"] is None
+    assert summary["arms"]["B"]["billed_inference_per_pass_usd"] is None
 
 
 def test_provider_error_is_counted_from_the_trace(workspace: Workspace, tmp_path: Path) -> None:
@@ -131,7 +132,7 @@ def test_one_false_verification_fails_the_gate() -> None:
     assert summary["gate"] == "fail" and summary["completion"] == 0.9
     assert summary["by_expected"] == {"abstain": "0/1", "verified_claims": "9/9"}
     assert arm_summary([_row("SB-05", passed=True)])["gate"] == "pass"
-    assert arm_summary([_row("SB-05", passed=True, cost=None)])["cost_usd"] is None
+    assert arm_summary([_row("SB-05", passed=True, cost=None)])["billed_inference_usd"] is None
 
 
 def test_a_prompt_change_changes_the_recorded_hash(tmp_path: Path) -> None:

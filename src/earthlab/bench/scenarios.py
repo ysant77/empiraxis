@@ -115,7 +115,9 @@ class Outcome(Strict):
     rejected_claims: int = 0
     reason_codes: list[ReasonCode] = Field(default_factory=list)
     answer_issues: list[str] = Field(default_factory=list)
-    seconds: float = 0.0
+    seconds: float = Field(
+        ge=0, description="Wall-clock seconds for the whole arm call, failures included."
+    )
     turns: int = 0
     tool_calls: int = 0
     prompt_tokens: int = 0

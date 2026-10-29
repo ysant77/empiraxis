@@ -1,6 +1,6 @@
-"""E2 bench metrics: model calls read from each run's trace, the hashes of the files that
-define a run, and the per-arm summary. Bench mode has no human step, so every row records
-an empty intervention list; the run metadata says so.
+"""E2 bench metrics: model calls read from each run's verified trace, the hashes of the
+files that define a run, and the per-arm summary. Bench mode has no human step, so every
+row records an empty intervention list; that is not a measure of real-world human effort.
 """
 
 from __future__ import annotations
@@ -16,15 +16,25 @@ from earthlab.trace import RunTrace
 # Files whose change can change a score. A protocol freeze pins these hashes.
 CONFIG_FILES = (
     "src/earthlab/agent/prompts.py",
+    "src/earthlab/agent/loop.py",
     "src/earthlab/bench/dispatcher.py",
     "src/earthlab/bench/runner.py",
     "src/earthlab/bench/scenarios.py",
     "src/earthlab/verify/answer_audit.py",
+    "src/earthlab/safety/gate.py",
+    "src/earthlab/safety/scope.py",
+    "src/earthlab/safety/llama_guard.py",
     "config/providers.yaml",
+    "config/ollama/earthlab-guard.Modelfile",
 )
 CAVEAT = "Counts from a small question set. They do not estimate general performance."
 INTERVENTIONS_NOTE = (
-    "Bench mode has no human approval or edit step; each row records an empty list."
+    "Bench mode has no human approval or edit step; each row records an empty list. "
+    "This count is not a measure of real-world human effort."
+)
+COST_NOTE = (
+    "billed_inference_usd is the provider price times the token counts. It excludes local "
+    "hardware, energy, the safety model and developer time, so it is not the operating cost."
 )
 
 Row = tuple[Scenario, ScenarioScore, Outcome]
@@ -33,9 +43,13 @@ Row = tuple[Scenario, ScenarioScore, Outcome]
 def trace_counts(run_dir: Path) -> dict[str, int]:
     """Counts read from the hash-chained run trace, not from the loop's own counters.
 
-    A rejected tool call is one the budget skipped or the registry did not execute.
+    The whole chain is verified first; a broken chain raises TraceIntegrityError, which the
+    bench records as an error row. A rejected tool call is one the budget skipped or the
+    registry did not execute.
     """
-    entries = list(RunTrace(run_dir / "trace.jsonl").records())
+    trace = RunTrace(run_dir / "trace.jsonl")
+    trace.verify()
+    entries = list(trace.records())
     events = [e["event"] for e in entries]
     errors = events.count("model_error")
     not_run = sum(
@@ -90,9 +104,11 @@ def arm_summary(rows: list[Row]) -> dict[str, Any]:
         "guard_blocks": sum(o.guard_blocks for o in outcomes),
         "prompt_tokens": sum(o.prompt_tokens for o in outcomes),
         "completion_tokens": sum(o.completion_tokens for o in outcomes),
-        "cost_usd": cost,
-        "cost_per_pass_usd": round(cost / passed, 6) if cost is not None and passed else None,
-        "interventions": sum(len(o.interventions) for o in outcomes),
+        "billed_inference_usd": cost,
+        "billed_inference_per_pass_usd": (
+            round(cost / passed, 6) if cost is not None and passed else None
+        ),
+        "bench_intervention_records": sum(len(o.interventions) for o in outcomes),
         "by_expected": _ratios(rows, lambda r: r[0].expected),
         "per_scenario": _ratios(rows, lambda r: r[0].id),
     }
@@ -106,4 +122,6 @@ def summarize(rows: list[Row], blocked: list[Scenario]) -> dict[str, Any]:
         "arms": dict(sorted(arms.items())),
         "blocked_unrun": {s.id: s.blocked_reason for s in blocked},
         "caveat": CAVEAT,
+        "cost_note": COST_NOTE,
+        "interventions_note": INTERVENTIONS_NOTE,
     }

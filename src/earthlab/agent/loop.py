@@ -46,6 +46,7 @@ class RunStatus(StrEnum):
     REFUSED = "refused"
 
 
+PLANNER_TEMPERATURE = 1.0  # matches the Muse sampling card; recorded in every bench run
 _ANSWERED = (RunStatus.VERIFIED, RunStatus.PARTIAL, RunStatus.ABSTAINED)
 
 
@@ -267,7 +268,7 @@ class Investigator:
                 state.messages,
                 schemas,
                 max_tokens=self._meter.budget.max_output_tokens,
-                temperature=1.0,
+                temperature=PLANNER_TEMPERATURE,
                 tool_choice=tool_choice,
                 timeout=min(cfg.timeout_seconds, self._meter.remaining_seconds()),
             )

@@ -11,6 +11,7 @@ import json
 import platform
 import shutil
 import subprocess
+import time
 from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
@@ -18,8 +19,16 @@ from typing import Any
 
 from earthlab.agent.budget import Budget
 from earthlab.bench.dispatcher import Dispatcher
-from earthlab.bench.heldout import DEV_NOTE
-from earthlab.bench.metrics import INTERVENTIONS_NOTE, Row, config_hashes, summarize, trace_counts
+from earthlab.bench.heldout import DEV_NOTE, HeldoutError
+from earthlab.bench.metrics import (
+    COST_NOTE,
+    INTERVENTIONS_NOTE,
+    Row,
+    config_hashes,
+    summarize,
+    trace_counts,
+)
+from earthlab.bench.runtime_info import guard_record, planner_record, probe_failures
 from earthlab.bench.scenarios import Outcome, Scenario, ScenarioScore, score
 from earthlab.digest import file_digest
 from earthlab.llm.client import ChatClient
@@ -54,6 +63,7 @@ def run_metadata(
     budget: Budget,
     scenario_file: dict[str, Any] | None = None,
     reasoning: str = "low",
+    guard: LlamaGuard | None = None,
 ) -> dict[str, Any]:
     cases = sorted((repo / "config" / "cases").glob("*.yaml"))
     return {
@@ -67,16 +77,28 @@ def run_metadata(
         "provider": client.config.name if client else None,
         "model": client.config.model if client else None,
         "price_source": client.config.price_source if client else None,
-        "provider_options": client.config.extra_body if client else None,
+        "planner": planner_record(client.config, budget.max_output_tokens) if client else None,
         "reasoning_prompt": reasoning,
+        "guard": guard_record(guard),
         "budget": budget.model_dump(),
         "scenario_file": scenario_file,
         "notes": [
             DISPATCHER_NOTE,
             scenario_file["note"] if scenario_file else DEV_NOTE,
             INTERVENTIONS_NOTE,
+            COST_NOTE,
         ],
     }
+
+
+def check_official(meta: dict[str, Any]) -> None:
+    """A held-out run is official: it needs a clean commit and readable server settings."""
+    revision = meta["code_revision"]
+    if revision == "unknown" or revision.endswith("-dirty"):
+        raise HeldoutError(f"a held-out run needs a clean git revision, got {revision}")
+    failed = probe_failures(meta["planner"], meta["guard"])
+    if failed:
+        raise HeldoutError(f"a held-out run needs server settings from: {', '.join(failed)}")
 
 
 def agent_outcome(
@@ -128,17 +150,21 @@ def _guarded_outcome(
     reasoning: str,
 ) -> Outcome:
     """One arm on one scenario. An unexpected exception becomes an 'error' outcome, which
-    scores as a failure, so a crash never removes a row from the denominator."""
+    scores as a failure, so a crash never removes a row from the denominator. The bench
+    clock times every row, so a failure never shows as faster than it was."""
+    started = time.monotonic()
     try:
         if arm == "A":
-            return Dispatcher(workspace).run(scenario.question)
-        assert client is not None
-        run_dir = out_dir / "runs" / f"{scenario.id}-r{repeat}"
-        run_dir.mkdir(parents=True, exist_ok=True)
-        return agent_outcome(scenario, client, workspace, run_dir, budget, guard, reasoning)
+            outcome = Dispatcher(workspace).run(scenario.question)
+        else:
+            assert client is not None
+            run_dir = out_dir / "runs" / f"{scenario.id}-r{repeat}"
+            run_dir.mkdir(parents=True, exist_ok=True)
+            outcome = agent_outcome(scenario, client, workspace, run_dir, budget, guard, reasoning)
     except Exception as exc:  # recorded as a failed row, never hidden
         error = f"{type(exc).__name__}: {exc}"
-        return Outcome(status="error", cost_usd=None, detail={"error": error})
+        outcome = Outcome(status="error", seconds=0.0, cost_usd=None, detail={"error": error})
+    return outcome.model_copy(update={"seconds": round(time.monotonic() - started, 3)})
 
 
 def _check_arms(arms: list[str], client: ChatClient | None) -> None:
@@ -166,7 +192,9 @@ def run_bench(
     _check_arms(arms, client)
     budget = budget or Budget()
     out_dir.mkdir(parents=True, exist_ok=True)
-    meta = run_metadata(repo, workspace, client, budget, scenario_file, reasoning)
+    meta = run_metadata(repo, workspace, client, budget, scenario_file, reasoning, guard)
+    if scenario_file and scenario_file["heldout"]:
+        check_official(meta)
     ready = [s for s in scenarios if s.status == "ready"]
     rows: list[Row] = []
     with (out_dir / "results.jsonl").open("a", encoding="utf-8") as log:

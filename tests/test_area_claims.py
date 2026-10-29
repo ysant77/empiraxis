@@ -128,4 +128,4 @@ def test_bench_scores_area_scenarios(
     assert summary["arms"]["A"]["per_scenario"] == {"SB-05": "1/1", "SB-05b": "1/1"}
     rows = [json.loads(line) for line in (tmp_path / "results.jsonl").read_text().splitlines()]
     assert rows[0]["outcome"]["area_supported"][0]["claim"]["month"] == "2015-09"
-    assert not score(SCENARIOS["SB-05"], "B", 0, Outcome(status="verified")).passed
+    assert not score(SCENARIOS["SB-05"], "B", 0, Outcome(status="verified", seconds=1.0)).passed
