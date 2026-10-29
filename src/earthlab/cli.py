@@ -117,6 +117,7 @@ def cmd_investigate(args: argparse.Namespace) -> int:
         reasoning=args.reasoning,
         listener=_print_event,
         guard=build_guard(args.providers, args.guard),
+        plan_review=args.plan_review,
     )
     report = write_report(run_dir, args.data_dir)
     for finding_id, r in result.ledger.latest_by_id().items():
@@ -277,6 +278,7 @@ def cmd_bench(args: argparse.Namespace) -> int:
         scenario_file=scenario_file,
         reasoning=args.reasoning,
         on_score=_print_score,
+        plan_review=args.plan_review and lock is None,
     )
     print(json.dumps({k: v for k, v in summary.items() if k != "meta"}, indent=2))
     print(f"results: {out_dir}")
@@ -339,6 +341,15 @@ def _add_eval_parser(sub: Any) -> None:
     ev.set_defaults(func=cmd_eval)
 
 
+def _add_plan_flag(parser: Any) -> None:
+    parser.add_argument(
+        "--no-plan-review",
+        dest="plan_review",
+        action="store_false",
+        help="skip the typed plan and critic step (the agent arm before plan review)",
+    )
+
+
 def _add_bench_parser(sub: Any) -> None:
     bench = sub.add_parser("bench", help="ScienceBench: rule dispatcher vs Meta agent")
     bench.add_argument("--scenarios", type=Path, default=Path("evals/sciencebench_dev_v1.yaml"))
@@ -352,6 +363,7 @@ def _add_bench_parser(sub: Any) -> None:
     bench.add_argument("--runs-dir", type=Path, default=Path("runs"))
     bench.add_argument("--max-turns", type=int, default=12)
     bench.add_argument("--reasoning", default="low", choices=["low", "medium", "high"])
+    _add_plan_flag(bench)
     bench.set_defaults(func=cmd_bench)
 
 
@@ -401,6 +413,7 @@ def build_parser() -> argparse.ArgumentParser:
     inv.add_argument(
         "--guard", default="local-llama-guard", help="safety model provider, or 'none'"
     )
+    _add_plan_flag(inv)
     inv.set_defaults(func=cmd_investigate)
 
     _add_eval_parser(sub)

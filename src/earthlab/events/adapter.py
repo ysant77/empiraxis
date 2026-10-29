@@ -269,6 +269,52 @@ def _revision(state: _State, entry: dict[str, Any]) -> None:
     )
 
 
+def _plan_submitted(state: _State, entry: dict[str, Any]) -> None:
+    data = entry["data"]
+    plan = data.get("plan") if isinstance(data.get("plan"), dict) else {}
+    method = plan.get("method_choice", {}).get("selected_id")
+    _emit(
+        state,
+        entry,
+        "orchestrator",
+        "plan_submitted",
+        "proposed",
+        f"Plan revision {data.get('plan_revision')}: intent {plan.get('research_intent')}, "
+        f"method {method}.",
+        receiver_role="scientific_critic",
+        task_id=data.get("task_id"),
+        plan_revision=data.get("plan_revision"),
+        evidence_refs=[f"sha256:{data.get('plan_sha256')}"],
+    )
+
+
+_REVIEW_STATUS: dict[str, EventStatus] = {
+    "accept": "approved",
+    "accept_with_warnings": "approved",
+    "needs_evidence": "pending",
+    "revise": "rejected",
+}
+
+
+def _plan_reviewed(state: _State, entry: dict[str, Any]) -> None:
+    data = entry["data"]
+    findings = data.get("findings", [])
+    errors = sum(1 for f in findings if f.get("severity") == "error")
+    abstentions = ", ".join(data.get("abstentions", [])) or "none"
+    _emit(
+        state,
+        entry,
+        "scientific_critic",
+        "plan_reviewed",
+        _REVIEW_STATUS.get(str(data.get("verdict")), "failed"),
+        f"Plan review: {data.get('verdict')}; {errors} error(s) of {len(findings)} "
+        f"finding(s); abstentions: {abstentions}.",
+        receiver_role="orchestrator",
+        plan_revision=data.get("plan_revision"),
+        evidence_refs=[f"sha256:{data.get('plan_sha256')}"],
+    )
+
+
 def _approval_requested(state: _State, entry: dict[str, Any]) -> None:
     data = entry["data"]
     target = data.get("asset_id") or data.get("case_id")
@@ -326,6 +372,8 @@ HANDLERS = {
     ("model_error", "runtime"): _model_error,
     ("answer_audit", "verifier"): _audit,
     ("answer_revision", "verifier"): _revision,
+    ("plan_submitted", "model"): _plan_submitted,
+    ("plan_reviewed", "critic"): _plan_reviewed,
     ("approval_requested", "approval_gate"): _approval_requested,
     ("approval_resolved", "approval_gate"): _approval_resolved,
     ("finish", "runtime"): _finish,
