@@ -18,6 +18,7 @@ from typing import Any
 
 from earthlab.agent.budget import Budget
 from earthlab.bench.dispatcher import Dispatcher
+from earthlab.bench.heldout import DEV_NOTE
 from earthlab.bench.scenarios import Outcome, Scenario, ScenarioScore, score
 from earthlab.digest import file_digest
 from earthlab.llm.client import ChatClient
@@ -46,7 +47,11 @@ def _git_revision(repo: Path) -> str:
 
 
 def run_metadata(
-    repo: Path, workspace: Workspace, client: ChatClient | None, budget: Budget
+    repo: Path,
+    workspace: Workspace,
+    client: ChatClient | None,
+    budget: Budget,
+    scenario_file: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     cases = sorted((repo / "config" / "cases").glob("*.yaml"))
     return {
@@ -58,7 +63,8 @@ def run_metadata(
         "provider": client.config.name if client else None,
         "model": client.config.model if client else None,
         "budget": budget.model_dump(),
-        "notes": [DISPATCHER_NOTE, "Visible development fixtures; not a blind holdout."],
+        "scenario_file": scenario_file,
+        "notes": [DISPATCHER_NOTE, scenario_file["note"] if scenario_file else DEV_NOTE],
     }
 
 
@@ -118,6 +124,7 @@ def run_bench(
     budget: Budget | None = None,
     repeats: int = 1,
     on_score: Callable[[ScenarioScore], None] | None = None,
+    scenario_file: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Score ready scenarios only; blocked scenarios are reported, never run or scored."""
     unknown = set(arms) - set(ARMS)
@@ -125,7 +132,7 @@ def run_bench(
         raise ValueError(f"unknown arms {sorted(unknown)} or arm B without a model client")
     budget = budget or Budget()
     out_dir.mkdir(parents=True, exist_ok=True)
-    meta = run_metadata(repo, workspace, client, budget)
+    meta = run_metadata(repo, workspace, client, budget, scenario_file)
     ready = [s for s in scenarios if s.status == "ready"]
     scores: list[ScenarioScore] = []
     with (out_dir / "results.jsonl").open("a", encoding="utf-8") as log:

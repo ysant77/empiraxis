@@ -72,7 +72,7 @@ class AreaRequirement(Strict):
 
 
 class Scenario(Strict):
-    id: str = Field(pattern=r"^SB-\d{2}[a-z]?$")
+    id: str = Field(pattern=r"^(SB|HO)-\d{2}[a-z]?$")
     priority: Literal["P0", "P1", "P2"]
     title: str
     status: Literal["ready", "blocked_unrun"]
