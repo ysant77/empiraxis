@@ -13,9 +13,11 @@ from earthlab.acquire.gate import load_approvals
 from earthlab.acquire.run import acquire_firms, acquire_mcd64a1, write_manifest
 from earthlab.agent.budget import Budget
 from earthlab.bench.heldout import HeldoutError, load_lock, scenario_file_record
+from earthlab.bench.official import OfficialSetup, check_only, run_official
+from earthlab.bench.protocol import load_protocol
 from earthlab.bench.runner import ARMS as BENCH_ARMS
 from earthlab.bench.runner import run_bench
-from earthlab.bench.scenarios import load_scenarios
+from earthlab.bench.scenarios import ScenarioScore, load_scenarios
 from earthlab.cases.loader import load_case
 from earthlab.contracts import TimeWindow
 from earthlab.data.quality import coverage_report
@@ -271,13 +273,39 @@ def cmd_bench(args: argparse.Namespace) -> int:
         repeats=args.repeats,
         scenario_file=scenario_file,
         reasoning=args.reasoning,
-        on_score=lambda s: print(
-            f"{s.scenario_id} [{s.arm}] r{s.repeat} passed={s.passed} {'; '.join(s.reasons)}",
-            flush=True,
-        ),
+        on_score=_print_score,
     )
     print(json.dumps({k: v for k, v in summary.items() if k != "meta"}, indent=2))
     print(f"results: {out_dir}")
+    return 0
+
+
+def _print_score(s: ScenarioScore) -> None:
+    print(
+        f"{s.scenario_id} [{s.arm}] r{s.repeat} passed={s.passed} {'; '.join(s.reasons)}",
+        flush=True,
+    )
+
+
+PROVIDERS = Path("config/providers.yaml")  # pinned by hash in the protocol
+
+
+def cmd_bench_official(args: argparse.Namespace) -> int:
+    """The one official held-out run. It takes no tuning flags: the protocol fixes them."""
+    protocol = load_protocol(args.protocol)
+    providers = load_providers(PROVIDERS)
+    client = build_client(providers[protocol.provider]) if "B" in protocol.arms else None
+    guard = build_guard(PROVIDERS, protocol.guard) if client else None
+    setup = OfficialSetup(
+        Path.cwd(), protocol, args.scenarios, open_workspace(args.data_dir), client, guard
+    )
+    if args.check_only:
+        meta = check_only(setup)
+        print(f"protocol check passed at {meta['code_revision']}; no question was run")
+        return 0
+    out_dir, summary = run_official(setup, args.rerun_reason, _print_score)
+    print(json.dumps({k: v for k, v in summary.items() if k != "meta"}, indent=2))
+    print(f"official results: {out_dir}")
     return 0
 
 
@@ -324,6 +352,15 @@ def _add_bench_parser(sub: Any) -> None:
     bench.set_defaults(func=cmd_bench)
 
 
+def _add_official_parser(sub: Any) -> None:
+    official = sub.add_parser("bench-official", help="the one official held-out run")
+    official.add_argument("--protocol", type=Path, required=True)
+    official.add_argument("--scenarios", type=Path, required=True, help="sealed question file")
+    official.add_argument("--rerun-reason", help="required for a second official run")
+    official.add_argument("--check-only", action="store_true", help="check; run no question")
+    official.set_defaults(func=cmd_bench_official)
+
+
 def _add_demo_parser(sub: Any) -> None:
     demo = sub.add_parser("demo", help="wildfire demo: Meta agent run, report, replay")
     demo.add_argument("--only", help="comma-separated scenario ids (default: the demo set)")
@@ -365,6 +402,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     _add_eval_parser(sub)
     _add_bench_parser(sub)
+    _add_official_parser(sub)
 
     _add_acquire_parser(sub)
 

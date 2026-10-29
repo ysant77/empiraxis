@@ -11,7 +11,7 @@ from typing import Any
 import pytest
 from fake_client import FAKE_CONFIG, ScriptedClient, call, say
 
-from earthlab.bench.metrics import CAVEAT, CONFIG_FILES, arm_summary, config_hashes
+from earthlab.bench.metrics import CAVEAT, arm_summary, config_hashes
 from earthlab.bench.runner import run_bench
 from earthlab.bench.scenarios import Outcome, ScenarioScore, load_scenarios
 from earthlab.llm.types import ProviderError, ProviderErrorKind
@@ -68,7 +68,9 @@ def test_every_row_has_every_metric_and_the_run_settings(
     meta = rows[0]["meta"]
     assert meta["reasoning_prompt"] == "low" and meta["planner"]["request"]["temperature"] == 1.0
     assert meta["guard"] == {"enabled": False, "note": "rule checks only; no safety model"}
-    assert set(CONFIG_FILES) <= set(meta["config_sha256"])
+    hashed = set(meta["config_sha256"])
+    assert {"src/earthlab/agent/prompts.py", "config/providers.yaml"} <= hashed
+    assert not any(name.startswith("src/earthlab/ui/") for name in hashed)
     assert any("no human approval" in note for note in meta["notes"])
     assert summary["caveat"] == CAVEAT and "not the operating cost" in summary["cost_note"]
     b = summary["arms"]["B"]
@@ -137,7 +139,7 @@ def test_one_false_verification_fails_the_gate() -> None:
 
 def test_a_prompt_change_changes_the_recorded_hash(tmp_path: Path) -> None:
     """T8: the protocol freeze can detect any change to a file that defines a run."""
-    for name in CONFIG_FILES:
+    for name in config_hashes(ROOT):
         (tmp_path / name).parent.mkdir(parents=True, exist_ok=True)
         shutil.copy(ROOT / name, tmp_path / name)
     before = config_hashes(tmp_path)

@@ -15,7 +15,7 @@ import time
 from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import IO, Any
 
 from earthlab.agent.budget import Budget
 from earthlab.bench.dispatcher import Dispatcher
@@ -173,6 +173,12 @@ def _check_arms(arms: list[str], client: ChatClient | None) -> None:
         raise ValueError(f"unknown arms {sorted(unknown)} or arm B without a model client")
 
 
+def _write_row(log: IO[str], result: ScenarioScore, outcome: Outcome, meta: dict[str, Any]) -> None:
+    row = {**result.model_dump(mode="json"), "outcome": outcome.model_dump(mode="json")}
+    log.write(json.dumps({**row, "meta": meta}, default=str) + "\n")
+    log.flush()
+
+
 def run_bench(
     scenarios: list[Scenario],
     arms: list[str],
@@ -187,14 +193,18 @@ def run_bench(
     on_score: Callable[[ScenarioScore], None] | None = None,
     scenario_file: dict[str, Any] | None = None,
     reasoning: str = "low",
+    before_rows: Callable[[dict[str, Any]], None] | None = None,
 ) -> dict[str, Any]:
-    """Score ready scenarios only; blocked scenarios are reported, never run or scored."""
+    """Score ready scenarios only; blocked ones are reported. before_rows can refuse a run."""
     _check_arms(arms, client)
     budget = budget or Budget()
     out_dir.mkdir(parents=True, exist_ok=True)
     meta = run_metadata(repo, workspace, client, budget, scenario_file, reasoning, guard)
+    meta |= {"arms": arms, "repeats": repeats}
     if scenario_file and scenario_file["heldout"]:
         check_official(meta)
+    if before_rows is not None:
+        before_rows(meta)
     ready = [s for s in scenarios if s.status == "ready"]
     rows: list[Row] = []
     with (out_dir / "results.jsonl").open("a", encoding="utf-8") as log:
@@ -206,10 +216,7 @@ def run_bench(
                     )
                     result = score(scenario, arm, repeat, outcome)
                     rows.append((scenario, result, outcome))
-                    dump = outcome.model_dump(mode="json")
-                    row = {**result.model_dump(mode="json"), "outcome": dump}
-                    log.write(json.dumps({**row, "meta": meta}, default=str) + "\n")
-                    log.flush()
+                    _write_row(log, result, outcome, meta)
                     if on_score is not None:
                         on_score(result)
     expected = len(ready) * len(arms) * repeats
