@@ -84,8 +84,11 @@ def test_matching_lock_is_recorded_with_its_blindness_note(tmp_path: Path) -> No
 
 
 def test_bench_command_logs_the_scenario_hash(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    """A held-out run needs a clean revision; the test fixes one so a local edit cannot
+    change the result."""
+    monkeypatch.setattr("earthlab.bench.runner._git_revision", lambda repo: "a" * 40)
     path = heldout_file(tmp_path)
     lock_path = tmp_path / "lock.yaml"
     lock_path.write_text(yaml.safe_dump(lock_for(path).model_dump(mode="json")), "utf-8")
@@ -99,6 +102,7 @@ def test_bench_command_logs_the_scenario_hash(
     meta = json.loads(rows.splitlines()[0])["meta"]
     assert meta["scenario_file"]["sha256"] == file_digest(path)
     assert any(BLINDNESS in note for note in meta["notes"])
+    assert meta["code_revision"] == "a" * 40
 
 
 def test_committed_lock_is_valid_and_states_its_blindness() -> None:

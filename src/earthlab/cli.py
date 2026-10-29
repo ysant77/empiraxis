@@ -270,6 +270,7 @@ def cmd_bench(args: argparse.Namespace) -> int:
         budget=Budget(max_turns=args.max_turns),
         repeats=args.repeats,
         scenario_file=scenario_file,
+        reasoning=args.reasoning,
         on_score=lambda s: print(
             f"{s.scenario_id} [{s.arm}] r{s.repeat} passed={s.passed} {'; '.join(s.reasons)}",
             flush=True,
@@ -319,6 +320,7 @@ def _add_bench_parser(sub: Any) -> None:
     bench.add_argument("--guard", default="local-llama-guard")
     bench.add_argument("--runs-dir", type=Path, default=Path("runs"))
     bench.add_argument("--max-turns", type=int, default=12)
+    bench.add_argument("--reasoning", default="low", choices=["low", "medium", "high"])
     bench.set_defaults(func=cmd_bench)
 
 

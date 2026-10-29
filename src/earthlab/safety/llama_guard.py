@@ -12,6 +12,7 @@ import re
 from typing import Protocol
 
 from earthlab.contracts import Strict
+from earthlab.llm.providers import ProviderConfig
 
 POLICY: tuple[tuple[str, str, str], ...] = (
     (
@@ -102,6 +103,8 @@ class LlamaGuard:
     def __init__(self, completer: RawCompleter, name: str):
         self._completer = completer
         self.name = name
+        # The provider config, when the completer has one; bench runs record it.
+        self.config: ProviderConfig | None = getattr(completer, "config", None)
 
     def classify(self, question: str, answer: str | None = None) -> GuardVerdict:
         reply = self._completer.complete(build_prompt(question, answer), MAX_GUARD_TOKENS)

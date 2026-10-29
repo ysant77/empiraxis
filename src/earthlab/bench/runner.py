@@ -11,6 +11,7 @@ import json
 import platform
 import shutil
 import subprocess
+import time
 from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
@@ -18,7 +19,16 @@ from typing import Any
 
 from earthlab.agent.budget import Budget
 from earthlab.bench.dispatcher import Dispatcher
-from earthlab.bench.heldout import DEV_NOTE
+from earthlab.bench.heldout import DEV_NOTE, HeldoutError
+from earthlab.bench.metrics import (
+    COST_NOTE,
+    INTERVENTIONS_NOTE,
+    Row,
+    config_hashes,
+    summarize,
+    trace_counts,
+)
+from earthlab.bench.runtime_info import guard_record, planner_record, probe_failures
 from earthlab.bench.scenarios import Outcome, Scenario, ScenarioScore, score
 from earthlab.digest import file_digest
 from earthlab.llm.client import ChatClient
@@ -52,20 +62,43 @@ def run_metadata(
     client: ChatClient | None,
     budget: Budget,
     scenario_file: dict[str, Any] | None = None,
+    reasoning: str = "low",
+    guard: LlamaGuard | None = None,
 ) -> dict[str, Any]:
     cases = sorted((repo / "config" / "cases").glob("*.yaml"))
     return {
         "started_at_utc": datetime.now(UTC).isoformat(timespec="seconds"),
         "code_revision": _git_revision(repo),
         "python": platform.python_version(),
+        "platform": platform.platform(),
+        "config_sha256": config_hashes(repo),
         "data_sha256": workspace.snapshot.sha256,
         "case_files_sha256": {p.name: file_digest(p) for p in cases},
         "provider": client.config.name if client else None,
         "model": client.config.model if client else None,
+        "price_source": client.config.price_source if client else None,
+        "planner": planner_record(client.config, budget.max_output_tokens) if client else None,
+        "reasoning_prompt": reasoning,
+        "guard": guard_record(guard),
         "budget": budget.model_dump(),
         "scenario_file": scenario_file,
-        "notes": [DISPATCHER_NOTE, scenario_file["note"] if scenario_file else DEV_NOTE],
+        "notes": [
+            DISPATCHER_NOTE,
+            scenario_file["note"] if scenario_file else DEV_NOTE,
+            INTERVENTIONS_NOTE,
+            COST_NOTE,
+        ],
     }
+
+
+def check_official(meta: dict[str, Any]) -> None:
+    """A held-out run is official: it needs a clean commit and readable server settings."""
+    revision = meta["code_revision"]
+    if revision == "unknown" or revision.endswith("-dirty"):
+        raise HeldoutError(f"a held-out run needs a clean git revision, got {revision}")
+    failed = probe_failures(meta["planner"], meta["guard"])
+    if failed:
+        raise HeldoutError(f"a held-out run needs server settings from: {', '.join(failed)}")
 
 
 def agent_outcome(
@@ -75,9 +108,16 @@ def agent_outcome(
     run_dir: Path,
     budget: Budget,
     guard: LlamaGuard | None,
+    reasoning: str = "low",
 ) -> Outcome:
     result = investigate(
-        scenario.question, client, workspace, run_dir, budget=budget, reasoning="low", guard=guard
+        scenario.question,
+        client,
+        workspace,
+        run_dir,
+        budget=budget,
+        reasoning=reasoning,
+        guard=guard,
     )
     return Outcome(
         status=result.status.value,
@@ -91,6 +131,9 @@ def agent_outcome(
         tool_calls=result.tool_calls,
         prompt_tokens=result.prompt_tokens,
         completion_tokens=result.completion_tokens,
+        **trace_counts(run_dir),
+        guard_blocks=sum(not d.allowed for d in result.safety),
+        cost_usd=result.cost_usd,
         detail={"run_dir": str(run_dir), "stop_reason": result.stop_reason},
     )
 
@@ -104,36 +147,30 @@ def _guarded_outcome(
     client: ChatClient | None,
     budget: Budget,
     guard: LlamaGuard | None,
+    reasoning: str,
 ) -> Outcome:
     """One arm on one scenario. An unexpected exception becomes an 'error' outcome, which
-    scores as a failure, so a crash never removes a row from the denominator."""
+    scores as a failure, so a crash never removes a row from the denominator. The bench
+    clock times every row, so a failure never shows as faster than it was."""
+    started = time.monotonic()
     try:
         if arm == "A":
-            return Dispatcher(workspace).run(scenario.question)
-        assert client is not None
-        run_dir = out_dir / "runs" / f"{scenario.id}-r{repeat}"
-        run_dir.mkdir(parents=True, exist_ok=True)
-        return agent_outcome(scenario, client, workspace, run_dir, budget, guard)
+            outcome = Dispatcher(workspace).run(scenario.question)
+        else:
+            assert client is not None
+            run_dir = out_dir / "runs" / f"{scenario.id}-r{repeat}"
+            run_dir.mkdir(parents=True, exist_ok=True)
+            outcome = agent_outcome(scenario, client, workspace, run_dir, budget, guard, reasoning)
     except Exception as exc:  # recorded as a failed row, never hidden
-        return Outcome(status="error", detail={"error": f"{type(exc).__name__}: {exc}"})
+        error = f"{type(exc).__name__}: {exc}"
+        outcome = Outcome(status="error", seconds=0.0, cost_usd=None, detail={"error": error})
+    return outcome.model_copy(update={"seconds": round(time.monotonic() - started, 3)})
 
 
-def summarize(scores: list[ScenarioScore], blocked: list[Scenario]) -> dict[str, Any]:
-    arms: dict[str, Any] = {}
-    for arm in sorted({s.arm for s in scores}):
-        rows = [s for s in scores if s.arm == arm]
-        arms[arm] = {
-            "runs": len(rows),
-            "passed": sum(s.passed for s in rows),
-            "false_verified": sum(s.false_verified for s in rows),
-            "errors": sum("status error" in " ".join(s.reasons) for s in rows),
-            "per_scenario": {
-                sid: f"{sum(s.passed for s in rows if s.scenario_id == sid)}/"
-                f"{sum(1 for s in rows if s.scenario_id == sid)}"
-                for sid in sorted({s.scenario_id for s in rows})
-            },
-        }
-    return {"arms": arms, "blocked_unrun": {s.id: s.blocked_reason for s in blocked}}
+def _check_arms(arms: list[str], client: ChatClient | None) -> None:
+    unknown = set(arms) - set(ARMS)
+    if unknown or ("B" in arms and client is None):
+        raise ValueError(f"unknown arms {sorted(unknown)} or arm B without a model client")
 
 
 def run_bench(
@@ -149,29 +186,28 @@ def run_bench(
     repeats: int = 1,
     on_score: Callable[[ScenarioScore], None] | None = None,
     scenario_file: dict[str, Any] | None = None,
+    reasoning: str = "low",
 ) -> dict[str, Any]:
     """Score ready scenarios only; blocked scenarios are reported, never run or scored."""
-    unknown = set(arms) - set(ARMS)
-    if unknown or ("B" in arms and client is None):
-        raise ValueError(f"unknown arms {sorted(unknown)} or arm B without a model client")
+    _check_arms(arms, client)
     budget = budget or Budget()
     out_dir.mkdir(parents=True, exist_ok=True)
-    meta = run_metadata(repo, workspace, client, budget, scenario_file)
+    meta = run_metadata(repo, workspace, client, budget, scenario_file, reasoning, guard)
+    if scenario_file and scenario_file["heldout"]:
+        check_official(meta)
     ready = [s for s in scenarios if s.status == "ready"]
-    scores: list[ScenarioScore] = []
+    rows: list[Row] = []
     with (out_dir / "results.jsonl").open("a", encoding="utf-8") as log:
         for repeat in range(repeats):
             for scenario in ready:
                 for arm in arms:
                     outcome = _guarded_outcome(
-                        arm, scenario, repeat, workspace, out_dir, client, budget, guard
+                        arm, scenario, repeat, workspace, out_dir, client, budget, guard, reasoning
                     )
                     result = score(scenario, arm, repeat, outcome)
-                    scores.append(result)
-                    row = {
-                        **result.model_dump(mode="json"),
-                        "outcome": outcome.model_dump(mode="json"),
-                    }
+                    rows.append((scenario, result, outcome))
+                    dump = outcome.model_dump(mode="json")
+                    row = {**result.model_dump(mode="json"), "outcome": dump}
                     log.write(json.dumps({**row, "meta": meta}, default=str) + "\n")
                     log.flush()
                     if on_score is not None:
@@ -180,9 +216,9 @@ def run_bench(
     summary = {
         "meta": meta,
         "rows_expected": expected,
-        "rows_written": len(scores),
-        "complete": len(scores) == expected,
-        **summarize(scores, [s for s in scenarios if s.status != "ready"]),
+        "rows_written": len(rows),
+        "complete": len(rows) == expected,
+        **summarize(rows, [s for s in scenarios if s.status != "ready"]),
     }
     (out_dir / "summary.json").write_text(json.dumps(summary, indent=2, default=str), "utf-8")
     return summary

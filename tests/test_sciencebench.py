@@ -105,20 +105,25 @@ def test_arm_a_reads_only_the_question(workspace: Workspace) -> None:
     ("codes", "passed"), [([ReasonCode.OUT_OF_SCOPE], False), ([ReasonCode.HOTSPOT_NOT_AREA], True)]
 )
 def test_abstention_needs_the_named_reason(codes: list[ReasonCode], passed: bool) -> None:
-    result = score(BY_ID["SB-06"], "B", 0, Outcome(status="abstained", reason_codes=codes))
+    outcome = Outcome(status="abstained", seconds=1.0, reason_codes=codes)
+    result = score(BY_ID["SB-06"], "B", 0, outcome)
     assert result.passed is passed
 
 
 def test_claims_in_an_abstain_scenario_count_as_false_verified() -> None:
     outcome = Outcome(
-        status="abstained", reason_codes=[ReasonCode.HOTSPOT_NOT_AREA], supported=[supported(PEAK)]
+        status="abstained",
+        seconds=1.0,
+        reason_codes=[ReasonCode.HOTSPOT_NOT_AREA],
+        supported=[supported(PEAK)],
     )
     result = score(BY_ID["SB-06"], "B", 0, outcome)
     assert not result.passed and result.false_verified == 1
-    verified = score(BY_ID["SB-16"], "B", 0, Outcome(status="verified"))
+    verified = score(BY_ID["SB-16"], "B", 0, Outcome(status="verified", seconds=1.0))
     assert not verified.passed and verified.false_verified == 1
     allowed = Outcome(
         status="abstained",
+        seconds=1.0,
         reason_codes=[ReasonCode.CAUSATION_NOT_IDENTIFIABLE],
         supported=[supported(PEAK)],
     )
@@ -136,7 +141,7 @@ def test_needs_input_scenario(workspace: Workspace, tmp_path: Path) -> None:
         "threshold": 150,
         "statement": "Guess.",
     }
-    outcome = Outcome(status="verified", supported=[supported(guessed)])
+    outcome = Outcome(status="verified", seconds=1.0, supported=[supported(guessed)])
     assert not score(sb02b, "B", 0, outcome).passed
 
 

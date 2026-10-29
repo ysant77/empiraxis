@@ -150,7 +150,7 @@ def _refused(
         tool_calls=0,
         submissions=0,
         seconds=0.0,
-        cost_usd=None,
+        cost_usd=client.config.estimate_cost_usd(0, 0),  # no model call was made
         provider=client.config.name,
         model=client.config.model,
         served_model=None,

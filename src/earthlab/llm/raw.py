@@ -15,6 +15,8 @@ from earthlab.llm.client import status_error
 from earthlab.llm.providers import ProviderConfig
 from earthlab.llm.types import ProviderError, ProviderErrorKind
 
+GUARD_TEMPERATURE = 0
+
 
 class RawCompletionClient:
     def __init__(self, config: ProviderConfig, *, transport: httpx.BaseTransport | None = None):
@@ -34,9 +36,13 @@ class RawCompletionClient:
                 "prompt": prompt,
                 "raw": True,
                 "stream": False,
-                "options": {"num_predict": max_tokens, "temperature": 0},
+                "options": {"num_predict": max_tokens, "temperature": GUARD_TEMPERATURE},
             }
-        return "/completion", {"prompt": prompt, "n_predict": max_tokens, "temperature": 0}
+        return "/completion", {
+            "prompt": prompt,
+            "n_predict": max_tokens,
+            "temperature": GUARD_TEMPERATURE,
+        }
 
     def complete(self, prompt: str, max_tokens: int) -> str:
         path, payload = self._request(prompt, max_tokens)
