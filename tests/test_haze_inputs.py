@@ -141,3 +141,33 @@ def test_h1_cli_runs_full_path_and_fallback(tmp_path: Path) -> None:
         cli.read_fires(
             [_pinned(tmp_path / "other", "synthetic-firms-box-z", "g.csv", b"latitude\n")]
         )
+
+
+def test_verify_checks_hash_size_and_cap(tmp_path: Path) -> None:
+    data = b"latitude,longitude\n0.0,101.0\n"
+    (tmp_path / "f.csv").write_bytes(data)
+    manifest = {
+        "asset_id": "firms-modis-sp-haze-2015-box-a",
+        "approval_id": "haze-2015-h1-download-firms-box-a",
+        "files": [
+            {"file": "f.csv", "sha256": hashlib.sha256(data).hexdigest(), "bytes": len(data)}
+        ],
+        "total_bytes": len(data),
+    }
+    path = tmp_path / "m.json"
+    path.write_text(json.dumps(manifest), encoding="utf-8")
+    approvals = Path(__file__).resolve().parents[1] / "config" / "approvals"
+    assert cli.verify_manifest(path, approvals) == []
+    assert cli.cmd_verify(argparse.Namespace(manifest=path, approvals=approvals)) == 0
+    (tmp_path / "f.csv").write_bytes(data + b"1.0,102.0\n")
+    path.write_text(json.dumps({**manifest, "total_bytes": 7_000_000}), encoding="utf-8")
+    problems = cli.verify_manifest(path, approvals)
+    assert any("sha256" in p for p in problems) and any("size" in p for p in problems)
+    assert any("cap" in p for p in problems)
+    assert cli.cmd_verify(argparse.Namespace(manifest=path, approvals=approvals)) == 1
+    (tmp_path / "f.csv").unlink()
+    path.write_text(json.dumps({**manifest, "approval_id": "unknown"}), encoding="utf-8")
+    assert cli.verify_manifest(path, approvals) == [
+        "f.csv: missing",
+        "approval unknown has no recorded byte cap",
+    ]

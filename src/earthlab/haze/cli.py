@@ -12,9 +12,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from earthlab.acquire.gate import load_approvals
 from earthlab.contracts import SGT, Strict, TimeWindow
 from earthlab.data.nea_pm25 import load_pm25
 from earthlab.data.snapshot import open_snapshot
+from earthlab.digest import file_digest
 from earthlab.haze import fires as fires_mod
 from earthlab.haze import met as met_mod
 from earthlab.haze.evidence import SourceRef, output_digest
@@ -112,6 +114,37 @@ def cmd_h1(args: argparse.Namespace) -> int:
     return 0
 
 
+def verify_manifest(manifest: Path, approvals_dir: Path) -> list[str]:
+    """Problems with a download: hash or size against its manifest, total against its cap."""
+    raw = json.loads(manifest.read_text(encoding="utf-8"))
+    problems: list[str] = []
+    for entry in raw["files"]:
+        path = manifest.parent / entry["file"]
+        if not path.is_file():
+            problems.append(f"{entry['file']}: missing")
+            continue
+        if file_digest(path) != entry["sha256"]:
+            problems.append(f"{entry['file']}: sha256 differs from the manifest")
+        if path.stat().st_size != entry["bytes"]:
+            problems.append(f"{entry['file']}: size differs from the manifest")
+    caps = {a.approval_id: a.max_bytes for a in load_approvals(approvals_dir)}
+    cap = caps.get(raw.get("approval_id", ""))
+    if cap is None:
+        problems.append(f"approval {raw.get('approval_id')} has no recorded byte cap")
+    elif raw["total_bytes"] > cap:
+        problems.append(f"total {raw['total_bytes']} bytes exceeds the {cap}-byte cap")
+    return problems
+
+
+def cmd_verify(args: argparse.Namespace) -> int:
+    raw = json.loads(args.manifest.read_text(encoding="utf-8"))
+    for entry in raw["files"]:
+        print(f"{entry['file']}  {entry['bytes']} bytes  sha256 {entry['sha256']}")
+    problems = verify_manifest(args.manifest, args.approvals)
+    print("\n".join(problems) if problems else f"OK: {raw['asset_id']}, {raw['total_bytes']} bytes")
+    return 1 if problems else 0
+
+
 def add_haze_parsers(sub: Any) -> None:
     h0 = sub.add_parser("haze-h0", help="H0: describe pinned NEA PM2.5 for Sep-Oct 2015")
     h0.add_argument("--nea", type=Path, default=Path("data/nea"))
@@ -130,3 +163,8 @@ def add_haze_parsers(sub: Any) -> None:
     h1.add_argument("--firms", type=Path, action="append", default=[])
     h1.add_argument("--out", type=Path, required=True)
     h1.set_defaults(func=cmd_h1)
+
+    ver = sub.add_parser("haze-verify", help="check a download against its manifest and cap")
+    ver.add_argument("--manifest", type=Path, required=True)
+    ver.add_argument("--approvals", type=Path, default=Path("config/approvals"))
+    ver.set_defaults(func=cmd_verify)
