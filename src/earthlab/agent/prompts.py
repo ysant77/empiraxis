@@ -68,5 +68,22 @@ REVISE_ANSWER = (
 )
 
 
-def system_prompt(reasoning: str = "medium") -> str:
-    return SYSTEM_PROMPT.format(reasoning=reasoning)
+PLAN_FIRST = """
+Plan first:
+- Before any other tool, call submit_plan once: the registered case, the intent the
+  question asks for (requested_intent) and the intent you will test (research_intent),
+  the target quantity, the period (monthly products: whole UTC months, for example
+  2015-09-01T00:00:00Z to 2015-10-01T00:00:00Z), each dataset with the quantity you treat
+  it as, the catalogue method, and any abstention. A causal question needs the abstention
+  causation_not_identifiable.
+- A deterministic critic checks the plan against the dataset registry. Read its verdict,
+  findings and suggested_reason_codes. You may revise the plan once.
+- If the verdict says the data cannot support the question, call declare_limitation with
+  the suggested reason codes. The critic never decides a claim; the verifier does.
+- If no registered case fits the question, call declare_limitation instead of a plan.
+"""
+
+
+def system_prompt(reasoning: str = "medium", plan_first: bool = False) -> str:
+    base = SYSTEM_PROMPT.format(reasoning=reasoning)
+    return base + PLAN_FIRST if plan_first else base

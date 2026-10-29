@@ -21,13 +21,20 @@ RoleId = Literal[
     "system",
 ]
 
-# Roles that recorded artifacts produce today.
+# Roles that recorded artifacts produce today. The scientific critic is deterministic code
+# (earthlab.planning.critic), not a model.
 IMPLEMENTED_ROLES: frozenset[RoleId] = frozenset(
-    {"human_director", "orchestrator", "verifier", "safety_gate", "tool", "system"}
+    {
+        "human_director",
+        "orchestrator",
+        "scientific_critic",
+        "verifier",
+        "safety_gate",
+        "tool",
+        "system",
+    }
 )
-PLANNED_ROLES: frozenset[RoleId] = frozenset(
-    {"product_manager", "geospatial_engineer", "scientific_critic"}
-)
+PLANNED_ROLES: frozenset[RoleId] = frozenset({"product_manager", "geospatial_engineer"})
 MODEL_AGENT_ROLES: frozenset[RoleId] = frozenset({"orchestrator"})
 # Roles that may write an investigation plan. Code components and the critic never do;
 # the product manager only proposes a question.
@@ -39,7 +46,7 @@ ROLE_LABELS: dict[str, str] = {
     "product_manager": "Product manager (research concierge)",
     "orchestrator": "Muse research orchestrator (investigator)",
     "geospatial_engineer": "Geospatial engineer",
-    "scientific_critic": "Scientific critic",
+    "scientific_critic": "Scientific critic (deterministic plan rules, code, not a model)",
     "verifier": "Deterministic verifier (code, not a model)",
     "safety_gate": "Safety gate (scope rules and optional Llama Guard)",
     "tool": "Scientific tool (code, not a model)",

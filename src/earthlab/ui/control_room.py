@@ -75,8 +75,8 @@ def _cards(run: RunEvents | None, error: str | None) -> None:
     cols = common.columns(4)
     with cols[0], common.panel("Runtime", "implemented"):
         st.write("Single model agent: the Muse investigator, with deterministic tools.")
-    with cols[1], common.panel("Independent critic", "planned"):
-        st.write("Role and contract under design. Not live.")
+    with cols[1], common.panel("Plan critic", "implemented"):
+        st.write("Deterministic plan rules, code, not a model. A model critic is not built.")
     with cols[2], common.panel("Trace integrity", "implemented" if run else "unavailable"):
         if run is not None:
             st.write(f"SHA-256 chain verified: {run.trace_records} records.")

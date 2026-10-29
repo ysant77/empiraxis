@@ -1,7 +1,9 @@
 """The investigation loop: plan, call tools, submit claims, revise on verifier feedback.
 
-The model chooses every tool call from the allowlist. The runtime executes, records and
-limits each call, and only the deterministic verifier decides whether a claim stands.
+With a plan step, the model first submits a typed plan that a deterministic critic
+reviews (see plan_step.py). The model chooses every tool call from the allowlist. The
+runtime executes, records and limits each call, and only the deterministic verifier
+decides whether a claim stands.
 """
 
 from __future__ import annotations
@@ -16,6 +18,7 @@ from earthlab.agent.area_findings import SUBMIT_AREA_TOOL, AreaLedger
 from earthlab.agent.budget import Budget, BudgetMeter, BudgetStop, prompt_bytes
 from earthlab.agent.findings import SUBMIT_TOOL, FindingsLedger
 from earthlab.agent.limitations import DECLARE_TOOL, LimitationArgs, LimitationLog
+from earthlab.agent.plan_step import PlanStep
 from earthlab.agent.prompts import (
     FINAL_AFTER_LIMITATION,
     FINAL_ANSWER,
@@ -26,6 +29,7 @@ from earthlab.agent.prompts import (
 from earthlab.llm.client import ChatClient
 from earthlab.llm.types import ChatResponse, ProviderError, ToolCall
 from earthlab.metrics import EarthlabMetrics
+from earthlab.planning.report import CriticReport
 from earthlab.safety.gate import WITHHELD, SafetyDecision
 from earthlab.tools.registry import ToolOutcome, ToolRegistry
 from earthlab.trace import RunTrace
@@ -87,6 +91,7 @@ class Investigation:
     skipped_tool_calls: int = 0
     limitations: tuple[LimitationArgs, ...] = ()
     area_ledger: AreaLedger = field(default_factory=AreaLedger)
+    plan_reviews: tuple[CriticReport, ...] = ()
 
 
 _SUBMIT_TOOLS = (SUBMIT_TOOL, SUBMIT_AREA_TOOL)
@@ -117,6 +122,7 @@ class Investigator:
         clock: Callable[[], float] = time.monotonic,
         limitations: LimitationLog | None = None,
         area_ledger: AreaLedger | None = None,
+        plan_step: PlanStep | None = None,
     ):
         self._client = client
         self._registry = registry
@@ -128,9 +134,12 @@ class Investigator:
         self._answer_gate = answer_gate
         self._limitations = limitations or LimitationLog()
         self._area = area_ledger or AreaLedger()
+        self._plan = plan_step
 
     def run(self, question: str) -> Investigation:
         cfg = self._client.config
+        if self._plan is not None:
+            self._plan.question = question
         self._trace.append(
             "start",
             "runtime",
@@ -142,7 +151,10 @@ class Investigator:
         )
         state = RunState(
             messages=[
-                {"role": "system", "content": system_prompt(self._reasoning)},
+                {
+                    "role": "system",
+                    "content": system_prompt(self._reasoning, self._plan is not None),
+                },
                 {"role": "user", "content": question},
             ]
         )
@@ -313,7 +325,8 @@ class Investigator:
         """Check the limits before each call in the batch; skip, never run, the rest."""
         for call in calls:
             self._metrics.record_tool(call.name, "requested")
-            reason = self._meter.check_tool_call(call.name in _SUBMIT_TOOLS)
+            reason = None if self._plan is None else self._plan.refusal(call.name)
+            reason = reason or self._meter.check_tool_call(call.name in _SUBMIT_TOOLS)
             if reason is not None:
                 self._skip_tool_call(state, call, reason)
                 continue
@@ -416,6 +429,7 @@ class Investigator:
             skipped_tool_calls=state.skipped_tool_calls,
             limitations=tuple(self._limitations.entries),
             area_ledger=self._area,
+            plan_reviews=() if self._plan is None else tuple(self._plan.reviews),
         )
 
 

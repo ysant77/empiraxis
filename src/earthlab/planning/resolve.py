@@ -79,24 +79,14 @@ def _draft_mismatch(claim: DataCandidate, path: str, name: str) -> Draft:
     )
 
 
-def catalogue_check(plan: InvestigationPlan, registry: Registry) -> Iterator[Draft]:
-    """Run the case feasibility check for a selected catalogue method."""
+def catalogue_feasibility(plan: InvestigationPlan, registry: Registry) -> Feasibility | None:
+    """The case feasibility check for the selected catalogue method, or None when the
+    plan has no catalogue method or the target is not a case variable."""
     method = plan.selected
-    if method.catalogue_id is None:
-        return
-    path = f"method_candidates[{method.method_id}]"
-    entry = CATALOGUE.get(method.catalogue_id)
+    entry = CATALOGUE.get(method.catalogue_id or "")
     target = plan.target.quantity
     if entry is None or not isinstance(target, ScientificVariable):
-        why = "is not in the catalogue" if entry is None else "needs a case variable as target"
-        yield (
-            CheckId.METHOD_INFEASIBLE,
-            "error",
-            f"{path}.catalogue_id",
-            f"catalogue method {method.catalogue_id} {why}",
-            "select a catalogue method that measures the target, or drop catalogue_id",
-        )
-        return
+        return None
     case = ScientificCase(
         case_id=plan.plan_id,
         title=plan.plan_id,
@@ -108,7 +98,28 @@ def catalogue_check(plan: InvestigationPlan, registry: Registry) -> Iterator[Dra
         method_id=entry.method_id,
         status="active",
     )
-    yield from _feasibility_drafts(plan, path, assess(case, entry, registry.assets))
+    return assess(case, entry, registry.assets)
+
+
+def catalogue_check(plan: InvestigationPlan, registry: Registry) -> Iterator[Draft]:
+    """Run the case feasibility check for a selected catalogue method."""
+    method = plan.selected
+    if method.catalogue_id is None:
+        return
+    path = f"method_candidates[{method.method_id}]"
+    result = catalogue_feasibility(plan, registry)
+    if result is None:
+        entry = CATALOGUE.get(method.catalogue_id)
+        why = "is not in the catalogue" if entry is None else "needs a case variable as target"
+        yield (
+            CheckId.METHOD_INFEASIBLE,
+            "error",
+            f"{path}.catalogue_id",
+            f"catalogue method {method.catalogue_id} {why}",
+            "select a catalogue method that measures the target, or drop catalogue_id",
+        )
+        return
+    yield from _feasibility_drafts(plan, path, result)
 
 
 def _feasibility_drafts(plan: InvestigationPlan, path: str, result: Feasibility) -> Iterator[Draft]:
