@@ -1,0 +1,93 @@
+# Valid plan: summarise pinned NEA regional PM2.5 for the 2015 haze. FIRMS is context
+# only and is not used by the selected method. Expected critic verdict: accept.
+plan_id: singapore-2015-haze
+plan_revision: 1
+task: {task_id: sg-2015-haze, role_id: orchestrator, visibility: public_demo}
+research_question: Which NEA region recorded the highest hourly PM2.5 in September and October 2015?
+requested_intent: observational_summary
+research_intent: observational_summary
+aoi:
+  area:
+    area_id: nea-all-regions
+    name: NEA reporting regions (areas, not stations)
+    regions: [north, south, east, west, central]
+  spatial_support: named_region
+  boundary_source: NEA regional reporting definition
+  boundary_version: data.gov.sg historical 1-hr PM2.5 dataset
+time_range:
+  period: {start: "2015-09-01T00:00:00+08:00", end: "2015-11-01T00:00:00+08:00", local_zone: Asia/Singapore}
+target:
+  quantity: air_pollution_observation
+  unit: ug/m3
+  temporal_resolution: hour
+  spatial_support: named_region
+data_candidates:
+  - dataset_id: nea-historical-1hr-pm25
+    product: nea-historical-1hr-pm25
+    version: data.gov.sg snapshot
+    publisher: National Environment Agency (NEA), Singapore
+    uri: https://data.gov.sg/datasets/d_6c0d5fc34838b12472475fdb73c0af29/view
+    licence: Singapore Open Data Licence v1.0
+    availability: pinned
+    sha256: 2fb76e1c4e4208e92f49670602e303c86e21eaa3704651633323e50f51015de4
+    quantity: air_pollution_observation
+    units: ug/m3
+    product_kind: in_situ_observation
+    native_variables: [pm25_one_hourly]
+    crs: named-regions
+    coverage: {start: "2014-04-01T00:00:00+08:00", end: "2025-01-01T00:00:00+08:00", local_zone: Asia/Singapore}
+    regions: [north, south, east, west, central]
+    availability_latency_hours: 1
+    valid_fraction: 0.98
+    missing_data_policy: Missing hours stay missing; no interpolation.
+  - dataset_id: firms-modis-sp-sumatra-kalimantan-2015
+    product: FIRMS/MODIS_SP
+    version: Collection 6.1 standard processing
+    publisher: NASA FIRMS
+    uri: https://firms.modaps.eosdis.nasa.gov/download/
+    licence: NASA Earth science data, no restrictions on use
+    availability: registered_not_downloaded
+    quantity: active_fire
+    units: detections
+    product_kind: satellite_retrieval
+    native_variables: [frp, confidence, acq_date]
+    crs: EPSG:4326
+    coverage: {start: "2015-09-01T00:00:00Z", end: "2015-11-01T00:00:00Z", local_zone: UTC}
+    extent: {min_lon: 100.0, min_lat: -4.0, max_lon: 104.9, max_lat: 0.9}
+    availability_latency_hours: 2160
+    missing_data_policy: Overpass gaps are not zero fire.
+method_candidates:
+  - method_id: nea_hourly_episode
+    catalogue_id: nea_hourly_episode
+    method_class: deterministic
+    technique: summary_statistics
+    inputs:
+      - {dataset_id: nea-historical-1hr-pm25, used_as: air_pollution_observation, assumed_kind: in_situ_observation}
+    feasibility: feasible
+    assumptions: [Regional values represent areas, not station points.]
+    failure_modes: [Long missing runs in one region bias its peak low.]
+    runtime_estimate_s: 2
+  - method_id: hysplit_back_trajectory
+    method_class: physical
+    technique: back_trajectory
+    inputs:
+      - {dataset_id: firms-modis-sp-sumatra-kalimantan-2015, used_as: active_fire, assumed_kind: satellite_retrieval, role: context}
+    feasibility: not_implemented
+    runtime_estimate_s: 600
+method_choice:
+  selected_id: nea_hourly_episode
+  rationale: The question asks for observed regional peaks; pinned hourly data answers it directly.
+  evidence_refs: ["dataset:nea-historical-1hr-pm25#sha256"]
+  rejected:
+    - {method_id: hysplit_back_trajectory, reason: Not implemented; the question does not ask about sources.}
+verification_plan:
+  checks:
+    - check_id: recompute-peak
+      description: Independent re-parse of the pinned CSV gives the same regional peak.
+      independent_of_method: true
+      acceptance_threshold: 0.0
+      threshold_unit: ug/m3
+  abstain_when:
+    - {kind: valid_fraction_below, value: 0.75}
+    - {kind: verifier_disagrees}
+  uncertainty_statement: Regional values are area aggregates; station-level peaks may be higher.

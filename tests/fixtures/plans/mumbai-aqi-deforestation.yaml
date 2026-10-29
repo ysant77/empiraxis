@@ -1,0 +1,108 @@
+# Fictional claim: "deforestation caused Mumbai's poor AQI in 2023". The plan downgrades
+# the causal request to an association study, states rival hypotheses and names the
+# missing evidence. Expected: needs_evidence, not a bare refusal. All data rows are
+# illustrative candidates; nothing here was downloaded or measured.
+plan_id: mumbai-aqi-deforestation
+plan_revision: 1
+task: {task_id: mumbai-aqi-forest, role_id: orchestrator, visibility: authenticated_reviewer}
+research_question: Did tree-cover loss around Mumbai cause the city's poor AQI in 2023?
+requested_intent: causal_inference
+research_intent: association
+intent_note: Cause cannot be established from co-trends; the plan tests association only.
+aoi:
+  area:
+    area_id: mumbai-draft
+    name: Greater Mumbai draft box
+    bbox: {min_lon: 72.75, min_lat: 18.85, max_lon: 73.05, max_lat: 19.30}
+  spatial_support: area_total
+  boundary_source: Draft box, not the municipal boundary
+  boundary_version: draft-1
+time_range:
+  period: {start: "2023-01-01T00:00:00+05:30", end: "2024-01-01T00:00:00+05:30", local_zone: Asia/Kolkata}
+target:
+  quantity: air_quality_index
+  unit: index
+  temporal_resolution: day
+  spatial_support: area_total
+data_candidates:
+  - dataset_id: cpcb-aqi-mumbai-2023
+    product: CPCB daily AQI bulletin
+    version: unknown
+    publisher: Central Pollution Control Board (India)
+    uri: https://cpcb.nic.in/
+    licence: not verified
+    availability: unavailable
+    quantity: air_quality_index
+    units: index
+    product_kind: derived_product
+    native_variables: [aqi, prominent_pollutant]
+    crs: station-points
+    coverage: {start: "2023-01-01T00:00:00+05:30", end: "2024-01-01T00:00:00+05:30", local_zone: Asia/Kolkata}
+    extent: {min_lon: 72.75, min_lat: 18.85, max_lon: 73.05, max_lat: 19.30}
+    availability_latency_hours: 24
+    missing_data_policy: Station-days without a bulletin stay missing.
+  - dataset_id: hansen-gfc-v1-11
+    product: Hansen Global Forest Change
+    version: v1.11
+    publisher: University of Maryland
+    uri: https://glad.earthengine.app/view/global-forest-change
+    licence: CC BY 4.0
+    availability: registered_not_downloaded
+    quantity: land_cover_change
+    units: lossyear
+    product_kind: derived_product
+    native_variables: [treecover2000, lossyear]
+    crs: EPSG:4326
+    resolution_m: 30
+    coverage: {start: "2000-01-01T00:00:00Z", end: "2024-01-01T00:00:00Z", local_zone: UTC}
+    extent: {min_lon: 72.0, min_lat: 18.0, max_lon: 74.0, max_lat: 20.0}
+    availability_latency_hours: 4380
+    missing_data_policy: Tree-cover loss year only; no regrowth or species information.
+method_candidates:
+  - method_id: lagged-cotrend-summary
+    method_class: deterministic
+    technique: lagged_association
+    inputs:
+      - {dataset_id: cpcb-aqi-mumbai-2023, used_as: air_quality_index, assumed_kind: derived_product}
+      - {dataset_id: hansen-gfc-v1-11, used_as: land_cover_change, assumed_kind: derived_product}
+    feasibility: needs_approval
+    assumptions: [Annual loss cannot resolve daily AQI changes; only coarse co-trends are tested.]
+    failure_modes: [Traffic, construction dust and sea-breeze changes dominate AQI.]
+    runtime_estimate_s: 10
+method_choice:
+  selected_id: lagged-cotrend-summary
+  rationale: An association summary is the strongest claim the data can support.
+  evidence_refs: ["dataset:hansen-gfc-v1-11#metadata"]
+hypotheses:
+  - {hypothesis_id: h-forward, statement: Tree-cover loss raised local PM levels., direction: forward}
+  - {hypothesis_id: h-common, statement: Urban growth drives both tree loss and emissions., direction: common_cause}
+  - {hypothesis_id: h-null, statement: AQI changes are unrelated to local tree-cover loss., direction: "null"}
+evidence_gaps:
+  - gap_id: aqi-source
+    needed: air_quality_index
+    why: The AQI archive, its licence and its station set are not verified.
+    candidate_dataset_ids: [cpcb-aqi-mumbai-2023]
+  - gap_id: emissions
+    needed: emissions
+    why: Without traffic, industry and construction emissions, rival causes cannot be separated.
+  - gap_id: meteorology
+    needed: boundary_layer_height
+    why: Seasonal mixing height changes AQI independent of land cover.
+approval_scope: [download]
+approval_requests:
+  - request_id: dl-hansen
+    action: download
+    dataset_ids: [hansen-gfc-v1-11]
+    max_bytes: 200000000
+    reason: Tree-cover loss tiles for the draft box only.
+verification_plan:
+  checks:
+    - check_id: recompute-loss-area
+      description: Recompute loss area from the tiles with an equal-area projection.
+      independent_of_method: true
+      acceptance_threshold: 0.01
+      threshold_unit: fraction
+  abstain_when:
+    - {kind: coverage_gap}
+    - {kind: method_blocked}
+  uncertainty_statement: Cause is not established; at most a temporal association is reported.

@@ -1,0 +1,144 @@
+# Test-only modelling plan: a 6-hour PM2.5 nowcast for Singapore regions. It exercises
+# the experiment, feature-timing, wind and approval rules. Valid as written; tests mutate
+# it. All values are illustrative; no model was trained and no score exists.
+plan_id: singapore-pm25-nowcast
+plan_revision: 1
+task: {task_id: sg-nowcast, role_id: geospatial_engineer, visibility: internal, parent_task_id: sg-2015-haze}
+research_question: Can regional PM2.5 six hours ahead be predicted from recent PM2.5 and forecast wind?
+requested_intent: prospective_prediction
+research_intent: prospective_prediction
+aoi:
+  area:
+    area_id: nea-all-regions
+    name: NEA reporting regions (areas, not stations)
+    regions: [north, south, east, west, central]
+  spatial_support: named_region
+  boundary_source: NEA regional reporting definition
+  boundary_version: data.gov.sg historical 1-hr PM2.5 dataset
+time_range:
+  period: {start: "2015-09-01T00:00:00+08:00", end: "2015-11-01T00:00:00+08:00", local_zone: Asia/Singapore}
+  forecast_issue_time: "2015-10-01T00:00:00+08:00"
+target:
+  quantity: air_pollution_observation
+  unit: ug/m3
+  temporal_resolution: hour
+  spatial_support: named_region
+data_candidates:
+  - dataset_id: nea-historical-1hr-pm25
+    product: nea-historical-1hr-pm25
+    version: data.gov.sg snapshot
+    publisher: National Environment Agency (NEA), Singapore
+    uri: https://data.gov.sg/datasets/d_6c0d5fc34838b12472475fdb73c0af29/view
+    licence: Singapore Open Data Licence v1.0
+    availability: pinned
+    sha256: 2fb76e1c4e4208e92f49670602e303c86e21eaa3704651633323e50f51015de4
+    quantity: air_pollution_observation
+    units: ug/m3
+    product_kind: in_situ_observation
+    native_variables: [pm25_one_hourly]
+    crs: named-regions
+    coverage: {start: "2014-04-01T00:00:00+08:00", end: "2025-01-01T00:00:00+08:00", local_zone: Asia/Singapore}
+    regions: [north, south, east, west, central]
+    availability_latency_hours: 1
+    valid_fraction: 0.98
+    missing_data_policy: Missing hours stay missing; no interpolation.
+  - dataset_id: gfs-wind-forecast-2015
+    product: NOAA GFS 0.25 degree forecast archive
+    version: GFS v13
+    publisher: NOAA NCEP
+    uri: https://www.ncei.noaa.gov/products/weather-climate-models/global-forecast
+    licence: US government work
+    availability: registered_not_downloaded
+    quantity: wind_vector
+    units: m/s
+    product_kind: operational_forecast
+    native_variables: [u10, v10]
+    crs: EPSG:4326
+    coverage: {start: "2015-01-01T00:00:00Z", end: "2016-01-01T00:00:00Z", local_zone: UTC}
+    regions: [north, south, east, west, central]
+    availability_latency_hours: 4
+    missing_data_policy: A missing forecast cycle falls back to the previous cycle.
+  - dataset_id: era5-wind-2015
+    product: ECMWF/ERA5/HOURLY
+    version: ERA5
+    publisher: ECMWF Copernicus Climate Change Service
+    uri: https://cds.climate.copernicus.eu/
+    licence: Copernicus licence
+    availability: registered_not_downloaded
+    quantity: wind_vector
+    units: m/s
+    product_kind: reanalysis
+    native_variables: [u10, v10]
+    crs: EPSG:4326
+    coverage: {start: "1940-01-01T00:00:00Z", end: "2026-01-01T00:00:00Z", local_zone: UTC}
+    regions: [north, south, east, west, central]
+    availability_latency_hours: 120
+    missing_data_policy: Gridded reanalysis has no gaps; it is a model estimate.
+  - dataset_id: nea-pm25-2019-holdout
+    product: nea-historical-1hr-pm25
+    version: data.gov.sg snapshot, 2019 haze months only
+    publisher: National Environment Agency (NEA), Singapore
+    uri: https://data.gov.sg/datasets/d_6c0d5fc34838b12472475fdb73c0af29/view
+    licence: Singapore Open Data Licence v1.0
+    availability: registered_not_downloaded
+    quantity: air_pollution_observation
+    units: ug/m3
+    product_kind: in_situ_observation
+    native_variables: [pm25_one_hourly]
+    crs: named-regions
+    coverage: {start: "2019-09-01T00:00:00+08:00", end: "2019-10-01T00:00:00+08:00", local_zone: Asia/Singapore}
+    regions: [north, south, east, west, central]
+    availability_latency_hours: 1
+    missing_data_policy: Missing hours stay missing.
+method_candidates:
+  - method_id: persistence
+    method_class: deterministic
+    technique: summary_statistics
+    inputs:
+      - {dataset_id: nea-historical-1hr-pm25, used_as: air_pollution_observation, assumed_kind: in_situ_observation}
+    feasibility: feasible
+    runtime_estimate_s: 1
+  - method_id: lagged-ridge-nowcast
+    method_class: statistical
+    technique: regression
+    inputs:
+      - {dataset_id: nea-historical-1hr-pm25, used_as: air_pollution_observation, assumed_kind: in_situ_observation}
+      - {dataset_id: gfs-wind-forecast-2015, used_as: wind_vector, assumed_kind: operational_forecast}
+    feasibility: needs_approval
+    assumptions: [Six-hour persistence plus forecast wind captures most variance.]
+    failure_modes: [Sudden wind shifts; fire activity changes upwind.]
+    runtime_estimate_s: 60
+method_choice:
+  selected_id: lagged-ridge-nowcast
+  rationale: Ridge on lagged PM2.5 and forecast wind is the smallest model that can beat persistence.
+  evidence_refs: ["dataset:nea-historical-1hr-pm25#sha256"]
+  simpler_baseline_id: persistence
+experiment_design:
+  transformations: [log1p of PM2.5]
+  leakage_risks: [Adjacent hours are autocorrelated.]
+  sample_unit: hour
+  split: {method: blocked_time}
+  baseline_ids: [persistence]
+  metrics: [mae_ug_m3, hit_rate_above_55]
+  independent_reference_id: nea-pm25-2019-holdout
+  features:
+    - {name: pm25_lag1, dataset_id: nea-historical-1hr-pm25, valid_offset_hours: -1}
+    - {name: wind_fc_plus6, dataset_id: gfs-wind-forecast-2015, valid_offset_hours: 6, issued_offset_hours: -6}
+approval_scope: [download]
+approval_requests:
+  - request_id: dl-gfs
+    action: download
+    dataset_ids: [gfs-wind-forecast-2015]
+    max_bytes: 100000000
+    reason: Point extraction of 10 m wind for Singapore, 2015.
+verification_plan:
+  checks:
+    - check_id: beat-persistence
+      description: MAE on the 2019 holdout is lower than persistence MAE.
+      independent_of_method: true
+      acceptance_threshold: 0.0
+      threshold_unit: ug/m3
+  abstain_when:
+    - {kind: valid_fraction_below, value: 0.75}
+    - {kind: verifier_disagrees}
+  uncertainty_statement: One season of training data; skill may not transfer to other years.

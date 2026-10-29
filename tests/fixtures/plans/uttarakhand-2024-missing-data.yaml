@@ -1,0 +1,72 @@
+# Missing data: the MCD64A1 snapshot for this box and period is not verified, so it is
+# unavailable. The plan declares the gap instead of inventing a value.
+# Expected: needs_evidence (uncertainty findings only).
+plan_id: uttarakhand-2024-missing-data
+plan_revision: 1
+task: {task_id: utk-2024, role_id: orchestrator, visibility: authenticated_reviewer}
+research_question: How much area did MODIS map as burned in the Uttarakhand box in April and May 2024?
+requested_intent: observational_summary
+research_intent: observational_summary
+aoi:
+  area:
+    area_id: uttarakhand-draft
+    name: Uttarakhand draft box
+    bbox: {min_lon: 77.5, min_lat: 28.7, max_lon: 81.1, max_lat: 31.5}
+  spatial_support: area_total
+  boundary_source: Draft box, not an administrative boundary
+  boundary_version: config/cases/uttarakhand-2024-burned-area.yaml
+time_range:
+  period: {start: "2024-04-01T00:00:00Z", end: "2024-06-01T00:00:00Z", local_zone: Asia/Kolkata}
+target:
+  quantity: burned_area
+  unit: ha
+  temporal_resolution: period_total
+  spatial_support: area_total
+data_candidates:
+  - dataset_id: mcd64a1-061-uttarakhand-2024
+    product: MODIS/061/MCD64A1
+    version: "6.1"
+    publisher: NASA LP DAAC (via Google Earth Engine)
+    uri: https://developers.google.com/earth-engine/datasets/catalog/MODIS_061_MCD64A1
+    licence: NASA Earth science data, no restrictions on use
+    availability: unavailable
+    quantity: burned_area
+    units: BurnDate (day of year); area computed in ha
+    product_kind: derived_product
+    native_variables: [BurnDate, Uncertainty, QA]
+    crs: SR-ORG:6974
+    resolution_m: 463.3127
+    coverage: {start: "2024-04-01T00:00:00Z", end: "2024-06-01T00:00:00Z", local_zone: UTC}
+    extent: {min_lon: 77.5, min_lat: 28.7, max_lon: 81.1, max_lat: 31.5}
+    availability_latency_hours: 1440
+    missing_data_policy: No value is reported until coverage, QA and licence are verified.
+    quality_policy: QA bits per the MCD64A1 C6.1 user guide
+method_candidates:
+  - method_id: mcd64a1_burned_area
+    catalogue_id: mcd64a1_burned_area
+    method_class: deterministic
+    technique: area_sum
+    inputs:
+      - {dataset_id: mcd64a1-061-uttarakhand-2024, used_as: burned_area, assumed_kind: derived_product}
+    feasibility: blocked
+    runtime_estimate_s: 5
+method_choice:
+  selected_id: mcd64a1_burned_area
+  rationale: Same method and code path as the Kalimantan case; only the data is missing.
+  evidence_refs: ["catalogue:mcd64a1_burned_area", "case:uttarakhand-2024-burned-area"]
+evidence_gaps:
+  - gap_id: utk-burned-area
+    needed: burned_area
+    why: Archive coverage, QA and licence for this box and period are not verified.
+    candidate_dataset_ids: [mcd64a1-061-uttarakhand-2024]
+verification_plan:
+  checks:
+    - check_id: server-area-sum
+      description: Server-side area sum recorded at download matches the local sum.
+      independent_of_method: true
+      acceptance_threshold: 0.01
+      threshold_unit: fraction
+  abstain_when:
+    - {kind: coverage_gap}
+    - {kind: valid_fraction_below, value: 0.8}
+  uncertainty_statement: No burned-area value may be reported for this case yet.
