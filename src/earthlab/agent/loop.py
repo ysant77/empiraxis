@@ -26,6 +26,7 @@ from earthlab.agent.prompts import (
     REVISE_ANSWER,
     system_prompt,
 )
+from earthlab.agent.rendered import render_answer
 from earthlab.llm.client import ChatClient
 from earthlab.llm.types import ChatResponse, ProviderError, ToolCall
 from earthlab.metrics import EarthlabMetrics
@@ -62,6 +63,7 @@ class RunState:
     finalising: bool = False
     stop_reason: str = ""
     revision_note: str | None = None
+    rendered: bool = False
     skipped_tool_calls: int = 0
     served_model: str | None = None
     prompt_tokens: int = 0
@@ -92,6 +94,7 @@ class Investigation:
     limitations: tuple[LimitationArgs, ...] = ()
     area_ledger: AreaLedger = field(default_factory=AreaLedger)
     plan_reviews: tuple[CriticReport, ...] = ()
+    answer_source: str = "model"
 
 
 _SUBMIT_TOOLS = (SUBMIT_TOOL, SUBMIT_AREA_TOOL)
@@ -123,6 +126,7 @@ class Investigator:
         limitations: LimitationLog | None = None,
         area_ledger: AreaLedger | None = None,
         plan_step: PlanStep | None = None,
+        render_fallback: bool = False,
     ):
         self._client = client
         self._registry = registry
@@ -135,6 +139,7 @@ class Investigator:
         self._limitations = limitations or LimitationLog()
         self._area = area_ledger or AreaLedger()
         self._plan = plan_step
+        self._render_fallback = render_fallback
 
     def run(self, question: str) -> Investigation:
         cfg = self._client.config
@@ -161,9 +166,7 @@ class Investigator:
         self._metrics.active.inc()
         try:
             status = self._loop(state)
-            audit = self._audit_answer(state)
-            if audit is not None and not audit.passed and status in _ANSWERED:
-                audit = self._revise_answer(question, state, audit)
+            audit = self._checked_answer(question, state, status)
         finally:
             self._metrics.active.dec()
         decision = self._gate_answer(question, state)
@@ -221,6 +224,29 @@ class Investigator:
             return audit
         state.answer = revised
         return self._audit_answer(state) or audit
+
+    def _checked_answer(
+        self, question: str, state: RunState, status: RunStatus
+    ) -> AnswerAudit | None:
+        """Audit the text; on failure revise once, then fall back to a rendered answer."""
+        audit = self._audit_answer(state)
+        if audit is not None and not audit.passed and status in _ANSWERED:
+            audit = self._revise_answer(question, state, audit)
+            if not audit.passed and self._render_fallback:
+                self._render_answer(state)
+        return audit
+
+    def _render_answer(self, state: RunState) -> None:
+        """Replace a text that still fails the audit with one built from verified findings.
+
+        Without any verified finding or limitation, the failed text and its issues stay.
+        """
+        text = render_answer(self._ledger, self._area, self._limitations.entries)
+        if text is None:
+            return
+        self._trace.append("answer_rendered", "runtime", withheld_text=state.answer)
+        state.answer = text
+        state.rendered = True
 
     def _audit_answer(self, state: RunState) -> AnswerAudit | None:
         if not state.answer:
@@ -430,6 +456,7 @@ class Investigator:
             limitations=tuple(self._limitations.entries),
             area_ledger=self._area,
             plan_reviews=() if self._plan is None else tuple(self._plan.reviews),
+            answer_source="rendered" if state.rendered else "model",
         )
 
 
@@ -437,7 +464,7 @@ def _answer_issues(
     audit: AnswerAudit | None, decision: SafetyDecision | None, state: RunState
 ) -> tuple[str, ...]:
     """Why the final text cannot be called verified; empty when it can."""
-    issues = [] if audit is None else audit.problems()
+    issues = [] if audit is None or state.rendered else audit.problems()
     if state.revision_note is not None and issues:
         issues.append(state.revision_note)
     if decision is not None and not decision.allowed:

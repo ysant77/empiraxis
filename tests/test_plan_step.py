@@ -18,8 +18,10 @@ from earthlab.agent.prompts import PLAN_FIRST, system_prompt
 from earthlab.events.adapter import load_run
 from earthlab.planning.proposal import PlanProposal, build_plan
 from earthlab.planning.registry import load_registry
-from earthlab.runtime import Workspace, investigate, open_workspace
+from earthlab.runtime import RunOptions, Workspace, investigate, open_workspace
 from earthlab.trace import RunTrace
+
+PLAN = RunOptions(plan_review=True)
 
 ROOT = Path(__file__).resolve().parents[1]
 CASE = "kalimantan-2015-burned-area"
@@ -90,7 +92,7 @@ def test_tools_wait_for_a_plan_and_october_ends_in_a_typed_abstention(
             say("The month fails the valid-data gate, so no area is claimed."),
         ]
     )
-    result = investigate("October burned area?", client, workspace, tmp_path, plan_review=True)
+    result = investigate("October burned area?", client, workspace, tmp_path, options=PLAN)
     assert result.status is RunStatus.ABSTAINED
     assert [r.verdict for r in result.plan_reviews] == ["revise"]
     records = [json.loads(line) for line in (tmp_path / "trace.jsonl").read_text().splitlines()]
@@ -130,7 +132,7 @@ def test_a_plan_rejected_twice_cannot_submit_claims(workspace: Workspace, tmp_pa
             say("No claim could be made."),
         ]
     )
-    result = investigate("October burned area?", client, workspace, tmp_path, plan_review=True)
+    result = investigate("October burned area?", client, workspace, tmp_path, options=PLAN)
     assert len(result.plan_reviews) == 2
     assert result.area_ledger.rounds == []
     reasons = [
@@ -151,7 +153,7 @@ def test_declare_limitation_runs_without_a_plan(workspace: Workspace, tmp_path: 
             say("No registered case fits the question."),
         ]
     )
-    result = investigate("Unrelated question?", client, workspace, tmp_path, plan_review=True)
+    result = investigate("Unrelated question?", client, workspace, tmp_path, options=PLAN)
     assert result.status is RunStatus.ABSTAINED and result.plan_reviews == ()
 
 

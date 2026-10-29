@@ -28,6 +28,14 @@ WITHHELD = (
 )
 
 
+CAUSAL_CODE = "S5"
+CAUSAL_ABSTENTION = (
+    "The question asks what caused an observation. The pinned observations alone cannot "
+    "identify a cause, so EarthLab does not attribute one. It can describe what the data "
+    "recorded and when, as a temporal association."
+)
+
+
 class Stage(StrEnum):
     QUESTION = "question"
     ANSWER = "answer"
@@ -39,6 +47,19 @@ class SafetyDecision(Strict):
     blocked_by: str | None = None
     reason: str | None = None
     guard: str | None = None
+    guard_codes: tuple[str, ...] = ()
+
+    def causal_only(self) -> bool:
+        """True for a question that Llama Guard blocked for S5 (causal attribution) alone.
+
+        Such a question is routed to a causation_not_identifiable abstention instead of a
+        refusal. Every other category, and every answer-stage block, stays a block.
+        """
+        return (
+            self.stage is Stage.QUESTION
+            and self.blocked_by == "llama_guard"
+            and self.guard_codes == (CAUSAL_CODE,)
+        )
 
 
 class SafetyGate:
@@ -56,7 +77,7 @@ class SafetyGate:
     def _decide(
         self, stage: Stage, rule_reason: str | None, question: str, answer: str | None
     ) -> SafetyDecision:
-        guard_text, guard_block = self._run_guard(question, answer)
+        guard_text, guard_block, codes = self._run_guard(question, answer)
         if rule_reason is not None:
             decision = SafetyDecision(
                 stage=stage,
@@ -72,22 +93,27 @@ class SafetyGate:
                 blocked_by="llama_guard",
                 reason=guard_block,
                 guard=guard_text,
+                guard_codes=codes,
             )
         else:
             decision = SafetyDecision(stage=stage, allowed=True, guard=guard_text)
         self._record(decision)
         return decision
 
-    def _run_guard(self, question: str, answer: str | None) -> tuple[str | None, str | None]:
-        """Return (guard description, blocking reason or None)."""
+    def _run_guard(
+        self, question: str, answer: str | None
+    ) -> tuple[str | None, str | None, tuple[str, ...]]:
+        """Return (guard description, blocking reason or None, flagged category codes)."""
         if self._guard is None:
-            return None, None
+            return None, None, ()
         try:
             verdict = self._guard.classify(question, answer)
         except ProviderError as exc:
-            return f"error: {exc.kind.value}", "safety model unavailable; failing closed"
+            return f"error: {exc.kind.value}", "safety model unavailable; failing closed", ()
         text = f"{self._guard.name}: {verdict.describe()}"
-        return text, None if verdict.safe else f"Llama Guard flagged {verdict.describe()}"
+        if verdict.safe:
+            return text, None, ()
+        return text, f"Llama Guard flagged {verdict.describe()}", verdict.codes
 
     def _record(self, decision: SafetyDecision) -> None:
         outcome = "allowed" if decision.allowed else "blocked"

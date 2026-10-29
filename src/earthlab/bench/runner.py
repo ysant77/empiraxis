@@ -13,6 +13,7 @@ import shutil
 import subprocess
 import time
 from collections.abc import Callable
+from dataclasses import asdict
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import IO, Any
@@ -32,7 +33,7 @@ from earthlab.bench.runtime_info import guard_record, planner_record, probe_fail
 from earthlab.bench.scenarios import Outcome, Scenario, ScenarioScore, score
 from earthlab.digest import file_digest
 from earthlab.llm.client import ChatClient
-from earthlab.runtime import Workspace, investigate
+from earthlab.runtime import DEFAULT_OPTIONS, RunOptions, Workspace, investigate
 from earthlab.safety.llama_guard import LlamaGuard
 
 ARMS = ("A", "B")
@@ -109,7 +110,7 @@ def agent_outcome(
     budget: Budget,
     guard: LlamaGuard | None,
     reasoning: str = "low",
-    plan_review: bool = False,
+    options: RunOptions = DEFAULT_OPTIONS,
 ) -> Outcome:
     result = investigate(
         scenario.question,
@@ -119,7 +120,7 @@ def agent_outcome(
         budget=budget,
         reasoning=reasoning,
         guard=guard,
-        plan_review=plan_review,
+        options=options,
     )
     return Outcome(
         status=result.status.value,
@@ -140,6 +141,7 @@ def agent_outcome(
             "run_dir": str(run_dir),
             "stop_reason": result.stop_reason,
             "plan_verdicts": [r.verdict for r in result.plan_reviews],
+            "answer_source": result.answer_source,
         },
     )
 
@@ -154,7 +156,7 @@ def _guarded_outcome(
     budget: Budget,
     guard: LlamaGuard | None,
     reasoning: str,
-    plan_review: bool = False,
+    options: RunOptions = DEFAULT_OPTIONS,
 ) -> Outcome:
     """One arm on one scenario. An unexpected exception becomes an 'error' outcome, which
     scores as a failure, so a crash never removes a row from the denominator. The bench
@@ -168,7 +170,14 @@ def _guarded_outcome(
             run_dir = out_dir / "runs" / f"{scenario.id}-r{repeat}"
             run_dir.mkdir(parents=True, exist_ok=True)
             outcome = agent_outcome(
-                scenario, client, workspace, run_dir, budget, guard, reasoning, plan_review
+                scenario,
+                client,
+                workspace,
+                run_dir,
+                budget,
+                guard,
+                reasoning,
+                options,
             )
     except Exception as exc:  # recorded as a failed row, never hidden
         error = f"{type(exc).__name__}: {exc}"
@@ -203,14 +212,14 @@ def run_bench(
     scenario_file: dict[str, Any] | None = None,
     reasoning: str = "low",
     before_rows: Callable[[dict[str, Any]], None] | None = None,
-    plan_review: bool = False,
+    options: RunOptions = DEFAULT_OPTIONS,
 ) -> dict[str, Any]:
     """Score ready scenarios only; blocked ones are reported. before_rows can refuse a run."""
     _check_arms(arms, client)
     budget = budget or Budget()
     out_dir.mkdir(parents=True, exist_ok=True)
     meta = run_metadata(repo, workspace, client, budget, scenario_file, reasoning, guard)
-    meta |= {"arms": arms, "repeats": repeats, "plan_review": plan_review}
+    meta |= {"arms": arms, "repeats": repeats, "options": asdict(options)}
     if scenario_file and scenario_file["heldout"]:
         check_official(meta)
     if before_rows is not None:
@@ -221,7 +230,7 @@ def run_bench(
         for repeat in range(repeats):
             for scenario in ready:
                 for arm in arms:
-                    ctx = (workspace, out_dir, client, budget, guard, reasoning, plan_review)
+                    ctx = (workspace, out_dir, client, budget, guard, reasoning, options)
                     outcome = _guarded_outcome(arm, scenario, repeat, *ctx)
                     result = score(scenario, arm, repeat, outcome)
                     rows.append((scenario, result, outcome))

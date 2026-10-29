@@ -15,7 +15,12 @@ from earthlab.acquire.gate import load_approvals
 from earthlab.agent.area_findings import AreaLedger, submit_area_findings_spec
 from earthlab.agent.budget import Budget
 from earthlab.agent.findings import FindingsLedger, submit_findings_spec
-from earthlab.agent.limitations import LimitationLog, declare_limitation_spec
+from earthlab.agent.limitations import (
+    LimitationArgs,
+    LimitationLog,
+    ReasonCode,
+    declare_limitation_spec,
+)
 from earthlab.agent.loop import Investigation, Investigator, RunStatus
 from earthlab.agent.plan_step import PlanStep
 from earthlab.cases.tools import CaseLibrary, assess_case_spec
@@ -26,7 +31,7 @@ from earthlab.llm.client import ChatClient
 from earthlab.metrics import EarthlabMetrics
 from earthlab.planning.registry import load_registry
 from earthlab.report.evidence import collect_evidence
-from earthlab.safety.gate import REFUSAL, SafetyDecision, SafetyGate
+from earthlab.safety.gate import CAUSAL_ABSTENTION, REFUSAL, SafetyDecision, SafetyGate
 from earthlab.safety.llama_guard import LlamaGuard
 from earthlab.tools.burned_area_tools import burned_area_spec
 from earthlab.tools.pm25_tools import Pm25Toolset
@@ -37,6 +42,22 @@ from earthlab.verify.verifier import Verifier
 
 SOURCE_LABEL = "nea-pm25"
 APPROVALS_DIR = Path("config") / "approvals"
+
+
+@dataclass(frozen=True)
+class RunOptions:
+    """Steps added after the frozen v1 protocol. Both are off unless a caller asks.
+
+    plan_review: the model submits a typed plan that the deterministic critic reviews.
+    render_fallback: a text that fails the answer audit after its revision is replaced by
+    an answer rendered from verified findings only.
+    """
+
+    plan_review: bool = False
+    render_fallback: bool = False
+
+
+DEFAULT_OPTIONS = RunOptions()
 
 
 @dataclass(frozen=True)
@@ -119,18 +140,13 @@ def investigate(
     reasoning: str = "medium",
     listener: Callable[[dict[str, Any]], None] | None = None,
     guard: LlamaGuard | None = None,
-    plan_review: bool = False,
+    options: RunOptions = DEFAULT_OPTIONS,
 ) -> Investigation:
-    """Gate the question, run the agent, then gate the final answer before saving.
-
-    With plan_review, the model must submit a plan that the deterministic critic reviews.
-    """
-    ledger = FindingsLedger()
-    limitations = LimitationLog()
-    area_ledger = AreaLedger()
+    """Gate the question, run the agent, then gate the final answer before saving."""
+    ledger, limitations, area_ledger = FindingsLedger(), LimitationLog(), AreaLedger()
     registry = build_registry(workspace, ledger, limitations, area_ledger)
     trace = RunTrace(run_dir / "trace.jsonl", listener)
-    plan_step = plan_step_for(workspace, trace, run_dir) if plan_review else None
+    plan_step = plan_step_for(workspace, trace, run_dir) if options.plan_review else None
     if plan_step is not None:
         registry.register(plan_step.spec())
     metrics = metrics or EarthlabMetrics(tool_names=set(registry.names()))
@@ -138,7 +154,9 @@ def investigate(
     trace.append("source", "runtime", **workspace.snapshot.citation())
     gate = SafetyGate(guard, metrics, trace)
     asked = gate.check_question(question)
-    if not asked.allowed:
+    if asked.causal_only():
+        result = _causal_abstention(client, ledger, asked, metrics, trace)
+    elif not asked.allowed:
         result = _refused(client, ledger, asked, metrics, trace)
     else:
         investigator = Investigator(
@@ -153,6 +171,7 @@ def investigate(
             limitations=limitations,
             area_ledger=area_ledger,
             plan_step=plan_step,
+            render_fallback=options.render_fallback,
         )
         result = investigator.run(question)
         result = replace(result, safety=(asked, *result.safety))
@@ -170,6 +189,13 @@ def _refused(
     """A refused question never reaches the planner model."""
     metrics.investigations.labels(RunStatus.REFUSED.value).inc()
     trace.append("finish", "runtime", status=RunStatus.REFUSED.value, reason=decision.reason)
+    return _refused_fields(client, ledger, decision)
+
+
+def _refused_fields(
+    client: ChatClient, ledger: FindingsLedger, decision: SafetyDecision
+) -> Investigation:
+    """The result of a run that stopped at the question gate: no model call was made."""
     return Investigation(
         status=RunStatus.REFUSED,
         stop_reason=decision.reason or "refused",
@@ -179,13 +205,41 @@ def _refused(
         tool_calls=0,
         submissions=0,
         seconds=0.0,
-        cost_usd=client.config.estimate_cost_usd(0, 0),  # no model call was made
+        cost_usd=client.config.estimate_cost_usd(0, 0),
         provider=client.config.name,
         model=client.config.model,
         served_model=None,
         prompt_tokens=0,
         completion_tokens=0,
         safety=(decision,),
+    )
+
+
+def _causal_abstention(
+    client: ChatClient,
+    ledger: FindingsLedger,
+    decision: SafetyDecision,
+    metrics: EarthlabMetrics,
+    trace: RunTrace,
+) -> Investigation:
+    """A question blocked for causal attribution alone becomes a typed abstention.
+
+    The planner model never runs; the abstention is the system's, not the model's.
+    """
+    limitation = LimitationArgs(
+        reasons=[ReasonCode.CAUSATION_NOT_IDENTIFIABLE],
+        explanation="Observations alone cannot identify the cause the question asks for.",
+    )
+    trace.append("forced_abstention", "safety", reasons=["causation_not_identifiable"])
+    metrics.investigations.labels(RunStatus.ABSTAINED.value).inc()
+    trace.append("finish", "runtime", status=RunStatus.ABSTAINED.value, reason="causal attribution")
+    refused = _refused_fields(client, ledger, decision)
+    return replace(
+        refused,
+        status=RunStatus.ABSTAINED,
+        stop_reason="causal attribution routed to an abstention",
+        answer=CAUSAL_ABSTENTION,
+        limitations=(limitation,),
     )
 
 
@@ -216,6 +270,7 @@ def result_payload(
         "attribution": snapshot.attribution,
         "safety": [d.model_dump(mode="json") for d in result.safety],
         "answer_issues": list(result.answer_issues),
+        "answer_source": result.answer_source,
         "answer_audit": None
         if result.answer_audit is None
         else result.answer_audit.model_dump(mode="json"),
