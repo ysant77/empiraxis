@@ -1,0 +1,27 @@
+{
+  "note": "Recorded with the scripted test client (no Meta model call). The tools, verifier and safety gate ran on the pinned data. Use it to demonstrate replay, not model quality.",
+  "runs": [
+    {
+      "run": "sb05-september",
+      "scenario_id": "SB-05",
+      "split": "development",
+      "files": {
+        "burn_map_2015-09.png": "0b07b619fab732d3440ae31c95388e0153b622ee5606299f1b8521658b4d3fe9",
+        "report.md": "b869bf0cfef2dc7b0de7af5dd7d0a43291a6a46ae78e3171b894c4af833b8b87",
+        "result.json": "51a9c07e2ebea372d4ea40e38ca328f16f1817e27d1eb000abbab224417b531f",
+        "trace.jsonl": "f643b7d8cda5bae0294e2d10deb04abadf8cd36972e3e2c9c3d174a356fdbef7"
+      }
+    },
+    {
+      "run": "sb05b-october",
+      "scenario_id": "SB-05b",
+      "split": "development",
+      "files": {
+        "burn_map_2015-10.png": "2c5977648c549607053d3a8539d956f4faebad47d585a19b64d2dfed9f4bff19",
+        "report.md": "1fdbda5a1d47256a9fa5d8156ecb25e4bbfa300169c3b5192d2b8e74dc5ffc6a",
+        "result.json": "14c4e70f42a1683a26feaf46ba7a8f060ee3311c092bd2647ec6cb13a73f6b79",
+        "trace.jsonl": "5592b56783391ba3869c803baf36b06b0c9e76219b33798db15bd8bd7cfc01f1"
+      }
+    }
+  ]
+}

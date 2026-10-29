@@ -1,0 +1,128 @@
+{
+  "question": "For the registered Kalimantan 2015 study area and September 2015, how many hectares were mapped as burned in MCD64A1, after quality checks?",
+  "status": "verified",
+  "stop_reason": "final answer given",
+  "answer": "The verified mapped burned area for the study box is in A1.1.",
+  "provider": "scripted-fixture",
+  "model": "scripted-test-client",
+  "served_model": "scripted-test-client",
+  "turns": 3,
+  "tool_calls": 2,
+  "submissions": 1,
+  "skipped_tool_calls": 0,
+  "seconds": 0.326,
+  "prompt_tokens": 300,
+  "completion_tokens": 30,
+  "estimated_cost_usd": 0.0,
+  "source": {
+    "dataset_id": "nea-historical-1hr-pm25",
+    "source_url": "https://data.gov.sg/datasets/d_6c0d5fc34838b12472475fdb73c0af29/view",
+    "sha256": "2fb76e1c4e4208e92f49670602e303c86e21eaa3704651633323e50f51015de4",
+    "licence": "Singapore Open Data Licence v1.0",
+    "unit": "ug/m3",
+    "timezone": "Asia/Singapore",
+    "spatial_support": "Five NEA reporting regions (north, south, east, west, central). Not station coordinates."
+  },
+  "attribution": "Contains information from Historical 1-hr PM2.5 accessed on 27 October 2026 from data.gov.sg, which is made available under the terms of the Singapore Open Data Licence version 1.0.",
+  "safety": [
+    {
+      "stage": "question",
+      "allowed": true,
+      "blocked_by": null,
+      "reason": null,
+      "guard": null
+    },
+    {
+      "stage": "answer",
+      "allowed": true,
+      "blocked_by": null,
+      "reason": null,
+      "guard": null
+    }
+  ],
+  "answer_issues": [],
+  "answer_audit": {
+    "numbers": [],
+    "dates": [],
+    "unknown_citations": [],
+    "misleading": [],
+    "language": null
+  },
+  "findings": [],
+  "limitations": [],
+  "area_findings": [
+    {
+      "id": "A1.1",
+      "case_id": "kalimantan-2015-burned-area",
+      "month": "2015-09",
+      "quantity": "burned_area_ha",
+      "value": 77426.0,
+      "statement": "Mapped burned area after quality checks.",
+      "qa_policy": "primary",
+      "unit": "ha",
+      "observed": 77426.0,
+      "verdict": "supported",
+      "check": "value",
+      "reason": "matches the recomputed 77426.0 ha",
+      "source_sha256": "126a6c506d0d05b7f913f36ea98925de67773c68ce19194b1759a9b9acc6bfe2"
+    }
+  ],
+  "area_rounds": [
+    [
+      {
+        "claim": {
+          "case_id": "kalimantan-2015-burned-area",
+          "month": "2015-09",
+          "quantity": "burned_area_ha",
+          "value": 77426.0,
+          "statement": "Mapped burned area after quality checks.",
+          "qa_policy": "primary"
+        },
+        "verdict": "supported",
+        "check": "value",
+        "observed": 77426.0,
+        "reason": "matches the recomputed 77426.0 ha",
+        "source_sha256": "126a6c506d0d05b7f913f36ea98925de67773c68ce19194b1759a9b9acc6bfe2"
+      }
+    ]
+  ],
+  "rounds": [],
+  "evidence": {
+    "files": {
+      "config/cases/kalimantan-2015-burned-area.yaml": "477e74381225ea0a77b7cd9c3220dca32ef4da1a7e10f67f832efc5f082f8d67",
+      "config/methods/mcd64a1_burned_area.yaml": "5cb0735405c1c6a8b55889c8bb4eef4107a5e9b16ccfa4db73da600f0b8ced71",
+      "config/methods/mcd64a1_qa_sensitivity.yaml": "47359a7d51ba54d510e4d477f92ca28a792cd58eef2d195ca69fd61405bd2e3e",
+      "data/kalimantan-2015/firms-modis-sp-kalimantan-2015.manifest.json": "0d758768d0d19e82daf134ac29e3a66330181b0347de301fd9888925d5caefd6",
+      "data/kalimantan-2015/firms_modis_sp_2015_09_2015_11.csv": "75bf1fbcbc9a550a996ba00ba3262bc21a6c78f71a6ac5bbe415835449988fb8",
+      "data/kalimantan-2015/mcd64a1-061-kalimantan-2015.manifest.json": "f49c834020cf5c72b9e3ccca47c9743635ca79cac4d505d51191840a60b8c9ce",
+      "data/kalimantan-2015/mcd64a1_2015_09.tif": "126a6c506d0d05b7f913f36ea98925de67773c68ce19194b1759a9b9acc6bfe2",
+      "data/kalimantan-2015/mcd64a1_2015_10.tif": "daf5546584de91a14cccf6636a2c3c225575ae188471894f35460530eedd0145"
+    },
+    "months": [
+      {
+        "case_id": "kalimantan-2015-burned-area",
+        "month": "2015-09",
+        "area_ha": 77426.0,
+        "valid_fraction": 0.970144,
+        "check": {
+          "month": "2015-09",
+          "verifier_burned_pixels": 3623,
+          "verifier_area_m2": 774259703.4,
+          "verifier_valid_fraction": 0.970144,
+          "ee_burned_pixels": 3618,
+          "verifier_area_per_pixel_m2": 213706.79,
+          "ee_area_per_pixel_m2": 213706.79,
+          "allowed_count_difference": 69,
+          "c1_count_ok": true,
+          "c2_per_pixel_area_ok": true,
+          "c3_tool_vs_verifier_ok": true,
+          "gate_ok": true,
+          "passed": true,
+          "notes": []
+        },
+        "source_sha256": "126a6c506d0d05b7f913f36ea98925de67773c68ce19194b1759a9b9acc6bfe2",
+        "firms_detections": 5863
+      }
+    ]
+  }
+}
