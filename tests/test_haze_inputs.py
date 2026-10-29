@@ -19,7 +19,14 @@ from earthlab.haze import cli
 from earthlab.haze.evidence import SourceRef
 from earthlab.haze.fires import count_in_window, read_manifest
 from earthlab.haze.geometry import H1_SOURCE_BOXES, corridor
-from earthlab.haze.met import GridField, box_mean, corridor_series, verified_files
+from earthlab.haze.met import (
+    GridField,
+    box_mean,
+    corridor_series,
+    verified_files,
+    with_surface_precip,
+)
+from earthlab.haze.sector import MetSeries
 
 T0 = datetime(2015, 9, 20, tzinfo=UTC)
 LATS = np.array([2.0, 1.0, 0.0, -1.0])
@@ -114,15 +121,20 @@ def test_extract_cli_builds_every_box(tmp_path: Path, monkeypatch: pytest.Monkey
     assert set(cli.read_extract(out)) == {"box-a", "box-b", "box-c"}
 
 
+def _extract(path: Path, series: dict[str, MetSeries]) -> Path:
+    payload = {"series": [s.model_dump(mode="json") for s in series.values()]}
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    return path
+
+
 def test_h1_cli_runs_full_path_and_fallback(tmp_path: Path) -> None:
     nea = write_nea(tmp_path / "nea", episode(datetime(2015, 9, 24, 20, tzinfo=UTC), 6, 140.0))
     fallback_out = tmp_path / "fallback.json"
     cli.cmd_h1(argparse.Namespace(nea=nea, met=[], firms=[], out=fallback_out))
     fallback = json.loads(fallback_out.read_text())
     assert fallback["report"]["provenance"]["evidence_class"] == "observation"
-    extract = tmp_path / "extract.json"
-    payload = {"series": [s.model_dump(mode="json") for s in met_series(steady(8.0)).values()]}
-    extract.write_text(json.dumps(payload), encoding="utf-8")
+    extract = _extract(tmp_path / "extract.json", met_series(steady(8.0, rain=3.0)))
+    upper = _extract(tmp_path / "upper.json", met_series(steady(8.0), level="850hPa"))
     lat, lon = H1_SOURCE_BOXES[0].centre
     firms = _pinned(
         tmp_path / "firms",
@@ -131,10 +143,21 @@ def test_h1_cli_runs_full_path_and_fallback(tmp_path: Path) -> None:
         f"latitude,longitude,acq_date,acq_time,confidence\n{lat},{lon},2015-09-23,0300,70\n".encode(),
     )
     out = tmp_path / "h1.json"
-    assert cli.cmd_h1(argparse.Namespace(nea=nea, met=[extract], firms=[firms], out=out)) == 0
-    document = json.loads(out.read_text())
-    assert document["report"]["provenance"]["evidence_class"] == "transport_plausibility"
-    assert document["time_sensitive_boxes"] == [] and len(document["digest"]) == 64
+    args = argparse.Namespace(nea=nea, met=[upper, extract], firms=[firms], out=out)
+    assert cli.cmd_h1(args) == 0
+    levels = json.loads(out.read_text())["levels"]
+    assert sorted(levels) == ["10m", "850hPa"]
+    for document in levels.values():
+        report = document["report"]
+        assert report["provenance"]["evidence_class"] == "transport_plausibility"
+        assert document["time_sensitive_boxes"] == [] and len(document["digest"]) == 64
+        # Surface rain of 3 mm/h reaches the 850 hPa check too, so nothing is consistent.
+        statuses = {b["status"] for o in report["onsets"] for b in o["boxes"]}
+        assert statuses == {"inconclusive"}
+    with pytest.raises(ValueError, match="needs the 10m extract"):
+        cli.met_by_level([upper])
+    with pytest.raises(ValueError, match="two extracts"):
+        cli.met_by_level([extract, extract])
     h0_out = tmp_path / "h0.json"
     assert cli.cmd_h0(argparse.Namespace(nea=nea, out=h0_out)) == 0
     with pytest.raises(ValueError, match="matches no H1 source box"):
@@ -171,3 +194,13 @@ def test_verify_checks_hash_size_and_cap(tmp_path: Path) -> None:
         "f.csv: missing",
         "approval unknown has no recorded byte cap",
     ]
+
+
+def test_surface_precip_joins_by_hour_and_refuses_other_boxes() -> None:
+    surface = met_series(steady(5.0, rain=2.0))
+    upper = met_series(steady(9.0), level="850hPa")
+    joined = with_surface_precip(upper["box-a"], surface["box-a"])
+    assert joined.level == "850hPa" and {h.precip_mm for h in joined.hours} == {2.0}
+    assert joined.hours[0].u_ms == upper["box-a"].hours[0].u_ms
+    with pytest.raises(ValueError, match="box mismatch"):
+        with_surface_precip(upper["box-a"], surface["box-b"])

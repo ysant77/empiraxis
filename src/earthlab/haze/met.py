@@ -107,3 +107,20 @@ def corridor_series(
         for moment, parts in sorted(by_hour.items())
     )
     return MetSeries(box_id=box_id, level=level, hours=hours, sources=sources)
+
+
+def with_surface_precip(upper: MetSeries, surface: MetSeries) -> MetSeries:
+    """Upper-level wind with the surface path rain of the same box and hour joined in.
+
+    Rain removal acts below the transport level, so the 850 hPa check uses surface rain.
+    """
+    if upper.box_id != surface.box_id:
+        raise ValueError(f"box mismatch: {upper.box_id} vs {surface.box_id}")
+    rain = {hour.time: hour.precip_mm for hour in surface.hours}
+    hours = tuple(h.model_copy(update={"precip_mm": rain.get(h.time)}) for h in upper.hours)
+    return MetSeries(
+        box_id=upper.box_id,
+        level=upper.level,
+        hours=hours,
+        sources=upper.sources + surface.sources,
+    )

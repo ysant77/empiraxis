@@ -96,21 +96,53 @@ def cmd_extract(args: argparse.Namespace) -> int:
     return 0
 
 
+def met_by_level(paths: list[Path]) -> dict[str, dict[str, MetSeries]]:
+    """Extracts grouped by level. 850 hPa needs the 10 m extract for path rain."""
+    levels: dict[str, dict[str, MetSeries]] = {}
+    for path in paths:
+        series = read_extract(path)
+        level = next(iter(series.values())).level
+        if level in levels:
+            raise ValueError(f"two extracts for level {level}")
+        levels[level] = series
+    if "850hPa" in levels:
+        if "10m" not in levels:
+            raise ValueError("the 850hPa check needs the 10m extract for path rain")
+        surface = levels["10m"]
+        levels["850hPa"] = {
+            box: met_mod.with_surface_precip(upper, surface[box])
+            for box, upper in levels["850hPa"].items()
+        }
+    return levels
+
+
+def _level_document(
+    h0: H0Report, met: dict[str, MetSeries], fires: Any, refs: tuple[SourceRef, ...]
+) -> dict[str, Any]:
+    ending = run_h1(h0, met, fires, refs, HourConvention.HOUR_ENDING)
+    beginning = run_h1(h0, met, fires, refs, HourConvention.HOUR_BEGINNING)
+    return {
+        "report": ending.model_dump(mode="json"),
+        "digest": output_digest(ending),
+        "time_sensitive_boxes": time_sensitive_boxes(ending, beginning),
+    }
+
+
 def cmd_h1(args: argparse.Namespace) -> int:
     h0 = load_h0(args.nea)
     if not args.met:
         write_report(fallback_report(h0, "no pinned ERA5 extract was given"), args.out)
         print(f"H1 fallback (PM2.5 only, wind not checked) -> {args.out}")
         return 0
-    met: dict[str, MetSeries] = {}
-    for path in args.met:
-        met.update(read_extract(path))
     detections, fire_refs = read_fires(args.firms)
-    ending = run_h1(h0, met, detections, fire_refs, HourConvention.HOUR_ENDING)
-    beginning = run_h1(h0, met, detections, fire_refs, HourConvention.HOUR_BEGINNING)
-    sensitive = time_sensitive_boxes(ending, beginning)
-    write_report(ending, args.out, {"time_sensitive_boxes": sensitive})
-    print(f"H1 transport plausibility -> {args.out}; time-sensitive boxes: {sensitive or 'none'}")
+    levels = {
+        level: _level_document(h0, met, detections, fire_refs)
+        for level, met in sorted(met_by_level(args.met).items())
+    }
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    document = {"h0_digest": output_digest(h0), "levels": levels}
+    args.out.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
+    print(f"H1 transport plausibility ({', '.join(levels)}) -> {args.out}")
     return 0
 
 
