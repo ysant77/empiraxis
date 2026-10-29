@@ -1,4 +1,4 @@
-"""EventV1: the safe-to-display event contract, and the role registry it depends on.
+"""EventV1: the safe-to-display event contract. Roles come from earthlab.roles.
 
 Only roles that a recorded artifact can produce are implemented. Planned roles are listed
 so that a view can show them as planned; the adapter never emits them.
@@ -11,17 +11,30 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
 
-ActorRole = Literal[
-    "human_director",
-    "product_manager",
-    "orchestrator",
-    "geospatial_engineer",
-    "scientific_critic",
-    "verifier",
-    "safety_gate",
-    "tool",
-    "system",
+from earthlab.roles import (
+    IMPLEMENTED_ROLES,
+    MODEL_AGENT_ROLES,
+    PLANNED_ROLES,
+    ROLE_LABELS,
+    RoleId,
+    is_model_agent,
+)
+
+__all__ = [
+    "IMPLEMENTED_ROLES",
+    "MODEL_AGENT_ROLES",
+    "PLANNED_ROLES",
+    "ROLE_LABELS",
+    "VISIBILITY_ORDER",
+    "ActorRole",
+    "EventStatus",
+    "EventType",
+    "EventV1",
+    "Visibility",
+    "is_model_agent",
 ]
+
+ActorRole = RoleId
 EventType = Literal[
     "task_proposed",
     "run_started",
@@ -32,6 +45,8 @@ EventType = Literal[
     "claim_verified",
     "answer_submitted",
     "revision_proposed",
+    "approval_requested",
+    "approval_resolved",
     "error",
     "run_completed",
 ]
@@ -50,31 +65,6 @@ class Visibility(StrEnum):
 
 VISIBILITY_ORDER = (Visibility.PUBLIC_DEMO, Visibility.AUTHENTICATED_REVIEWER, Visibility.INTERNAL)
 
-# Roles that recorded artifacts produce today. The Muse investigator is the one model agent.
-IMPLEMENTED_ROLES: frozenset[str] = frozenset(
-    {"human_director", "orchestrator", "verifier", "safety_gate", "tool", "system"}
-)
-PLANNED_ROLES: frozenset[str] = frozenset(
-    {"product_manager", "geospatial_engineer", "scientific_critic"}
-)
-MODEL_AGENT_ROLES: frozenset[str] = frozenset({"orchestrator"})
-ROLE_LABELS: dict[str, str] = {
-    "human_director": "Human director",
-    "product_manager": "Product manager (research concierge)",
-    "orchestrator": "Muse research orchestrator (investigator)",
-    "geospatial_engineer": "Geospatial engineer",
-    "scientific_critic": "Scientific critic",
-    "verifier": "Deterministic verifier (code, not a model)",
-    "safety_gate": "Safety gate (scope rules and optional Llama Guard)",
-    "tool": "Scientific tool (code, not a model)",
-    "system": "Runtime",
-}
-
-
-def is_model_agent(role: str) -> bool:
-    """True only for a role that a language model plays. Tools and the verifier never are."""
-    return role in MODEL_AGENT_ROLES
-
 
 class EventV1(BaseModel):
     """One recorded action, summarised. Never holds a raw prompt, hidden reasoning or a key."""
@@ -91,7 +81,7 @@ class EventV1(BaseModel):
     event_type: EventType
     status: EventStatus
     task_id: str | None = None
-    plan_revision: str | None = None
+    plan_revision: int | None = None  # same type as InvestigationPlan.plan_revision
     message_summary: str
     evidence_refs: list[str] = []
     source_trace_ref: str | None = None

@@ -273,7 +273,7 @@ class Investigator:
                 timeout=min(cfg.timeout_seconds, self._meter.remaining_seconds()),
             )
         except ProviderError as exc:
-            self._metrics.record_inference(cfg.name, cfg.logical_model, exc.kind.value, 0.0)
+            self._metrics.record_inference(cfg.name, cfg.logical_model, exc.kind.value, None)
             self._trace.append("model_error", "runtime", kind=exc.kind.value)
             raise
         self._account(state, resp, worst)

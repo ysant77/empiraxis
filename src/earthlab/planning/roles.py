@@ -1,12 +1,6 @@
-"""Role identity, display visibility and task links for plans and critic reports.
+"""Display visibility and task links for plans and critic reports.
 
-The role list is a copy of the design contract (docs: role and event contract v1). The
-event stream keeps the same list; a later change will merge the two into one module.
-
-Implementation truth at this revision: only the orchestrator (the Muse investigator) is a
-model-led actor. The verifier, tools and the deterministic critic are code. The product
-manager, geospatial engineer and model critic roles are future-facing; a plan may name
-them so that later records stay compatible, but no code runs them as separate agents.
+The role list lives in earthlab.roles, shared with the trace events and the UI.
 """
 
 from __future__ import annotations
@@ -16,26 +10,13 @@ from typing import Literal, Self
 from pydantic import Field, model_validator
 
 from earthlab.contracts import Strict
+from earthlab.roles import PLAN_AUTHOR_ROLES, RoleId
+
+__all__ = ["PLAN_AUTHOR_ROLES", "RoleId", "TaskMeta", "Visibility"]
 
 TASK_ID = r"^[a-z0-9][a-z0-9._-]*$"
 
-RoleId = Literal[
-    "human_director",
-    "product_manager",
-    "orchestrator",
-    "geospatial_engineer",
-    "scientific_critic",
-    "verifier",
-    "tool",
-    "system",
-]
 Visibility = Literal["public_demo", "authenticated_reviewer", "internal"]
-
-# Roles that may write an investigation plan. Code components (verifier, tool, system)
-# and the critic never author a plan; the product manager only proposes a question.
-PLAN_AUTHOR_ROLES: frozenset[RoleId] = frozenset(
-    {"human_director", "orchestrator", "geospatial_engineer"}
-)
 
 
 class TaskMeta(Strict):

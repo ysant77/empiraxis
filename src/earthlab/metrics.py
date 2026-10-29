@@ -70,12 +70,17 @@ class EarthlabMetrics:
         provider: str,
         model: str,
         outcome: str,
-        seconds: float,
+        seconds: float | None,
         tokens: tuple[int | None, int | None] = (None, None),
         cost_usd: float | None = None,
     ) -> None:
+        """Count every request; observe duration only when a response was timed.
+
+        A failed request has no response time, so it is counted, not observed.
+        """
         self.inference_requests.labels(provider, model, outcome).inc()
-        self.inference_duration.labels(provider, model).observe(seconds)
+        if seconds is not None:
+            self.inference_duration.labels(provider, model).observe(seconds)
         for direction, count in zip(("input", "output"), tokens, strict=True):
             if count is not None:
                 self.inference_tokens.labels(provider, model, direction).inc(count)
