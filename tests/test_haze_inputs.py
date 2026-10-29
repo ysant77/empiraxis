@@ -19,7 +19,7 @@ from earthlab.haze import cli
 from earthlab.haze.evidence import SourceRef
 from earthlab.haze.fires import count_in_window, read_manifest
 from earthlab.haze.geometry import H1_SOURCE_BOXES, corridor
-from earthlab.haze.met import DecoderMissing, GridField, box_mean, corridor_series, verified_files
+from earthlab.haze.met import GridField, box_mean, corridor_series, verified_files
 
 T0 = datetime(2015, 9, 20, tzinfo=UTC)
 LATS = np.array([2.0, 1.0, 0.0, -1.0])
@@ -102,14 +102,16 @@ class FakeDecoder:
             yield GridField(name, None, T0, lats, lons, np.full((lats.size, lons.size), value))
 
 
-def test_extract_cli_builds_every_box_or_reports_the_missing_decoder(tmp_path: Path) -> None:
+def test_extract_cli_builds_every_box(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     manifest = _pinned(tmp_path, "synthetic-era5", "a.grib", b"GRIB")
     series = cli.build_extract(manifest, "10m", FakeDecoder())
     assert [s.box_id for s in series] == ["box-a", "box-b", "box-c"]
     assert series[2].hours[0].u_ms == 2.0 and series[2].sources[0].file == "a.grib"
     assert corridor(H1_SOURCE_BOXES[2]).max_lon > 111
-    with pytest.raises(DecoderMissing, match="owner approval"):
-        cli.cmd_extract(argparse.Namespace(manifest=manifest, level="10m", out=tmp_path / "x.json"))
+    monkeypatch.setattr(cli, "load_decoder", FakeDecoder)
+    out = tmp_path / "extract.json"
+    assert cli.cmd_extract(argparse.Namespace(manifest=manifest, level="10m", out=out)) == 0
+    assert set(cli.read_extract(out)) == {"box-a", "box-b", "box-c"}
 
 
 def test_h1_cli_runs_full_path_and_fallback(tmp_path: Path) -> None:

@@ -3,7 +3,7 @@
 A decoder turns one pinned ERA5 file into grid fields; this module averages each field
 over a corridor box and joins u, v and precipitation by valid hour. ERA5 precipitation
 is metres per hour; the series stores millimetres. The GRIB decoder is an adapter behind
-the GridDecoder protocol; tests use a fake that yields synthetic fields.
+the GridDecoder protocol (earthlab.haze.grib); tests use fakes and synthetic fields.
 """
 
 from __future__ import annotations

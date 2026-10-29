@@ -20,6 +20,7 @@ from earthlab.haze import met as met_mod
 from earthlab.haze.evidence import SourceRef, output_digest
 from earthlab.haze.fallback import fallback_report
 from earthlab.haze.geometry import H1_SOURCE_BOXES, corridor
+from earthlab.haze.grib import load_decoder
 from earthlab.haze.h0 import H0Report, describe
 from earthlab.haze.h1 import run_h1, time_sensitive_boxes
 from earthlab.haze.sector import MetSeries
@@ -41,12 +42,6 @@ def write_report(report: Strict, out: Path, extra: dict[str, Any] | None = None)
 def load_h0(nea_dir: Path) -> H0Report:
     snapshot, path = open_snapshot(nea_dir)
     return describe(load_pm25(path, snapshot), H1_WINDOW)
-
-
-def load_decoder() -> met_mod.GridDecoder:
-    raise met_mod.DecoderMissing(
-        "no GRIB decoder is installed; adding eccodes needs owner approval"
-    )
 
 
 def build_extract(
