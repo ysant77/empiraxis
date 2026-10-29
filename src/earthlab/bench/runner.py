@@ -18,6 +18,7 @@ from typing import Any
 
 from earthlab.agent.budget import Budget
 from earthlab.bench.dispatcher import Dispatcher
+from earthlab.bench.heldout import DEV_NOTE
 from earthlab.bench.scenarios import Outcome, Scenario, ScenarioScore, score
 from earthlab.digest import file_digest
 from earthlab.llm.client import ChatClient
@@ -46,7 +47,11 @@ def _git_revision(repo: Path) -> str:
 
 
 def run_metadata(
-    repo: Path, workspace: Workspace, client: ChatClient | None, budget: Budget
+    repo: Path,
+    workspace: Workspace,
+    client: ChatClient | None,
+    budget: Budget,
+    scenario_file: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     cases = sorted((repo / "config" / "cases").glob("*.yaml"))
     return {
@@ -58,7 +63,8 @@ def run_metadata(
         "provider": client.config.name if client else None,
         "model": client.config.model if client else None,
         "budget": budget.model_dump(),
-        "notes": [DISPATCHER_NOTE, "Visible development fixtures; not a blind holdout."],
+        "scenario_file": scenario_file,
+        "notes": [DISPATCHER_NOTE, scenario_file["note"] if scenario_file else DEV_NOTE],
     }
 
 
@@ -89,6 +95,29 @@ def agent_outcome(
     )
 
 
+def _guarded_outcome(
+    arm: str,
+    scenario: Scenario,
+    repeat: int,
+    workspace: Workspace,
+    out_dir: Path,
+    client: ChatClient | None,
+    budget: Budget,
+    guard: LlamaGuard | None,
+) -> Outcome:
+    """One arm on one scenario. An unexpected exception becomes an 'error' outcome, which
+    scores as a failure, so a crash never removes a row from the denominator."""
+    try:
+        if arm == "A":
+            return Dispatcher(workspace).run(scenario.question)
+        assert client is not None
+        run_dir = out_dir / "runs" / f"{scenario.id}-r{repeat}"
+        run_dir.mkdir(parents=True, exist_ok=True)
+        return agent_outcome(scenario, client, workspace, run_dir, budget, guard)
+    except Exception as exc:  # recorded as a failed row, never hidden
+        return Outcome(status="error", detail={"error": f"{type(exc).__name__}: {exc}"})
+
+
 def summarize(scores: list[ScenarioScore], blocked: list[Scenario]) -> dict[str, Any]:
     arms: dict[str, Any] = {}
     for arm in sorted({s.arm for s in scores}):
@@ -97,6 +126,7 @@ def summarize(scores: list[ScenarioScore], blocked: list[Scenario]) -> dict[str,
             "runs": len(rows),
             "passed": sum(s.passed for s in rows),
             "false_verified": sum(s.false_verified for s in rows),
+            "errors": sum("status error" in " ".join(s.reasons) for s in rows),
             "per_scenario": {
                 sid: f"{sum(s.passed for s in rows if s.scenario_id == sid)}/"
                 f"{sum(1 for s in rows if s.scenario_id == sid)}"
@@ -118,6 +148,7 @@ def run_bench(
     budget: Budget | None = None,
     repeats: int = 1,
     on_score: Callable[[ScenarioScore], None] | None = None,
+    scenario_file: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Score ready scenarios only; blocked scenarios are reported, never run or scored."""
     unknown = set(arms) - set(ARMS)
@@ -125,20 +156,16 @@ def run_bench(
         raise ValueError(f"unknown arms {sorted(unknown)} or arm B without a model client")
     budget = budget or Budget()
     out_dir.mkdir(parents=True, exist_ok=True)
-    meta = run_metadata(repo, workspace, client, budget)
+    meta = run_metadata(repo, workspace, client, budget, scenario_file)
     ready = [s for s in scenarios if s.status == "ready"]
     scores: list[ScenarioScore] = []
     with (out_dir / "results.jsonl").open("a", encoding="utf-8") as log:
         for repeat in range(repeats):
             for scenario in ready:
                 for arm in arms:
-                    if arm == "A":
-                        outcome = Dispatcher(workspace).run(scenario.question)
-                    else:
-                        assert client is not None
-                        run_dir = out_dir / "runs" / f"{scenario.id}-r{repeat}"
-                        run_dir.mkdir(parents=True, exist_ok=True)
-                        outcome = agent_outcome(scenario, client, workspace, run_dir, budget, guard)
+                    outcome = _guarded_outcome(
+                        arm, scenario, repeat, workspace, out_dir, client, budget, guard
+                    )
                     result = score(scenario, arm, repeat, outcome)
                     scores.append(result)
                     row = {
@@ -149,6 +176,13 @@ def run_bench(
                     log.flush()
                     if on_score is not None:
                         on_score(result)
-    summary = {"meta": meta, **summarize(scores, [s for s in scenarios if s.status != "ready"])}
+    expected = len(ready) * len(arms) * repeats
+    summary = {
+        "meta": meta,
+        "rows_expected": expected,
+        "rows_written": len(scores),
+        "complete": len(scores) == expected,
+        **summarize(scores, [s for s in scenarios if s.status != "ready"]),
+    }
     (out_dir / "summary.json").write_text(json.dumps(summary, indent=2, default=str), "utf-8")
     return summary

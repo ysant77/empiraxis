@@ -12,6 +12,7 @@ from typing import Any
 from earthlab.acquire.gate import load_approvals
 from earthlab.acquire.run import acquire_firms, acquire_mcd64a1, write_manifest
 from earthlab.agent.budget import Budget
+from earthlab.bench.heldout import HeldoutError, load_lock, scenario_file_record
 from earthlab.bench.runner import ARMS as BENCH_ARMS
 from earthlab.bench.runner import run_bench
 from earthlab.bench.scenarios import load_scenarios
@@ -251,6 +252,10 @@ def cmd_bench(args: argparse.Namespace) -> int:
         raise SystemExit(f"unknown arms: {sorted(set(arms) - set(BENCH_ARMS))}")
     client = build_client(load_providers(args.providers)[args.provider]) if "B" in arms else None
     scenarios = load_scenarios(args.scenarios)
+    lock = load_lock(args.heldout_lock) if args.heldout_lock else None
+    if lock is not None and args.only:
+        raise HeldoutError("--only is not allowed with --heldout-lock: run the whole set")
+    scenario_file = scenario_file_record(args.scenarios, scenarios, lock)
     if args.only:
         scenarios = [s for s in scenarios if s.id in args.only.split(",")]
     out_dir = new_run_dir(args.runs_dir / "bench")
@@ -264,6 +269,7 @@ def cmd_bench(args: argparse.Namespace) -> int:
         guard=build_guard(args.providers, args.guard) if client else None,
         budget=Budget(max_turns=args.max_turns),
         repeats=args.repeats,
+        scenario_file=scenario_file,
         on_score=lambda s: print(
             f"{s.scenario_id} [{s.arm}] r{s.repeat} passed={s.passed} {'; '.join(s.reasons)}",
             flush=True,
@@ -304,6 +310,7 @@ def _add_eval_parser(sub: Any) -> None:
 def _add_bench_parser(sub: Any) -> None:
     bench = sub.add_parser("bench", help="ScienceBench: rule dispatcher vs Meta agent")
     bench.add_argument("--scenarios", type=Path, default=Path("evals/sciencebench_dev_v1.yaml"))
+    bench.add_argument("--heldout-lock", type=Path, help="lock file of a sealed held-out set")
     bench.add_argument("--arms", default="A")
     bench.add_argument("--only", default="")
     bench.add_argument("--repeats", type=int, default=1)

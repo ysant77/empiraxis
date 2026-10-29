@@ -1,0 +1,11 @@
+# Lock for the sealed ScienceBench held-out set v1. The question file stays outside the
+# repo. `earthlab bench --heldout-lock evals/heldout_v1.lock.yaml` refuses a file whose
+# SHA-256 or question count differs from this lock. Committed before any run on the set.
+set_id: heldout-v1
+sha256: f02268e969f1dcd84c854c42fcea20aeca95a069a5d6e91a526220e1a7696613
+questions: 16
+frozen_at: 2026-10-29
+blindness: >-
+  Drafted by the developer, reviewed by the owner without changes. The developer knows
+  the system's prompts, tools and verifier, so this is weaker blindness than an
+  independent author.
