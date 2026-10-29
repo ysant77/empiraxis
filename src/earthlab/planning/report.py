@@ -13,6 +13,7 @@ from pydantic import Field
 
 from earthlab.cases.models import SHA256
 from earthlab.contracts import Strict
+from earthlab.planning.plan import AbstentionReason
 from earthlab.planning.roles import TaskMeta
 
 REPORT_SCHEMA_VERSION: Literal["1"] = "1"
@@ -38,6 +39,12 @@ class CheckId(StrEnum):
     NO_COMPETING_HYPOTHESIS = "no_competing_hypothesis"
     APPROVAL_OUTSIDE_SCOPE = "approval_outside_scope"
     DECLARED_EVIDENCE_GAP = "declared_evidence_gap"
+    DATA_UNAVAILABLE = "data_unavailable"
+    UNREGISTERED_DATASET = "unregistered_dataset"
+    REGISTRY_MISMATCH = "registry_mismatch"
+    METHOD_INFEASIBLE = "method_infeasible"
+    ACTION_NOT_SUPPORTED = "action_not_supported"
+    CAUSAL_ABSTENTION_MISSING = "causal_abstention_missing"
 
 
 Severity = Literal["error", "warning", "uncertainty"]
@@ -57,7 +64,8 @@ class Finding(Strict):
 
 
 class CriticReport(Strict):
-    """One review of one plan revision. `verdict` is fixed by the finding severities:
+    """One review of one plan revision against one registry. `abstentions` lists the
+    plan-level answers the run must give instead of a value. `verdict` follows severity:
     any error gives revise; else a declared evidence gap gives needs_evidence; else any
     warning gives accept_with_warnings; else accept."""
 
@@ -69,7 +77,9 @@ class CriticReport(Strict):
     plan_id: str = Field(min_length=1)
     plan_revision: int = Field(ge=1)
     plan_sha256: str = Field(pattern=SHA256)
+    registry_sha256: str = Field(pattern=SHA256)
     verdict: Verdict
+    abstentions: tuple[AbstentionReason, ...] = ()
     findings: tuple[Finding, ...] = ()
 
     def checks(self, severity: Severity | None = None) -> set[CheckId]:

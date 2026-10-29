@@ -103,6 +103,9 @@ evidence_gaps:
   - gap_id: fuel-moisture
     needed: fuel_moisture
     why: Dead fuel moisture would show whether drought preceded the fire increase.
+abstentions:
+  - reason: causation_not_identifiable
+    note: Fire and heat share drivers; lead-lag cannot identify the causal direction.
 approval_scope: [download]
 approval_requests:
   - request_id: dl-heat-fire

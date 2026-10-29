@@ -88,6 +88,9 @@ evidence_gaps:
   - gap_id: meteorology
     needed: boundary_layer_height
     why: Seasonal mixing height changes AQI independent of land cover.
+abstentions:
+  - reason: causation_not_identifiable
+    note: Co-trends of AQI and tree-cover loss cannot separate cause from confounding.
 approval_scope: [download]
 approval_requests:
   - request_id: dl-hansen

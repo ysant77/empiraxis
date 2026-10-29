@@ -70,6 +70,13 @@ class Target(Strict):
     spatial_resolution_m: float | None = Field(default=None, gt=0)
 
 
+class PeriodFraction(Strict):
+    """Valid fraction measured for one sub-period, for example one product month."""
+
+    period: StudyPeriod
+    valid_fraction: float = Field(ge=0, le=1)
+
+
 class DataCandidate(Strict):
     """One dataset the plan considers. Footprint fields reuse the case types."""
 
@@ -92,6 +99,7 @@ class DataCandidate(Strict):
     regions: tuple[Region, ...] = ()
     availability_latency_hours: float = Field(ge=0)
     valid_fraction: float | None = Field(default=None, ge=0, le=1)
+    valid_fraction_by_period: tuple[PeriodFraction, ...] = ()
     missing_data_policy: str = Field(min_length=1)
     quality_policy: str | None = None
     bands: tuple[str, ...] = ()
@@ -103,6 +111,21 @@ class DataCandidate(Strict):
         if (self.availability == "pinned") != (self.sha256 is not None):
             raise ValueError("a pinned dataset needs sha256, and only a pinned one has it")
         return self
+
+    def valid_fraction_for(self, period: StudyPeriod) -> float | None:
+        """Lowest measured fraction over sub-periods that overlap `period`.
+
+        With no sub-periods, the single total. With sub-periods but none that overlap,
+        None: no measurement exists for that period.
+        """
+        if not self.valid_fraction_by_period:
+            return self.valid_fraction
+        parts = [
+            p.valid_fraction
+            for p in self.valid_fraction_by_period
+            if p.period.start < period.end and period.start < p.period.end
+        ]
+        return min(parts) if parts else None
 
     def covers(self, area: StudyArea) -> bool:
         if area.bbox is not None:

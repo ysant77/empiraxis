@@ -1,7 +1,7 @@
-# Failed coverage: the plan asks about October 2015, but the registered MCD64A1 snapshot
-# for this box ends on 1 October and covers a smaller box, and October smoke left most
-# pixels unmapped. The plan does not declare the gap. Expected: revise (data_coverage).
-# The snapshot and its hash are fixture values, not a real file.
+# Failed coverage: the plan asks about October 2015. The download manifest records a
+# valid land fraction of 0.4597 for October, below the method floor of 0.8. The plan
+# claims 0.93 and no monthly values; the critic must use the registry and report the
+# disagreement. Expected: revise.
 plan_id: kalimantan-2015-10-failed-coverage
 plan_revision: 1
 task: {task_id: kal-2015-10, role_id: orchestrator, visibility: public_demo}
@@ -25,24 +25,24 @@ target:
   spatial_support: area_total
   spatial_resolution_m: 463.3127
 data_candidates:
-  - dataset_id: mcd64a1-061-kalimantan-2015-09-snapshot
+  - dataset_id: mcd64a1-061-kalimantan-2015
     product: MODIS/061/MCD64A1
     version: "6.1"
     publisher: NASA LP DAAC (via Google Earth Engine)
     uri: https://developers.google.com/earth-engine/datasets/catalog/MODIS_061_MCD64A1
     licence: NASA Earth science data, no restrictions on use
     availability: pinned
-    sha256: "1111111111111111111111111111111111111111111111111111111111111111"
+    sha256: f49c834020cf5c72b9e3ccca47c9743635ca79cac4d505d51191840a60b8c9ce
     quantity: burned_area
     units: BurnDate (day of year); area computed in ha
     product_kind: derived_product
     native_variables: [BurnDate, Uncertainty, QA]
     crs: SR-ORG:6974
     resolution_m: 463.3127
-    coverage: {start: "2015-09-01T00:00:00Z", end: "2015-10-01T00:00:00Z", local_zone: UTC}
-    extent: {min_lon: 113.9, min_lat: -3.1, max_lon: 114.8, max_lat: -2.0}
+    coverage: {start: "2015-09-01T00:00:00Z", end: "2015-11-01T00:00:00Z", local_zone: UTC}
+    extent: {min_lon: 113.8, min_lat: -3.2, max_lon: 114.8, max_lat: -2.0}
     availability_latency_hours: 1440
-    valid_fraction: 0.41
+    valid_fraction: 0.93
     missing_data_policy: Unmapped and water pixels are excluded and reported as a fraction.
     quality_policy: QA bits per the MCD64A1 C6.1 user guide
   - dataset_id: firms-modis-sp-kalimantan-2015
@@ -68,7 +68,7 @@ method_candidates:
     method_class: deterministic
     technique: area_sum
     inputs:
-      - {dataset_id: mcd64a1-061-kalimantan-2015-09-snapshot, used_as: burned_area, assumed_kind: derived_product}
+      - {dataset_id: mcd64a1-061-kalimantan-2015, used_as: burned_area, assumed_kind: derived_product}
       - {dataset_id: firms-modis-sp-kalimantan-2015, used_as: active_fire, assumed_kind: satellite_retrieval, role: context}
     feasibility: feasible
     assumptions: [Pixel area from the native sinusoidal grid.]
@@ -84,7 +84,7 @@ method_candidates:
 method_choice:
   selected_id: mcd64a1_burned_area
   rationale: MCD64A1 maps burned area; FIRMS counts thermal anomalies, not area.
-  evidence_refs: ["dataset:mcd64a1-061-kalimantan-2015-09-snapshot#sha256", "catalogue:mcd64a1_burned_area"]
+  evidence_refs: ["dataset:mcd64a1-061-kalimantan-2015#sha256", "catalogue:mcd64a1_burned_area"]
   simpler_baseline_id: firms-count
   rejected:
     - {method_id: firms-count, reason: Detections are not burned area; kept as context only.}

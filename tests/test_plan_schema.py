@@ -14,7 +14,7 @@ from earthlab.planning.vocab import PlanQuantity
 
 def test_every_fixture_loads_with_the_current_schema_version() -> None:
     names = sorted(p.stem for p in PLANS.glob("*.yaml"))
-    assert len(names) == 7
+    assert len(names) == 8
     for name in names:
         assert load_plan(PLANS / f"{name}.yaml").schema_version == PLAN_SCHEMA_VERSION
 

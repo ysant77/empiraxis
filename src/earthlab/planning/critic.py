@@ -1,4 +1,5 @@
-"""Deterministic plan critic: run every rule, order the findings, fix the verdict.
+"""Deterministic plan critic: resolve datasets against the registry, run every rule,
+order the findings and fix the verdict.
 
 The critic is code, not a model. It never edits a plan; it reports what to correct. A
 model critic, if added later, must write the same CriticReport type so the two can be
@@ -10,7 +11,9 @@ from __future__ import annotations
 from collections import Counter
 
 from earthlab.digest import payload_digest
+from earthlab.planning.outcomes import causal_abstention, refused_actions, report_abstentions
 from earthlab.planning.plan import InvestigationPlan
+from earthlab.planning.registry import Registry
 from earthlab.planning.report import (
     SEVERITY_RANK,
     CheckId,
@@ -18,6 +21,7 @@ from earthlab.planning.report import (
     Finding,
     Verdict,
 )
+from earthlab.planning.resolve import catalogue_check, resolve
 from earthlab.planning.roles import TaskMeta
 from earthlab.planning.rules import RULES, Draft
 
@@ -44,8 +48,17 @@ def _finding_ids(drafts: list[Draft]) -> list[str]:
     return ids
 
 
-def _findings(plan: InvestigationPlan, digest: str) -> tuple[Finding, ...]:
-    drafts = sorted((d for rule in RULES for d in rule(plan)), key=_sort_key)
+def _drafts(plan: InvestigationPlan, registry: Registry) -> list[Draft]:
+    """Registry disagreements, then every rule on the plan with registry records."""
+    resolved, drafts = resolve(plan, registry)
+    drafts += [d for rule in RULES for d in rule(resolved)]
+    drafts += catalogue_check(resolved, registry)
+    drafts += refused_actions(resolved)
+    drafts += causal_abstention(resolved)
+    return sorted(drafts, key=_sort_key)
+
+
+def _findings(plan: InvestigationPlan, digest: str, drafts: list[Draft]) -> tuple[Finding, ...]:
     return tuple(
         Finding(
             finding_id=finding_id,
@@ -72,10 +85,10 @@ def _verdict(findings: tuple[Finding, ...]) -> Verdict:
     return "accept_with_warnings" if "warning" in severities else "accept"
 
 
-def review_plan(plan: InvestigationPlan) -> CriticReport:
-    """Review one plan revision. The same plan always gives the same report."""
+def review_plan(plan: InvestigationPlan, registry: Registry) -> CriticReport:
+    """Review one plan revision against the registry. Same inputs, same report."""
     digest = plan_digest(plan)
-    findings = _findings(plan, digest)
+    findings = _findings(plan, digest, _drafts(plan, registry))
     return CriticReport(
         report_id=f"{plan.plan_id}.r{plan.plan_revision}.critique",
         task=TaskMeta(
@@ -87,6 +100,8 @@ def review_plan(plan: InvestigationPlan) -> CriticReport:
         plan_id=plan.plan_id,
         plan_revision=plan.plan_revision,
         plan_sha256=digest,
+        registry_sha256=registry.digest(),
         verdict=_verdict(findings),
+        abstentions=report_abstentions(plan, (f.check for f in findings)),
         findings=findings,
     )

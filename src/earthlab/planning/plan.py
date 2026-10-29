@@ -108,6 +108,7 @@ class VerificationPlan(Strict):
     abstain_when: tuple[AbstainCondition, ...] = Field(min_length=1)
     cite_source_hashes: Literal[True] = True
     uncertainty_statement: str = Field(min_length=1)
+    report_values: Literal["verified_findings_only"] = "verified_findings_only"
 
 
 class Hypothesis(Strict):
@@ -123,6 +124,17 @@ class EvidenceGap(Strict):
     needed: Quantity
     why: str = Field(min_length=1)
     candidate_dataset_ids: tuple[str, ...] = ()
+
+
+AbstentionReason = Literal["data_unavailable", "causation_not_identifiable"]
+
+
+class Abstention(Strict):
+    """A part of the question the plan will not answer, and why."""
+
+    reason: AbstentionReason
+    dataset_ids: tuple[str, ...] = ()
+    note: str = Field(min_length=1)
 
 
 class CausalDesign(Strict):
@@ -166,6 +178,7 @@ class InvestigationPlan(Strict):
     causal_design: CausalDesign | None = None
     hypotheses: tuple[Hypothesis, ...] = ()
     evidence_gaps: tuple[EvidenceGap, ...] = ()
+    abstentions: tuple[Abstention, ...] = ()
     operations: tuple[PlannedOperation, ...] = ()
     approval_scope: tuple[ActionKind, ...] = ()
     approval_requests: tuple[ApprovalRequest, ...] = ()
@@ -179,6 +192,17 @@ class InvestigationPlan(Strict):
         if problems:
             raise ValueError("; ".join(problems))
         return self
+
+    def abstains(self, reason: AbstentionReason, dataset_id: str | None = None) -> bool:
+        return any(
+            a.reason == reason and (dataset_id is None or dataset_id in a.dataset_ids)
+            for a in self.abstentions
+        )
+
+    def declared_missing(self, dataset_id: str) -> bool:
+        """True when the plan names the dataset in an evidence gap or a data abstention."""
+        gaps = {i for g in self.evidence_gaps for i in g.candidate_dataset_ids}
+        return dataset_id in gaps or self.abstains("data_unavailable", dataset_id)
 
     def dataset(self, dataset_id: str) -> DataCandidate:
         return next(d for d in self.data_candidates if d.dataset_id == dataset_id)
@@ -218,6 +242,7 @@ def _reference_problems(plan: InvestigationPlan) -> list[str]:
     used += [i for r in plan.approval_requests for i in r.dataset_ids]
     used += [i for o in plan.operations for i in o.dataset_ids]
     used += [i for g in plan.evidence_gaps for i in g.candidate_dataset_ids]
+    used += [i for a in plan.abstentions for i in a.dataset_ids]
     named = [choice.selected_id, *(r.method_id for r in choice.rejected)]
     if choice.simpler_baseline_id:
         named.append(choice.simpler_baseline_id)

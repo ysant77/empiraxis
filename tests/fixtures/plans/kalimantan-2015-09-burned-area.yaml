@@ -40,7 +40,10 @@ data_candidates:
     coverage: {start: "2015-09-01T00:00:00Z", end: "2015-11-01T00:00:00Z", local_zone: UTC}
     extent: {min_lon: 113.8, min_lat: -3.2, max_lon: 114.8, max_lat: -2.0}
     availability_latency_hours: 1440
-    valid_fraction: 0.93
+    valid_fraction: 0.4597  # lowest month; the critic uses the months that overlap the plan
+    valid_fraction_by_period:  # measured at download (valid land pixels / land pixels)
+      - {period: {start: "2015-09-01T00:00:00Z", end: "2015-10-01T00:00:00Z", local_zone: UTC}, valid_fraction: 0.9701}
+      - {period: {start: "2015-10-01T00:00:00Z", end: "2015-11-01T00:00:00Z", local_zone: UTC}, valid_fraction: 0.4597}
     missing_data_policy: Unmapped and water pixels are excluded and reported as a fraction.
     quality_policy: QA bits per the MCD64A1 C6.1 user guide
   - dataset_id: firms-modis-sp-kalimantan-2015

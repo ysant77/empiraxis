@@ -214,20 +214,23 @@ def pm25_from_wind(plan: InvestigationPlan) -> Iterator[Draft]:
 
 
 def coverage(plan: InvestigationPlan) -> Iterator[Draft]:
-    """Check 9: data outside the study area or period, unavailable, or too few valid."""
-    declared = {i for g in plan.evidence_gaps for i in g.candidate_dataset_ids}
+    """Check 9: data unavailable for the period, outside the area, or too few valid.
+
+    Data that does not exist for the study period is `data_unavailable`; data that exists
+    but does not cover the area or has too few valid values is `data_coverage`.
+    """
     floor = _valid_floor(plan)
     for i, use, ds in _uses(plan):
         if use.role == "context":
             continue
-        severity: Severity = "uncertainty" if ds.dataset_id in declared else "error"
-        for problem in _coverage_problems(plan, ds, floor):
+        severity: Severity = "uncertainty" if plan.declared_missing(ds.dataset_id) else "error"
+        for check, problem in _coverage_problems(plan, ds, floor):
             yield (
-                CheckId.DATA_COVERAGE,
+                check,
                 severity,
                 _path(plan, i, "dataset_id"),
                 f"{ds.dataset_id}: {problem}",
-                "narrow the area or period, choose covered data, or declare an evidence gap",
+                "narrow the area or period, choose covered data, or declare the gap",
             )
 
 
@@ -236,16 +239,20 @@ def _valid_floor(plan: InvestigationPlan) -> float:
     return entry.min_valid_fraction if entry else plan.selected.min_valid_fraction
 
 
-def _coverage_problems(plan: InvestigationPlan, ds: DataCandidate, floor: float) -> list[str]:
+def _coverage_problems(
+    plan: InvestigationPlan, ds: DataCandidate, floor: float
+) -> list[tuple[CheckId, str]]:
+    missing, partial = CheckId.DATA_UNAVAILABLE, CheckId.DATA_COVERAGE
     problems = []
     if ds.availability == "unavailable":
-        problems.append("unavailable for this area and period")
+        problems.append((missing, "unavailable for this area and period"))
     if not ds.coverage.contains(plan.time_range.period):
-        problems.append("temporal coverage does not contain the study period")
+        problems.append((missing, "temporal coverage does not contain the study period"))
     if not ds.covers(plan.aoi.area):
-        problems.append("spatial coverage does not contain the study area")
-    if ds.valid_fraction is not None and ds.valid_fraction < floor:
-        problems.append(f"valid fraction {ds.valid_fraction} is below {floor}")
+        problems.append((partial, "spatial coverage does not contain the study area"))
+    valid = ds.valid_fraction_for(plan.time_range.period)
+    if valid is not None and valid < floor:
+        problems.append((partial, f"valid fraction {valid} is below {floor}"))
     return problems
 
 

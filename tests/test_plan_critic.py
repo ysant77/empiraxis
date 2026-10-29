@@ -6,7 +6,7 @@ from __future__ import annotations
 from typing import Any
 
 import pytest
-from plan_helpers import PLANS, dataset, errors, method, raw, review
+from plan_helpers import PLANS, dataset, errors, method, raw, registry, review
 
 from earthlab.planning import CheckId, load_plan, plan_digest, review_plan
 
@@ -19,12 +19,13 @@ EXPECTED_VERDICTS = {
     "mumbai-aqi-deforestation": "needs_evidence",
     "heatwave-fire-reverse-causality": "needs_evidence",
     "singapore-pm25-nowcast": "accept",
+    "kalimantan-2015-12-outside-pinned": "needs_evidence",
 }
 
 
 @pytest.mark.parametrize(("name", "verdict"), sorted(EXPECTED_VERDICTS.items()))
 def test_fixture_verdicts(name: str, verdict: str) -> None:
-    report = review_plan(load_plan(PLANS / f"{name}.yaml"))
+    report = review_plan(load_plan(PLANS / f"{name}.yaml"), registry())
     assert report.verdict == verdict
     assert report.task.role_id == "scientific_critic"
     assert report.task.parent_task_id == load_plan(PLANS / f"{name}.yaml").task.task_id
@@ -154,11 +155,11 @@ def test_wind_only_transport_plausibility_is_not_flagged() -> None:
     assert C.PM25_FROM_WIND_ALONE not in review(plan).checks()
 
 
-def test_failed_coverage_reports_period_area_and_valid_fraction() -> None:
+def test_failed_coverage_uses_the_measured_october_fraction() -> None:
     report = review(raw("kalimantan-2015-10-failed-coverage"))
     coverage = [f for f in report.findings if f.check is C.DATA_COVERAGE]
-    assert len(coverage) == 3
-    assert all(f.severity == "error" for f in coverage)
+    assert [f.message.split(": ")[1] for f in coverage] == ["valid fraction 0.4597 is below 0.8"]
+    assert coverage[0].severity == "error"
     assert len({f.finding_id for f in report.findings}) == len(report.findings)
 
 
@@ -166,7 +167,7 @@ def test_declared_gap_turns_coverage_into_uncertainty() -> None:
     plan = raw("uttarakhand-2024-missing-data")
     assert review(plan).checks("error") == set()
     plan["evidence_gaps"] = []
-    assert C.DATA_COVERAGE in errors(plan)
+    assert {C.DATA_UNAVAILABLE, C.METHOD_INFEASIBLE} <= errors(plan)
 
 
 def test_missing_download_and_spend_approvals_are_flagged() -> None:
@@ -207,7 +208,7 @@ def test_association_without_rival_hypothesis_warns() -> None:
 
 def test_report_is_deterministic_and_bound_to_the_plan_hash() -> None:
     plan = load_plan(PLANS / "kalimantan-2015-10-failed-coverage.yaml")
-    first, second = review_plan(plan), review_plan(plan)
+    first, second = review_plan(plan, registry()), review_plan(plan, registry())
     assert first == second
     assert first.plan_sha256 == plan_digest(plan)
     assert [f.priority for f in first.findings] == list(range(1, len(first.findings) + 1))
@@ -221,8 +222,12 @@ def test_useful_plans_for_unsupported_claims_carry_gaps_and_rivals() -> None:
         assert plan.research_intent == "association"
         assert plan.evidence_gaps
         assert {h.direction for h in plan.hypotheses} - {"forward"}
-        assert review_plan(plan).verdict == "needs_evidence"
+        assert review_plan(plan, registry()).verdict == "needs_evidence"
     assert dataset(raw("mumbai-aqi-deforestation"), "cpcb-aqi-mumbai-2023")
+
+
+def _scene(plan: dict[str, Any]) -> list[dict[str, Any]]:
+    return [dataset(plan, "hls-l30-kalimantan-2015")]
 
 
 def _segmentation_plan(**scene: Any) -> dict[str, Any]:
@@ -267,7 +272,8 @@ def _segmentation_plan(**scene: Any) -> dict[str, Any]:
 
 
 def test_segmentation_with_compatible_scenes_is_not_flagged() -> None:
-    assert C.INCOMPATIBLE_IMAGE_INPUT not in review(_segmentation_plan()).checks()
+    plan = _segmentation_plan()
+    assert C.INCOMPATIBLE_IMAGE_INPUT not in review(plan, _scene(plan)).checks()
 
 
 @pytest.mark.parametrize(
@@ -279,4 +285,5 @@ def test_segmentation_with_compatible_scenes_is_not_flagged() -> None:
     ],
 )
 def test_segmentation_with_incompatible_scenes_is_flagged(scene: dict[str, Any]) -> None:
-    assert C.INCOMPATIBLE_IMAGE_INPUT in errors(_segmentation_plan(**scene))
+    plan = _segmentation_plan(**scene)
+    assert C.INCOMPATIBLE_IMAGE_INPUT in errors(plan, _scene(plan))
