@@ -348,6 +348,31 @@ def _approval_resolved(state: _State, entry: dict[str, Any]) -> None:
     )
 
 
+def _rendered(state: _State, entry: dict[str, Any]) -> None:
+    _emit(
+        state,
+        entry,
+        "system",
+        "answer_submitted",
+        "executed",
+        "The model text failed the answer check twice; the answer was rendered from "
+        "verified findings only.",
+    )
+
+
+def _forced_abstention(state: _State, entry: dict[str, Any]) -> None:
+    reasons = ", ".join(entry["data"].get("reasons", []))
+    _emit(
+        state,
+        entry,
+        "safety_gate",
+        "safety_checked",
+        "blocked",
+        f"Causal-attribution question routed to a typed abstention ({reasons}); "
+        "the planner did not run.",
+    )
+
+
 def _finish(state: _State, entry: dict[str, Any]) -> None:
     data = entry["data"]
     status = str(data.get("status"))
@@ -376,6 +401,8 @@ HANDLERS = {
     ("plan_reviewed", "critic"): _plan_reviewed,
     ("approval_requested", "approval_gate"): _approval_requested,
     ("approval_resolved", "approval_gate"): _approval_resolved,
+    ("answer_rendered", "runtime"): _rendered,
+    ("forced_abstention", "safety"): _forced_abstention,
     ("finish", "runtime"): _finish,
 }
 
