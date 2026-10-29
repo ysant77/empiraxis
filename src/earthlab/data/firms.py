@@ -15,9 +15,11 @@ from earthlab.data.snapshot import SourceMismatchError
 from earthlab.digest import file_digest
 
 
-def detections_in_month(data_dir: Path, manifest_name: str, box: BoundingBox, month: str) -> int:
-    """Detections whose UTC acquisition date falls in month (YYYY-MM) and inside box."""
-    count = 0
+def detections(
+    data_dir: Path, manifest_name: str, box: BoundingBox, month: str
+) -> list[tuple[float, float]]:
+    """(lon, lat) of detections whose UTC acquisition date is in month (YYYY-MM) and in box."""
+    points: list[tuple[float, float]] = []
     for entry in read_manifest(data_dir / manifest_name)["files"]:
         path = data_dir / entry["file"]
         actual = file_digest(path)
@@ -28,5 +30,10 @@ def detections_in_month(data_dir: Path, manifest_name: str, box: BoundingBox, mo
                 if not row["acq_date"].startswith(month):
                     continue
                 lat, lon = float(row["latitude"]), float(row["longitude"])
-                count += box.min_lat <= lat <= box.max_lat and box.min_lon <= lon <= box.max_lon
-    return count
+                if box.min_lat <= lat <= box.max_lat and box.min_lon <= lon <= box.max_lon:
+                    points.append((lon, lat))
+    return points
+
+
+def detections_in_month(data_dir: Path, manifest_name: str, box: BoundingBox, month: str) -> int:
+    return len(detections(data_dir, manifest_name, box, month))

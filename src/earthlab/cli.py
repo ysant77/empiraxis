@@ -18,6 +18,7 @@ from earthlab.bench.scenarios import load_scenarios
 from earthlab.cases.loader import load_case
 from earthlab.contracts import TimeWindow
 from earthlab.data.quality import coverage_report
+from earthlab.demo import DEMO_IDS, run_demo
 from earthlab.evals.runner import ARMS, run_suite
 from earthlab.evals.safety import load_cases, run_case, summarize
 from earthlab.evals.tasks import load_tasks
@@ -25,15 +26,12 @@ from earthlab.llm.client import build_client
 from earthlab.llm.providers import load_providers
 from earthlab.llm.raw import RawCompletionClient
 from earthlab.metrics import EarthlabMetrics
-from earthlab.report.chart import hourly_chart
-from earthlab.report.markdown import render_report
+from earthlab.report.write import DEFAULT_WINDOW, write_report
 from earthlab.runtime import investigate, new_run_dir, open_workspace
 from earthlab.safety.llama_guard import LlamaGuard
 from earthlab.tools.burned_area_tools import case_report
 from earthlab.verify.claims import Claim
 from earthlab.verify.replay import replay_run
-
-DEFAULT_WINDOW = TimeWindow(start=datetime(2015, 9, 1), end=datetime(2015, 11, 1))
 
 
 def _print_event(record: dict[str, Any]) -> None:
@@ -74,19 +72,6 @@ def cmd_verify(args: argparse.Namespace) -> int:
     result = workspace.verifier.verify(claim)
     print(result.model_dump_json(indent=2))
     return 0 if result.verdict.value == "supported" else 1
-
-
-def write_report(run_dir: Path, workspace_dir: Path) -> Path:
-    """report.md for a saved run; the PM2.5 chart only for runs that are not burned-area only."""
-    result = json.loads((run_dir / "result.json").read_text(encoding="utf-8"))
-    chart = None
-    if result["rounds"] or not result.get("evidence"):
-        workspace = open_workspace(workspace_dir)
-        chart = "pm25_hourly.png"
-        hourly_chart(workspace.dataset, DEFAULT_WINDOW, run_dir / chart)
-    path = run_dir / "report.md"
-    path.write_text(render_report(result, chart), encoding="utf-8")
-    return path
 
 
 def cmd_report(args: argparse.Namespace) -> int:
@@ -158,6 +143,25 @@ def cmd_replay(args: argparse.Namespace) -> int:
     for problem in out.problems:
         print(f"problem: {problem}")
     return 0 if out.ok else 1
+
+
+def cmd_demo(args: argparse.Namespace) -> int:
+    """The wildfire demo with the Meta agent: one run, report and replay per question."""
+    config = load_providers(args.providers)[args.provider]
+    ids = args.only.split(",") if args.only else list(DEMO_IDS)
+    rows = run_demo(
+        ids,
+        lambda: build_client(config),
+        open_workspace(args.data_dir),
+        new_run_dir(args.runs_dir / "demo"),
+        args.data_dir,
+        guard=build_guard(args.providers, args.guard),
+        reasoning=args.reasoning,
+    )
+    for r in rows:
+        replay = "replay ok" if r["replay_ok"] else "REPLAY FAILED"
+        print(f"{r['id']:7} {r['status']:18} {r['seconds']:7.1f} s  {replay}  {r['report']}")
+    return 0 if all(r["replay_ok"] for r in rows) else 1
 
 
 def cmd_eval(args: argparse.Namespace) -> int:
@@ -311,6 +315,17 @@ def _add_bench_parser(sub: Any) -> None:
     bench.set_defaults(func=cmd_bench)
 
 
+def _add_demo_parser(sub: Any) -> None:
+    demo = sub.add_parser("demo", help="wildfire demo: Meta agent run, report, replay")
+    demo.add_argument("--only", help="comma-separated scenario ids (default: the demo set)")
+    demo.add_argument("--provider", default="local-glimmer")
+    demo.add_argument("--providers", type=Path, default=Path("config/providers.yaml"))
+    demo.add_argument("--runs-dir", type=Path, default=Path("runs"))
+    demo.add_argument("--reasoning", choices=["low", "medium", "high"], default="low")
+    demo.add_argument("--guard", default="local-llama-guard", help="safety provider, or 'none'")
+    demo.set_defaults(func=cmd_demo)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="earthlab", description=__doc__)
     parser.add_argument("--data-dir", type=Path, default=Path("data/nea"))
@@ -350,6 +365,7 @@ def build_parser() -> argparse.ArgumentParser:
     safety.add_argument("--guard", default="local-llama-guard")
     safety.set_defaults(func=cmd_safety_eval)
 
+    _add_demo_parser(sub)
     replay = sub.add_parser("replay", help="re-verify a saved run offline, no model needed")
     replay.add_argument("run_dir", type=Path)
     replay.set_defaults(func=cmd_replay)

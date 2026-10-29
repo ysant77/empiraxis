@@ -1,4 +1,4 @@
-"""Streamlit demo: live investigation, saved-run replay, manual claim check and data QA.
+"""Streamlit demo: live investigation, wildfire case view, saved runs, claim check, data QA.
 
 Run with:  uv run --extra ui streamlit run src/earthlab/ui/app.py
 """
@@ -13,16 +13,22 @@ from typing import Any
 
 import streamlit as st
 
+from earthlab.agent.area_findings import AreaClaim, verify_area_claim
 from earthlab.agent.budget import Budget
-from earthlab.cli import DEFAULT_WINDOW, write_report
 from earthlab.contracts import Region, TimeWindow
+from earthlab.data.mcd64a1 import read_manifest
 from earthlab.data.quality import coverage_report
 from earthlab.llm.client import build_client
 from earthlab.llm.providers import load_providers
 from earthlab.llm.raw import RawCompletionClient
 from earthlab.metrics import EarthlabMetrics
+from earthlab.report.area_sections import AREA_LIMITATIONS
+from earthlab.report.burn_map import burn_map
+from earthlab.report.write import DEFAULT_WINDOW, write_report
 from earthlab.runtime import Workspace, investigate, new_run_dir, open_workspace
 from earthlab.safety.llama_guard import LlamaGuard
+from earthlab.science.burned_area import QaPolicy
+from earthlab.tools.burned_area_tools import mcd64a1_asset_id, month_report
 from earthlab.trace import RunTrace
 from earthlab.verify.claims import Claim, ClaimKind
 
@@ -69,13 +75,16 @@ def show_result(run_dir: Path) -> None:
     result = json.loads((run_dir / "result.json").read_text(encoding="utf-8"))
     st.subheader(f"Status: {result['status']}")
     findings = [f for f in result.get("findings", []) if f["verdict"] == "supported"]
-    st.markdown("**Findings (verified claims)**")
-    st.dataframe(findings, use_container_width=True)
+    if findings or result["rounds"]:
+        st.markdown("**Findings (verified claims)**")
+        st.dataframe(findings, use_container_width=True)
     st.markdown("**Interpretation (model text)**")
     for issue in result.get("answer_issues", []):
         st.error(f"Not verified: {issue}")
     st.write(result["answer"] or "_No final answer._")
-    st.dataframe(_verdict_rows(result["rounds"]), use_container_width=True)
+    if result["rounds"]:
+        st.dataframe(_verdict_rows(result["rounds"]), use_container_width=True)
+    _show_area(result, run_dir)
     chart = run_dir / "pm25_hourly.png"
     if chart.exists():
         st.image(str(chart))
@@ -85,6 +94,57 @@ def show_result(run_dir: Path) -> None:
         f"{result['prompt_tokens']} in / {result['completion_tokens']} out tokens. "
         f"Source sha256 {result['source']['sha256'][:16]}..."
     )
+
+
+def _show_area(result: dict[str, Any], run_dir: Path) -> None:
+    """Burned-area claims with every verdict, declared limitations and the run's maps."""
+    if result.get("area_findings"):
+        st.markdown("**Burned-area claims (independent verifier)**")
+        st.dataframe(result["area_findings"], use_container_width=True)
+    for entry in result.get("limitations", []):
+        st.warning(f"Declared limitation {', '.join(entry['reasons'])}: {entry['explanation']}")
+    for image in sorted(run_dir.glob("burn_map_*.png")):
+        st.image(str(image), width=520)
+
+
+@st.cache_data(show_spinner=False)
+def _map_png(case_id: str, month: str, policy: str) -> bytes:
+    library = workspace().cases
+    assert library is not None
+    out = RUNS_DIR / "ui" / f"burn_map_{case_id}_{month}_{policy}.png"
+    return burn_map(library.get(case_id), library.root, month, QaPolicy(policy), out).read_bytes()
+
+
+def tab_wildfire() -> None:
+    """One month of a pinned case under a QA policy: tool value, verifier, gate, map."""
+    library = workspace().cases
+    cases = [] if library is None else [c for c in library.ids() if library.get(c).case.data_dir]
+    if library is None or not cases:
+        st.info("No burned-area case with pinned data.")
+        return
+    case_file = library.get(st.selectbox("Registered case", cases))
+    folder = library.root / str(case_file.case.data_dir)
+    manifest = read_manifest(folder / f"{mcd64a1_asset_id(case_file)}.manifest.json")
+    cols = st.columns(2)
+    month = cols[0].selectbox("Month (UTC)", [f["month"] for f in manifest["files"]])
+    policy = QaPolicy(cols[1].selectbox("QA policy", [p.value for p in QaPolicy]))
+    report = month_report(case_file, library.root, month, policy)
+    s, c = report["summary"], report["check"]
+    area = f"{s['primary_area_ha']:,.1f}" if s["gate_passed"] else "not reported (gate)"
+    m = st.columns(4)
+    m[0].metric("Mapped burned area (ha)", area)
+    m[1].metric("Valid-land fraction", f"{s['valid_fraction']:.3f}")
+    m[2].metric("Verifier checks", "pass" if c["passed"] else "FAIL")
+    m[3].metric("Reporting gate", "pass" if c["gate_ok"] else "fail")
+    st.image(_map_png(case_file.case.case_id, month, policy.value), width=560)
+    claimed = st.number_input("Claimed area (ha)", value=50000.0, step=100.0)
+    if st.button("Check area claim"):
+        raw = {"case_id": case_file.case.case_id, "month": month, "quantity": "burned_area_ha"}
+        claim = AreaClaim.model_validate(
+            {**raw, "value": claimed, "statement": "Manual check.", "qa_policy": policy}
+        )
+        st.json(verify_area_claim(claim, library).model_dump(mode="json", exclude={"claim"}))
+    st.caption(" ".join(AREA_LIMITATIONS) + f" Source sha256 {s['source_sha256'][:16]}...")
 
 
 def tab_investigate() -> None:
@@ -132,11 +192,12 @@ def tab_investigate() -> None:
 
 
 def tab_runs() -> None:
-    runs = sorted((p for p in RUNS_DIR.glob("*") if (p / "result.json").exists()), reverse=True)
+    found = sorted(RUNS_DIR.rglob("result.json"), key=lambda p: p.stat().st_mtime, reverse=True)
+    runs = [p.parent for p in found[:200]]  # investigations, bench and demo runs
     if not runs:
         st.info("No saved runs yet.")
         return
-    run_dir = st.selectbox("Saved run", runs, format_func=lambda p: p.name)
+    run_dir = st.selectbox("Saved run", runs, format_func=lambda p: str(p.relative_to(RUNS_DIR)))
     records = RunTrace(run_dir / "trace.jsonl").verify()
     st.success(f"Trace hash chain intact ({records} records).")
     show_result(run_dir)
@@ -183,12 +244,14 @@ def main() -> None:
     st.set_page_config(page_title="Axiom EarthLab", layout="wide")
     st.title("Axiom EarthLab")
     st.caption(
-        "Evidence-first investigation of the 2015 Singapore haze with a Meta open-weight model. "
+        "Evidence-first investigation of the 2015 haze and Kalimantan burned area with a Meta "
+        "open-weight model. "
         "Research prototype: not health advice, not a forecast."
     )
     metrics()
-    tabs = st.tabs(["Investigate", "Saved runs", "Verifier", "Data"])
-    for tab, render in zip(tabs, (tab_investigate, tab_runs, tab_verifier, tab_data), strict=True):
+    names = ["Investigate", "Wildfire case", "Saved runs", "Verifier", "Data"]
+    renders = (tab_investigate, tab_wildfire, tab_runs, tab_verifier, tab_data)
+    for tab, render in zip(st.tabs(names), renders, strict=True):
         with tab:
             render()
     st.caption(f"Prometheus metrics: http://127.0.0.1:{METRICS_PORT}/metrics (local only)")

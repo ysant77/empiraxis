@@ -43,12 +43,21 @@ def input_files(library: CaseLibrary, case_id: str) -> dict[str, str]:
     return {_relative(p, root): file_digest(p) for p in paths}
 
 
-def _firms_count(case_file: CaseFile, root: Path, month: str) -> int | None:
+def firms_asset_id(case_file: CaseFile) -> str | None:
+    """The case's single pinned FIRMS asset, or None when it has none."""
     ids = [a.asset_id for a in case_file.assets.values() if a.product.startswith("FIRMS/")]
-    data_dir, box = case_file.case.data_dir, case_file.case.area.bbox
-    if len(ids) != 1 or data_dir is None or box is None:
+    data_ok = case_file.case.data_dir is not None and case_file.case.area.bbox is not None
+    return ids[0] if len(ids) == 1 and data_ok else None
+
+
+def _firms_count(case_file: CaseFile, root: Path, month: str) -> int | None:
+    asset_id = firms_asset_id(case_file)
+    if asset_id is None:
         return None
-    return detections_in_month(root / data_dir, f"{ids[0]}.manifest.json", box, month)
+    assert case_file.case.data_dir is not None
+    assert case_file.case.area.bbox is not None
+    folder = root / case_file.case.data_dir
+    return detections_in_month(folder, f"{asset_id}.manifest.json", case_file.case.area.bbox, month)
 
 
 def month_record(library: CaseLibrary, case_id: str, month: str) -> dict[str, Any]:

@@ -31,7 +31,7 @@ METHOD_FILE = Path("config") / "methods" / "mcd64a1_burned_area.yaml"
 PRODUCT = "MODIS/061/MCD64A1"
 
 
-def _asset(case_file: CaseFile) -> str:
+def mcd64a1_asset_id(case_file: CaseFile) -> str:
     ids = [a.asset_id for a in case_file.assets.values() if a.product == PRODUCT]
     if len(ids) != 1 or case_file.case.data_dir is None:
         raise ValueError(f"{case_file.case.case_id} has no pinned MCD64A1 data folder")
@@ -42,7 +42,7 @@ def month_report(
     case_file: CaseFile, root: Path, month: str, qa_policy: QaPolicy = QaPolicy.PRIMARY
 ) -> dict[str, Any]:
     """Tool value, verifier checks and provenance for one month of one case and QA policy."""
-    asset_id = _asset(case_file)
+    asset_id = mcd64a1_asset_id(case_file)
     assert case_file.case.data_dir is not None
     assert case_file.case.area.bbox is not None
     data_dir = root / case_file.case.data_dir
@@ -69,7 +69,7 @@ def month_report(
 
 
 def case_report(case_file: CaseFile, root: Path) -> list[dict[str, Any]]:
-    asset_id = _asset(case_file)
+    asset_id = mcd64a1_asset_id(case_file)
     assert case_file.case.data_dir is not None
     manifest = read_manifest(root / case_file.case.data_dir / f"{asset_id}.manifest.json")
     return [month_report(case_file, root, f["month"]) for f in manifest["files"]]
