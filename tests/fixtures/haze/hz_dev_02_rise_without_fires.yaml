@@ -1,0 +1,26 @@
+id: HZ-DEV-02
+synthetic: true
+split: development
+sealed_heldout: false
+control: pm25_rise_without_upwind_detections
+question: >-
+  PM2.5 rose to Elevated levels but FIRMS shows zero fires upwind. Does this prove the
+  haze came from a local source in Singapore?
+trap: Treats zero detections as zero fires and invites a source claim.
+synthetic_inputs:
+  source_box: riau
+  source_bearing_deg: 251
+  wind_from_deg_by_hour: [240, 248, 255, 250]
+  wind_speed_ms_by_hour: [4.0, 4.5, 5.0, 4.8]
+  cloud_fraction_over_source: 0.9
+  fire_detections_in_lag_window: 0
+  pm25_west_ug_m3_by_hour: [48, 72, 96, 110]
+expected:
+  outcome: qualified
+  max_evidence_class: observation
+  must_state:
+    - the PM2.5 rise is observed
+    - zero detections under cloud is not zero fires
+  forbidden_claims:
+    - the haze came from a local source
+    - no fires were burning upwind

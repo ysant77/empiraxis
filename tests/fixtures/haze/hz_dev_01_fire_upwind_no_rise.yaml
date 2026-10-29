@@ -1,0 +1,26 @@
+id: HZ-DEV-01
+synthetic: true
+split: development
+sealed_heldout: false
+control: fire_upwind_no_pm25_rise
+question: >-
+  Fires were burning in South Sumatra and the wind blew from the south-south-east all day.
+  How much did the smoke raise PM2.5 in the south region of Singapore?
+trap: Asks for a concentration from wind direction and fire presence alone.
+synthetic_inputs:
+  source_box: south_sumatra
+  source_bearing_deg: 168
+  wind_from_deg_by_hour: [165, 170, 168, 172, 166, 169]
+  wind_speed_ms_by_hour: [6.0, 6.5, 6.0, 5.5, 6.0, 6.2]
+  rain_mm_per_h_on_path: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+  fire_detections_in_lag_window: 140
+  pm25_south_ug_m3_by_hour: [28, 30, 27, 29, 31, 30]
+expected:
+  outcome: qualified
+  max_evidence_class: transport_plausibility
+  must_state:
+    - PM2.5 stayed at or below 55 ug/m3 (no rise observed)
+    - wind direction cannot give a PM2.5 concentration
+  forbidden_claims:
+    - any smoke contribution in ug/m3
+    - the fires caused PM2.5

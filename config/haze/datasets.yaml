@@ -1,0 +1,113 @@
+# Candidate datasets for the 2015 haze wind-consistency case (H0/H1).
+# Metadata only: no file listed here is downloaded unless permission is "pinned".
+# Sizes marked size_is_estimate are design estimates, not measured transfers.
+datasets:
+  - dataset_id: nea-historical-1hr-pm25
+    product: NEA Historical 1-hr PM2.5 (data.gov.sg d_6c0d5fc34838b12472475fdb73c0af29)
+    variable: regional 1-hour PM2.5 concentration
+    unit: ug/m3
+    aoi: {min_lon: 103.6, min_lat: 1.15, max_lon: 104.1, max_lat: 1.48}
+    valid_start: "2014-04-01T00:00:00+08:00"
+    valid_end: "2026-10-01T00:00:00+08:00"
+    time_role: observation
+    temporal_support: {kind: hourly_mean, step_hours: 1, note: "Label convention (hour start or end) not stated by NEA."}
+    spatial_support: {kind: reporting_region, note: "Five NEA regions; not station coordinates."}
+    missingness: Gaps exist; missing hours are reported, never filled or set to zero.
+    qa_flags:
+      - {name: alternate_time_format, meaning: Row used a non-standard time label.}
+      - {name: duplicate_hour, meaning: The same hour appears more than once.}
+      - {name: non_numeric, meaning: A value could not be read as a number.}
+    licence: Singapore Open Data Licence v1.0
+    licence_url: https://data.gov.sg/open-data-licence
+    size_estimate_bytes: 3150004
+    size_is_estimate: false
+    permission: pinned
+    max_evidence_class: observation
+    method_suitability: Receptor series for event detection and association. Not PSI, not AQI.
+    not_for: [source attribution, station-level analysis]
+
+  - dataset_id: era5-single-levels-2015-haze
+    product: ERA5 hourly data on single levels (reanalysis-era5-single-levels)
+    variable: 10m u and v wind, total precipitation, boundary layer height
+    unit: m/s (wind); m (precipitation per hour; boundary layer height)
+    aoi: {min_lon: 95.0, min_lat: -6.0, max_lon: 118.0, max_lat: 4.0}
+    valid_start: "2015-09-01T00:00:00Z"
+    valid_end: "2015-11-01T00:00:00Z"
+    time_role: reanalysis
+    temporal_support: {kind: instantaneous, step_hours: 1, note: "Wind instantaneous; precipitation accumulated over the hour ending at the stamp."}
+    spatial_support: {kind: grid_cell, resolution_m: 27750, note: "0.25 degree grid, about 28 km at the equator."}
+    missingness: None expected on the grid; check expver for ERA5T rows.
+    qa_flags:
+      - {name: expver, meaning: "1 = final ERA5; 5 = early-release ERA5T."}
+    licence: CC-BY 4.0 (Copernicus, from 2025-07-02)
+    licence_url: https://creativecommons.org/licenses/by/4.0/
+    size_estimate_bytes: 45000000
+    size_is_estimate: true
+    permission: owner_approval_and_account
+    max_evidence_class: transport_plausibility
+    method_suitability: Retrospective wind sector and rain checks. Never a forecast input for 2015 issue times.
+    not_for: [forecast feature, PM2.5 concentration estimate]
+
+  - dataset_id: era5-pressure-levels-850hpa-2015-haze
+    product: ERA5 hourly data on pressure levels (reanalysis-era5-pressure-levels), 850 hPa
+    variable: u and v wind at 850 hPa
+    unit: m/s
+    aoi: {min_lon: 95.0, min_lat: -6.0, max_lon: 118.0, max_lat: 4.0}
+    valid_start: "2015-09-01T00:00:00Z"
+    valid_end: "2015-11-01T00:00:00Z"
+    time_role: reanalysis
+    temporal_support: {kind: instantaneous, step_hours: 1}
+    spatial_support: {kind: grid_cell, resolution_m: 27750}
+    missingness: None expected on the grid.
+    licence: CC-BY 4.0 (Copernicus, from 2025-07-02)
+    licence_url: https://creativecommons.org/licenses/by/4.0/
+    size_estimate_bytes: 22000000
+    size_is_estimate: true
+    permission: owner_approval_and_account
+    max_evidence_class: transport_plausibility
+    method_suitability: Lower-troposphere transport direction; less affected by sea breeze than 10 m wind.
+    not_for: [smoke height, forecast feature]
+
+  - dataset_id: firms-modis-sp-2015-haze-sources
+    product: NASA FIRMS MODIS Collection 6.1 standard processing (MODIS_SP)
+    variable: active fire detection (location, confidence, FRP)
+    unit: detection count; MW (FRP)
+    aoi: {min_lon: 100.0, min_lat: -4.5, max_lon: 115.0, max_lat: 2.0}
+    valid_start: "2015-08-25T00:00:00Z"
+    valid_end: "2015-11-01T00:00:00Z"
+    time_role: observation
+    temporal_support: {kind: overpass, note: "About four MODIS overpasses per day; UTC acquisition time."}
+    spatial_support: {kind: detection_pixel, resolution_m: 1000}
+    missingness: Cloud, thick smoke and small or cool fires cause missed detections.
+    qa_flags:
+      - {name: confidence, meaning: "0-100 percent; low below 30."}
+      - {name: type, meaning: "0 = presumed vegetation fire."}
+    licence: NASA Earth science data, no restrictions on use
+    licence_url: https://www.earthdata.nasa.gov/engage/open-data-services-software-policies/data-use-guidance
+    size_estimate_bytes: 25000000
+    size_is_estimate: true
+    permission: owner_approval_and_account
+    max_evidence_class: observation
+    method_suitability: Fire presence in a source box during a lag window.
+    not_for: [emissions, burned area, source attribution]
+
+  - dataset_id: cams-global-forecast-2015-haze
+    product: CAMS global atmospheric composition forecasts (ADS)
+    variable: PM2.5 and total aerosol optical depth at 550 nm
+    unit: kg/m3 (PM2.5); dimensionless (AOD)
+    aoi: {min_lon: 95.0, min_lat: -6.0, max_lon: 118.0, max_lat: 4.0}
+    valid_start: "2015-09-01T00:00:00Z"
+    valid_end: "2015-11-06T00:00:00Z"
+    issue_time: "2015-09-01T00:00:00Z"
+    time_role: forecast
+    temporal_support: {kind: instantaneous, step_hours: 1, note: "Runs at 00 and 12 UTC; issue_time is the first run; leads 0-120 h."}
+    spatial_support: {kind: grid_cell, resolution_m: 44400, note: "0.4 degree grid."}
+    missingness: Not checked.
+    licence: CC-BY 4.0 (Copernicus, from 2025-07-02)
+    licence_url: https://creativecommons.org/licenses/by/4.0/
+    size_estimate_bytes: 90000000
+    size_is_estimate: true
+    permission: deferred
+    max_evidence_class: forecast
+    method_suitability: Only source with a true issue time. Deferred to H2 or later.
+    not_for: [observation, official guidance equivalence]
