@@ -36,6 +36,15 @@ def load_lock(path: Path) -> HeldoutLock:
     return HeldoutLock.model_validate(yaml.safe_load(path.read_text(encoding="utf-8")))
 
 
+def _check_locked_set(path: Path, scenarios: list[Scenario]) -> None:
+    """A locked set holds only HO- scenarios, and all of them run."""
+    if not all(s.id.startswith(HELDOUT_PREFIX) for s in scenarios):
+        raise HeldoutError(f"{path.name}: a locked set holds only HO- scenarios")
+    idle = [s.id for s in scenarios if s.status != "ready"]
+    if idle:
+        raise HeldoutError(f"{path.name}: held-out scenarios not ready: {', '.join(idle)}")
+
+
 def scenario_file_record(
     path: Path, scenarios: list[Scenario], lock: HeldoutLock | None
 ) -> dict[str, Any]:
@@ -49,6 +58,7 @@ def scenario_file_record(
             raise HeldoutError(f"{path.name}: SHA-256 {digest} does not match the lock")
         if not heldout or len(scenarios) != lock.questions:
             raise HeldoutError(f"{path.name}: expected {lock.questions} held-out scenarios")
+        _check_locked_set(path, scenarios)
     return {
         "name": path.name,
         "sha256": digest,

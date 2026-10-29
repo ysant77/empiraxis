@@ -276,3 +276,27 @@ def test_identifiers_and_product_names_are_not_numbers() -> None:
     # Observed live: "mcd64a1_burned_area" and "NEA historical 1-hour PM2.5" (SB-08, SB-03).
     assert text_numbers("The mcd64a1_burned_area method and the NEA 1-hour PM2.5 record.") == []
     assert text_numbers("It peaked in 2015 at 471.") == ["2015", "471"]
+
+
+class _Boom(ScriptedClient):
+    """A client whose every call raises an unexpected error."""
+
+    def chat(self, *args: Any, **kwargs: Any) -> Any:
+        raise RuntimeError("unexpected failure")
+
+
+def test_a_crash_is_an_error_row_and_the_run_continues(
+    workspace: Workspace, tmp_path: Path
+) -> None:
+    """A3/A4: an exception is scored as a failure; every row and the summary are written."""
+    picked = [BY_ID["SB-06"], BY_ID["SB-16"]]
+    summary = run_bench(
+        picked, ["A", "B"], workspace, tmp_path, repo=ROOT, client=_Boom([]), repeats=2
+    )
+    rows = [json.loads(line) for line in (tmp_path / "results.jsonl").read_text().splitlines()]
+    errors = [r for r in rows if r["arm"] == "B"]
+    assert len(rows) == 8 and len(errors) == 4
+    assert all(r["outcome"]["status"] == "error" and not r["passed"] for r in errors)
+    assert "RuntimeError" in errors[0]["outcome"]["detail"]["error"]
+    assert summary["rows_expected"] == summary["rows_written"] == 8 and summary["complete"]
+    assert summary["arms"]["B"]["errors"] == 4

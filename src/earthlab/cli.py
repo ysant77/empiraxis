@@ -12,7 +12,7 @@ from typing import Any
 from earthlab.acquire.gate import load_approvals
 from earthlab.acquire.run import acquire_firms, acquire_mcd64a1, write_manifest
 from earthlab.agent.budget import Budget
-from earthlab.bench.heldout import load_lock, scenario_file_record
+from earthlab.bench.heldout import HeldoutError, load_lock, scenario_file_record
 from earthlab.bench.runner import ARMS as BENCH_ARMS
 from earthlab.bench.runner import run_bench
 from earthlab.bench.scenarios import load_scenarios
@@ -253,6 +253,8 @@ def cmd_bench(args: argparse.Namespace) -> int:
     client = build_client(load_providers(args.providers)[args.provider]) if "B" in arms else None
     scenarios = load_scenarios(args.scenarios)
     lock = load_lock(args.heldout_lock) if args.heldout_lock else None
+    if lock is not None and args.only:
+        raise HeldoutError("--only is not allowed with --heldout-lock: run the whole set")
     scenario_file = scenario_file_record(args.scenarios, scenarios, lock)
     if args.only:
         scenarios = [s for s in scenarios if s.id in args.only.split(",")]

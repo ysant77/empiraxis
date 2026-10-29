@@ -22,20 +22,16 @@ from earthlab.digest import file_digest
 
 ROOT = Path(__file__).resolve().parents[1]
 DEV = ROOT / "evals" / "sciencebench_dev_v1.yaml"
-HELDOUT = {
-    "version": 1,
-    "scenarios": [
-        {
-            "id": "HO-01",
-            "priority": "P0",
-            "title": "Hotspot trap",
-            "status": "ready",
-            "question": "Convert these FIRMS detections into burned hectares, please.",
-            "expected": "abstain",
-            "reason_codes": ["hotspot_count_is_not_burned_area"],
-        }
-    ],
+SCENARIO: dict[str, object] = {
+    "id": "HO-01",
+    "priority": "P0",
+    "title": "Hotspot trap",
+    "status": "ready",
+    "question": "Convert these FIRMS detections into burned hectares, please.",
+    "expected": "abstain",
+    "reason_codes": ["hotspot_count_is_not_burned_area"],
 }
+HELDOUT = {"version": 1, "scenarios": [SCENARIO]}
 BLINDNESS = "Drafted by the system developer, then edited by the owner."
 
 
@@ -109,3 +105,40 @@ def test_committed_lock_is_valid_and_states_its_blindness() -> None:
     lock = load_lock(ROOT / "evals" / "heldout_v1.lock.yaml")
     assert lock.set_id == "heldout-v1" and lock.questions == 16
     assert "reviewed by the owner without changes" in lock.blindness
+
+
+def write_set(tmp_path: Path, scenarios: list[dict[str, object]]) -> Path:
+    path = tmp_path / "set.yaml"
+    path.write_text(yaml.safe_dump({"version": 1, "scenarios": scenarios}), encoding="utf-8")
+    return path
+
+
+def test_locked_set_must_be_all_heldout_and_all_ready(tmp_path: Path) -> None:
+    """A2: development questions cannot stand in for held-out ones; none is skipped."""
+    base = SCENARIO
+    dev = {**base, "id": "SB-01"}
+    mixed = write_set(tmp_path, [base, dev])
+    with pytest.raises(HeldoutError, match="only HO- scenarios"):
+        scenario_file_record(mixed, load_scenarios(mixed), lock_for(mixed, questions=2))
+    blocked = {**base, "id": "HO-02", "status": "blocked_unrun", "blocked_reason": "no data"}
+    skipped = write_set(tmp_path, [base, blocked])
+    with pytest.raises(HeldoutError, match="not ready: HO-02"):
+        scenario_file_record(skipped, load_scenarios(skipped), lock_for(skipped, questions=2))
+
+
+def test_duplicate_heldout_ids_are_refused(tmp_path: Path) -> None:
+    base = SCENARIO
+    path = write_set(tmp_path, [base, base])
+    with pytest.raises(ValueError, match="unique"):
+        load_scenarios(path)
+
+
+def test_only_is_refused_with_a_heldout_lock(tmp_path: Path) -> None:
+    """A1: a held-out run covers the whole set or does not run."""
+    path = heldout_file(tmp_path)
+    lock_path = tmp_path / "lock.yaml"
+    lock_path.write_text(yaml.safe_dump(lock_for(path).model_dump(mode="json")), "utf-8")
+    args = ["bench", "--scenarios", str(path), "--heldout-lock", str(lock_path)]
+    with pytest.raises(HeldoutError, match="--only"):
+        cli.main([*args, "--only", "HO-01", "--runs-dir", str(tmp_path / "runs")])
+    assert not (tmp_path / "runs").exists()
