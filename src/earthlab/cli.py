@@ -25,6 +25,7 @@ from earthlab.demo import DEMO_IDS, run_demo
 from earthlab.evals.runner import ARMS, run_suite
 from earthlab.evals.safety import load_cases, run_case, summarize
 from earthlab.evals.tasks import load_tasks
+from earthlab.haze.cli import add_haze_parsers
 from earthlab.llm.client import build_client
 from earthlab.llm.providers import load_providers
 from earthlab.llm.raw import RawCompletionClient
@@ -407,6 +408,7 @@ def build_parser() -> argparse.ArgumentParser:
     _add_official_parser(sub)
 
     _add_acquire_parser(sub)
+    add_haze_parsers(sub)
 
     safety = sub.add_parser("safety-eval", help="score Llama Guard and scope rules on labels")
     safety.add_argument("--cases", type=Path, default=Path("evals/safety_cases.yaml"))
