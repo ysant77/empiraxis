@@ -103,3 +103,9 @@ def test_bench_command_logs_the_scenario_hash(
     meta = json.loads(rows.splitlines()[0])["meta"]
     assert meta["scenario_file"]["sha256"] == file_digest(path)
     assert any(BLINDNESS in note for note in meta["notes"])
+
+
+def test_committed_lock_is_valid_and_states_its_blindness() -> None:
+    lock = load_lock(ROOT / "evals" / "heldout_v1.lock.yaml")
+    assert lock.set_id == "heldout-v1" and lock.questions == 16
+    assert "reviewed by the owner without changes" in lock.blindness
