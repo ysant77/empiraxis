@@ -16,10 +16,10 @@ from typing import Any
 
 import httpx
 
-from earthlab.acquire import firms, mcd64a1
+from earthlab.acquire import era5, firms, mcd64a1
 from earthlab.acquire.gate import authorize, write_capped
 from earthlab.cases.loader import CaseFile
-from earthlab.cases.models import ApprovalAction, HumanApproval, SourceAsset
+from earthlab.cases.models import ApprovalAction, HumanApproval, RequestScope, SourceAsset
 
 FIRMS_ROW_BYTES = 120  # expected upper bound per detection row, for the size request
 FIRMS_EXPECTED_ROWS = 20_000
@@ -37,7 +37,11 @@ def _months(asset: SourceAsset) -> list[tuple[date, date]]:
 
 
 def _gate(
-    approvals: list[HumanApproval], case_file: CaseFile, asset: SourceAsset, expected_bytes: int
+    approvals: list[HumanApproval],
+    case_file: CaseFile,
+    asset: SourceAsset,
+    expected_bytes: int,
+    request: RequestScope | None = None,
 ) -> HumanApproval:
     case_id = case_file.case.case_id
     authorize(
@@ -49,6 +53,22 @@ def _gate(
         case_id,
         asset_id=asset.asset_id,
         request_bytes=expected_bytes,
+        request=request or _scope_of(asset),
+    )
+
+
+def _scope_of(
+    asset: SourceAsset, variables: tuple[str, ...] = (), levels: tuple[int, ...] = ()
+) -> RequestScope:
+    """What a download of this asset fetches, for a scoped approval to check."""
+    assert asset.extent is not None
+    return RequestScope(
+        product=asset.product,
+        extent=asset.extent,
+        start=asset.coverage.start,
+        end=asset.coverage.end,
+        variables=variables,
+        pressure_levels_hpa=levels,
     )
 
 
@@ -142,6 +162,47 @@ def acquire_firms(
             "requests": len(firms.chunks(start, end)),
         }
     ]
+    return _manifest(asset, approval, files)
+
+
+def acquire_era5(
+    case_file: CaseFile,
+    asset_id: str,
+    approvals: list[HumanApproval],
+    out_dir: Path,
+    client_factory: Callable[[], era5.CdsClient] = era5.client_from_config,
+    variables: tuple[str, ...] | None = None,
+    levels: tuple[int, ...] | None = None,
+) -> dict[str, Any]:
+    """The approved ERA5 H1 request for one asset, month by month, under one byte cap."""
+    asset = case_file.assets[asset_id]
+    assert asset.extent is not None
+    dataset = era5.dataset_of(asset.product)
+    variables = era5.H1_VARIABLES[dataset] if variables is None else variables
+    levels = era5.H1_LEVELS[dataset] if levels is None else levels
+    start, end = asset.coverage.start, asset.coverage.end
+    era5.check_h1(dataset, variables, levels, asset.extent, start, end)
+    hours = int((end - start) / timedelta(hours=1))
+    expected = era5.expected_bytes(variables, levels, asset.extent, hours)
+    approval = _gate(approvals, case_file, asset, expected, _scope_of(asset, variables, levels))
+    assert approval.max_bytes is not None
+    client = client_factory()
+    out_dir.mkdir(parents=True, exist_ok=True)
+    budget, files = approval.max_bytes, []
+    for month, request in era5.monthly_requests(variables, levels, asset.extent, start, end):
+        path = out_dir / era5.month_file(dataset, month)
+        sha, size = era5.fetch_month(client, dataset, request, path, budget)
+        budget -= size
+        files.append(
+            {
+                "file": path.name,
+                "month": f"{month:%Y-%m}",
+                "sha256": sha,
+                "bytes": size,
+                "dataset": dataset,
+                "request": request,
+            }
+        )
     return _manifest(asset, approval, files)
 
 

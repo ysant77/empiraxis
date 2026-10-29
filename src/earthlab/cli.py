@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from earthlab.acquire.gate import load_approvals
-from earthlab.acquire.run import acquire_firms, acquire_mcd64a1, write_manifest
+from earthlab.acquire.run import acquire_era5, acquire_firms, acquire_mcd64a1, write_manifest
 from earthlab.agent.budget import Budget
 from earthlab.bench.heldout import HeldoutError, load_lock, scenario_file_record
 from earthlab.bench.official import OfficialSetup, check_only, run_official
@@ -209,6 +209,8 @@ def cmd_acquire(args: argparse.Namespace) -> int:
         manifest = acquire_mcd64a1(case_file, args.asset, approvals, args.out, ee)
     elif product.startswith("FIRMS/"):
         manifest = acquire_firms(case_file, args.asset, approvals, args.out)
+    elif product.startswith("ERA5/"):
+        manifest = acquire_era5(case_file, args.asset, approvals, args.out)
     else:
         raise SystemExit(f"no acquisition route for {product}")
     path = write_manifest(manifest, args.out)

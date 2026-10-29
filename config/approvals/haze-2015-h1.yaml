@@ -1,0 +1,95 @@
+# Owner approvals for the 2015 haze H1 downloads, given in chat on 2026-10-29 and recorded
+# at 08:06 UTC. Conditions from the owner: start only after the official held-out results
+# are archived and the owner says go. Each record allows exactly one product, box, period
+# and field set (scope). Expiry is the end of 31 October 2026 (SGT), the H1 stop rule.
+# Not approved, and so not recorded: FIRMS VIIRS, MCD64A1 for the source boxes, CAMS.
+approvals:
+  - approval_id: haze-2015-h1-confirm-area
+    case_id: haze-2015-h1-sources
+    action: confirm_study_area
+    approved: true
+    approver: ysant77 (repository owner)
+    decided_at_utc: "2026-10-29T08:06:00Z"
+    expires_at_utc: "2026-10-31T16:00:00Z"
+
+  - approval_id: haze-2015-h1-download-era5-sl
+    case_id: haze-2015-h1-sources
+    action: download
+    approved: true
+    approver: ysant77 (repository owner)
+    decided_at_utc: "2026-10-29T08:06:00Z"
+    expires_at_utc: "2026-10-31T16:00:00Z"
+    asset_ids: [era5-sl-haze-2015]
+    max_bytes: 60000000  # estimate 45.8 MB GRIB
+    scope:
+      product: ERA5/reanalysis-era5-single-levels
+      extent: {min_lon: 95.0, min_lat: -6.0, max_lon: 118.0, max_lat: 4.0}
+      start: "2015-09-01T00:00:00Z"
+      end: "2015-11-01T00:00:00Z"
+      variables:
+        - 10m_u_component_of_wind
+        - 10m_v_component_of_wind
+        - total_precipitation
+        - boundary_layer_height
+
+  - approval_id: haze-2015-h1-download-era5-pl850
+    case_id: haze-2015-h1-sources
+    action: download
+    approved: true
+    approver: ysant77 (repository owner)
+    decided_at_utc: "2026-10-29T08:06:00Z"
+    expires_at_utc: "2026-10-31T16:00:00Z"
+    asset_ids: [era5-pl850-haze-2015]
+    max_bytes: 30000000  # estimate 22.9 MB GRIB
+    scope:
+      product: ERA5/reanalysis-era5-pressure-levels
+      extent: {min_lon: 95.0, min_lat: -6.0, max_lon: 118.0, max_lat: 4.0}
+      start: "2015-09-01T00:00:00Z"
+      end: "2015-11-01T00:00:00Z"
+      variables: [u_component_of_wind, v_component_of_wind]
+      pressure_levels_hpa: [850]
+
+  - approval_id: haze-2015-h1-download-firms-box-a
+    case_id: haze-2015-h1-sources
+    action: download
+    approved: true
+    approver: ysant77 (repository owner)
+    decided_at_utc: "2026-10-29T08:06:00Z"
+    expires_at_utc: "2026-10-31T16:00:00Z"
+    asset_ids: [firms-modis-sp-haze-2015-box-a]
+    max_bytes: 6000000
+    scope:
+      product: FIRMS/MODIS_SP
+      extent: {min_lon: 100.0, min_lat: -1.5, max_lon: 103.5, max_lat: 2.0}
+      start: "2015-08-25T00:00:00Z"
+      end: "2015-11-01T00:00:00Z"
+
+  - approval_id: haze-2015-h1-download-firms-box-b
+    case_id: haze-2015-h1-sources
+    action: download
+    approved: true
+    approver: ysant77 (repository owner)
+    decided_at_utc: "2026-10-29T08:06:00Z"
+    expires_at_utc: "2026-10-31T16:00:00Z"
+    asset_ids: [firms-modis-sp-haze-2015-box-b]
+    max_bytes: 8000000
+    scope:
+      product: FIRMS/MODIS_SP
+      extent: {min_lon: 102.5, min_lat: -4.5, max_lon: 106.5, max_lat: -1.0}
+      start: "2015-08-25T00:00:00Z"
+      end: "2015-11-01T00:00:00Z"
+
+  - approval_id: haze-2015-h1-download-firms-box-c
+    case_id: haze-2015-h1-sources
+    action: download
+    approved: true
+    approver: ysant77 (repository owner)
+    decided_at_utc: "2026-10-29T08:06:00Z"
+    expires_at_utc: "2026-10-31T16:00:00Z"
+    asset_ids: [firms-modis-sp-haze-2015-box-c]
+    max_bytes: 11000000  # FIRMS caps total 25 MB across boxes A-C
+    scope:
+      product: FIRMS/MODIS_SP
+      extent: {min_lon: 108.5, min_lat: -3.5, max_lon: 115.0, max_lat: 1.0}
+      start: "2015-08-25T00:00:00Z"
+      end: "2015-11-01T00:00:00Z"

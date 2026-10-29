@@ -231,6 +231,48 @@ class ApprovalAction(StrEnum):
     PUBLISH = "publish"
 
 
+class RequestScope(Strict):
+    """What one download asks for, or what an approval allows: product, box, period, fields.
+
+    An approved scope allows exactly its box and product, a period inside its own, and a
+    subset of its variables and pressure levels. Anything else is refused.
+    """
+
+    product: str = Field(min_length=1)
+    extent: BoundingBox
+    start: datetime
+    end: datetime
+    variables: tuple[str, ...] = ()
+    pressure_levels_hpa: tuple[int, ...] = ()
+
+    @field_validator("start", "end")
+    @classmethod
+    def _utc(cls, value: datetime) -> datetime:
+        return _aware_utc(value)
+
+    @model_validator(mode="after")
+    def _ordered(self) -> Self:
+        if self.end <= self.start:
+            raise ValueError("scope end must be after scope start")
+        return self
+
+    def refusal(self, request: RequestScope) -> str | None:
+        """Why this approved scope does not allow the request, or None when it does."""
+        if request.product != self.product:
+            return f"product {request.product} is not the approved {self.product}"
+        if request.extent != self.extent:
+            return "area differs from the approved box"
+        if request.start < self.start or request.end > self.end:
+            return "period lies outside the approved dates"
+        extra_vars = sorted(set(request.variables) - set(self.variables))
+        if extra_vars:
+            return f"variables not approved: {', '.join(extra_vars)}"
+        extra_levels = sorted(set(request.pressure_levels_hpa) - set(self.pressure_levels_hpa))
+        if extra_levels:
+            return f"pressure levels not approved: {extra_levels}"
+        return None
+
+
 class HumanApproval(Strict):
     """A human decision about one consequential action. No model tool can create one."""
 
@@ -244,6 +286,7 @@ class HumanApproval(Strict):
     asset_ids: tuple[str, ...] = ()
     max_bytes: int | None = Field(default=None, gt=0)
     max_usd: float | None = Field(default=None, gt=0)
+    scope: RequestScope | None = None
 
     @field_validator("decided_at_utc", "expires_at_utc")
     @classmethod
@@ -268,11 +311,12 @@ class HumanApproval(Strict):
         asset_id: str | None = None,
         request_bytes: int | None = None,
         request_usd: float | None = None,
+        request: RequestScope | None = None,
     ) -> str | None:
         """Why this approval does not cover the request, or None when it does.
 
         A download must name its asset and size, and a spend its amount; each must fit
-        inside the approved scope.
+        inside the approved scope. A scoped download must also state what it fetches.
         """
         if not self.approved:
             return "the approval was rejected"
@@ -280,16 +324,24 @@ class HumanApproval(Strict):
             return f"approval covers {self.action.value}, not {action.value}"
         if not self.decided_at_utc <= _aware_utc(at) < self.expires_at_utc:
             return "the approval is not valid at this time"
-        return self._scope_refusal(asset_id, request_bytes, request_usd)
+        return self._scope_refusal(asset_id, request_bytes, request_usd, request)
 
     def _scope_refusal(
-        self, asset_id: str | None, request_bytes: int | None, request_usd: float | None
+        self,
+        asset_id: str | None,
+        request_bytes: int | None,
+        request_usd: float | None,
+        request: RequestScope | None,
     ) -> str | None:
         if self.action is ApprovalAction.DOWNLOAD:
             if asset_id is None or asset_id not in self.asset_ids:
                 return f"asset {asset_id} is not in the approval"
             if request_bytes is None or self.max_bytes is None or request_bytes > self.max_bytes:
                 return f"download of {request_bytes} bytes exceeds or lacks the approved cap"
+            if self.scope is not None:
+                if request is None:
+                    return "the approval is scoped; the request must state what it fetches"
+                return self.scope.refusal(request)
         if self.action is ApprovalAction.HOSTED_MODEL_SPEND and (
             request_usd is None or self.max_usd is None or request_usd > self.max_usd
         ):

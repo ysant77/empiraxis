@@ -19,7 +19,7 @@ dependencies = [
 
 [project.optional-dependencies]
 ui = ["streamlit>=1.40"]
-acquire = ["earthengine-api>=1.0"]
+acquire = ["earthengine-api>=1.0", "cdsapi==0.7.7"]
 
 [project.scripts]
 earthlab = "earthlab.cli:main"
@@ -57,7 +57,7 @@ strict = true
 plugins = ["pydantic.mypy"]
 
 [[tool.mypy.overrides]]
-module = ["streamlit", "streamlit.*", "matplotlib", "matplotlib.*", "ee", "ee.*"]
+module = ["streamlit", "streamlit.*", "matplotlib", "matplotlib.*", "ee", "ee.*", "cdsapi", "cdsapi.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
