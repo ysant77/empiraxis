@@ -15,6 +15,9 @@ import yaml
 
 from earthlab.cases.models import ApprovalAction, HumanApproval, RequestScope
 from earthlab.digest import file_digest
+from earthlab.trace import RunTrace
+
+GATE_ACTOR = "approval_gate"
 
 
 class ApprovalRefused(PermissionError):
@@ -42,9 +45,24 @@ def authorize(
     request_bytes: int | None = None,
     request: RequestScope | None = None,
     at: datetime | None = None,
+    trace: RunTrace | None = None,
 ) -> HumanApproval:
-    """Return the approval that covers the request, or raise with every refusal reason."""
+    """Return the approval that covers the request, or raise with every refusal reason.
+
+    With a trace, the gate records `approval_requested` before the check and
+    `approval_resolved` after it, so a run shows each consequential action it asked for.
+    """
     moment = at or datetime.now(UTC)
+    target = asset_id or case_id
+    if trace is not None:
+        trace.append(
+            "approval_requested",
+            GATE_ACTOR,
+            action=action.value,
+            case_id=case_id,
+            asset_id=asset_id,
+            request_bytes=request_bytes,
+        )
     reasons: list[str] = []
     for approval in approvals:
         if approval.case_id != case_id:
@@ -53,10 +71,31 @@ def authorize(
             action, moment, asset_id=asset_id, request_bytes=request_bytes, request=request
         )
         if refusal is None:
+            _resolved(trace, action, target, approval.approval_id, None)
             return approval
         reasons.append(f"{approval.approval_id}: {refusal}")
     detail = "; ".join(reasons) or "no approval recorded for this case"
-    raise ApprovalRefused(f"{action.value} for {asset_id or case_id} refused: {detail}")
+    _resolved(trace, action, target, None, detail)
+    raise ApprovalRefused(f"{action.value} for {target} refused: {detail}")
+
+
+def _resolved(
+    trace: RunTrace | None,
+    action: ApprovalAction,
+    target: str,
+    approval_id: str | None,
+    refusal: str | None,
+) -> None:
+    if trace is not None:
+        trace.append(
+            "approval_resolved",
+            GATE_ACTOR,
+            action=action.value,
+            target=target,
+            approved=refusal is None,
+            approval_id=approval_id,
+            refusal=refusal,
+        )
 
 
 def write_capped(chunks: Iterable[bytes], path: Path, max_bytes: int) -> tuple[str, int]:

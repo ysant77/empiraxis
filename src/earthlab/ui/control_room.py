@@ -126,6 +126,23 @@ def _durations(run: RunEvents) -> list[dict[str, Any]]:
     return [{"actor": k, "recorded ms": v} for k, v in sorted(totals.items())]
 
 
+APPROVAL_EVENTS = ("approval_requested", "approval_resolved")
+
+
+def approval_event_rows(run: RunEvents) -> list[dict[str, Any]]:
+    """Approval-gate events recorded in this run's trace, in order."""
+    return [
+        {
+            "event": e.event_type,
+            "status": e.status,
+            "summary": e.message_summary,
+            "trace ref": e.source_trace_ref,
+        }
+        for e in run.events
+        if e.event_type in APPROVAL_EVENTS
+    ]
+
+
 def recorded_approvals(root: Path = APPROVALS_DIR) -> list[dict[str, Any]]:
     """Human approvals recorded in config/approvals, with their expiry state now."""
     rows: list[dict[str, Any]] = []
@@ -157,6 +174,13 @@ def _human_control(run: RunEvents | None) -> None:
                 {"action": "Untrusted code execution", "rule": "disabled"},
             ]
         )
+        if run is not None:
+            rows = approval_event_rows(run)
+            st.caption("Approval-gate events in this run's trace:")
+            if rows:
+                st.dataframe(rows, use_container_width=True, hide_index=True)
+            else:
+                st.write("This run asked the approval gate for nothing.")
         st.button("Approve pending action", disabled=True)
         st.caption(common.status_text("planned", "An approval queue in the UI is not implemented."))
         if run is not None:

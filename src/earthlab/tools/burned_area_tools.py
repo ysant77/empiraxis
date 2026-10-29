@@ -68,6 +68,29 @@ def month_report(
     }
 
 
+def pinned_months(case_file: CaseFile, root: Path) -> list[str]:
+    """The UTC months the case's pinned MCD64A1 manifest holds, in manifest order."""
+    asset_id = mcd64a1_asset_id(case_file)
+    assert case_file.case.data_dir is not None
+    manifest = read_manifest(root / case_file.case.data_dir / f"{asset_id}.manifest.json")
+    return [str(f["month"]) for f in manifest["files"]]
+
+
+def month_unavailable(case_file: CaseFile, month: str, months: list[str]) -> dict[str, Any]:
+    """A typed result for a month outside the pinned data. Nothing is computed or guessed."""
+    return {
+        "case_id": case_file.case.case_id,
+        "month": month,
+        "status": "data_unavailable",
+        "reason_code": "data_unavailable",
+        "pinned_months": months,
+        "limitations": [
+            f"No pinned MCD64A1 file for {month}. A new month needs an approved download.",
+        ],
+        "next_step": "Use declare_limitation with data_unavailable for this month.",
+    }
+
+
 def case_report(case_file: CaseFile, root: Path) -> list[dict[str, Any]]:
     asset_id = mcd64a1_asset_id(case_file)
     assert case_file.case.data_dir is not None
@@ -92,7 +115,11 @@ def burned_area_spec(
     """consulted, when given, records each (case_id, month) the tool answered."""
 
     def handle(args: BurnedAreaArgs) -> dict[str, Any]:
-        report = month_report(library.get(args.case_id), library.root, args.month, args.qa_policy)
+        case_file = library.get(args.case_id)
+        months = pinned_months(case_file, library.root)
+        if args.month not in months:
+            return month_unavailable(case_file, args.month, months)
+        report = month_report(case_file, library.root, args.month, args.qa_policy)
         if consulted is not None:
             consulted.append((args.case_id, args.month))
         return report

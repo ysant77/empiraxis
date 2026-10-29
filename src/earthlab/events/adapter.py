@@ -269,6 +269,39 @@ def _revision(state: _State, entry: dict[str, Any]) -> None:
     )
 
 
+def _approval_requested(state: _State, entry: dict[str, Any]) -> None:
+    data = entry["data"]
+    target = data.get("asset_id") or data.get("case_id")
+    _emit(
+        state,
+        entry,
+        "system",
+        "approval_requested",
+        "pending",
+        f"Approval gate: {data.get('action')} for {target} needs a recorded human approval.",
+        receiver_role="human_director",
+    )
+
+
+def _approval_resolved(state: _State, entry: dict[str, Any]) -> None:
+    data = entry["data"]
+    approved = bool(data.get("approved"))
+    detail = (
+        f"covered by recorded approval {data.get('approval_id')}"
+        if approved
+        else f"refused: {data.get('refusal')}"
+    )
+    _emit(
+        state,
+        entry,
+        "human_director",
+        "approval_resolved",
+        "approved" if approved else "rejected",
+        f"{data.get('action')} for {data.get('target')}: {detail}.",
+        receiver_role="system",
+    )
+
+
 def _finish(state: _State, entry: dict[str, Any]) -> None:
     data = entry["data"]
     status = str(data.get("status"))
@@ -293,6 +326,8 @@ HANDLERS = {
     ("model_error", "runtime"): _model_error,
     ("answer_audit", "verifier"): _audit,
     ("answer_revision", "verifier"): _revision,
+    ("approval_requested", "approval_gate"): _approval_requested,
+    ("approval_resolved", "approval_gate"): _approval_resolved,
     ("finish", "runtime"): _finish,
 }
 
