@@ -76,7 +76,13 @@ class BudgetMeter:
         return (request_bytes * price_in + self.budget.max_output_tokens * price_out) / 1e6
 
     def reserve_model_call(self, config: ProviderConfig, request_bytes: int) -> float:
-        """Check every limit for one model call and return its worst-case cost."""
+        """Check every limit for one model call, count the turn and return its worst case."""
+        worst = self.check_model_call(config, request_bytes)
+        self.turns += 1
+        return worst
+
+    def check_model_call(self, config: ProviderConfig, request_bytes: int) -> float:
+        """Raise BudgetStop if one more model call could cross a limit; reserve nothing."""
         if self.turns >= self.budget.max_turns:
             raise BudgetStop(f"turn limit {self.budget.max_turns} reached")
         if self.remaining_seconds() <= 0:
@@ -89,7 +95,6 @@ class BudgetMeter:
                 f"next model call could cost {worst:.4f} USD; "
                 f"{self.cost_usd:.4f} of {self.budget.max_usd} USD already spent"
             )
-        self.turns += 1
         return worst
 
     def settle_model_call(self, config: ProviderConfig, usage: Usage, worst: float) -> float:
