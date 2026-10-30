@@ -28,6 +28,7 @@ from earthlab.contracts import SourceSnapshot
 from earthlab.data.nea_pm25 import Pm25Dataset, load_pm25
 from earthlab.data.snapshot import open_snapshot
 from earthlab.llm.client import ChatClient
+from earthlab.llm.retry import NO_RETRY, RetryPolicy
 from earthlab.metrics import EarthlabMetrics
 from earthlab.planning.registry import load_registry
 from earthlab.report.evidence import collect_evidence
@@ -51,10 +52,13 @@ class RunOptions:
     plan_review: the model submits a typed plan that the deterministic critic reviews.
     render_fallback: a text that fails the answer audit after its revision is replaced by
     an answer rendered from verified findings only.
+    provider_retry: one more attempt after a transient provider failure. None keeps the
+    v1 protocol: one attempt per model call.
     """
 
     plan_review: bool = False
     render_fallback: bool = False
+    provider_retry: RetryPolicy | None = None
 
 
 DEFAULT_OPTIONS = RunOptions()
@@ -172,6 +176,7 @@ def investigate(
             area_ledger=area_ledger,
             plan_step=plan_step,
             render_fallback=options.render_fallback,
+            retry=options.provider_retry or NO_RETRY,
         )
         result = investigator.run(question)
         result = replace(result, safety=(asked, *result.safety))

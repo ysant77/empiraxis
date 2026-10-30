@@ -29,6 +29,7 @@ from earthlab.haze.cli import add_haze_parsers
 from earthlab.llm.client import build_client
 from earthlab.llm.providers import load_providers
 from earthlab.llm.raw import RawCompletionClient
+from earthlab.llm.retry import RetryPolicy
 from earthlab.metrics import EarthlabMetrics
 from earthlab.report.write import DEFAULT_WINDOW, write_report
 from earthlab.runtime import RunOptions, investigate, new_run_dir, open_workspace
@@ -117,7 +118,7 @@ def cmd_investigate(args: argparse.Namespace) -> int:
         reasoning=args.reasoning,
         listener=_print_event,
         guard=build_guard(args.providers, args.guard),
-        options=RunOptions(args.plan_review, args.render_fallback),
+        options=_run_options(args),
     )
     report = write_report(run_dir, args.data_dir)
     for finding_id, r in result.ledger.latest_by_id().items():
@@ -278,7 +279,7 @@ def cmd_bench(args: argparse.Namespace) -> int:
         scenario_file=scenario_file,
         reasoning=args.reasoning,
         on_score=_print_score,
-        options=RunOptions() if lock else RunOptions(args.plan_review, args.render_fallback),
+        options=RunOptions() if lock else _run_options(args),
     )
     print(json.dumps({k: v for k, v in summary.items() if k != "meta"}, indent=2))
     print(f"results: {out_dir}")
@@ -341,6 +342,11 @@ def _add_eval_parser(sub: Any) -> None:
     ev.set_defaults(func=cmd_eval)
 
 
+def _run_options(args: argparse.Namespace) -> RunOptions:
+    retry = RetryPolicy() if args.provider_retry else None
+    return RunOptions(args.plan_review, args.render_fallback, retry)
+
+
 def _add_plan_flag(parser: Any) -> None:
     parser.add_argument(
         "--no-plan-review",
@@ -353,6 +359,11 @@ def _add_plan_flag(parser: Any) -> None:
         dest="render_fallback",
         action="store_false",
         help="keep a final text that fails the answer audit as answer_unverified",
+    )
+    parser.add_argument(
+        "--provider-retry",
+        action="store_true",
+        help="retry a model call once after a transient provider failure (off in v1 protocol)",
     )
 
 

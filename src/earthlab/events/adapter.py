@@ -236,8 +236,18 @@ def _skipped(state: _State, entry: dict[str, Any]) -> None:
 
 
 def _model_error(state: _State, entry: dict[str, Any]) -> None:
-    kind = entry["data"].get("kind")
-    _emit(state, entry, "orchestrator", "error", "failed", f"Model call failed: {kind}.")
+    data = entry["data"]
+    detail = ""
+    if "attempt" in data:  # traces before the retry policy have no attempt fields
+        tail = "; retrying" if data.get("retrying") else ""
+        detail = f" (attempt {data['attempt']} of {data.get('max_attempts')}{tail})"
+    summary = f"Model call failed: {data.get('kind')}{detail}."
+    _emit(state, entry, "orchestrator", "error", "failed", summary)
+
+
+def _retry_skipped(state: _State, entry: dict[str, Any]) -> None:
+    reason = entry["data"].get("reason")
+    _emit(state, entry, "system", "error", "blocked", f"Model call not retried: {reason}.")
 
 
 def _audit(state: _State, entry: dict[str, Any]) -> None:
@@ -395,6 +405,7 @@ HANDLERS = {
     ("tool_result", "runtime"): _tool_result,
     ("tool_skipped", "runtime"): _skipped,
     ("model_error", "runtime"): _model_error,
+    ("model_retry_skipped", "runtime"): _retry_skipped,
     ("answer_audit", "verifier"): _audit,
     ("answer_revision", "verifier"): _revision,
     ("plan_submitted", "model"): _plan_submitted,
