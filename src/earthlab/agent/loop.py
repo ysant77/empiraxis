@@ -18,6 +18,7 @@ from earthlab.agent.area_findings import SUBMIT_AREA_TOOL, AreaLedger
 from earthlab.agent.budget import Budget, BudgetMeter, BudgetStop, prompt_bytes
 from earthlab.agent.findings import SUBMIT_TOOL, FindingsLedger
 from earthlab.agent.limitations import DECLARE_TOOL, LimitationArgs, LimitationLog
+from earthlab.agent.messages import answer_issues, assistant_message
 from earthlab.agent.plan_step import PlanStep
 from earthlab.agent.prompts import (
     FINAL_AFTER_LIMITATION,
@@ -28,7 +29,8 @@ from earthlab.agent.prompts import (
 )
 from earthlab.agent.rendered import render_answer
 from earthlab.llm.client import ChatClient
-from earthlab.llm.types import ChatResponse, ProviderError, ToolCall
+from earthlab.llm.retry import NO_RETRY, RetryPolicy
+from earthlab.llm.types import ChatResponse, ProviderError, ToolCall, Usage
 from earthlab.metrics import EarthlabMetrics
 from earthlab.planning.report import CriticReport
 from earthlab.safety.gate import WITHHELD, SafetyDecision
@@ -100,16 +102,6 @@ class Investigation:
 _SUBMIT_TOOLS = (SUBMIT_TOOL, SUBMIT_AREA_TOOL)
 
 
-def _assistant_message(resp: ChatResponse) -> dict[str, Any]:
-    message: dict[str, Any] = {"role": "assistant", "content": resp.content}
-    if resp.tool_calls:
-        message["tool_calls"] = [
-            {"id": c.id, "type": "function", "function": {"name": c.name, "arguments": c.arguments}}
-            for c in resp.tool_calls
-        ]
-    return message
-
-
 class Investigator:
     def __init__(
         self,
@@ -127,6 +119,8 @@ class Investigator:
         area_ledger: AreaLedger | None = None,
         plan_step: PlanStep | None = None,
         render_fallback: bool = False,
+        retry: RetryPolicy = NO_RETRY,
+        sleep: Callable[[float], None] = time.sleep,
     ):
         self._client = client
         self._registry = registry
@@ -140,6 +134,8 @@ class Investigator:
         self._area = area_ledger or AreaLedger()
         self._plan = plan_step
         self._render_fallback = render_fallback
+        self._retry = retry
+        self._sleep = sleep
 
     def run(self, question: str) -> Investigation:
         cfg = self._client.config
@@ -153,6 +149,7 @@ class Investigator:
             model=cfg.model,
             logical_model=cfg.logical_model,
             budget=self._meter.budget.model_dump(),
+            retry_policy=self._retry.record(),
         )
         state = RunState(
             messages=[
@@ -170,7 +167,7 @@ class Investigator:
         finally:
             self._metrics.active.dec()
         decision = self._gate_answer(question, state)
-        issues = _answer_issues(audit, decision, state)
+        issues = answer_issues(audit, decision, state.rendered, state.revision_note)
         if status in _ANSWERED and not state.answer:
             issues = ("no final text was produced", *issues)
         if issues and status in _ANSWERED:
@@ -217,7 +214,7 @@ class Investigator:
         except ProviderError as exc:
             state.revision_note = f"revision failed: {exc.kind.value}"
             return audit
-        state.messages.append(_assistant_message(resp))
+        state.messages.append(assistant_message(resp))
         revised = resp.content.strip()
         if not revised:
             state.revision_note = "revision returned no text"
@@ -271,7 +268,7 @@ class Investigator:
             except ProviderError as exc:
                 state.stop_reason = str(exc)
                 return RunStatus.PROVIDER_ERROR
-            state.messages.append(_assistant_message(resp))
+            state.messages.append(assistant_message(resp))
             if state.finalising or not resp.tool_calls:
                 if self._settle_text_turn(state, resp):
                     return self._status_after_stop(budget_hit=False)
@@ -294,13 +291,40 @@ class Investigator:
     def _call_model(self, state: RunState) -> ChatResponse:
         """Reserve the worst-case cost and check every limit, then call the model.
 
-        Raises BudgetStop, without calling, when the call could cross a limit.
+        Raises BudgetStop, without calling, when the first attempt could cross a limit.
+        A transient failure may get one more attempt under the retry policy (see
+        earthlab.llm.retry); every failed attempt stays charged and is traced.
         """
+        return self._retry.run(
+            lambda attempt: self._attempt_model_call(state, attempt),
+            lambda exc: self._retry_blocker(state, exc),
+            self._sleep,
+        )
+
+    def _retry_blocker(self, state: RunState, exc: ProviderError) -> str | None:
+        """Why a second attempt must not be sent (traced), or None when it may."""
+        reason = None
+        if self._retry.delay(exc) >= self._meter.remaining_seconds():
+            reason = "retry delay would outlast the time left"
+        else:
+            schemas = self._registry.schemas()
+            try:
+                self._meter.check_model_call(
+                    self._client.config, prompt_bytes(state.messages, schemas)
+                )
+            except BudgetStop as stop:
+                reason = str(stop)
+        if reason is not None:
+            self._trace.append("model_retry_skipped", "runtime", kind=exc.kind.value, reason=reason)
+        return reason
+
+    def _attempt_model_call(self, state: RunState, attempt: int) -> ChatResponse:
         cfg = self._client.config
         schemas = self._registry.schemas()
         worst = self._meter.reserve_model_call(cfg, prompt_bytes(state.messages, schemas))
         # Keep the same tool schemas on the final turn so the server can reuse its prompt cache.
         tool_choice = "none" if state.finalising else "auto"
+        started = time.perf_counter()
         try:
             resp = self._client.chat(
                 state.messages,
@@ -311,8 +335,19 @@ class Investigator:
                 timeout=min(cfg.timeout_seconds, self._meter.remaining_seconds()),
             )
         except ProviderError as exc:
+            # A failed request may still be billed: keep the reserved worst case charged.
+            charged = self._meter.settle_model_call(cfg, Usage(), worst)
             self._metrics.record_inference(cfg.name, cfg.logical_model, exc.kind.value, None)
-            self._trace.append("model_error", "runtime", kind=exc.kind.value)
+            self._trace.append(
+                "model_error",
+                "runtime",
+                kind=exc.kind.value,
+                attempt=attempt,
+                max_attempts=self._retry.max_attempts,
+                retrying=self._retry.retries(exc, attempt),
+                elapsed_ms=round((time.perf_counter() - started) * 1000),
+                charged_usd=round(charged, 6),
+            )
             raise
         self._account(state, resp, worst)
         return resp
@@ -458,15 +493,3 @@ class Investigator:
             plan_reviews=() if self._plan is None else tuple(self._plan.reviews),
             answer_source="rendered" if state.rendered else "model",
         )
-
-
-def _answer_issues(
-    audit: AnswerAudit | None, decision: SafetyDecision | None, state: RunState
-) -> tuple[str, ...]:
-    """Why the final text cannot be called verified; empty when it can."""
-    issues = [] if audit is None or state.rendered else audit.problems()
-    if state.revision_note is not None and issues:
-        issues.append(state.revision_note)
-    if decision is not None and not decision.allowed:
-        issues.append(f"safety check withheld the text: {decision.reason}")
-    return tuple(issues)
