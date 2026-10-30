@@ -1,0 +1,71 @@
+# Role and model bindings. Model names here are candidates. `roles` lists the roles a
+# candidate may serve now; `planned_roles` lists roles it is only being evaluated for.
+# A role needs an enabled candidate, and enabling needs a passed preflight and a checked
+# licence.
+# Only muse-glimmer is enabled today, for the role that runs now (the Muse investigator).
+# Every other candidate is disabled until a human approves its download or endpoint.
+schema_version: "1"
+roles:
+  product_manager:   {families: [meta-muse, meta-llama], status: planned}
+  orchestrator:      {families: [meta-muse, meta-llama], status: implemented}
+  geospatial_engineer: {families: [meta-muse], status: planned}
+  implementor:       {families: [meta-muse, meta-llama, qwen, gemma, mistral, deepseek], status: planned}
+  qa_reviewer:       {families: [meta-muse, meta-llama], status: planned}
+
+candidates:
+  - candidate_id: muse-glimmer
+    family: meta-muse
+    model_id: muse-glimmer-30B
+    provider_id: local-glimmer
+    roles: [orchestrator]
+    planned_roles: [product_manager, geospatial_engineer, implementor, qa_reviewer]
+    license: Apache-2.0
+    license_checked: true
+    enabled: true
+    preflight:
+      checked_on: "2026-10-27"
+      json_schema: pass
+      tool_call: pass
+      served_model: muse-glimmer-30B
+      note: First live run and bench on the development Mac; investigator role only.
+
+  - candidate_id: llama-3-2-3b
+    family: meta-llama
+    model_id: meta-llama/Llama-3.2-3B-Instruct
+    planned_roles: [product_manager]
+    license: Llama 3.2 Community License
+    license_checked: false
+    enabled: false
+
+  - candidate_id: muse-spark-open
+    family: meta-muse
+    model_id: meta-models/muse-spark-open-1026
+    provider_id: baseten-spark-open
+    planned_roles: [geospatial_engineer, implementor]
+    license: verify on the model card before use
+    license_checked: false
+    enabled: false
+
+  - candidate_id: qwen3-coder-30b-a3b
+    family: qwen
+    model_id: Qwen/Qwen3-Coder-30B-A3B-Instruct
+    planned_roles: [implementor]
+    license: Apache-2.0 (verify the exact revision)
+    license_checked: false
+    enabled: false
+
+  - candidate_id: qwen3-4b-2507
+    family: qwen
+    model_id: Qwen/Qwen3-4B-Instruct-2507
+    planned_roles: [implementor]
+    license: Apache-2.0 (verify the exact revision)
+    license_checked: false
+    enabled: false
+
+  - candidate_id: gemma-3-4b-it
+    family: gemma
+    model_id: google/gemma-3-4b-it
+    planned_roles: [implementor]
+    license: Gemma Terms of Use (gated; acceptance required)
+    license_checked: false
+    enabled: false
