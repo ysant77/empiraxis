@@ -28,7 +28,8 @@ from earthlab.agent.prompts import (
 )
 from earthlab.agent.rendered import render_answer
 from earthlab.llm.client import ChatClient
-from earthlab.llm.types import ChatResponse, ProviderError, ToolCall
+from earthlab.llm.retry import NO_RETRY, RetryPolicy
+from earthlab.llm.types import ChatResponse, ProviderError, ToolCall, Usage
 from earthlab.metrics import EarthlabMetrics
 from earthlab.planning.report import CriticReport
 from earthlab.safety.gate import WITHHELD, SafetyDecision
@@ -127,6 +128,8 @@ class Investigator:
         area_ledger: AreaLedger | None = None,
         plan_step: PlanStep | None = None,
         render_fallback: bool = False,
+        retry: RetryPolicy = NO_RETRY,
+        sleep: Callable[[float], None] = time.sleep,
     ):
         self._client = client
         self._registry = registry
@@ -140,6 +143,8 @@ class Investigator:
         self._area = area_ledger or AreaLedger()
         self._plan = plan_step
         self._render_fallback = render_fallback
+        self._retry = retry
+        self._sleep = sleep
 
     def run(self, question: str) -> Investigation:
         cfg = self._client.config
@@ -153,6 +158,7 @@ class Investigator:
             model=cfg.model,
             logical_model=cfg.logical_model,
             budget=self._meter.budget.model_dump(),
+            retry_policy=self._retry.record(),
         )
         state = RunState(
             messages=[
@@ -294,13 +300,46 @@ class Investigator:
     def _call_model(self, state: RunState) -> ChatResponse:
         """Reserve the worst-case cost and check every limit, then call the model.
 
-        Raises BudgetStop, without calling, when the call could cross a limit.
+        Raises BudgetStop, without calling, when the first attempt could cross a limit.
+        Under the retry policy a transient failure gets one more attempt, which reserves
+        its own budget first; if that reservation fails, the original ProviderError is
+        raised. Every failed attempt stays charged at its worst case and is traced.
         """
+        attempt = 1
+        while True:
+            try:
+                return self._attempt_model_call(state, attempt)
+            except ProviderError as exc:
+                if not self._retry.retries(exc, attempt):
+                    raise
+                if (reason := self._retry_blocker(state, exc)) is not None:
+                    self._trace.append(
+                        "model_retry_skipped", "runtime", kind=exc.kind.value, reason=reason
+                    )
+                    raise
+                self._sleep(self._retry.delay(exc))
+                attempt += 1
+
+    def _retry_blocker(self, state: RunState, exc: ProviderError) -> str | None:
+        """Why a second attempt must not be sent, or None when it may."""
+        if self._retry.delay(exc) >= self._meter.remaining_seconds():
+            return "retry delay would outlast the time left"
+        cfg = self._client.config
+        try:
+            self._meter.check_model_call(
+                cfg, prompt_bytes(state.messages, self._registry.schemas())
+            )
+        except BudgetStop as stop:
+            return str(stop)
+        return None
+
+    def _attempt_model_call(self, state: RunState, attempt: int) -> ChatResponse:
         cfg = self._client.config
         schemas = self._registry.schemas()
         worst = self._meter.reserve_model_call(cfg, prompt_bytes(state.messages, schemas))
         # Keep the same tool schemas on the final turn so the server can reuse its prompt cache.
         tool_choice = "none" if state.finalising else "auto"
+        started = time.perf_counter()
         try:
             resp = self._client.chat(
                 state.messages,
@@ -311,8 +350,19 @@ class Investigator:
                 timeout=min(cfg.timeout_seconds, self._meter.remaining_seconds()),
             )
         except ProviderError as exc:
+            # A failed request may still be billed: keep the reserved worst case charged.
+            charged = self._meter.settle_model_call(cfg, Usage(), worst)
             self._metrics.record_inference(cfg.name, cfg.logical_model, exc.kind.value, None)
-            self._trace.append("model_error", "runtime", kind=exc.kind.value)
+            self._trace.append(
+                "model_error",
+                "runtime",
+                kind=exc.kind.value,
+                attempt=attempt,
+                max_attempts=self._retry.max_attempts,
+                retrying=self._retry.retries(exc, attempt),
+                elapsed_ms=round((time.perf_counter() - started) * 1000),
+                charged_usd=round(charged, 6),
+            )
             raise
         self._account(state, resp, worst)
         return resp
