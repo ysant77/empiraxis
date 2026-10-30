@@ -9,6 +9,7 @@ from typing import Any
 import pytest
 from conftest import REPO_DATA
 from fake_client import ScriptedClient, call, say
+from plan_helpers import raw, review
 from plan_helpers import registry as shared_registry
 
 from earthlab.acquire.gate import load_approvals
@@ -18,6 +19,7 @@ from earthlab.agent.prompts import PLAN_FIRST, system_prompt
 from earthlab.events.adapter import load_run
 from earthlab.planning.proposal import PlanProposal, build_plan
 from earthlab.planning.registry import load_registry
+from earthlab.planning.report import CriticReport, Verdict
 from earthlab.runtime import RunOptions, Workspace, investigate, open_workspace
 from earthlab.trace import RunTrace
 
@@ -157,28 +159,154 @@ def test_declare_limitation_runs_without_a_plan(workspace: Workspace, tmp_path: 
     assert result.status is RunStatus.ABSTAINED and result.plan_reviews == ()
 
 
-def test_download_requests_go_through_the_approval_gate(
+def _wind_proposal() -> PlanProposal:
+    extra = {"dataset_id": "era5-wind-2015", "used_as": "wind_vector"}
+    return PlanProposal.model_validate(proposal(datasets=[*proposal()["datasets"], extra]))
+
+
+def test_download_requests_from_an_accepted_plan_go_through_the_approval_gate(
     workspace: Workspace, tmp_path: Path
 ) -> None:
     assert workspace.cases is not None
-    trace = RunTrace(tmp_path / "trace.jsonl")
-    step = PlanStep(
-        cases=workspace.cases,
-        registry=shared_registry(),
-        approvals=load_approvals(ROOT / "config" / "approvals"),
-        trace=trace,
-        task_id="gate-test",
+    step = _step(workspace, tmp_path)
+    plan = build_plan(
+        _wind_proposal(),
+        workspace.cases,
+        shared_registry(),
         question="Did wind carry smoke over the box?",
+        task_id="gate-test",
+        revision=1,
     )
-    extra = {"dataset_id": "era5-wind-2015", "used_as": "wind_vector"}
-    reply = step.handle(
-        PlanProposal.model_validate(proposal(datasets=[*proposal()["datasets"], extra]))
-    )
+    assert plan.approval_requests
+    reply = step._reply(plan, _report("accept"))
     assert reply["approvals"] and reply["approvals"][0]["approved"] is False
-    events = [r["event"] for r in trace.records()]
+    events = [r["event"] for r in step.trace.records()]
     assert events[-2:] == ["approval_requested", "approval_resolved"]
 
 
 def test_plan_instructions_only_with_the_plan_step() -> None:
     assert PLAN_FIRST in system_prompt("low", plan_first=True)
     assert PLAN_FIRST not in system_prompt("low")
+
+
+def _skips(tmp_path: Path) -> list[tuple[str, str]]:
+    records = [json.loads(line) for line in (tmp_path / "trace.jsonl").read_text().splitlines()]
+    return [
+        (r["data"]["name"], r["data"]["reason"]) for r in records if r["event"] == "tool_skipped"
+    ]
+
+
+def test_a_plan_under_revision_cannot_use_evidence_tools(
+    workspace: Workspace, tmp_path: Path
+) -> None:
+    """A first `revise` verdict blocks evidence tools until a revision is accepted."""
+    client = ScriptedClient(
+        [
+            call("submit_plan", **proposal("10")),
+            call("burned_area_summary", case_id=CASE, month="2015-10"),
+            call(
+                "declare_limitation",
+                reasons=["insufficient_valid_data"],
+                explanation="Too few valid land cells in that month.",
+            ),
+            say("The month fails the valid-data gate, so no area is claimed."),
+        ]
+    )
+    result = investigate("October burned area?", client, workspace, tmp_path, options=PLAN)
+    assert [r.verdict for r in result.plan_reviews] == ["revise"]
+    assert result.status is RunStatus.ABSTAINED
+    skipped = _skips(tmp_path)
+    assert skipped == [
+        (
+            "burned_area_summary",
+            "plan verdict is revise; revise the plan with submit_plan "
+            "or call declare_limitation before using evidence tools",
+        )
+    ]
+    executed = [
+        json.loads(line)["data"]["name"]
+        for line in (tmp_path / "trace.jsonl").read_text().splitlines()
+        if json.loads(line)["event"] == "tool_result"
+    ]
+    assert "burned_area_summary" not in executed
+
+
+def test_an_accepted_revision_reopens_evidence_tools(workspace: Workspace, tmp_path: Path) -> None:
+    client = ScriptedClient(
+        [
+            call("submit_plan", **proposal("10")),
+            call("submit_plan", **proposal("09")),
+            call("burned_area_summary", case_id=CASE, month="2015-09"),
+            say("Done."),
+        ]
+    )
+    result = investigate("September burned area?", client, workspace, tmp_path, options=PLAN)
+    assert result.plan_reviews[0].verdict == "revise"
+    assert result.plan_reviews[-1].verdict in ("accept", "accept_with_warnings")
+    assert _skips(tmp_path) == []
+
+
+@pytest.mark.parametrize(
+    ("verdict", "tool", "allowed"),
+    [
+        ("accept", "burned_area_summary", True),
+        ("accept", "submit_area_findings", True),
+        ("accept_with_warnings", "rank_regions", True),
+        ("revise", "burned_area_summary", False),
+        ("revise", "inspect_coverage", False),
+        ("revise", "submit_findings", False),
+        ("revise", "submit_plan", True),
+        ("revise", "declare_limitation", True),
+        ("needs_evidence", "inspect_coverage", True),
+        ("needs_evidence", "assess_case", True),
+        ("needs_evidence", "burned_area_summary", False),
+        ("needs_evidence", "submit_area_findings", False),
+        ("needs_evidence", "declare_limitation", True),
+    ],
+)
+def test_plan_policy_table(
+    workspace: Workspace, tmp_path: Path, verdict: Verdict, tool: str, allowed: bool
+) -> None:
+    step = _step(workspace, tmp_path)
+    step.reviews.append(_report(verdict))
+    assert (step.refusal(tool) is None) is allowed
+
+
+def test_a_rejected_plan_blocks_every_tool_but_the_limitation(
+    workspace: Workspace, tmp_path: Path
+) -> None:
+    step = _step(workspace, tmp_path)
+    step.reviews += [_report("revise"), _report("revise")]
+    for tool in ("burned_area_summary", "inspect_coverage", "submit_findings", "submit_plan"):
+        assert step.refusal(tool) is not None
+    assert step.refusal("declare_limitation") is None
+
+
+def test_no_approval_decision_for_a_plan_that_is_not_accepted(
+    workspace: Workspace, tmp_path: Path
+) -> None:
+    """A defective plan's download request is deferred: no gate event, no authorization."""
+    step = _step(workspace, tmp_path)
+    reply = step.handle(_wind_proposal())
+    assert reply["verdict"] == "revise"
+    assert reply["approvals"] == []
+    assert "approvals_deferred" in reply
+    events = [r["event"] for r in step.trace.records()]
+    assert "approval_requested" not in events and "approval_resolved" not in events
+
+
+def _step(workspace: Workspace, tmp_path: Path) -> PlanStep:
+    assert workspace.cases is not None
+    return PlanStep(
+        cases=workspace.cases,
+        registry=shared_registry(),
+        approvals=load_approvals(ROOT / "config" / "approvals"),
+        trace=RunTrace(tmp_path / "trace.jsonl"),
+        task_id="policy-test",
+        question="How much burned?",
+    )
+
+
+def _report(verdict: Verdict) -> CriticReport:
+    """A real critic report with only its verdict replaced, to drive the policy table."""
+    return review(raw("uttarakhand-2024-missing-data")).model_copy(update={"verdict": verdict})
