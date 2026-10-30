@@ -16,6 +16,7 @@ import yaml
 
 from earthlab.events.adapter import RunEvents
 from earthlab.events.contract import (
+    EXPERIMENTAL_ROLES,
     IMPLEMENTED_ROLES,
     PLANNED_ROLES,
     ROLE_LABELS,
@@ -93,13 +94,20 @@ def _cards(run: RunEvents | None, error: str | None) -> None:
 def _topology() -> None:
     with common.panel("Role topology", "implemented", "Planned roles are disabled."):
         for role in ROLE_ORDER:
-            state = "current" if role in IMPLEMENTED_ROLES else "planned"
+            state = (
+                "current"
+                if role in IMPLEMENTED_ROLES
+                else "experimental, scripted-client tests only"
+                if role in EXPERIMENTAL_ROLES
+                else "planned"
+            )
             st.write(f"**{ROLE_LABELS[role]}** · {state} · {role_kind(role)}")
             if role in PLANNED_ROLES:
                 st.button(f"Open {role.replace('_', ' ')} console", disabled=True, key=role)
         st.caption(
-            "Only the Muse investigator and the deterministic verification path are "
-            "implemented. Tools and the verifier are code, never agent peers."
+            "The Muse investigator and the deterministic verification path are implemented. "
+            "The product manager to engineer workflow is experimental: no live run is "
+            "recorded yet. Tools and the verifier are code, never agent peers."
         )
 
 
