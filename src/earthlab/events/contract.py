@@ -45,6 +45,8 @@ EventType = Literal[
     "claim_verified",
     "answer_submitted",
     "revision_proposed",
+    "plan_submitted",
+    "plan_reviewed",
     "approval_requested",
     "approval_resolved",
     "error",

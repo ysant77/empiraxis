@@ -109,6 +109,7 @@ def agent_outcome(
     budget: Budget,
     guard: LlamaGuard | None,
     reasoning: str = "low",
+    plan_review: bool = False,
 ) -> Outcome:
     result = investigate(
         scenario.question,
@@ -118,6 +119,7 @@ def agent_outcome(
         budget=budget,
         reasoning=reasoning,
         guard=guard,
+        plan_review=plan_review,
     )
     return Outcome(
         status=result.status.value,
@@ -134,7 +136,11 @@ def agent_outcome(
         **trace_counts(run_dir),
         guard_blocks=sum(not d.allowed for d in result.safety),
         cost_usd=result.cost_usd,
-        detail={"run_dir": str(run_dir), "stop_reason": result.stop_reason},
+        detail={
+            "run_dir": str(run_dir),
+            "stop_reason": result.stop_reason,
+            "plan_verdicts": [r.verdict for r in result.plan_reviews],
+        },
     )
 
 
@@ -148,6 +154,7 @@ def _guarded_outcome(
     budget: Budget,
     guard: LlamaGuard | None,
     reasoning: str,
+    plan_review: bool = False,
 ) -> Outcome:
     """One arm on one scenario. An unexpected exception becomes an 'error' outcome, which
     scores as a failure, so a crash never removes a row from the denominator. The bench
@@ -160,7 +167,9 @@ def _guarded_outcome(
             assert client is not None
             run_dir = out_dir / "runs" / f"{scenario.id}-r{repeat}"
             run_dir.mkdir(parents=True, exist_ok=True)
-            outcome = agent_outcome(scenario, client, workspace, run_dir, budget, guard, reasoning)
+            outcome = agent_outcome(
+                scenario, client, workspace, run_dir, budget, guard, reasoning, plan_review
+            )
     except Exception as exc:  # recorded as a failed row, never hidden
         error = f"{type(exc).__name__}: {exc}"
         outcome = Outcome(status="error", seconds=0.0, cost_usd=None, detail={"error": error})
@@ -194,13 +203,14 @@ def run_bench(
     scenario_file: dict[str, Any] | None = None,
     reasoning: str = "low",
     before_rows: Callable[[dict[str, Any]], None] | None = None,
+    plan_review: bool = False,
 ) -> dict[str, Any]:
     """Score ready scenarios only; blocked ones are reported. before_rows can refuse a run."""
     _check_arms(arms, client)
     budget = budget or Budget()
     out_dir.mkdir(parents=True, exist_ok=True)
     meta = run_metadata(repo, workspace, client, budget, scenario_file, reasoning, guard)
-    meta |= {"arms": arms, "repeats": repeats}
+    meta |= {"arms": arms, "repeats": repeats, "plan_review": plan_review}
     if scenario_file and scenario_file["heldout"]:
         check_official(meta)
     if before_rows is not None:
@@ -211,9 +221,8 @@ def run_bench(
         for repeat in range(repeats):
             for scenario in ready:
                 for arm in arms:
-                    outcome = _guarded_outcome(
-                        arm, scenario, repeat, workspace, out_dir, client, budget, guard, reasoning
-                    )
+                    ctx = (workspace, out_dir, client, budget, guard, reasoning, plan_review)
+                    outcome = _guarded_outcome(arm, scenario, repeat, *ctx)
                     result = score(scenario, arm, repeat, outcome)
                     rows.append((scenario, result, outcome))
                     _write_row(log, result, outcome, meta)

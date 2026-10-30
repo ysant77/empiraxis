@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import secrets
 from collections.abc import Callable
 from dataclasses import dataclass, replace
@@ -10,17 +11,20 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from earthlab.acquire.gate import load_approvals
 from earthlab.agent.area_findings import AreaLedger, submit_area_findings_spec
 from earthlab.agent.budget import Budget
 from earthlab.agent.findings import FindingsLedger, submit_findings_spec
 from earthlab.agent.limitations import LimitationLog, declare_limitation_spec
 from earthlab.agent.loop import Investigation, Investigator, RunStatus
+from earthlab.agent.plan_step import PlanStep
 from earthlab.cases.tools import CaseLibrary, assess_case_spec
 from earthlab.contracts import SourceSnapshot
 from earthlab.data.nea_pm25 import Pm25Dataset, load_pm25
 from earthlab.data.snapshot import open_snapshot
 from earthlab.llm.client import ChatClient
 from earthlab.metrics import EarthlabMetrics
+from earthlab.planning.registry import load_registry
 from earthlab.report.evidence import collect_evidence
 from earthlab.safety.gate import REFUSAL, SafetyDecision, SafetyGate
 from earthlab.safety.llama_guard import LlamaGuard
@@ -32,6 +36,7 @@ from earthlab.verify.recompute import IndependentSource
 from earthlab.verify.verifier import Verifier
 
 SOURCE_LABEL = "nea-pm25"
+APPROVALS_DIR = Path("config") / "approvals"
 
 
 @dataclass(frozen=True)
@@ -80,6 +85,22 @@ def build_registry(
     return registry
 
 
+def plan_step_for(workspace: Workspace, trace: RunTrace, run_dir: Path) -> PlanStep | None:
+    """The plan step for a run with registered cases; None when there are no cases."""
+    if workspace.cases is None:
+        return None
+    root = workspace.cases.root
+    folder = root / APPROVALS_DIR
+    task_id = re.sub(r"[^a-z0-9._-]", "-", run_dir.name.lower()).lstrip("-._") or "run"
+    return PlanStep(
+        cases=workspace.cases,
+        registry=load_registry(root),
+        approvals=load_approvals(folder) if folder.is_dir() else [],
+        trace=trace,
+        task_id=task_id,
+    )
+
+
 def new_run_dir(root: Path) -> Path:
     stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     path = root / f"{stamp}-{secrets.token_hex(3)}"
@@ -98,15 +119,22 @@ def investigate(
     reasoning: str = "medium",
     listener: Callable[[dict[str, Any]], None] | None = None,
     guard: LlamaGuard | None = None,
+    plan_review: bool = False,
 ) -> Investigation:
-    """Gate the question, run the agent, then gate the final answer before saving."""
+    """Gate the question, run the agent, then gate the final answer before saving.
+
+    With plan_review, the model must submit a plan that the deterministic critic reviews.
+    """
     ledger = FindingsLedger()
     limitations = LimitationLog()
     area_ledger = AreaLedger()
     registry = build_registry(workspace, ledger, limitations, area_ledger)
+    trace = RunTrace(run_dir / "trace.jsonl", listener)
+    plan_step = plan_step_for(workspace, trace, run_dir) if plan_review else None
+    if plan_step is not None:
+        registry.register(plan_step.spec())
     metrics = metrics or EarthlabMetrics(tool_names=set(registry.names()))
     metrics.record_qa(SOURCE_LABEL, workspace.dataset.issue_counts())
-    trace = RunTrace(run_dir / "trace.jsonl", listener)
     trace.append("source", "runtime", **workspace.snapshot.citation())
     gate = SafetyGate(guard, metrics, trace)
     asked = gate.check_question(question)
@@ -124,6 +152,7 @@ def investigate(
             answer_gate=gate.check_answer,
             limitations=limitations,
             area_ledger=area_ledger,
+            plan_step=plan_step,
         )
         result = investigator.run(question)
         result = replace(result, safety=(asked, *result.safety))
@@ -198,6 +227,7 @@ def result_payload(
         ],
         "rounds": [[r.model_dump(mode="json") for r in rnd] for rnd in result.ledger.rounds],
         "evidence": collect_evidence(cases, result.area_ledger),
+        "plan_reviews": [r.model_dump(mode="json") for r in result.plan_reviews],
     }
 
 

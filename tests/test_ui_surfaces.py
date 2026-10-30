@@ -100,7 +100,7 @@ def test_unknown_role_in_a_listed_run_is_not_displayed(
 ) -> None:
     root = tmp_path / "replay"
     shutil.copytree(REPLAY, root)
-    RunTrace(root / "sb05-september" / "trace.jsonl").append("message", "scientific_critic")
+    RunTrace(root / "sb05-september" / "trace.jsonl").append("message", "product_manager")
     monkeypatch.setattr(common, "REPLAY_DIR", root)
     app = open_view("control")
     assert "Integrity check failed" in app.error[0].value  # the manifest digest no longer matches
@@ -132,7 +132,8 @@ def test_control_room_shows_no_planned_role_as_an_actor(offline: None) -> None:
 def test_role_kind_never_calls_code_an_agent() -> None:
     assert role_kind("tool") == "code" and role_kind("verifier") == "code"
     assert role_kind("safety_gate") == "code" and role_kind("human_director") == "human"
-    assert role_kind("scientific_critic") == "planned role, not running"
+    assert role_kind("product_manager") == "planned role, not running"
+    assert role_kind("scientific_critic") == "code"
 
 
 def test_replay_has_no_live_or_unapproved_interactive_controls(offline: None) -> None:
