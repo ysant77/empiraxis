@@ -112,7 +112,9 @@ def test_no_sealed_content_or_keys_in_public_views(offline: None) -> None:
         for marker in ("HO-", "sk-", "api_key", "<think>"):
             assert marker not in text, (view, marker)
     lab = page_text(open_view("lab"))
-    assert "running, results not yet archived" in lab
+    assert "running, results not yet archived" not in lab
+    assert "archived; measured at an older code revision" in lab
+    assert "Typed plan critic is in a separate branch" not in lab
     assert "development, visible questions" in lab
 
 
