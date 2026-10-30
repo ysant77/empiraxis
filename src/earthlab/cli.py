@@ -31,7 +31,7 @@ from earthlab.llm.providers import load_providers
 from earthlab.llm.raw import RawCompletionClient
 from earthlab.metrics import EarthlabMetrics
 from earthlab.report.write import DEFAULT_WINDOW, write_report
-from earthlab.runtime import investigate, new_run_dir, open_workspace
+from earthlab.runtime import RunOptions, investigate, new_run_dir, open_workspace
 from earthlab.safety.llama_guard import LlamaGuard
 from earthlab.tools.burned_area_tools import case_report
 from earthlab.verify.claims import Claim
@@ -117,7 +117,7 @@ def cmd_investigate(args: argparse.Namespace) -> int:
         reasoning=args.reasoning,
         listener=_print_event,
         guard=build_guard(args.providers, args.guard),
-        plan_review=args.plan_review,
+        options=RunOptions(args.plan_review, args.render_fallback),
     )
     report = write_report(run_dir, args.data_dir)
     for finding_id, r in result.ledger.latest_by_id().items():
@@ -278,7 +278,7 @@ def cmd_bench(args: argparse.Namespace) -> int:
         scenario_file=scenario_file,
         reasoning=args.reasoning,
         on_score=_print_score,
-        plan_review=args.plan_review and lock is None,
+        options=RunOptions() if lock else RunOptions(args.plan_review, args.render_fallback),
     )
     print(json.dumps({k: v for k, v in summary.items() if k != "meta"}, indent=2))
     print(f"results: {out_dir}")
@@ -347,6 +347,12 @@ def _add_plan_flag(parser: Any) -> None:
         dest="plan_review",
         action="store_false",
         help="skip the typed plan and critic step (the agent arm before plan review)",
+    )
+    parser.add_argument(
+        "--no-rendered-fallback",
+        dest="render_fallback",
+        action="store_false",
+        help="keep a final text that fails the answer audit as answer_unverified",
     )
 
 

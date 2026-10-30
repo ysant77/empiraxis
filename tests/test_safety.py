@@ -10,7 +10,7 @@ from fake_client import ScriptedClient, call, say
 from earthlab.agent.loop import RunStatus
 from earthlab.llm.types import ProviderError, ProviderErrorKind
 from earthlab.metrics import EarthlabMetrics
-from earthlab.runtime import Workspace, investigate, new_run_dir, open_workspace
+from earthlab.runtime import RunOptions, Workspace, investigate, new_run_dir, open_workspace
 from earthlab.safety.gate import REFUSAL, WITHHELD
 from earthlab.safety.llama_guard import LlamaGuard, build_prompt, parse_verdict
 from earthlab.safety.scope import answer_out_of_scope, question_out_of_scope
@@ -148,6 +148,29 @@ def test_guard_failure_fails_closed(workspace: Workspace, tmp_path: Path) -> Non
 def test_unsafe_final_answer_is_withheld_but_claims_stand(
     workspace: Workspace, tmp_path: Path
 ) -> None:
+    """A text that passes the answer audit but that the guard flags is withheld."""
+    planner = ScriptedClient(
+        [call("submit_findings", claims=[CLAIM]), say("West had the highest value (R1.1).")]
+    )
+    result = investigate(
+        "Which region peaked?",
+        planner,
+        workspace,
+        new_run_dir(tmp_path),
+        guard=guard("safe", "unsafe\nS2"),
+    )
+    assert result.status == RunStatus.ANSWER_UNVERIFIED and result.answer == WITHHELD
+    assert "safety check withheld the text" in result.answer_issues[-1]
+    question_check, answer_check = result.safety
+    assert question_check.allowed and not answer_check.allowed
+    assert answer_check.blocked_by == "llama_guard"
+    assert len(result.ledger.supported()) == 1
+
+
+def test_out_of_scope_text_is_replaced_before_the_answer_gate(
+    workspace: Workspace, tmp_path: Path
+) -> None:
+    """Advice in the text fails the audit twice, so only verified findings are shown."""
     planner = ScriptedClient(
         [
             call("submit_findings", claims=[CLAIM]),
@@ -161,13 +184,10 @@ def test_unsafe_final_answer_is_withheld_but_claims_stand(
         workspace,
         new_run_dir(tmp_path),
         guard=guard("safe", "safe"),
+        options=RunOptions(render_fallback=True),
     )
-    assert result.status == RunStatus.ANSWER_UNVERIFIED and result.answer == WITHHELD
-    assert "safety check withheld the text" in result.answer_issues[-1]
-    question_check, answer_check = result.safety
-    assert question_check.allowed and not answer_check.allowed
-    assert answer_check.blocked_by == "scope_rules"
-    assert len(result.ledger.supported()) == 1
+    assert result.status == RunStatus.VERIFIED and result.answer_source == "rendered"
+    assert "indoors" not in result.answer
 
 
 def test_clean_run_passes_both_gates(workspace: Workspace, tmp_path: Path) -> None:
