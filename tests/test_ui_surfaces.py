@@ -134,7 +134,8 @@ def test_control_room_shows_no_planned_role_as_an_actor(offline: None) -> None:
 def test_role_kind_never_calls_code_an_agent() -> None:
     assert role_kind("tool") == "code" and role_kind("verifier") == "code"
     assert role_kind("safety_gate") == "code" and role_kind("human_director") == "human"
-    assert role_kind("product_manager") == "planned role, not running"
+    assert role_kind("product_manager") == "model agent"
+    assert role_kind("implementor") == "planned role, not running"
     assert role_kind("scientific_critic") == "code"
 
 

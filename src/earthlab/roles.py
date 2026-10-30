@@ -1,8 +1,10 @@
 """The one role list for plans, critic reports, trace events and the UI.
 
-Only the orchestrator (the Muse investigator) is played by a language model. The verifier,
-safety gate, tools and runtime are code. Planned roles are listed so that records stay
-compatible and a view can show them as planned; no code runs them as separate agents.
+The orchestrator (the single Muse investigator) is a language-model role. The product
+manager and geospatial engineer are experimental model roles: the workflow in
+earthlab.workflow runs them, tested with a scripted client, with no live run recorded yet.
+The verifier, safety gate, tools and runtime are code. Planned roles are listed so that
+records stay compatible and a view can show them as planned; no code runs them.
 """
 
 from __future__ import annotations
@@ -36,10 +38,11 @@ IMPLEMENTED_ROLES: frozenset[RoleId] = frozenset(
         "system",
     }
 )
-PLANNED_ROLES: frozenset[RoleId] = frozenset(
-    {"product_manager", "geospatial_engineer", "implementor", "qa_reviewer"}
+EXPERIMENTAL_ROLES: frozenset[RoleId] = frozenset({"product_manager", "geospatial_engineer"})
+PLANNED_ROLES: frozenset[RoleId] = frozenset({"implementor", "qa_reviewer"})
+MODEL_AGENT_ROLES: frozenset[RoleId] = frozenset(
+    {"orchestrator", "product_manager", "geospatial_engineer"}
 )
-MODEL_AGENT_ROLES: frozenset[RoleId] = frozenset({"orchestrator"})
 # Roles that may write an investigation plan. Code components and the critic never do;
 # the product manager only proposes a question.
 PLAN_AUTHOR_ROLES: frozenset[RoleId] = frozenset(
@@ -47,9 +50,9 @@ PLAN_AUTHOR_ROLES: frozenset[RoleId] = frozenset(
 )
 ROLE_LABELS: dict[str, str] = {
     "human_director": "Human director",
-    "product_manager": "Product manager (research concierge)",
+    "product_manager": "Product manager (Meta model; structures the request, no tools)",
     "orchestrator": "Muse research orchestrator (investigator)",
-    "geospatial_engineer": "Geospatial engineer",
+    "geospatial_engineer": "Geospatial engineer (Muse; plan-reviewed investigator on one case)",
     "implementor": "Implementation worker (Meta or non-Meta model; proposes patches only)",
     "qa_reviewer": "Model reviewer (findings only; cannot override tests or the verifier)",
     "scientific_critic": "Scientific critic (deterministic plan rules, code, not a model)",
