@@ -39,6 +39,7 @@ class _State:
     visibility: Visibility
     heldout: bool
     last_model_event: str | None = None
+    agent_role: ActorRole | None = None  # set while a workflow role is running
     events: list[EventV1] = field(default_factory=list)
 
 
@@ -51,6 +52,11 @@ class RunEvents:
     heldout: bool
     status: str | None
     events: list[EventV1]
+
+
+def _agent(state: _State) -> ActorRole:
+    """The model role acting now: a workflow role, else the single Muse investigator."""
+    return state.agent_role or "orchestrator"
 
 
 def _clip(text: str) -> str:
@@ -100,6 +106,24 @@ def _source(state: _State, entry: dict[str, Any]) -> None:
 
 def _start(state: _State, entry: dict[str, Any]) -> None:
     data = entry["data"]
+    if state.agent_role is None:
+        _question(state, entry)
+    budget = data.get("budget", {})
+    who = "Engineer" if state.agent_role == "geospatial_engineer" else "Investigator"
+    _emit(
+        state,
+        entry,
+        _agent(state),
+        "run_started",
+        "executed",
+        f"{who} started on {data.get('provider')} / {data.get('model')}; budget "
+        f"{budget.get('max_turns')} turns, {budget.get('max_tool_calls')} tool calls, "
+        f"{budget.get('max_usd')} USD.",
+    )
+
+
+def _question(state: _State, entry: dict[str, Any]) -> None:
+    data = entry["data"]
     question = "Held-out question (text withheld)." if state.heldout else data.get("question", "")
     _emit(
         state,
@@ -108,19 +132,8 @@ def _start(state: _State, entry: dict[str, Any]) -> None:
         "task_proposed",
         "proposed",
         f"Research question: {question}",
-        receiver_role="orchestrator",
+        receiver_role=_agent(state),
         suffix=".q",
-    )
-    budget = data.get("budget", {})
-    _emit(
-        state,
-        entry,
-        "orchestrator",
-        "run_started",
-        "executed",
-        f"Investigator started on {data.get('provider')} / {data.get('model')}; budget "
-        f"{budget.get('max_turns')} turns, {budget.get('max_tool_calls')} tool calls, "
-        f"{budget.get('max_usd')} USD.",
     )
 
 
@@ -140,6 +153,7 @@ def _safety(state: _State, entry: dict[str, Any]) -> None:
 
 def _model_turn(state: _State, entry: dict[str, Any]) -> None:
     data = entry["data"]
+    actor: ActorRole = data.get("role") or _agent(state)
     names = [str(c.get("name")) for c in data.get("tool_calls", [])]
     seconds = data.get("wall_seconds")
     elapsed = None if seconds is None else round(float(seconds) * 1000)
@@ -147,18 +161,18 @@ def _model_turn(state: _State, entry: dict[str, Any]) -> None:
         event = _emit(
             state,
             entry,
-            "orchestrator",
+            actor,
             "tool_requested",
             "proposed",
             f"Turn {data.get('turn')}: requested {', '.join(names)}.",
-            receiver_role="tool",
+            receiver_role="system" if actor == "product_manager" else "tool",
             elapsed_ms=elapsed,
         )
     else:
         event = _emit(
             state,
             entry,
-            "orchestrator",
+            actor,
             "answer_submitted",
             "proposed",
             f"Turn {data.get('turn')}: drafted the final answer.",
@@ -197,7 +211,7 @@ def _tool_result(state: _State, entry: dict[str, Any]) -> None:
         "tool_completed",
         status,
         f"{name}({_arguments(data.get('arguments'))}) -> {outcome}{detail}",
-        receiver_role="orchestrator",
+        receiver_role=_agent(state),
         parent_event_id=state.last_model_event,
         evidence_refs=_tool_refs(payload),
     )
@@ -215,7 +229,7 @@ def _verdicts(state: _State, entry: dict[str, Any], data: dict[str, Any], parent
         "claim_verified",
         "approved" if data.get("all_supported") else "rejected",
         f"Round {data.get('round')}: " + ("; ".join(parts) or "no claims"),
-        receiver_role="orchestrator",
+        receiver_role=_agent(state),
         parent_event_id=parent,
         suffix=".v",
     )
@@ -230,7 +244,7 @@ def _skipped(state: _State, entry: dict[str, Any]) -> None:
         "tool_completed",
         "blocked",
         f"{data.get('name')} not run: {data.get('reason')}",
-        receiver_role="orchestrator",
+        receiver_role=_agent(state),
         parent_event_id=state.last_model_event,
     )
 
@@ -242,7 +256,8 @@ def _model_error(state: _State, entry: dict[str, Any]) -> None:
         tail = "; retrying" if data.get("retrying") else ""
         detail = f" (attempt {data['attempt']} of {data.get('max_attempts')}{tail})"
     summary = f"Model call failed: {data.get('kind')}{detail}."
-    _emit(state, entry, "orchestrator", "error", "failed", summary)
+    actor = data.get("role") or _agent(state)
+    _emit(state, entry, actor, "error", "failed", summary)
 
 
 def _retry_skipped(state: _State, entry: dict[str, Any]) -> None:
@@ -262,7 +277,7 @@ def _audit(state: _State, entry: dict[str, Any]) -> None:
         "claim_verified",
         status,
         f"Answer audit: {issues} issue(s) in the final text.",
-        receiver_role="orchestrator",
+        receiver_role=_agent(state),
     )
 
 
@@ -275,7 +290,7 @@ def _revision(state: _State, entry: dict[str, Any]) -> None:
         "revision_proposed",
         "pending",
         f"Requested one answer revision for {count} issue(s).",
-        receiver_role="orchestrator",
+        receiver_role=_agent(state),
     )
 
 
@@ -286,7 +301,7 @@ def _plan_submitted(state: _State, entry: dict[str, Any]) -> None:
     _emit(
         state,
         entry,
-        "orchestrator",
+        _agent(state),
         "plan_submitted",
         "proposed",
         f"Plan revision {data.get('plan_revision')}: intent {plan.get('research_intent')}, "
@@ -319,7 +334,7 @@ def _plan_reviewed(state: _State, entry: dict[str, Any]) -> None:
         _REVIEW_STATUS.get(str(data.get("verdict")), "failed"),
         f"Plan review: {data.get('verdict')}; {errors} error(s) of {len(findings)} "
         f"finding(s); abstentions: {abstentions}.",
-        receiver_role="orchestrator",
+        receiver_role=_agent(state),
         plan_revision=data.get("plan_revision"),
         evidence_refs=[f"sha256:{data.get('plan_sha256')}"],
     )
@@ -386,18 +401,157 @@ def _forced_abstention(state: _State, entry: dict[str, Any]) -> None:
 def _finish(state: _State, entry: dict[str, Any]) -> None:
     data = entry["data"]
     status = str(data.get("status"))
-    done: EventStatus = "failed" if status in {"error", "refused"} else "completed"
+    done: EventStatus = (
+        "failed" if status in {"error", "refused", "failed", "provider_error"} else "completed"
+    )
     _emit(
         state,
         entry,
         "system",
         "run_completed",
         done,
-        f"Run finished: {status} ({data.get('reason')}); {data.get('turns', 0)} model turns.",
+        f"{'Engineer task' if state.agent_role else 'Run'} finished: {status} "
+        f"({data.get('reason')}); {data.get('turns', 0)} model turns.",
+    )
+
+
+def _workflow_start(state: _State, entry: dict[str, Any]) -> None:
+    data = entry["data"]
+    _question(state, entry)
+    pm, engineer = data.get("pm") or {}, data.get("engineer") or {}
+    _emit(
+        state,
+        entry,
+        "system",
+        "run_started",
+        "executed",
+        f"Workflow started ({data.get('topology')} PM topology): product manager "
+        f"{pm.get('provider')} / {pm.get('model')}, engineer {engineer.get('provider')} / "
+        f"{engineer.get('model')}. The code controller owns every transition.",
+        task_id=data.get("task_id"),
+    )
+
+
+_ROLES: dict[str, ActorRole] = {
+    "product_manager": "product_manager",
+    "geospatial_engineer": "geospatial_engineer",
+}
+
+
+def _role_invocation(state: _State, entry: dict[str, Any]) -> None:
+    data = entry["data"]
+    role = _ROLES.get(str(data.get("role")))
+    if role is None:
+        raise UnknownEventError(f"unknown workflow role {data.get('role')!r}")
+    started = data.get("phase") == "started"
+    state.agent_role = role if started else None
+    if started:
+        _emit(
+            state,
+            entry,
+            "system",
+            "role_invocation_started",
+            "executed",
+            f"Invoked {role.replace('_', ' ')} for task {data.get('task_id')}.",
+            receiver_role=role,
+            task_id=data.get("task_id"),
+        )
+        return
+    ok = data.get("status") not in {"failed", "provider_error"}
+    _emit(
+        state,
+        entry,
+        role,
+        "role_invocation_finished",
+        "completed" if ok else "failed",
+        f"{role.replace('_', ' ').capitalize()} finished: {data.get('status')}; "
+        f"{data.get('model_calls')} model call(s).",
+        receiver_role="system",
+        task_id=data.get("task_id"),
+    )
+
+
+def _brief_reviewed(state: _State, entry: dict[str, Any]) -> None:
+    data = entry["data"]
+    valid = bool(data.get("valid"))
+    detail = f"route {data.get('route')}" if valid else "; ".join(data.get("issues", []))
+    digest = data.get("brief_sha256")
+    _emit(
+        state,
+        entry,
+        "system",
+        "brief_validated",
+        "approved" if valid else "rejected",
+        f"Brief {'accepted' if valid else 'rejected'} by code checks: {detail}.",
+        receiver_role="product_manager",
+        task_id=data.get("task_id"),
+        evidence_refs=[f"sha256:{digest}"] if digest else [],
+    )
+
+
+def _task_handoff(state: _State, entry: dict[str, Any]) -> None:
+    data = entry["data"]
+    task = data.get("task") if isinstance(data.get("task"), dict) else {}
+    _emit(
+        state,
+        entry,
+        "system",
+        "task_handoff_created",
+        "approved",
+        f"Engineering task {data.get('task_id')} for case {task.get('case_id')}: "
+        f"{len(task.get('allowed_dataset_ids', []))} allowed dataset(s), method "
+        f"{', '.join(task.get('allowed_method_ids', []))}; read-only.",
+        receiver_role="geospatial_engineer",
+        task_id=data.get("task_id"),
+        evidence_refs=[f"sha256:{data.get('brief_sha256')}", f"sha256:{data.get('task_sha256')}"],
+    )
+
+
+def _result_delivered(state: _State, entry: dict[str, Any]) -> None:
+    data = entry["data"]
+    reply = data.get("reply") if isinstance(data.get("reply"), dict) else {}
+    found = ", ".join(reply.get("supported_finding_ids", [])) or "none"
+    _emit(
+        state,
+        entry,
+        "system",
+        "verified_result_delivered",
+        "completed",
+        f"Engineer result {reply.get('status')} sent to the product manager; verified "
+        f"findings: {found}.",
+        receiver_role="product_manager",
+        task_id=data.get("task_id"),
+        evidence_refs=[f"sha256:{data.get('reply_sha256')}"],
+    )
+
+
+def _pm_report(state: _State, entry: dict[str, Any]) -> None:
+    data = entry["data"]
+    passed = bool(data.get("passed"))
+    source = data.get("source")
+    text = (
+        "passed the answer audit"
+        if passed
+        else f"failed ({len(data.get('issues', []))} issue(s)); shown: {source} answer"
+    )
+    _emit(
+        state,
+        entry,
+        "product_manager",
+        "pm_report_issued",
+        "approved" if passed else "rejected",
+        f"Product manager report {text}.",
+        receiver_role="human_director",
     )
 
 
 HANDLERS = {
+    ("workflow_start", "runtime"): _workflow_start,
+    ("role_invocation", "runtime"): _role_invocation,
+    ("brief_reviewed", "runtime"): _brief_reviewed,
+    ("task_handoff", "runtime"): _task_handoff,
+    ("result_delivered", "runtime"): _result_delivered,
+    ("pm_report", "runtime"): _pm_report,
     ("source", "runtime"): _source,
     ("start", "runtime"): _start,
     ("safety_check", "safety"): _safety,

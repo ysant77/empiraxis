@@ -37,6 +37,7 @@ from earthlab.safety.llama_guard import LlamaGuard
 from earthlab.tools.burned_area_tools import case_report
 from earthlab.verify.claims import Claim
 from earthlab.verify.replay import replay_run
+from earthlab.workflow.run import run_workflow
 
 
 def _print_event(record: dict[str, Any]) -> None:
@@ -129,6 +130,33 @@ def cmd_investigate(args: argparse.Namespace) -> int:
     for issue in result.answer_issues:
         print(f"answer not verified: {issue}")
     return exit_code(result.status.value)
+
+
+def cmd_workflow(args: argparse.Namespace) -> int:
+    """Product manager -> Geospatial Engineer hand-off; one provider serves both roles."""
+    config = load_providers(args.providers)[args.provider]
+    client = build_client(config)
+    run_dir = new_run_dir(args.runs_dir)
+    print(f"run: {run_dir}\nprovider: {config.name} ({config.model}) for PM and engineer")
+    run = run_workflow(
+        args.question,
+        client,
+        open_workspace(args.data_dir),
+        run_dir,
+        budget=Budget(max_turns=args.max_turns, max_seconds=args.max_seconds),
+        reasoning=args.reasoning,
+        listener=_print_event,
+        guard=build_guard(args.providers, args.guard),
+        options=_run_options(args),
+    )
+    if run.brief is not None:
+        print(f"brief: route {run.brief.brief.route}, case {run.brief.brief.case_id}")
+    for question in run.manager.followup_questions:
+        print(f"needs input: {question}")
+    if run.engineer is not None:
+        print(f"report: {write_report(run_dir, args.data_dir)}")
+    print(f"\n{run.manager.report_text}\n\nstatus: {run.status} ({run.manager.report_source})")
+    return exit_code(run.status)
 
 
 def cmd_replay(args: argparse.Namespace) -> int:
@@ -432,6 +460,22 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _add_plan_flag(inv)
     inv.set_defaults(func=cmd_investigate)
+
+    flow = sub.add_parser(
+        "workflow", help="experimental: product manager -> geospatial engineer hand-off"
+    )
+    flow.add_argument("question")
+    flow.add_argument("--provider", default="local-glimmer")
+    flow.add_argument("--providers", type=Path, default=Path("config/providers.yaml"))
+    flow.add_argument("--runs-dir", type=Path, default=Path("runs"))
+    flow.add_argument("--reasoning", choices=["low", "medium", "high"], default="low")
+    flow.add_argument("--max-turns", type=int, default=12)
+    flow.add_argument("--max-seconds", type=float, default=3600.0)
+    flow.add_argument(
+        "--guard", default="local-llama-guard", help="safety model provider, or 'none'"
+    )
+    _add_plan_flag(flow)
+    flow.set_defaults(func=cmd_workflow)
 
     _add_eval_parser(sub)
     _add_bench_parser(sub)

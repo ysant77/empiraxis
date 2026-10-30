@@ -1,7 +1,7 @@
 """EventV1: the safe-to-display event contract. Roles come from earthlab.roles.
 
-Only roles that a recorded artifact can produce are implemented. Planned roles are listed
-so that a view can show them as planned; the adapter never emits them.
+Implemented and experimental roles can appear in recorded artifacts. Planned roles are
+listed so that a view can show them as planned; the adapter never emits them.
 """
 
 from __future__ import annotations
@@ -12,6 +12,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict
 
 from earthlab.roles import (
+    EXPERIMENTAL_ROLES,
     IMPLEMENTED_ROLES,
     MODEL_AGENT_ROLES,
     PLANNED_ROLES,
@@ -21,6 +22,7 @@ from earthlab.roles import (
 )
 
 __all__ = [
+    "EXPERIMENTAL_ROLES",
     "IMPLEMENTED_ROLES",
     "MODEL_AGENT_ROLES",
     "PLANNED_ROLES",
@@ -51,6 +53,12 @@ EventType = Literal[
     "approval_resolved",
     "error",
     "run_completed",
+    "role_invocation_started",
+    "role_invocation_finished",
+    "brief_validated",
+    "task_handoff_created",
+    "verified_result_delivered",
+    "pm_report_issued",
 ]
 EventStatus = Literal[
     "proposed", "pending", "approved", "rejected", "executed", "blocked", "failed", "completed"

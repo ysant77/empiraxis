@@ -53,8 +53,12 @@ class RunTrace:
         self.path = path
         self._listener = listener
         path.parent.mkdir(parents=True, exist_ok=True)
+        self.resync()
+
+    def resync(self) -> None:
+        """Continue from the file's last entry, after another writer appended to it."""
         self._next_seq, self._head = 0, ROOT_DIGEST
-        for entry in _read_entries(path):
+        for entry in _read_entries(self.path):
             self._next_seq, self._head = entry["seq"] + 1, entry["hash"]
 
     def records(self) -> Iterator[dict[str, Any]]:
