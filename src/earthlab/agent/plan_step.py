@@ -1,9 +1,20 @@
 """The plan step: Muse submits a typed plan, the deterministic critic reviews it, once more.
 
 Order: submit_plan -> review_plan -> at most one revision -> approval gate for each
-requested action -> evidence tools -> verifier. Until a plan is reviewed, only submit_plan
-and declare_limitation run. A plan still rejected after its revision cannot submit claims.
-The critic reviews the plan; the verifier alone decides claims.
+requested action -> evidence tools -> verifier. The verdict of the latest review decides
+which tools may run (see `refusal`):
+
+| latest verdict          | submit_plan  | evidence tools        | claims | declare_limitation |
+| ----------------------- | ------------ | --------------------- | ------ | ------------------ |
+| no review yet           | yes          | no                    | no     | yes                |
+| revise (revision left)  | yes          | no                    | no     | yes                |
+| needs_evidence          | if left      | read-only diagnostics | no     | yes                |
+| accept / with warnings  | if left      | yes                   | yes    | yes                |
+| rejected after revision | no           | no                    | no     | yes                |
+
+Approval requests reach the gate only from an accepted plan; a defective plan's requests
+are deferred and never authorize anything. The critic reviews the plan; the verifier alone
+decides claims.
 """
 
 from __future__ import annotations
@@ -29,6 +40,9 @@ from earthlab.trace import RunTrace
 SUBMIT_PLAN_TOOL = "submit_plan"
 MAX_PLAN_SUBMISSIONS = 2  # the first plan and one revision
 CLAIM_TOOLS = frozenset({"submit_findings", "submit_area_findings"})
+# Read-only coverage and case metadata: what a needs_evidence plan may still inspect.
+DIAGNOSTIC_TOOLS = frozenset({"inspect_coverage", "assess_case"})
+ACCEPTED = frozenset({"accept", "accept_with_warnings"})
 _REASONS: dict[CheckId, ReasonCode] = {
     CheckId.FIRE_DETECTIONS_AS_BURNED_AREA: ReasonCode.HOTSPOT_NOT_AREA,
     CheckId.LST_AS_AIR_TEMPERATURE: ReasonCode.LST_NOT_AIR_TEMPERATURE,
@@ -48,10 +62,12 @@ _NEXT = {
     "accept": "The plan is accepted. Use the read-only tools, then submit claims.",
     "accept_with_warnings": "The plan is accepted with warnings. Use the read-only tools, "
     "then submit claims, and state the warnings as limits.",
-    "needs_evidence": "Evidence is missing. If the answer depends on it, call "
-    "declare_limitation with the suggested reason codes; otherwise continue.",
-    "revise": "Fix the errors and call submit_plan once more, or call declare_limitation "
-    "with the suggested reason codes if the data cannot support the question.",
+    "needs_evidence": "Evidence is missing, so claims cannot be submitted. You may check "
+    "coverage or case metadata, then revise the plan once with submit_plan, or call "
+    "declare_limitation with the suggested reason codes.",
+    "revise": "Evidence tools stay closed until a revised plan is accepted. Fix the errors "
+    "and call submit_plan once more, or call declare_limitation with the suggested reason "
+    "codes if the data cannot support the question.",
     "rejected": "The plan stays rejected, so claims cannot be submitted. Call "
     "declare_limitation with the suggested reason codes.",
 }
@@ -89,9 +105,19 @@ class PlanStep:
             )
         if not self.reviews:
             return "submit_plan first; the plan must be reviewed before any other tool"
-        if tool in CLAIM_TOOLS and self.rejected():
+        if self.rejected():
             return "the plan was rejected after its revision; call declare_limitation"
-        return None
+        verdict = self.reviews[-1].verdict
+        if verdict in ACCEPTED:
+            return None
+        if verdict == "needs_evidence" and tool in DIAGNOSTIC_TOOLS:
+            return None
+        if verdict == "needs_evidence" and tool in CLAIM_TOOLS:
+            return "plan verdict is needs_evidence; claims cannot be submitted"
+        return (
+            f"plan verdict is {verdict}; revise the plan with submit_plan "
+            "or call declare_limitation before using evidence tools"
+        )
 
     def spec(self) -> ToolSpec:
         return ToolSpec(
@@ -140,7 +166,8 @@ class PlanStep:
     def _reply(self, plan: InvestigationPlan, report: CriticReport) -> dict[str, Any]:
         left = MAX_PLAN_SUBMISSIONS - len(self.reviews)
         verdict = "rejected" if self.rejected() else report.verdict
-        return {
+        accepted = report.verdict in ACCEPTED
+        reply: dict[str, Any] = {
             "plan_revision": plan.plan_revision,
             "verdict": report.verdict,
             "findings": [
@@ -154,10 +181,16 @@ class PlanStep:
             ],
             "abstentions": list(report.abstentions),
             "suggested_reason_codes": suggested_reasons(report),
-            "approvals": self._gate(plan),
+            "approvals": self._gate(plan) if accepted else [],
             "revisions_left": left,
             "next_step": _NEXT[verdict],
         }
+        if plan.approval_requests and not accepted:
+            reply["approvals_deferred"] = (
+                f"plan verdict is {report.verdict}; approval requests are sent to the gate "
+                "only from an accepted plan"
+            )
+        return reply
 
     def _gate(self, plan: InvestigationPlan) -> list[dict[str, Any]]:
         """Send each requested action through the approval gate; the gate records it."""
