@@ -37,9 +37,10 @@ CAPABILITIES = [
     ("NEA PM2.5 historical tools", "implemented"),
     ("Kalimantan burned-area case", "implemented"),
     ("Independent verification", "implemented"),
-    ("Wind-transport analysis", "planned"),
-    ("Research critique stage", "planned"),
-    ("Product assistant role", "planned"),
+    ("Plan critique (deterministic code)", "implemented"),
+    ("Haze H1 wind-transport plausibility", "backend implemented (CLI), not in this UI"),
+    ("Product manager role", "planned"),
+    ("Implementation workers", "planned"),
 ]
 TAB_NAMES = ["Investigate", "Wildfire case", "Saved runs", "Verifier", "Data", "Challenge"]
 
@@ -68,7 +69,10 @@ def start_panel() -> None:
     with common.panel("Investigation start", "implemented", "Two datasets have pinned data."):
         label = st.radio("Dataset", list(DATASETS), horizontal=True)
         case_id = DATASETS[label]
-        st.checkbox("Wind-linked haze investigation (planned, not implemented)", disabled=True)
+        st.checkbox(
+            "Wind-transport plausibility (H1 backend exists as a CLI; not in this UI)",
+            disabled=True,
+        )
         st.selectbox("Example research question", PROMPTS[case_id])
         library = common.workspace().cases
         if library is not None and case_id in library.ids():

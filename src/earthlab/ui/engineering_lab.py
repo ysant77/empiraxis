@@ -7,6 +7,7 @@ The official held-out panel states its run status only, until the owner supplies
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import Any
 
@@ -21,7 +22,9 @@ from earthlab.ui import common
 METHOD_FILE = Path("config/methods/mcd64a1_burned_area.yaml")
 PROTOCOL_FILE = Path("evals/heldout_v1.protocol.yaml")
 LOCK_FILE = Path("evals/heldout_v1.lock.yaml")
-HELDOUT_STATUS = "running, results not yet archived"
+RESULTS_FILE = Path("evals/results/heldout-v1/summary.json")
+HELDOUT_STATUS = "archived; measured at an older code revision"
+HELDOUT_KEYS = ("runs", "passed", "false_verified", "errors", "median_seconds")
 CASE = "kalimantan-2015-burned-area"
 MONTHS = ("2015-09", "2015-10")
 PIPELINE = [
@@ -30,7 +33,9 @@ PIPELINE = [
     ("Train / validation / test split", "planned", "Chronological, gap-aware; no random split"),
     ("Deterministic baseline", "implemented", "Pre-registered MCD64A1 method; bench arm A"),
     ("Optional learned method", "planned", "Small regression or a compatible pretrained model"),
-    ("Critique and independent score", "planned", "Typed plan critic is in a separate branch"),
+    ("Plan critique", "implemented", "Deterministic plan critic, code, not a model"),
+    ("Independent score", "implemented", "Deterministic verifier recomputes every claim"),
+    ("Implementation workers", "planned", "Typed contracts only; no worker runs code"),
 ]
 BENCH_KEYS = (
     "runs",
@@ -133,16 +138,31 @@ def _dev_bench() -> None:
 
 
 def _heldout() -> None:
-    with common.panel("Official held-out benchmark", "experimental", HELDOUT_STATUS):
+    with common.panel("Official held-out benchmark", "implemented", HELDOUT_STATUS):
         protocol = yaml.safe_load(PROTOCOL_FILE.read_text(encoding="utf-8"))
         lock = yaml.safe_load(LOCK_FILE.read_text(encoding="utf-8"))
-        st.write(f"**Run status:** {HELDOUT_STATUS}.")
         st.write(
             f"Set {lock['set_id']}: {lock['questions']} sealed questions, arms "
             f"{', '.join(protocol['arms'])}, {protocol['repeats']} repeats, frozen "
             f"{protocol['frozen_at']}. Question text is never shown."
         )
-        st.caption("No held-out score is shown until the owner archives the official result.")
+        if not RESULTS_FILE.is_file():
+            st.caption(common.status_text("unavailable", "The archived summary is missing."))
+            return
+        summary = json.loads(RESULTS_FILE.read_text(encoding="utf-8"))
+        # Arm totals only: per-question rows would name sealed question IDs.
+        st.table(
+            [
+                {"arm": arm, **{k: totals.get(k) for k in HELDOUT_KEYS}}
+                for arm, totals in summary["arms"].items()
+            ]
+        )
+        revision = str(summary["meta"]["code_revision"])[:7]
+        st.caption(
+            f"Measured once at code revision {revision}. Later changes do not inherit these "
+            "counts, and the set is spent: it is not re-run to claim an improvement. "
+            f"{summary.get('caveat', '')}"
+        )
 
 
 def _experiments() -> None:
