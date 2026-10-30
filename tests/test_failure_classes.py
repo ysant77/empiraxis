@@ -24,7 +24,7 @@ from earthlab.llm.types import ProviderError, ProviderErrorKind
 from earthlab.metrics import EarthlabMetrics
 from earthlab.planning.plan import InvestigationPlan
 from earthlab.planning.roles import RoleId
-from earthlab.roles import IMPLEMENTED_ROLES, PLANNED_ROLES
+from earthlab.roles import EXPERIMENTAL_ROLES, IMPLEMENTED_ROLES, PLANNED_ROLES
 from earthlab.runtime import build_registry, investigate, new_run_dir, open_workspace
 from earthlab.trace import RunTrace
 from earthlab.ui.control_room import approval_event_rows
@@ -99,7 +99,8 @@ def test_approval_gate_writes_trace_events_the_control_room_shows(tmp_path: Path
 
 def test_one_role_list_and_one_plan_revision_type() -> None:
     assert RoleId is ActorRole
-    assert set(get_args(RoleId)) == IMPLEMENTED_ROLES | PLANNED_ROLES
+    assert set(get_args(RoleId)) == IMPLEMENTED_ROLES | EXPERIMENTAL_ROLES | PLANNED_ROLES
+    assert not EXPERIMENTAL_ROLES & (IMPLEMENTED_ROLES | PLANNED_ROLES)
     event_type = EventV1.model_fields["plan_revision"].annotation
     plan_type = InvestigationPlan.model_fields["plan_revision"].annotation
     assert plan_type is int

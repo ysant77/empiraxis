@@ -8,86 +8,39 @@ raw text and reasoning are never copied into an event.
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from earthlab.events.contract import ActorRole, EventStatus, EventType, EventV1, Visibility
+from earthlab.events.contract import ActorRole, EventStatus, Visibility
+from earthlab.events.emit import (
+    HELDOUT_MARK,
+    SUBMIT_TOOLS,
+    ResultMismatchError,
+    RunEvents,
+    State,
+    TraceMissingError,
+    UnknownEventError,
+    acting_role,
+    emit,
+    question_event,
+)
+from earthlab.events.workflow import WORKFLOW_HANDLERS
 from earthlab.trace import RunTrace
 
-SUBMIT_TOOLS = frozenset({"submit_findings", "submit_area_findings"})
-HELDOUT_MARK = "heldout"
-_SUMMARY_LIMIT = 240
+__all__ = [
+    "HELDOUT_MARK",
+    "ResultMismatchError",
+    "RunEvents",
+    "TraceMissingError",
+    "UnknownEventError",
+    "load_run",
+    "looks_heldout",
+]
 
 
-class TraceMissingError(RuntimeError):
-    """The run folder has no trace, or the trace is empty."""
-
-
-class UnknownEventError(RuntimeError):
-    """The trace holds an event or actor that the adapter does not know."""
-
-
-class ResultMismatchError(RuntimeError):
-    """result.json does not agree with the verified trace."""
-
-
-@dataclass
-class _State:
-    run_id: str
-    trace_id: str
-    visibility: Visibility
-    heldout: bool
-    last_model_event: str | None = None
-    events: list[EventV1] = field(default_factory=list)
-
-
-@dataclass(frozen=True)
-class RunEvents:
-    run_id: str
-    trace_records: int
-    trace_head: str
-    closed: bool
-    heldout: bool
-    status: str | None
-    events: list[EventV1]
-
-
-def _clip(text: str) -> str:
-    text = " ".join(text.split())
-    return text if len(text) <= _SUMMARY_LIMIT else text[: _SUMMARY_LIMIT - 3] + "..."
-
-
-def _emit(
-    state: _State,
-    entry: dict[str, Any],
-    actor: ActorRole,
-    event_type: EventType,
-    status: EventStatus,
-    summary: str,
-    **extra: Any,
-) -> EventV1:
-    suffix = extra.pop("suffix", "")
-    event = EventV1(
-        event_id=f"{state.run_id}:{entry['seq']}{suffix}",
-        run_id=state.run_id,
-        trace_id=state.trace_id,
-        timestamp_utc=str(entry["ts"]),
-        actor_role=actor,
-        event_type=event_type,
-        status=status,
-        message_summary=_clip(summary),
-        source_trace_ref=f"trace.jsonl#seq={entry['seq']}@{str(entry['hash'])[:12]}",
-        display_visibility=extra.pop("visibility", state.visibility),
-        **extra,
-    )
-    state.events.append(event)
-    return event
-
-
-def _source(state: _State, entry: dict[str, Any]) -> None:
+def _source(state: State, entry: dict[str, Any]) -> None:
     data = entry["data"]
-    _emit(
+    emit(
         state,
         entry,
         "system",
@@ -98,37 +51,29 @@ def _source(state: _State, entry: dict[str, Any]) -> None:
     )
 
 
-def _start(state: _State, entry: dict[str, Any]) -> None:
+def _start(state: State, entry: dict[str, Any]) -> None:
     data = entry["data"]
-    question = "Held-out question (text withheld)." if state.heldout else data.get("question", "")
-    _emit(
-        state,
-        entry,
-        "human_director",
-        "task_proposed",
-        "proposed",
-        f"Research question: {question}",
-        receiver_role="orchestrator",
-        suffix=".q",
-    )
+    if state.agent_role is None:
+        question_event(state, entry)
     budget = data.get("budget", {})
-    _emit(
+    who = "Engineer" if state.agent_role == "geospatial_engineer" else "Investigator"
+    emit(
         state,
         entry,
-        "orchestrator",
+        acting_role(state),
         "run_started",
         "executed",
-        f"Investigator started on {data.get('provider')} / {data.get('model')}; budget "
+        f"{who} started on {data.get('provider')} / {data.get('model')}; budget "
         f"{budget.get('max_turns')} turns, {budget.get('max_tool_calls')} tool calls, "
         f"{budget.get('max_usd')} USD.",
     )
 
 
-def _safety(state: _State, entry: dict[str, Any]) -> None:
+def _safety(state: State, entry: dict[str, Any]) -> None:
     data = entry["data"]
     allowed = bool(data.get("allowed"))
     verdict = "allowed" if allowed else f"blocked by {data.get('blocked_by') or 'policy'}"
-    _emit(
+    emit(
         state,
         entry,
         "safety_gate",
@@ -138,27 +83,28 @@ def _safety(state: _State, entry: dict[str, Any]) -> None:
     )
 
 
-def _model_turn(state: _State, entry: dict[str, Any]) -> None:
+def _model_turn(state: State, entry: dict[str, Any]) -> None:
     data = entry["data"]
+    actor: ActorRole = data.get("role") or acting_role(state)
     names = [str(c.get("name")) for c in data.get("tool_calls", [])]
     seconds = data.get("wall_seconds")
     elapsed = None if seconds is None else round(float(seconds) * 1000)
     if names:
-        event = _emit(
+        event = emit(
             state,
             entry,
-            "orchestrator",
+            actor,
             "tool_requested",
             "proposed",
             f"Turn {data.get('turn')}: requested {', '.join(names)}.",
-            receiver_role="tool",
+            receiver_role="system" if actor == "product_manager" else "tool",
             elapsed_ms=elapsed,
         )
     else:
-        event = _emit(
+        event = emit(
             state,
             entry,
-            "orchestrator",
+            actor,
             "answer_submitted",
             "proposed",
             f"Turn {data.get('turn')}: drafted the final answer.",
@@ -184,20 +130,20 @@ def _tool_refs(data: dict[str, Any]) -> list[str]:
     return [f"sha256:{digest}"] if digest else []
 
 
-def _tool_result(state: _State, entry: dict[str, Any]) -> None:
+def _tool_result(state: State, entry: dict[str, Any]) -> None:
     data = entry["data"]
     name, outcome = str(data.get("name")), str(data.get("outcome"))
     status: EventStatus = {"executed": "executed", "rejected": "rejected"}.get(outcome, "failed")  # type: ignore[assignment]
     detail = f" ({data.get('error')})" if data.get("error") else ""
     payload = data.get("data") if isinstance(data.get("data"), dict) else {}
-    tool = _emit(
+    tool = emit(
         state,
         entry,
         "tool",
         "tool_completed",
         status,
         f"{name}({_arguments(data.get('arguments'))}) -> {outcome}{detail}",
-        receiver_role="orchestrator",
+        receiver_role=acting_role(state),
         parent_event_id=state.last_model_event,
         evidence_refs=_tool_refs(payload),
     )
@@ -205,88 +151,89 @@ def _tool_result(state: _State, entry: dict[str, Any]) -> None:
         _verdicts(state, entry, payload, tool.event_id)
 
 
-def _verdicts(state: _State, entry: dict[str, Any], data: dict[str, Any], parent: str) -> None:
+def _verdicts(state: State, entry: dict[str, Any], data: dict[str, Any], parent: str) -> None:
     verdicts = data.get("verdicts", [])
     parts = [f"{v.get('id')} {v.get('verdict')} ({v.get('reason')})" for v in verdicts]
-    _emit(
+    emit(
         state,
         entry,
         "verifier",
         "claim_verified",
         "approved" if data.get("all_supported") else "rejected",
         f"Round {data.get('round')}: " + ("; ".join(parts) or "no claims"),
-        receiver_role="orchestrator",
+        receiver_role=acting_role(state),
         parent_event_id=parent,
         suffix=".v",
     )
 
 
-def _skipped(state: _State, entry: dict[str, Any]) -> None:
+def _skipped(state: State, entry: dict[str, Any]) -> None:
     data = entry["data"]
-    _emit(
+    emit(
         state,
         entry,
         "tool",
         "tool_completed",
         "blocked",
         f"{data.get('name')} not run: {data.get('reason')}",
-        receiver_role="orchestrator",
+        receiver_role=acting_role(state),
         parent_event_id=state.last_model_event,
     )
 
 
-def _model_error(state: _State, entry: dict[str, Any]) -> None:
+def _model_error(state: State, entry: dict[str, Any]) -> None:
     data = entry["data"]
     detail = ""
     if "attempt" in data:  # traces before the retry policy have no attempt fields
         tail = "; retrying" if data.get("retrying") else ""
         detail = f" (attempt {data['attempt']} of {data.get('max_attempts')}{tail})"
     summary = f"Model call failed: {data.get('kind')}{detail}."
-    _emit(state, entry, "orchestrator", "error", "failed", summary)
+    actor = data.get("role") or acting_role(state)
+    emit(state, entry, actor, "error", "failed", summary)
 
 
-def _retry_skipped(state: _State, entry: dict[str, Any]) -> None:
+def _retry_skipped(state: State, entry: dict[str, Any]) -> None:
     reason = entry["data"].get("reason")
-    _emit(state, entry, "system", "error", "blocked", f"Model call not retried: {reason}.")
+    emit(state, entry, "system", "error", "blocked", f"Model call not retried: {reason}.")
 
 
-def _audit(state: _State, entry: dict[str, Any]) -> None:
+def _audit(state: State, entry: dict[str, Any]) -> None:
     data = entry["data"]
     issues = sum(len(v) for v in data.values() if isinstance(v, list))
     issues += 1 if data.get("language") else 0
     status: EventStatus = "rejected" if issues else "approved"
-    _emit(
+    emit(
         state,
         entry,
         "verifier",
         "claim_verified",
         status,
         f"Answer audit: {issues} issue(s) in the final text.",
-        receiver_role="orchestrator",
+        receiver_role=acting_role(state),
     )
 
 
-def _revision(state: _State, entry: dict[str, Any]) -> None:
+def _revision(state: State, entry: dict[str, Any]) -> None:
     count = len(entry["data"].get("issues", []))
-    _emit(
+    emit(
         state,
         entry,
         "verifier",
         "revision_proposed",
         "pending",
         f"Requested one answer revision for {count} issue(s).",
-        receiver_role="orchestrator",
+        receiver_role=acting_role(state),
     )
 
 
-def _plan_submitted(state: _State, entry: dict[str, Any]) -> None:
+def _plan_submitted(state: State, entry: dict[str, Any]) -> None:
     data = entry["data"]
     plan = data.get("plan") if isinstance(data.get("plan"), dict) else {}
     method = plan.get("method_choice", {}).get("selected_id")
-    _emit(
+    emit(
         state,
         entry,
-        "orchestrator",
+        acting_role(state),
         "plan_submitted",
         "proposed",
         f"Plan revision {data.get('plan_revision')}: intent {plan.get('research_intent')}, "
@@ -306,12 +253,12 @@ _REVIEW_STATUS: dict[str, EventStatus] = {
 }
 
 
-def _plan_reviewed(state: _State, entry: dict[str, Any]) -> None:
+def _plan_reviewed(state: State, entry: dict[str, Any]) -> None:
     data = entry["data"]
     findings = data.get("findings", [])
     errors = sum(1 for f in findings if f.get("severity") == "error")
     abstentions = ", ".join(data.get("abstentions", [])) or "none"
-    _emit(
+    emit(
         state,
         entry,
         "scientific_critic",
@@ -319,16 +266,16 @@ def _plan_reviewed(state: _State, entry: dict[str, Any]) -> None:
         _REVIEW_STATUS.get(str(data.get("verdict")), "failed"),
         f"Plan review: {data.get('verdict')}; {errors} error(s) of {len(findings)} "
         f"finding(s); abstentions: {abstentions}.",
-        receiver_role="orchestrator",
+        receiver_role=acting_role(state),
         plan_revision=data.get("plan_revision"),
         evidence_refs=[f"sha256:{data.get('plan_sha256')}"],
     )
 
 
-def _approval_requested(state: _State, entry: dict[str, Any]) -> None:
+def _approval_requested(state: State, entry: dict[str, Any]) -> None:
     data = entry["data"]
     target = data.get("asset_id") or data.get("case_id")
-    _emit(
+    emit(
         state,
         entry,
         "system",
@@ -339,7 +286,7 @@ def _approval_requested(state: _State, entry: dict[str, Any]) -> None:
     )
 
 
-def _approval_resolved(state: _State, entry: dict[str, Any]) -> None:
+def _approval_resolved(state: State, entry: dict[str, Any]) -> None:
     data = entry["data"]
     approved = bool(data.get("approved"))
     detail = (
@@ -347,7 +294,7 @@ def _approval_resolved(state: _State, entry: dict[str, Any]) -> None:
         if approved
         else f"refused: {data.get('refusal')}"
     )
-    _emit(
+    emit(
         state,
         entry,
         "human_director",
@@ -358,8 +305,8 @@ def _approval_resolved(state: _State, entry: dict[str, Any]) -> None:
     )
 
 
-def _rendered(state: _State, entry: dict[str, Any]) -> None:
-    _emit(
+def _rendered(state: State, entry: dict[str, Any]) -> None:
+    emit(
         state,
         entry,
         "system",
@@ -370,9 +317,9 @@ def _rendered(state: _State, entry: dict[str, Any]) -> None:
     )
 
 
-def _forced_abstention(state: _State, entry: dict[str, Any]) -> None:
+def _forced_abstention(state: State, entry: dict[str, Any]) -> None:
     reasons = ", ".join(entry["data"].get("reasons", []))
-    _emit(
+    emit(
         state,
         entry,
         "safety_gate",
@@ -383,21 +330,25 @@ def _forced_abstention(state: _State, entry: dict[str, Any]) -> None:
     )
 
 
-def _finish(state: _State, entry: dict[str, Any]) -> None:
+def _finish(state: State, entry: dict[str, Any]) -> None:
     data = entry["data"]
     status = str(data.get("status"))
-    done: EventStatus = "failed" if status in {"error", "refused"} else "completed"
-    _emit(
+    done: EventStatus = (
+        "failed" if status in {"error", "refused", "failed", "provider_error"} else "completed"
+    )
+    emit(
         state,
         entry,
         "system",
         "run_completed",
         done,
-        f"Run finished: {status} ({data.get('reason')}); {data.get('turns', 0)} model turns.",
+        f"{'Engineer task' if state.agent_role else 'Run'} finished: {status} "
+        f"({data.get('reason')}); {data.get('turns', 0)} model turns.",
     )
 
 
 HANDLERS = {
+    **WORKFLOW_HANDLERS,
     ("source", "runtime"): _source,
     ("start", "runtime"): _start,
     ("safety_check", "safety"): _safety,
@@ -450,7 +401,7 @@ def load_run(run_dir: Path, *, heldout: bool | None = None) -> RunEvents:
     records = list(trace.records())
     held = looks_heldout(run_dir) if heldout is None else heldout
     head = str(records[-1]["hash"])
-    state = _State(
+    state = State(
         run_id=run_dir.name,
         trace_id=head[:16],
         visibility=Visibility.INTERNAL if held else Visibility.PUBLIC_DEMO,

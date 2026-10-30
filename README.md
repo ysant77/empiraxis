@@ -136,6 +136,37 @@ Question: which region had the highest hourly PM2.5 in September–October 2015,
 
 Totals: 6 turns, 5 tool calls, 394 s wall time, 19,578 input and 1,284 output tokens. `earthlab replay` reproduced 4 of 4 verdicts with no model.
 
+## Experimental: product manager to Geospatial Engineer workflow
+
+`earthlab workflow` runs one request through two model roles. Python controls every
+step. Today one provider serves both roles: Muse Glimmer, combined topology. This path
+has been tested with a scripted client only; no live run is recorded yet.
+
+1. The safety gate checks the request. A refused or causal-only request never reaches a model.
+2. The product manager makes one model call. Its only tool is `submit_brief`: a typed
+   route (`engineer`, `needs_input` or `out_of_scope`), a registered case, the intent and
+   the period. It names no dataset, value or method, and never sees a scientific tool.
+3. Code checks the brief. The case must be registered, the period must lie inside the
+   case period, and the brief may contain no number that is not in the request or the
+   case. A rejected brief gets one correction; a second failure ends the run as `failed`.
+   `needs_input` returns the clarifications and no engineer runs.
+4. Code turns the brief into a hashed `EngineeringTaskV1` and gives the engineer (the
+   existing investigator, plan review on) a case library that holds only the assigned
+   case. The task includes the researcher's own words, so a brief cannot turn a causal
+   question into a descriptive one.
+5. The engineer's result goes back to the product manager, who writes a short report.
+   The report passes the same answer audit and safety gate as any final answer; if it
+   fails, the engineer's audited answer is shown instead.
+
+Every step is a hash-chained trace entry, and the Control Room shows the product
+manager and engineer as separate actors. Limits: the separate-orchestrator topology
+and a Llama product manager are not built, and the NEA PM2.5 tools are not tied to a
+case, so an accepted burned-area plan could still call them.
+
+```bash
+uv run earthlab workflow "How much area burned in the Kalimantan study box in September 2015?"
+```
+
 ## Evaluation
 
 `evals/tasks.yaml` has five fixed tasks. The expected facts are not stored: the verifier recomputes them. Three arms run on the same tasks:
