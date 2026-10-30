@@ -16,6 +16,7 @@ from earthlab.agent.limitations import DECLARE_TOOL, ReasonCode
 from earthlab.cases.models import ApprovalAction, HumanApproval
 from earthlab.cases.tools import CaseLibrary
 from earthlab.planning.critic import plan_digest, review_plan
+from earthlab.planning.intent import enforce_requested_intent
 from earthlab.planning.outcomes import gate_refusal
 from earthlab.planning.plan import InvestigationPlan
 from earthlab.planning.proposal import PlanProposal, build_plan
@@ -114,6 +115,7 @@ class PlanStep:
             task_id=self.task_id,
             revision=len(self.plans) + 1,
         )
+        plan, replaced = enforce_requested_intent(plan, self.question)
         self.plans.append(plan)
         self.trace.append(
             "plan_submitted",
@@ -122,11 +124,18 @@ class PlanStep:
             task_id=plan.task.task_id,
             plan_sha256=plan_digest(plan),
             plan=plan.model_dump(mode="json"),
+            requested_intent_replaced=replaced.value if replaced else None,
         )
         report = review_plan(plan, self.registry)
         self.reviews.append(report)
         self.trace.append("plan_reviewed", "critic", **report.model_dump(mode="json"))
-        return self._reply(plan, report)
+        reply = self._reply(plan, report)
+        if replaced is not None:
+            reply["requested_intent"] = (
+                f"the question asks for a cause; requested_intent {replaced.value} was "
+                "replaced by causal_inference"
+            )
+        return reply
 
     def _reply(self, plan: InvestigationPlan, report: CriticReport) -> dict[str, Any]:
         left = MAX_PLAN_SUBMISSIONS - len(self.reviews)
