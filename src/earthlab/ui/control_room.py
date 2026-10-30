@@ -31,6 +31,8 @@ ROLE_ORDER = (
     "orchestrator",
     "product_manager",
     "geospatial_engineer",
+    "implementor",
+    "qa_reviewer",
     "scientific_critic",
     "verifier",
     "safety_gate",
