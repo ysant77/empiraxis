@@ -30,7 +30,7 @@ from earthlab.data.snapshot import open_snapshot
 from earthlab.llm.client import ChatClient
 from earthlab.llm.retry import NO_RETRY, RetryPolicy
 from earthlab.metrics import EarthlabMetrics
-from earthlab.planning.registry import load_registry
+from earthlab.planning.registry import Registry, load_registry
 from earthlab.report.evidence import collect_evidence
 from earthlab.safety.gate import CAUSAL_ABSTENTION, REFUSAL, SafetyDecision, SafetyGate
 from earthlab.safety.llama_guard import LlamaGuard
@@ -46,6 +46,15 @@ APPROVALS_DIR = Path("config") / "approvals"
 
 
 @dataclass(frozen=True)
+class TaskScope:
+    """What one assigned task may touch. The model sees and can call only these tools,
+    and its plan may name only these datasets. None on RunOptions means no task limit."""
+
+    tools: frozenset[str]
+    dataset_ids: frozenset[str]
+
+
+@dataclass(frozen=True)
 class RunOptions:
     """Steps added after the frozen v1 protocol. Both are off unless a caller asks.
 
@@ -54,11 +63,13 @@ class RunOptions:
     an answer rendered from verified findings only.
     provider_retry: one more attempt after a transient provider failure. None keeps the
     v1 protocol: one attempt per model call.
+    scope: the tools and datasets an assigned task may use (the workflow engineer).
     """
 
     plan_review: bool = False
     render_fallback: bool = False
     provider_retry: RetryPolicy | None = None
+    scope: TaskScope | None = None
 
 
 DEFAULT_OPTIONS = RunOptions()
@@ -110,16 +121,28 @@ def build_registry(
     return registry
 
 
-def plan_step_for(workspace: Workspace, trace: RunTrace, run_dir: Path) -> PlanStep | None:
-    """The plan step for a run with registered cases; None when there are no cases."""
+def plan_step_for(
+    workspace: Workspace, trace: RunTrace, run_dir: Path, scope: TaskScope | None = None
+) -> PlanStep | None:
+    """The plan step for a run with registered cases; None when there are no cases.
+
+    With a scope, the critic's registry holds only the scope's datasets, so a plan that
+    names any other dataset is refused as unregistered.
+    """
     if workspace.cases is None:
         return None
     root = workspace.cases.root
+    registry = load_registry(root)
+    if scope is not None:
+        registry = Registry(
+            candidates={k: v for k, v in registry.candidates.items() if k in scope.dataset_ids},
+            assets=registry.assets,
+        )
     folder = root / APPROVALS_DIR
     task_id = re.sub(r"[^a-z0-9._-]", "-", run_dir.name.lower()).lstrip("-._") or "run"
     return PlanStep(
         cases=workspace.cases,
-        registry=load_registry(root),
+        registry=registry,
         approvals=load_approvals(folder) if folder.is_dir() else [],
         trace=trace,
         task_id=task_id,
@@ -148,11 +171,9 @@ def investigate(
 ) -> Investigation:
     """Gate the question, run the agent, then gate the final answer before saving."""
     ledger, limitations, area_ledger = FindingsLedger(), LimitationLog(), AreaLedger()
-    registry = build_registry(workspace, ledger, limitations, area_ledger)
     trace = RunTrace(run_dir / "trace.jsonl", listener)
-    plan_step = plan_step_for(workspace, trace, run_dir) if options.plan_review else None
-    if plan_step is not None:
-        registry.register(plan_step.spec())
+    registry = build_registry(workspace, ledger, limitations, area_ledger)
+    registry, plan_step = _scoped(registry, workspace, trace, run_dir, options)
     metrics = metrics or EarthlabMetrics(tool_names=set(registry.names()))
     metrics.record_qa(SOURCE_LABEL, workspace.dataset.issue_counts())
     trace.append("source", "runtime", **workspace.snapshot.citation())
@@ -182,6 +203,16 @@ def investigate(
         result = replace(result, safety=(asked, *result.safety))
     save_result(run_dir, question, result, workspace.snapshot, workspace.cases)
     return result
+
+
+def _scoped(
+    registry: ToolRegistry, workspace: Workspace, trace: RunTrace, run_dir: Path, opts: RunOptions
+) -> tuple[ToolRegistry, PlanStep | None]:
+    """Add the plan step when asked, then keep only the scope's tools when one is set."""
+    plan_step = plan_step_for(workspace, trace, run_dir, opts.scope) if opts.plan_review else None
+    if plan_step is not None:
+        registry.register(plan_step.spec())
+    return (registry if opts.scope is None else registry.only(opts.scope.tools)), plan_step
 
 
 def _refused(

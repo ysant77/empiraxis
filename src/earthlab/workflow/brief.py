@@ -112,7 +112,8 @@ def propose_brief(
     pm: RoleCalls, request: str, cases: CaseLibrary, budget: Budget, task_id: str
 ) -> tuple[ProductBriefV1 | None, list[str]]:
     """The PM's brief once it passes validation, or None with the last issues."""
-    meter = BudgetMeter(budget.model_copy(update={"max_turns": PM_CALLS}))
+    # The stage budget is already cut from the run's ledger; a cap may only lower it.
+    meter = BudgetMeter(budget.model_copy(update={"max_turns": min(budget.max_turns, PM_CALLS)}))
     messages: list[dict[str, Any]] = [
         {"role": "system", "content": PM_SYSTEM.format(cases=case_catalogue(cases))},
         {"role": "user", "content": request},

@@ -8,7 +8,9 @@ reviewed investigator, limited to the assigned case) -> verified result to the P
 report (audited; else the engineer's audited answer) -> finished.
 
 The product manager has one schema-only tool and never sees a scientific tool. The
-engineer is the existing investigator with plan review on. Both trace into one hash chain.
+engineer is the existing investigator with plan review on, scoped to its case's tools and
+datasets. Both roles share one budget (WorkflowLedger) and trace into one hash chain. Both
+roles must be bound (WorkflowAssignment) to the clients that serve them.
 """
 
 from __future__ import annotations
@@ -26,6 +28,7 @@ from earthlab.agent.loop import Investigation, RunStatus
 from earthlab.cases.tools import CaseLibrary
 from earthlab.digest import payload_digest
 from earthlab.llm.client import ChatClient
+from earthlab.llm.retry import NO_RETRY
 from earthlab.llm.types import ProviderError
 from earthlab.metrics import EarthlabMetrics
 from earthlab.runtime import DEFAULT_OPTIONS, RunOptions, Workspace, investigate, result_payload
@@ -34,7 +37,8 @@ from earthlab.safety.llama_guard import LlamaGuard
 from earthlab.trace import RunTrace
 from earthlab.verify.answer_audit import audit_answer
 from earthlab.verify.claims import Verdict
-from earthlab.workflow.brief import propose_brief, validate_brief
+from earthlab.workflow.assign import WorkflowAssignment, task_scope
+from earthlab.workflow.brief import PM_CALLS, propose_brief, validate_brief
 from earthlab.workflow.calls import RoleCalls
 from earthlab.workflow.contracts import (
     EngineeringReplyV1,
@@ -44,6 +48,7 @@ from earthlab.workflow.contracts import (
     RoleCall,
     WorkflowStatus,
 )
+from earthlab.workflow.ledger import WorkflowLedger
 from earthlab.workflow.prompts import PM_REPORT, engineer_prompt
 
 __all__ = ["WorkflowRun", "engineering_task", "run_workflow", "validate_brief"]
@@ -74,12 +79,14 @@ class _Setup:
     listener: Callable[[dict[str, Any]], None] | None
     guard: LlamaGuard | None
     options: RunOptions
+    assignment: WorkflowAssignment
 
 
 def engineering_task(
     brief: ProductBriefV1, cases: CaseLibrary, budget: Budget
 ) -> EngineeringTaskV1:
     case_file = cases.get(str(brief.brief.case_id))
+    scope = task_scope(case_file)
     return EngineeringTaskV1(
         task_id=f"{brief.task_id}.ge",
         parent_task_id=brief.task_id,
@@ -88,6 +95,7 @@ def engineering_task(
         case_id=case_file.case.case_id,
         allowed_dataset_ids=tuple(sorted(case_file.assets)),
         allowed_method_ids=(case_file.case.method_id,),
+        allowed_tool_names=tuple(sorted(scope.tools)),
         max_model_calls=budget.max_turns,
         max_tool_calls=budget.max_tool_calls,
         max_seconds=budget.max_seconds,
@@ -135,7 +143,11 @@ class _Flow:
         self.trace = RunTrace(setup.run_dir / "trace.jsonl", setup.listener)
         slug = re.sub(r"[^a-z0-9._-]", "-", setup.run_dir.name.lower()).lstrip("-._")
         self.task_id = slug or "run"
-        self.pm = RoleCalls("product_manager", pm_client, self.trace, setup.metrics)
+        self.ledger = WorkflowLedger(setup.budget)
+        retry = setup.options.provider_retry or NO_RETRY
+        self.pm = RoleCalls(
+            "product_manager", pm_client, self.trace, setup.metrics, self.ledger, retry
+        )
         self.gate = SafetyGate(setup.guard, setup.metrics, self.trace)
 
     @property
@@ -151,14 +163,19 @@ class _Flow:
             "workflow_start", "runtime", question=s.question, task_id=self.task_id,
             topology="combined", pm={"provider": pm.name, "model": pm.model},
             engineer={"provider": s.client.config.name, "model": s.client.config.model},
+            bindings={
+                "pm": s.assignment.pm.model_dump(mode="json"),
+                "engineer": s.assignment.engineer.model_dump(mode="json"),
+            },
+            budget=s.budget.model_dump(), retry_policy=self.pm.retry.record(),
         )  # fmt: skip
         asked = self.gate.check_question(s.question)
         if not asked.allowed or asked.causal_only():
             return self._without_models()
-        brief, issues = self._brief()
+        brief, issues, status = self._brief()
         if brief is None:
             failed = ManagerResultV1(
-                task_id=self.task_id, status="failed", typed_limitations=tuple(issues)
+                task_id=self.task_id, status=status, typed_limitations=tuple(issues)
             )
             return self._finish(failed)
         if brief.brief.route != "engineer":
@@ -185,17 +202,24 @@ class _Flow:
         )
         return self._finish(manager, result=result)
 
-    def _brief(self) -> tuple[ProductBriefV1 | None, list[str]]:
+    def _brief(self) -> tuple[ProductBriefV1 | None, list[str], WorkflowStatus]:
+        """The validated brief, or None with its issues and the failed status."""
+        stage = self.ledger.stage(PM_CALLS)
+        if stage is None:
+            return None, [self.ledger.why_stopped()], "budget_exhausted"
         self._invocation("started", "product_manager", self.task_id)
+        started = self.ledger.elapsed()
+        status: WorkflowStatus = "failed"
         try:
-            brief, issues = propose_brief(
-                self.pm, self.s.question, self.cases, self.s.budget, self.task_id
-            )
-        except (ProviderError, BudgetStop) as exc:
-            brief, issues = None, [str(exc)]
-        status = "completed" if brief is not None else "failed"
-        self._invocation("finished", "product_manager", self.task_id, status, self.pm.calls)
-        return brief, issues
+            brief, issues = propose_brief(self.pm, self.s.question, self.cases, stage, self.task_id)
+        except BudgetStop as exc:
+            brief, issues, status = None, [str(exc)], "budget_exhausted"
+        except ProviderError as exc:
+            brief, issues, status = None, [str(exc)], "provider_error"
+        self.ledger.charge("product_manager", seconds=self.ledger.elapsed() - started)
+        done = "completed" if brief is not None else status
+        self._invocation("finished", "product_manager", self.task_id, done, self.pm.calls)
+        return brief, issues, status
 
     def _invocation(
         self, phase: str, role: str, task_id: str, status: str | None = None, calls: int = 0
@@ -207,7 +231,16 @@ class _Flow:
 
     def _engineer(self, brief: ProductBriefV1) -> WorkflowRun:
         s = self.s
-        task = engineering_task(brief, self.cases, s.budget)
+        stage = self.ledger.stage()
+        if stage is None:
+            stop = ManagerResultV1(
+                task_id=self.task_id,
+                status="budget_exhausted",
+                typed_limitations=(self.ledger.why_stopped(),),
+            )
+            return self._finish(stop, brief)
+        case_file = self.cases.get(str(brief.brief.case_id))
+        task = engineering_task(brief, self.cases, stage)
         dumped = task.model_dump(mode="json")
         self.trace.append(
             "task_handoff", "runtime", task_id=task.task_id, parent_task_id=task.parent_task_id,
@@ -222,13 +255,18 @@ class _Flow:
             replace(s.workspace, cases=_only(self.cases, task.case_id)),
             s.run_dir,
             metrics=s.metrics,
-            budget=s.budget,
+            budget=stage,
             reasoning=s.reasoning,
             listener=s.listener,
             guard=s.guard,
-            options=replace(s.options, plan_review=True),
+            options=replace(s.options, plan_review=True, scope=task_scope(case_file)),
         )
         self.trace.resync()  # investigate appended to the same file through its own handle
+        self.ledger.charge(
+            "geospatial_engineer", model_calls=result.turns, tool_calls=result.tool_calls,
+            prompt_tokens=result.prompt_tokens, completion_tokens=result.completion_tokens,
+            cost_usd=result.cost_usd or 0.0, seconds=result.seconds,
+        )  # fmt: skip
         reply = self._deliver(task, result, round((time.perf_counter() - started) * 1000))
         source, text = self._report(reply, result)
         manager = ManagerResultV1(
@@ -285,12 +323,16 @@ class _Flow:
             {"role": "system", "content": PM_REPORT},
             {"role": "user", "content": json.dumps(envelope)},
         ]
+        stage = self.ledger.stage(1)
+        started = self.ledger.elapsed()
         try:
-            meter = BudgetMeter(self.s.budget.model_copy(update={"max_turns": 1}))
-            text = self.pm.call(meter, messages, [], "none").content.strip()
+            if stage is None:
+                raise BudgetStop(self.ledger.why_stopped())
+            text = self.pm.call(BudgetMeter(stage), messages, [], "none").content.strip()
             issues = self._report_issues(text, result)
         except (ProviderError, BudgetStop) as exc:
             text, issues = "", [str(exc)]
+        self.ledger.charge("product_manager", seconds=self.ledger.elapsed() - started)
         source = "pm_model" if not issues else fallback[0]
         self.trace.append("pm_report", "runtime", passed=not issues, issues=issues, source=source)
         return (source, text) if not issues else fallback
@@ -341,11 +383,16 @@ class _Flow:
         def dump(record: Any) -> Any:
             return None if record is None else record.model_dump(mode="json")
 
+        usage = {role: vars(u) for role, u in self.ledger.usage.items()}
         return {
-            "topology": "combined",
+            "topology": self.s.assignment.topology,
+            "bindings": {
+                "pm": self.s.assignment.pm.model_dump(mode="json"),
+                "engineer": self.s.assignment.engineer.model_dump(mode="json"),
+            },
+            "usage": usage | {"total": vars(self.ledger.total())},
+            "budget": self.s.budget.model_dump(),
             "pm_calls": self.pm.calls,
-            "pm_prompt_tokens": self.pm.prompt_tokens,
-            "pm_completion_tokens": self.pm.completion_tokens,
             "brief": dump(brief),
             "engineering_task": dump(task),
             "engineering_reply": dump(reply),
@@ -359,6 +406,7 @@ def run_workflow(
     workspace: Workspace,
     run_dir: Path,
     *,
+    assignment: WorkflowAssignment,
     pm_client: ChatClient | None = None,
     metrics: EarthlabMetrics | None = None,
     budget: Budget | None = None,
@@ -367,11 +415,17 @@ def run_workflow(
     guard: LlamaGuard | None = None,
     options: RunOptions = DEFAULT_OPTIONS,
 ) -> WorkflowRun:
-    """Run the PM -> engineer hand-off. `client` serves the engineer; `pm_client` the PM."""
+    """Run the PM -> engineer hand-off. `client` serves the engineer; `pm_client` the PM.
+
+    `budget` limits the whole run, across both roles. Raises BindingRefused, before any
+    record is written, when a client is not the one its role is bound to.
+    """
     if workspace.cases is None:
         raise ValueError("the workflow needs registered cases")
+    pm = pm_client or client
+    assignment.check(pm, client)
     setup = _Setup(
         question, client, workspace, run_dir, metrics or EarthlabMetrics(),
-        budget or Budget(), reasoning, listener, guard, options,
+        budget or Budget(), reasoning, listener, guard, options, assignment,
     )  # fmt: skip
-    return _Flow(setup, pm_client or client).run()
+    return _Flow(setup, pm).run()
