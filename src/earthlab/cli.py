@@ -113,7 +113,8 @@ def cmd_workflow(args: argparse.Namespace) -> int:
     """Product manager -> Geospatial Engineer hand-off; one provider serves both roles."""
     providers = load_providers(args.providers)
     client = build_client(providers[args.provider])
-    assignment = repo_assignment(providers, client)  # refuses an unbound or unready role
+    # Refuses an unbound or unready role. One client serves every role in both topologies.
+    assignment = repo_assignment(providers, client, topology=args.topology)
     run_dir = new_run_dir(args.runs_dir)
     print(f"run: {run_dir}\nroles: {assignment.summary()}")
     run = run_workflow(
@@ -122,6 +123,7 @@ def cmd_workflow(args: argparse.Namespace) -> int:
         open_workspace(args.data_dir),
         run_dir,
         assignment=assignment,
+        orchestrator_client=client if args.topology == "separate" else None,
         budget=Budget(max_turns=args.max_turns, max_seconds=args.max_seconds),
         reasoning=args.reasoning,
         listener=_print_event,
@@ -444,6 +446,7 @@ def build_parser() -> argparse.ArgumentParser:
     inv.set_defaults(func=cmd_investigate)
     flow = sub.add_parser("workflow", help="experimental: product manager -> engineer hand-off")
     _add_live_args(flow)
+    flow.add_argument("--topology", choices=["combined", "separate"], default="combined")
     flow.set_defaults(func=cmd_workflow)
 
     _add_eval_parser(sub)

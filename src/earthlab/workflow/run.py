@@ -3,6 +3,7 @@
 The Python controller here owns every transition, permission and limit:
 
 received -> safety gate -> PM brief (one model call, one correction) -> brief validated
+-> [separate topology: orchestrator decision (one call, one correction) -> validated]
 -> needs_input | out_of_scope | engineering task -> engineer run (the existing plan-
 reviewed investigator, limited to the assigned case) -> verified result to the PM -> PM
 report (audited; else the engineer's audited answer) -> finished.
@@ -44,11 +45,13 @@ from earthlab.workflow.contracts import (
     EngineeringReplyV1,
     EngineeringTaskV1,
     ManagerResultV1,
+    OrchestratorDecisionV1,
     ProductBriefV1,
     RoleCall,
     WorkflowStatus,
 )
 from earthlab.workflow.ledger import WorkflowLedger
+from earthlab.workflow.orchestrate import ORCHESTRATOR_CALLS, propose_decision
 from earthlab.workflow.prompts import PM_REPORT, engineer_prompt
 
 __all__ = ["WorkflowRun", "engineering_task", "run_workflow", "validate_brief"]
@@ -80,6 +83,7 @@ class _Setup:
     guard: LlamaGuard | None
     options: RunOptions
     assignment: WorkflowAssignment
+    orchestrator: ChatClient | None = None
 
 
 def engineering_task(
@@ -148,6 +152,14 @@ class _Flow:
         self.pm = RoleCalls(
             "product_manager", pm_client, self.trace, setup.metrics, self.ledger, retry
         )
+        self.orch = (
+            None
+            if setup.orchestrator is None
+            else RoleCalls(
+                "orchestrator", setup.orchestrator, self.trace, setup.metrics, self.ledger, retry
+            )
+        )
+        self.decision: OrchestratorDecisionV1 | None = None
         self.gate = SafetyGate(setup.guard, setup.metrics, self.trace)
 
     @property
@@ -161,12 +173,9 @@ class _Flow:
         s, pm = self.s, self.pm.client.config
         self.trace.append(
             "workflow_start", "runtime", question=s.question, task_id=self.task_id,
-            topology="combined", pm={"provider": pm.name, "model": pm.model},
+            topology=s.assignment.topology, pm={"provider": pm.name, "model": pm.model},
             engineer={"provider": s.client.config.name, "model": s.client.config.model},
-            bindings={
-                "pm": s.assignment.pm.model_dump(mode="json"),
-                "engineer": s.assignment.engineer.model_dump(mode="json"),
-            },
+            bindings=s.assignment.records(),
             budget=s.budget.model_dump(), retry_policy=self.pm.retry.record(),
         )  # fmt: skip
         asked = self.gate.check_question(s.question)
@@ -185,7 +194,47 @@ class _Flow:
                 followup_questions=brief.brief.clarifications_needed,
             )
             return self._finish(stop, brief)
+        if self.orch is not None:
+            stopped = self._orchestrate(brief)
+            if stopped is not None:
+                return self._finish(stopped, brief)
         return self._engineer(brief)
+
+    def _orchestrate(self, brief: ProductBriefV1) -> ManagerResultV1 | None:
+        """Run the separate orchestrator; None means assign the engineer."""
+        if self.orch is None:
+            raise RuntimeError("only the separate topology has an orchestrator")
+        stage = self.ledger.stage(ORCHESTRATOR_CALLS)
+        status: WorkflowStatus = "failed"
+        issues: list[str] = []
+        self._invocation("started", "orchestrator", brief.task_id)
+        started = self.ledger.elapsed()
+        try:
+            if stage is None:
+                raise BudgetStop(self.ledger.why_stopped())
+            self.decision, issues = propose_decision(self.orch, brief, self.s.question, stage)
+        except BudgetStop as exc:
+            issues, status = [str(exc)], "budget_exhausted"
+        except ProviderError as exc:
+            issues, status = [str(exc)], "provider_error"
+        self.ledger.charge("orchestrator", seconds=self.ledger.elapsed() - started)
+        done = status if self.decision is None else "completed"
+        self._invocation("finished", "orchestrator", brief.task_id, done, self.orch.calls)
+        if self.decision is None:
+            return ManagerResultV1(
+                task_id=self.task_id, status=status, typed_limitations=tuple(issues)
+            )
+        choice = self.decision.decision
+        if choice.decision == "request_input":
+            followup = (choice.clarification or "",)
+            return ManagerResultV1(
+                task_id=self.task_id, status="needs_input", followup_questions=followup
+            )
+        if choice.decision == "decline":
+            return ManagerResultV1(
+                task_id=self.task_id, status="out_of_scope", typed_limitations=(choice.reason,)
+            )
+        return None
 
     def _without_models(self) -> WorkflowRun:
         """Refusals and causal abstentions never reach a model; investigate records them."""
@@ -211,7 +260,14 @@ class _Flow:
         started = self.ledger.elapsed()
         status: WorkflowStatus = "failed"
         try:
-            brief, issues = propose_brief(self.pm, self.s.question, self.cases, stage, self.task_id)
+            brief, issues = propose_brief(
+                self.pm,
+                self.s.question,
+                self.cases,
+                stage,
+                self.task_id,
+                self.s.assignment.topology,
+            )
         except BudgetStop as exc:
             brief, issues, status = None, [str(exc)], "budget_exhausted"
         except ProviderError as exc:
@@ -386,10 +442,10 @@ class _Flow:
         usage = {role: vars(u) for role, u in self.ledger.usage.items()}
         return {
             "topology": self.s.assignment.topology,
-            "bindings": {
-                "pm": self.s.assignment.pm.model_dump(mode="json"),
-                "engineer": self.s.assignment.engineer.model_dump(mode="json"),
-            },
+            "bindings": self.s.assignment.records(),
+            "orchestrator_decision": None
+            if self.decision is None
+            else self.decision.model_dump(mode="json"),
             "usage": usage | {"total": vars(self.ledger.total())},
             "budget": self.s.budget.model_dump(),
             "pm_calls": self.pm.calls,
@@ -408,6 +464,7 @@ def run_workflow(
     *,
     assignment: WorkflowAssignment,
     pm_client: ChatClient | None = None,
+    orchestrator_client: ChatClient | None = None,
     metrics: EarthlabMetrics | None = None,
     budget: Budget | None = None,
     reasoning: str = "medium",
@@ -417,15 +474,17 @@ def run_workflow(
 ) -> WorkflowRun:
     """Run the PM -> engineer hand-off. `client` serves the engineer; `pm_client` the PM.
 
-    `budget` limits the whole run, across both roles. Raises BindingRefused, before any
-    record is written, when a client is not the one its role is bound to.
+    `budget` limits the whole run, across every role. Raises BindingRefused, before any
+    record is written, when a client is not the one its role is bound to. The assignment
+    decides the topology; a separate topology needs `orchestrator_client`.
     """
     if workspace.cases is None:
         raise ValueError("the workflow needs registered cases")
     pm = pm_client or client
-    assignment.check(pm, client)
+    assignment.check(pm, client, orchestrator_client)
+    orchestrator = orchestrator_client if assignment.topology == "separate" else None
     setup = _Setup(
         question, client, workspace, run_dir, metrics or EarthlabMetrics(),
-        budget or Budget(), reasoning, listener, guard, options, assignment,
+        budget or Budget(), reasoning, listener, guard, options, assignment, orchestrator,
     )  # fmt: skip
     return _Flow(setup, pm).run()

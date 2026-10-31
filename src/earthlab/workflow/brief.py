@@ -15,7 +15,7 @@ from earthlab.digest import payload_digest
 from earthlab.llm.types import ChatResponse
 from earthlab.tools.registry import ToolSpec
 from earthlab.workflow.calls import RoleCalls
-from earthlab.workflow.contracts import BriefProposal, ProductBriefV1
+from earthlab.workflow.contracts import BriefProposal, ProductBriefV1, Topology
 from earthlab.workflow.prompts import PM_SYSTEM, case_catalogue
 
 SUBMIT_BRIEF = "submit_brief"
@@ -35,6 +35,11 @@ def brief_spec() -> ToolSpec:
 
 def _numbers(text: str) -> set[str]:
     return set(_NUMBER.findall(_UNIT_NAMES.sub(" ", text)))
+
+
+def invented_numbers(written: str, source: str) -> list[str]:
+    """Figures in `written` that `source` does not contain. Unit names are not figures."""
+    return sorted(_numbers(written) - _numbers(source))
 
 
 def _route_issues(proposal: BriefProposal, known: set[str]) -> list[str]:
@@ -80,8 +85,7 @@ def validate_brief(proposal: BriefProposal, request: str, cases: CaseLibrary) ->
             *proposal.clarifications_needed,
         ]
     )
-    invented = sorted(_numbers(written) - _numbers(f"{request} {case_text}"))
-    if invented:
+    if invented := invented_numbers(written, f"{request} {case_text}"):
         issues.append(f"numbers not in the request or the case: {', '.join(invented)}")
     return issues
 
@@ -109,7 +113,12 @@ def _feedback(messages: list[dict[str, Any]], resp: ChatResponse, issues: list[s
 
 
 def propose_brief(
-    pm: RoleCalls, request: str, cases: CaseLibrary, budget: Budget, task_id: str
+    pm: RoleCalls,
+    request: str,
+    cases: CaseLibrary,
+    budget: Budget,
+    task_id: str,
+    topology: Topology = "combined",
 ) -> tuple[ProductBriefV1 | None, list[str]]:
     """The PM's brief once it passes validation, or None with the last issues."""
     # The stage budget is already cut from the run's ledger; a cap may only lower it.
@@ -128,6 +137,7 @@ def propose_brief(
             brief = ProductBriefV1(
                 task_id=task_id,
                 request_sha256=payload_digest(request),
+                topology=topology,
                 brief=proposal,
                 author=pm.identity(),
             )

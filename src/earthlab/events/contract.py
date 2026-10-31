@@ -56,6 +56,7 @@ EventType = Literal[
     "role_invocation_started",
     "role_invocation_finished",
     "brief_validated",
+    "orchestrator_decision_validated",
     "task_handoff_created",
     "verified_result_delivered",
     "pm_report_issued",
