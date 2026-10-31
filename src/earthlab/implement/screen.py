@@ -74,6 +74,14 @@ class PatchFormatError(ValueError):
     """The text is not a git unified diff the screen can read."""
 
 
+def _check_file_header(line: str, path: str) -> None:
+    """The ---/+++ names must be the diff header's own path, so no tool can write elsewhere."""
+    if line.startswith("--- ") and line[4:] not in (f"a/{path}", "/dev/null"):
+        raise PatchFormatError(f"old name {line[4:120]} does not match {path}")
+    if line.startswith("+++ ") and line[4:] != f"b/{path}":
+        raise PatchFormatError(f"new name {line[4:120]} does not match {path}")
+
+
 def parse_patch(diff: str) -> list[FilePatch]:
     files: list[FilePatch] = []
     path: str | None = None
@@ -101,10 +109,15 @@ def parse_patch(diff: str) -> list[FilePatch]:
         if line.startswith("@@"):
             in_hunk = True
         elif not in_hunk:
+            _check_file_header(line, path)
             headers.append(line)
             new_file = new_file or line.startswith("new file mode")
-        elif line.startswith("+") and not line.startswith("+++"):
+        elif line.startswith("+"):
+            # Inside a hunk every "+" line is added content, even "+++x" (the Python
+            # line "++x"). Only the file header, before the first "@@", names a file.
             added.append(line[1:])
+        elif line and line[0] not in " -\\":
+            raise PatchFormatError(f"{path}: unexpected line in a hunk: {line[:80]}")
     close()
     if not files:
         raise PatchFormatError("no file in the patch")
