@@ -211,6 +211,16 @@ uv run earthlab workflow --topology separate "How much area burned in the Kalima
 
 ## Evaluation
 
+**Workflow development suite (WD v1, development only).** `evals/workflow_dev_v1.yaml`
+holds nine visible scenarios (verified result, valid abstention, causal overclaim, wrong
+period, missing data, budget exhaustion, approval denial, cross-case access, missing
+input). Its arms are the single Muse investigator, combined Muse PM, separate Muse PM and
+orchestrator, and a conditional Llama-PM arm that runs only once that candidate is
+approved and preflighted; until then it is reported unavailable, never scored. Scores are
+computed from each run's trace and `result.json` (`earthlab.evals.workflow_dev`). So far
+only scripted clients have run it, which checks the harness and measures no model. It is
+not the sealed held-out v1 set, which is spent and is neither read nor re-run.
+
 `evals/tasks.yaml` has five fixed tasks. The expected facts are not stored: the verifier recomputes them. Three arms run on the same tasks:
 
 | Arm | What it is |
