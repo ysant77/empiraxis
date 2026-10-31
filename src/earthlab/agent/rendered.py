@@ -77,6 +77,8 @@ def verified_block(
         parts += pm25 + areas
     if codes:
         parts.append("Declared limitations: " + ", ".join(codes) + ".")
+    if area.gate_notes:
+        parts += ["Deterministic plan review:", *[f"- {note}" for note in area.gate_notes]]
     if limits:
         parts += ["Method limits:", *[f"- {item}" for item in limits]]
     return "\n".join(parts)
@@ -98,6 +100,6 @@ def render_answer(
         parts.append("Declared limitations: " + ", ".join(codes) + ".")
     parts.append(
         "The model's own summary did not pass the answer check, so it is not shown. "
-        "Only the values above are verified."
+        "Only values the independent verifier recomputed are verified."
     )
     return "\n".join(parts)

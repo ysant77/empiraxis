@@ -40,7 +40,7 @@ from earthlab.trace import RunTrace
 from earthlab.verify.answer_audit import audit_answer
 from earthlab.verify.claims import Verdict
 from earthlab.workflow.assign import WorkflowAssignment, task_scope
-from earthlab.workflow.brief import PM_CALLS, propose_brief, validate_brief
+from earthlab.workflow.brief import PM_CALLS, fixed_report, propose_brief, validate_brief
 from earthlab.workflow.calls import RoleCalls, client_kind
 from earthlab.workflow.contracts import (
     EngineeringReplyV1,
@@ -421,7 +421,7 @@ class _Flow:
         reply: EngineeringReplyV1 | None = None,
         result: Investigation | None = None,
     ) -> WorkflowRun:
-        s = self.s
+        s, manager = self.s, fixed_report(manager, brief)
         self.trace.append(
             "finish", "runtime", status=manager.status, reason=f"workflow {manager.status}",
             workflow=True, turns=self.pm.calls + (result.turns if result else 0),

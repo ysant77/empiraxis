@@ -123,7 +123,11 @@ def build_registry(
 
 
 def plan_step_for(
-    workspace: Workspace, trace: RunTrace, run_dir: Path, scope: TaskScope | None = None
+    workspace: Workspace,
+    trace: RunTrace,
+    run_dir: Path,
+    scope: TaskScope | None = None,
+    area: AreaLedger | None = None,
 ) -> PlanStep | None:
     """The plan step for a run with registered cases; None when there are no cases.
 
@@ -147,6 +151,7 @@ def plan_step_for(
         approvals=load_approvals(folder) if folder.is_dir() else [],
         trace=trace,
         task_id=task_id,
+        area=area,
     )
 
 
@@ -174,7 +179,7 @@ def investigate(
     ledger, limitations, area_ledger = FindingsLedger(), LimitationLog(), AreaLedger()
     trace = RunTrace(run_dir / "trace.jsonl", listener)
     registry = build_registry(workspace, ledger, limitations, area_ledger)
-    registry, plan_step = _scoped(registry, workspace, trace, run_dir, options)
+    registry, plan_step = _scoped(registry, workspace, trace, run_dir, options, area_ledger)
     metrics = metrics or EarthlabMetrics(tool_names=set(registry.names()))
     metrics.record_qa(SOURCE_LABEL, workspace.dataset.issue_counts())
     trace.append("source", "runtime", **workspace.snapshot.citation())
@@ -207,10 +212,17 @@ def investigate(
 
 
 def _scoped(
-    registry: ToolRegistry, workspace: Workspace, trace: RunTrace, run_dir: Path, opts: RunOptions
+    registry: ToolRegistry,
+    workspace: Workspace,
+    trace: RunTrace,
+    run_dir: Path,
+    opts: RunOptions,
+    area: AreaLedger,
 ) -> tuple[ToolRegistry, PlanStep | None]:
     """Add the plan step when asked, then keep only the scope's tools when one is set."""
-    plan_step = plan_step_for(workspace, trace, run_dir, opts.scope) if opts.plan_review else None
+    plan_step = (
+        plan_step_for(workspace, trace, run_dir, opts.scope, area) if opts.plan_review else None
+    )
     if plan_step is not None:
         registry.register(plan_step.spec())
     return (registry if opts.scope is None else registry.only(opts.scope.tools)), plan_step

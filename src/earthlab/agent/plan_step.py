@@ -20,9 +20,11 @@ decides claims.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from typing import Any
 
 from earthlab.acquire.gate import ApprovalRefused, authorize
+from earthlab.agent.area_findings import AreaLedger
 from earthlab.agent.findings import FindingsLedger
 from earthlab.agent.limitations import DECLARE_TOOL, LimitationArgs, LimitationLog, ReasonCode
 from earthlab.cases.methods import CATALOGUE
@@ -41,6 +43,7 @@ from earthlab.trace import RunTrace
 
 SUBMIT_PLAN_TOOL = "submit_plan"
 MAX_PLAN_SUBMISSIONS = 2  # the first plan and one revision
+BURNED_AREA_METHOD = "mcd64a1_burned_area"
 CLAIM_TOOLS = frozenset({"submit_findings", "submit_area_findings"})
 # Read-only coverage and case metadata: what a needs_evidence plan may still inspect.
 DIAGNOSTIC_TOOLS = frozenset({"inspect_coverage", "assess_case"})
@@ -100,6 +103,7 @@ class PlanStep:
     plans: list[InvestigationPlan] = field(default_factory=list)
     reviews: list[CriticReport] = field(default_factory=list)
     window_short: bool = False
+    area: AreaLedger | None = None
 
     def rejected(self) -> bool:
         return len(self.reviews) >= MAX_PLAN_SUBMISSIONS and self.reviews[-1].verdict == "revise"
@@ -187,6 +191,7 @@ class PlanStep:
         report = review_plan(plan, self.registry)
         self.reviews.append(report)
         self.trace.append("plan_reviewed", "critic", **report.model_dump(mode="json"))
+        self._record_gate(proposal, report)
         reply = self._reply(plan, report)
         if replaced is not None:
             reply["requested_intent"] = (
@@ -194,6 +199,22 @@ class PlanStep:
                 "replaced by causal_inference"
             )
         return reply
+
+    def _record_gate(self, proposal: PlanProposal, report: CriticReport) -> None:
+        """A coverage refusal is evidence: keep its months so a replay can re-check them."""
+        notes = [
+            f.message
+            for f in report.findings
+            if f.check is CheckId.DATA_COVERAGE and f.severity == "error"
+        ]
+        if self.area is None or not notes or proposal.method_id != BURNED_AREA_METHOD:
+            return
+        period = self.cases.get(proposal.case_id).case.period
+        start = max(proposal.period_start.astimezone(UTC), period.start)
+        end = min(proposal.period_end.astimezone(UTC), period.end)
+        self.area.gate_notes += [n for n in notes if n not in self.area.gate_notes]
+        pairs = [(proposal.case_id, month) for month in _months(start, end)]
+        self.area.consulted += [p for p in pairs if p not in self.area.consulted]
 
     def _reply(self, plan: InvestigationPlan, report: CriticReport) -> dict[str, Any]:
         left = MAX_PLAN_SUBMISSIONS - len(self.reviews)
@@ -251,6 +272,15 @@ class PlanStep:
             if dataset_id in self.cases.get(case_id).assets:
                 return case_id
         return None
+
+
+def _months(start: datetime, end: datetime) -> list[str]:
+    """Each calendar month (UTC) the half-open period touches."""
+    found, year, month = [], start.year, start.month
+    while datetime(year, month, 1, tzinfo=UTC) < end:
+        found.append(f"{year:04d}-{month:02d}")
+        year, month = (year + 1, 1) if month == 12 else (year, month + 1)
+    return found
 
 
 def _decision(action: ActionKind, dataset_id: str, approved: bool, detail: str) -> dict[str, Any]:

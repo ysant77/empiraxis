@@ -113,6 +113,7 @@ class AreaLedger:
 
     rounds: list[list[AreaVerification]] = field(default_factory=list)
     consulted: list[tuple[str, str]] = field(default_factory=list)  # (case_id, month) read
+    gate_notes: list[str] = field(default_factory=list)  # plan-review coverage refusals
 
     @property
     def latest(self) -> list[AreaVerification]:

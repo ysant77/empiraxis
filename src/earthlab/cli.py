@@ -154,6 +154,7 @@ def cmd_replay(args: argparse.Namespace) -> int:
     """Re-check a saved run without any model: trace chain, verdicts and input hashes."""
     out = replay_run(args.run_dir, open_workspace(args.data_dir))
     print(f"trace: {out.trace_records} records, hash chain intact")
+    print(f"PM2.5 source hash: {'match' if out.source_matches else 'CHANGED'}")
     print(f"verdicts reproduced: {out.pm25[0]}/{out.pm25[1]}")
     print(f"area verdicts reproduced: {out.area[0]}/{out.area[1]}")
     print(f"month checks reproduced: {out.months[0]}/{out.months[1]}")

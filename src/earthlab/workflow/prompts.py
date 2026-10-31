@@ -24,7 +24,9 @@ Call submit_brief exactly once:
 - route "needs_input": a required input is missing (for example a threshold, area or
   period the request does not give). List at most three short clarifications. Never
   choose a missing value yourself.
-- route "out_of_scope": no registered case fits.
+- route "out_of_scope": no registered case fits. A causal question about a registered
+  case does fit it: use route "engineer" and intent causal_inference, and the engineer
+  records the limit.
 - intent: observational_summary for what the data shows; association,
   transport_plausibility, retrospective_estimation, prospective_prediction or
   causal_inference only when the request asks for that.

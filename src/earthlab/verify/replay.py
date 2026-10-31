@@ -31,6 +31,7 @@ class Replay:
     files_checked: int = 0
     changed_files: list[str] = field(default_factory=list)
     problems: list[str] = field(default_factory=list)
+    source_matches: bool = False
 
     @property
     def ok(self) -> bool:
@@ -43,8 +44,13 @@ def _same(fresh: dict[str, Any], saved: dict[str, Any]) -> bool:
 
 
 def _pm25(result: dict[str, Any], workspace: Workspace, out: Replay) -> None:
-    if result["source"]["sha256"] != workspace.snapshot.sha256:
+    out.source_matches = result["source"]["sha256"] == workspace.snapshot.sha256
+    if not out.source_matches:
         out.problems.append("the PM2.5 source hash differs from the saved run")
+    if "rounds" not in result:
+        if result.get("workflow", {"engineering_task": True})["engineering_task"] is not None:
+            out.problems.append("the run has no verdict records")
+        return  # a workflow that stopped before the engineer has no verdicts to replay
     for rnd in result["rounds"]:
         for saved in rnd:
             fresh = workspace.verifier.verify(Claim.model_validate(saved["claim"]))
