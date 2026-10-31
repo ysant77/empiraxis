@@ -221,7 +221,6 @@ computed from each run's trace and `result.json` (`earthlab.evals.workflow_dev`)
 only scripted clients have run it, which checks the harness and measures no model. It is
 not the sealed held-out v1 set, which is spent and is neither read nor re-run.
 
-
 `evals/tasks.yaml` has five fixed tasks. The expected facts are not stored: the verifier recomputes them. Three arms run on the same tasks:
 
 | Arm | What it is |

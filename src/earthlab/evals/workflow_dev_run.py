@@ -13,19 +13,14 @@ from pathlib import Path
 from earthlab.agent.budget import Budget
 from earthlab.evals.workflow_dev import SCORING_VERSION, Arm, Scenario, ScoreV1, run_facts, score
 from earthlab.implement.bindings import Bindings
-from earthlab.llm.client import ChatClient, OpenAICompatClient
+from earthlab.llm.client import ChatClient
 from earthlab.llm.providers import ProviderConfig
-from earthlab.llm.raw import RawCompletionClient
 from earthlab.runtime import RunOptions, Workspace, investigate
 from earthlab.workflow.assign import WorkflowAssignment, resolve_assignment
+from earthlab.workflow.calls import client_kind
 from earthlab.workflow.run import run_workflow
 
 ClientFor = Callable[[str], ChatClient]  # candidate ID -> client
-
-
-def is_live(client: ChatClient) -> bool:
-    """Only the real HTTP clients are live; scripted test clients never are."""
-    return isinstance(client, OpenAICompatClient | RawCompletionClient)
 
 
 def arm_blockers(
@@ -90,7 +85,7 @@ def run_scenario(
             pm_client=pm, orchestrator_client=orchestrator, budget=budget,
             options=options or RunOptions(),
         )  # fmt: skip
-    live = all(is_live(c) for c in clients)
+    live = all(client_kind(c) == "live_http" for c in clients)
     record = score(scenario, arm.id, run_facts(run_dir), "live" if live else "synthetic")
     (run_dir / "score.json").write_text(
         json.dumps(
