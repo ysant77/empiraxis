@@ -24,6 +24,7 @@ from earthlab.events.contract import (
     is_model_agent,
 )
 from earthlab.events.redact import visible_events
+from earthlab.events.workflow_view import ROLE_NAMES, WorkflowView, load_workflow
 from earthlab.ui import common
 
 APPROVALS_DIR = Path("config/approvals")
@@ -57,11 +58,20 @@ def role_kind(role: str) -> str:
     return "human" if role == "human_director" else "code"
 
 
-def event_rows(events: list[EventV1]) -> list[dict[str, Any]]:
+def role_name(role: str, topology: str | None = None) -> str:
+    """Who an actor was in this run. The orchestrator role id means the single Muse
+    investigator outside a workflow, and the model orchestrator in the separate topology."""
+    if role == "orchestrator":
+        return ROLE_NAMES[role] if topology == "separate" else "Muse investigator (single agent)"
+    return ROLE_NAMES.get(role, ROLE_LABELS.get(role, role))
+
+
+def event_rows(events: list[EventV1], topology: str | None = None) -> list[dict[str, Any]]:
     return [
         {
             "time (UTC)": e.timestamp_utc[11:19],
             "actor": e.actor_role,
+            "role in this run": role_name(e.actor_role, topology),
             "actor kind": role_kind(e.actor_role),
             "to": e.receiver_role or "",
             "event": e.event_type,
@@ -106,12 +116,16 @@ def _topology() -> None:
                 st.button(f"Open {role.replace('_', ' ')} console", disabled=True, key=role)
         st.caption(
             "The Muse investigator and the deterministic verification path are implemented. "
-            "The product manager to engineer workflow is experimental: no live run is "
-            "recorded yet. Tools and the verifier are code, never agent peers."
+            "The product manager to engineer workflow, in its combined and separate "
+            "topologies, is experimental: only scripted-client runs are recorded. In the "
+            "separate topology, a separately invoked model orchestrator proposes typed "
+            "decisions; it is not the single Muse investigator. Implementation workers and "
+            "model training are planned. Tools, the plan critic and the verifier are code, "
+            "never agent peers."
         )
 
 
-def _timeline(run: RunEvents | None) -> None:
+def _timeline(run: RunEvents | None, topology: str | None = None) -> None:
     with common.panel("Event timeline", "implemented" if run else "unavailable"):
         if run is None:
             st.write("No verified run to show. A broken or missing trace is never displayed.")
@@ -122,7 +136,7 @@ def _timeline(run: RunEvents | None) -> None:
             f"Recorded events from {run.run_id}; run {state}; status {run.status}. "
             f"{withheld} event(s) withheld for audience {common.audience().value}."
         )
-        st.dataframe(event_rows(shown), use_container_width=True, hide_index=True)
+        st.dataframe(event_rows(shown, topology), use_container_width=True, hide_index=True)
         st.caption(
             "Summaries of recorded actions only. Raw prompts and model reasoning are never "
             "shown. No role-to-role conversation is recorded, so none is shown."
@@ -197,6 +211,40 @@ def _human_control(run: RunEvents | None) -> None:
             st.dataframe(_durations(run), use_container_width=True, hide_index=True)
 
 
+def shown(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Rows for display: a value the record does not hold reads "unknown", never zero."""
+    return [{k: "unknown" if v is None else v for k, v in row.items()} for row in rows]
+
+
+PROVENANCE_NOTES = {
+    "synthetic": "Synthetic test run: the model replies were scripted. This is not live "
+    "multi-agent collaboration and it measures no model.",
+    "unknown": "Provenance was not recorded for this run; treat it as unverified.",
+    "live": "Live run: every role was served by a model endpoint over HTTP.",
+}
+
+
+def _workflow(view: WorkflowView) -> None:
+    status: common.Status = "implemented" if view.provenance == "live" else "experimental"
+    with common.panel("Workflow run", status, f"{view.topology} topology"):
+        note = PROVENANCE_NOTES[view.provenance]
+        (st.info if view.provenance == "live" else st.warning)(note)
+        st.caption(f"Run {view.run_id}: status {view.status}. Python validated every step.")
+        st.dataframe(view.stages, use_container_width=True, hide_index=True)
+        st.caption("Per-role use, counted from the hash-chained trace:")
+        st.dataframe(shown(view.roles), use_container_width=True, hide_index=True)
+        if view.retries:
+            st.caption("Failed model calls and retries:")
+            st.dataframe(shown(view.retries), use_container_width=True, hide_index=True)
+        else:
+            st.caption("No model call failed in this run.")
+        st.caption(f"Budget limits: {view.budget['limits']}. Used: {view.budget['used']}.")
+        found = ", ".join(view.findings) or "none"
+        st.write(
+            f"Verified findings: {found}. Limitations: {', '.join(view.limitations) or 'none'}."
+        )
+
+
 def _telemetry() -> None:
     with common.panel("Runtime overview", "implemented"):
         st.table([{"surface": n, "status": s, "note": t} for n, s, t in TELEMETRY])
@@ -218,11 +266,14 @@ def render() -> None:
     if names:
         picked = st.selectbox("Recorded run", names, key="control_run")
         st.caption(f"Provenance: {common.replay_provenance()}")
-        _, run, error = common.load_replay(picked)
+        run_dir, run, error = common.load_replay(picked)
         if run is None:
             st.error(f"Run not shown. Integrity check failed: {error}")
+    view = load_workflow(run_dir) if run is not None and run_dir is not None else None
     _cards(run, error)
-    _timeline(run)
+    if view is not None:
+        _workflow(view)
+    _timeline(run, None if view is None else view.topology)
     left, right = common.columns(2)
     with left:
         _topology()

@@ -24,6 +24,16 @@ from earthlab.workflow.ledger import WorkflowLedger
 Messages = list[dict[str, Any]]
 
 
+def client_kind(client: ChatClient) -> str:
+    """live_http only for the real HTTP clients; anything else (scripted test clients
+    included) is scripted_or_other, so a test run can never be shown as live."""
+    from earthlab.llm.client import OpenAICompatClient
+    from earthlab.llm.raw import RawCompletionClient
+
+    live = isinstance(client, OpenAICompatClient | RawCompletionClient)
+    return "live_http" if live else "scripted_or_other"
+
+
 class RoleCalls:
     """Every model call one role makes in a run; counts and served model are kept."""
 
@@ -108,8 +118,8 @@ class RoleCalls:
         self.ledger.charge(
             self.role,
             model_calls=1,
-            prompt_tokens=usage.prompt_tokens or 0,
-            completion_tokens=usage.completion_tokens or 0,
+            prompt_tokens=usage.prompt_tokens,  # None when the provider did not report it
+            completion_tokens=usage.completion_tokens,
             cost_usd=charged,
         )
         self.served_model = resp.served_model or self.served_model
