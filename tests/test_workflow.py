@@ -9,19 +9,27 @@ from typing import Any
 import pytest
 from conftest import REPO_DATA
 from fake_client import ScriptedClient, call, say
+from workflow_helpers import assignment
 
 from earthlab.events.adapter import load_run
+from earthlab.llm.providers import load_providers
 from earthlab.llm.types import ProviderError, ProviderErrorKind
 from earthlab.runtime import Workspace, open_workspace
 from earthlab.trace import RunTrace
 from earthlab.workflow.contracts import BriefProposal
-from earthlab.workflow.run import run_workflow, validate_brief
+from earthlab.workflow.run import WorkflowRun, run_workflow, validate_brief
 
 CASE = "kalimantan-2015-burned-area"
 MCD = "mcd64a1-061-kalimantan-2015"
 FIRMS = "firms-modis-sp-kalimantan-2015"
 SEPT_HA = 77426.0
 REQUEST = "How much area burned in the Kalimantan study box in September 2015?"
+
+
+def flow(
+    question: str, client: ScriptedClient, workspace: Workspace, run_dir: Path, **kw: Any
+) -> WorkflowRun:
+    return run_workflow(question, client, workspace, run_dir, assignment=assignment(client), **kw)
 
 
 @pytest.fixture(scope="module")
@@ -93,7 +101,7 @@ def test_september_request_goes_pm_to_engineer_and_returns_verified(
             say("The engineer verified the mapped burned area in A1.1. It is not forest loss."),
         ]
     )
-    run = run_workflow(REQUEST, client, workspace, tmp_path)
+    run = flow(REQUEST, client, workspace, tmp_path)
     assert run.status == "verified"
     assert run.task is not None and run.task.case_id == CASE
     assert run.task.allowed_method_ids == ("mcd64a1_burned_area",)
@@ -152,9 +160,7 @@ def test_a_missing_threshold_returns_needs_input_without_an_engineer(
             )
         ]
     )
-    run = run_workflow(
-        "How many hours was the west region very polluted?", client, workspace, tmp_path
-    )
+    run = flow("How many hours was the west region very polluted?", client, workspace, tmp_path)
     assert run.status == "needs_input" and run.task is None and run.engineer is None
     assert run.manager.followup_questions == ("Which PM2.5 threshold, in ug/m3?",)
     assert len(client.requests) == 1
@@ -167,7 +173,7 @@ def test_a_number_the_request_did_not_contain_is_rejected(
 ) -> None:
     invented = brief(normalized_question="Check whether 500 ha burned in September 2015.")
     client = ScriptedClient([call("submit_brief", **invented), call("submit_brief", **invented)])
-    run = run_workflow(REQUEST, client, workspace, tmp_path)
+    run = flow(REQUEST, client, workspace, tmp_path)
     assert run.status == "failed" and run.engineer is None
     reviews = [r["data"] for r in records(tmp_path) if r["event"] == "brief_reviewed"]
     assert len(reviews) == 2 and not any(r["valid"] for r in reviews)
@@ -183,7 +189,7 @@ def test_one_correction_then_the_handoff(workspace: Workspace, tmp_path: Path) -
             say("Verified in A1.1."),
         ]
     )
-    run = run_workflow(REQUEST, client, workspace, tmp_path)
+    run = flow(REQUEST, client, workspace, tmp_path)
     assert run.status == "verified" and run.pm_calls == 3  # two briefs and the report
     reviews = [r["data"] for r in records(tmp_path) if r["event"] == "brief_reviewed"]
     assert [r["valid"] for r in reviews] == [False, True]
@@ -197,7 +203,7 @@ def test_the_pm_cannot_run_a_scientific_tool(workspace: Workspace, tmp_path: Pat
             call("burned_area_summary", case_id=CASE, month="2015-09"),
         ]
     )
-    run = run_workflow(REQUEST, client, workspace, tmp_path)
+    run = flow(REQUEST, client, workspace, tmp_path)
     assert run.status == "failed"
     assert not any(r["event"] == "tool_result" for r in records(tmp_path))
 
@@ -219,7 +225,7 @@ def test_the_engineer_cannot_plan_outside_its_assigned_case(
             say("No finding was verified."),
         ]
     )
-    run = run_workflow(REQUEST, client, workspace, tmp_path)
+    run = flow(REQUEST, client, workspace, tmp_path)
     plans = [
         r["data"]
         for r in records(tmp_path)
@@ -241,7 +247,7 @@ def test_a_pm_report_with_figures_falls_back_to_the_engineer_answer(
             say("About 77,426 ha burned in September 2015."),
         ]
     )
-    run = run_workflow(REQUEST, client, workspace, tmp_path)
+    run = flow(REQUEST, client, workspace, tmp_path)
     assert run.status == "verified" and run.manager.report_source == "engineer"
     assert "77" not in run.manager.report_text
     report = next(r["data"] for r in records(tmp_path) if r["event"] == "pm_report")
@@ -250,7 +256,7 @@ def test_a_pm_report_with_figures_falls_back_to_the_engineer_answer(
 
 def test_a_refused_question_never_reaches_the_pm(workspace: Workspace, tmp_path: Path) -> None:
     client = ScriptedClient([call("submit_brief", **brief())])
-    run = run_workflow("Should I wear a mask outside during the haze?", client, workspace, tmp_path)
+    run = flow("Should I wear a mask outside during the haze?", client, workspace, tmp_path)
     assert run.status == "refused" and client.requests == []
     assert load_run(tmp_path).status == "refused"
 
@@ -276,7 +282,7 @@ def test_october_ends_in_an_abstention_reported_by_the_pm(
             say("No area was verified: the month has too little valid data."),
         ]
     )
-    run = run_workflow(
+    run = flow(
         "How much area burned in the Kalimantan study box in October 2015?",
         client,
         workspace,
@@ -290,9 +296,9 @@ def test_october_ends_in_an_abstention_reported_by_the_pm(
 
 def test_a_provider_error_in_the_pm_fails_closed(workspace: Workspace, tmp_path: Path) -> None:
     client = ScriptedClient([ProviderError(ProviderErrorKind.SERVER, "HTTP 500")])
-    run = run_workflow(REQUEST, client, workspace, tmp_path)
-    assert run.status == "failed" and run.engineer is None
-    assert load_run(tmp_path).status == "failed"
+    run = flow(REQUEST, client, workspace, tmp_path)
+    assert run.status == "provider_error" and run.engineer is None
+    assert load_run(tmp_path).status == "provider_error"
 
 
 def test_brief_validation_rules(workspace: Workspace) -> None:
@@ -319,7 +325,8 @@ def test_workflow_command(
     from earthlab import cli
 
     steps = [call("submit_brief", **brief()), *engineer_steps(), say("Verified in A1.1.")]
-    monkeypatch.setattr(cli, "build_client", lambda config: ScriptedClient(steps))
+    glimmer = load_providers(Path("config/providers.yaml"))["local-glimmer"]
+    monkeypatch.setattr(cli, "build_client", lambda config: ScriptedClient(steps, glimmer))
     argv = ["--data-dir", str(REPO_DATA), "workflow", REQUEST, "--guard", "none"]
     code = cli.main([*argv, "--runs-dir", str(tmp_path)])
     out = capsys.readouterr().out
@@ -332,7 +339,7 @@ def test_a_workflow_run_replays_offline(workspace: Workspace, tmp_path: Path) ->
     from earthlab.verify.replay import replay_run
 
     steps = [call("submit_brief", **brief()), *engineer_steps(), say("Verified in A1.1.")]
-    run_workflow(REQUEST, ScriptedClient(steps), workspace, tmp_path)
+    flow(REQUEST, ScriptedClient(steps), workspace, tmp_path)
     out = replay_run(tmp_path, workspace)
     assert list(out.area) == [1, 1] and not out.problems
 
@@ -346,7 +353,7 @@ def test_an_unverified_engineer_answer_is_never_reported(
         say("About 77,426 ha burned."),  # fails the answer audit
         say("Still 77,426 ha."),  # the one revision fails too
     ]
-    run = run_workflow(REQUEST, ScriptedClient(steps), workspace, tmp_path)
+    run = flow(REQUEST, ScriptedClient(steps), workspace, tmp_path)
     assert run.status == "answer_unverified"
     assert run.manager.report_text == "" and run.manager.report_source == "none"
     assert not any(r["event"] == "pm_report" for r in records(tmp_path))

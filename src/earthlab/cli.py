@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -19,6 +18,7 @@ from earthlab.bench.runner import ARMS as BENCH_ARMS
 from earthlab.bench.runner import run_bench
 from earthlab.bench.scenarios import ScenarioScore, load_scenarios
 from earthlab.cases.loader import load_case
+from earthlab.console import print_event as _print_event
 from earthlab.contracts import TimeWindow
 from earthlab.data.quality import coverage_report
 from earthlab.demo import DEMO_IDS, run_demo
@@ -37,31 +37,8 @@ from earthlab.safety.llama_guard import LlamaGuard
 from earthlab.tools.burned_area_tools import case_report
 from earthlab.verify.claims import Claim
 from earthlab.verify.replay import replay_run
+from earthlab.workflow.assign import repo_assignment
 from earthlab.workflow.run import run_workflow
-
-
-def _print_event(record: dict[str, Any]) -> None:
-    data = record["data"]
-    event = record["event"]
-    if event == "model_turn":
-        calls = ", ".join(c["name"] for c in data["tool_calls"]) or "text answer"
-        print(f"[turn {data['turn']}] model -> {calls} ({data['wall_seconds']:.1f} s)")
-    elif event == "tool_result":
-        line = f"    {data['name']}: {data['outcome']}"
-        if data["name"] == "submit_findings" and data.get("data"):
-            verdicts = [
-                f"{v['kind']}/{v['region']}={v['verdict']}" for v in data["data"]["verdicts"]
-            ]
-            line += " | " + "; ".join(verdicts)
-        elif data.get("error"):
-            line += f" | {data['error'][:120]}"
-        print(line)
-    elif event == "safety_check":
-        verdict = "allowed" if data["allowed"] else f"BLOCKED by {data['blocked_by']}"
-        print(f"[safety {data['stage']}] {verdict} | {data.get('guard') or 'rules only'}")
-    elif event == "finish":
-        print(f"[finish] status={data['status']} ({data['reason']})")
-    sys.stdout.flush()
 
 
 def cmd_qa(args: argparse.Namespace) -> int:
@@ -134,15 +111,17 @@ def cmd_investigate(args: argparse.Namespace) -> int:
 
 def cmd_workflow(args: argparse.Namespace) -> int:
     """Product manager -> Geospatial Engineer hand-off; one provider serves both roles."""
-    config = load_providers(args.providers)[args.provider]
-    client = build_client(config)
+    providers = load_providers(args.providers)
+    client = build_client(providers[args.provider])
+    assignment = repo_assignment(providers, client)  # refuses an unbound or unready role
     run_dir = new_run_dir(args.runs_dir)
-    print(f"run: {run_dir}\nprovider: {config.name} ({config.model}) for PM and engineer")
+    print(f"run: {run_dir}\nroles: {assignment.summary()}")
     run = run_workflow(
         args.question,
         client,
         open_workspace(args.data_dir),
         run_dir,
+        assignment=assignment,
         budget=Budget(max_turns=args.max_turns, max_seconds=args.max_seconds),
         reasoning=args.reasoning,
         listener=_print_event,

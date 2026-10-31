@@ -9,6 +9,7 @@ from conftest import REPO_DATA
 from fake_client import ScriptedClient, call, say
 
 from earthlab import cli
+from earthlab.console import print_event
 from earthlab.report.markdown import render_report
 from earthlab.report.write import write_report
 from earthlab.runtime import investigate, new_run_dir, open_workspace
@@ -63,20 +64,18 @@ def test_qa_and_verify_commands(capsys: pytest.CaptureFixture[str]) -> None:
 
 
 def test_progress_printer_formats_events(capsys: pytest.CaptureFixture[str]) -> None:
-    cli._print_event(
-        {"event": "model_turn", "data": {"turn": 1, "tool_calls": [], "wall_seconds": 2.0}}
-    )
+    print_event({"event": "model_turn", "data": {"turn": 1, "tool_calls": [], "wall_seconds": 2.0}})
     verdicts = {"verdicts": [{"kind": "peak_region", "region": "west", "verdict": "supported"}]}
-    cli._print_event(
+    print_event(
         {
             "event": "tool_result",
             "data": {"name": "submit_findings", "outcome": "executed", "data": verdicts},
         }
     )
-    cli._print_event(
+    print_event(
         {"event": "tool_result", "data": {"name": "x", "outcome": "rejected", "error": "bad"}}
     )
-    cli._print_event({"event": "finish", "data": {"status": "verified", "reason": "done"}})
+    print_event({"event": "finish", "data": {"status": "verified", "reason": "done"}})
     out = capsys.readouterr().out
     assert "text answer" in out and "west=supported" in out and "| bad" in out
     assert "status=verified" in out
@@ -121,5 +120,5 @@ def test_guard_can_be_disabled_and_safety_events_print(
     )
     assert guard is not None and guard.name == "llama-guard-3-8b"
     blocked = {"stage": "question", "allowed": False, "blocked_by": "scope_rules", "guard": None}
-    cli._print_event({"event": "safety_check", "data": blocked})
+    print_event({"event": "safety_check", "data": blocked})
     assert "BLOCKED by scope_rules | rules only" in capsys.readouterr().out

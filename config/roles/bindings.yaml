@@ -2,13 +2,14 @@
 # candidate may serve now; `planned_roles` lists roles it is only being evaluated for.
 # A role needs an enabled candidate, and enabling needs a passed preflight and a checked
 # licence.
-# Only muse-glimmer is enabled today, for the role that runs now (the Muse investigator).
+# Only muse-glimmer is enabled: as the single investigator (orchestrator, implemented)
+# and for the experimental PM and engineer workflow roles (scripted tests only so far).
 # Every other candidate is disabled until a human approves its download or endpoint.
 schema_version: "1"
 roles:
-  product_manager:   {families: [meta-muse, meta-llama], status: planned}
+  product_manager:   {families: [meta-muse, meta-llama], status: experimental}
   orchestrator:      {families: [meta-muse, meta-llama], status: implemented}
-  geospatial_engineer: {families: [meta-muse], status: planned}
+  geospatial_engineer: {families: [meta-muse], status: experimental}
   implementor:       {families: [meta-muse, meta-llama, qwen, gemma, mistral, deepseek], status: planned}
   qa_reviewer:       {families: [meta-muse, meta-llama], status: planned}
 
@@ -17,8 +18,8 @@ candidates:
     family: meta-muse
     model_id: muse-glimmer-30B
     provider_id: local-glimmer
-    roles: [orchestrator]
-    planned_roles: [product_manager, geospatial_engineer, implementor, qa_reviewer]
+    roles: [orchestrator, product_manager, geospatial_engineer]
+    planned_roles: [implementor, qa_reviewer]
     license: Apache-2.0
     license_checked: true
     enabled: true

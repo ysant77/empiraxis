@@ -158,10 +158,26 @@ has been tested with a scripted client only; no live run is recorded yet.
    The report passes the same answer audit and safety gate as any final answer; if it
    fails, the engineer's audited answer is shown instead.
 
-Every step is a hash-chained trace entry, and the Control Room shows the product
-manager and engineer as separate actors. Limits: the separate-orchestrator topology
-and a Llama product manager are not built, and the NEA PM2.5 tools are not tied to a
-case, so an accepted burned-area plan could still call them.
+Controls that hold for the whole run:
+
+- **One budget.** `--max-turns`, `--max-seconds` and the cost limit cover the PM brief, the
+  engineer and the PM report together. Each stage gets only what is left; a stage that has
+  no room does not start and the run ends `budget_exhausted`. `result.json` records the
+  model calls, tool calls, tokens, cost and seconds of each role and in total.
+- **Runtime bindings.** Both roles are bound through `config/roles/bindings.yaml` before
+  anything runs, and the client serving each role must be the bound candidate's provider and
+  model. The bindings keep four facts apart: whether the role is implemented, experimental
+  or planned; whether the provider is configured and enabled; whether preflight passed; and
+  whether the licence was checked. The workflow is an explicit opt-in to its experimental
+  roles; planned roles and unapproved candidates are refused.
+- **Task scope.** The engineer sees and can call only its case's tools (a burned-area case
+  gets no NEA PM2.5 tools, and the reverse), and its plan may name only its case's datasets.
+- **Retries.** With `--provider-retry`, a PM call gets the same single bounded retry as the
+  investigator, inside the stage budget; every attempt is charged and traced.
+
+Every step is a hash-chained trace entry, and the Control Room shows the product manager
+and engineer as separate actors. Not built yet: the separate-orchestrator topology and a
+Llama product manager.
 
 ```bash
 uv run earthlab workflow "How much area burned in the Kalimantan study box in September 2015?"
