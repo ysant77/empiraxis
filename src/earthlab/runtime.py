@@ -23,6 +23,7 @@ from earthlab.agent.limitations import (
 )
 from earthlab.agent.loop import Investigation, Investigator, RunStatus
 from earthlab.agent.plan_step import PlanStep
+from earthlab.agent.rendered import verified_block
 from earthlab.cases.tools import CaseLibrary, assess_case_spec
 from earthlab.contracts import SourceSnapshot
 from earthlab.data.nea_pm25 import Pm25Dataset, load_pm25
@@ -307,6 +308,7 @@ def result_payload(
         "safety": [d.model_dump(mode="json") for d in result.safety],
         "answer_issues": list(result.answer_issues),
         "answer_source": result.answer_source,
+        "findings_text": verified_block(result.ledger, result.area_ledger, result.limitations),
         "answer_audit": None
         if result.answer_audit is None
         else result.answer_audit.model_dump(mode="json"),

@@ -45,9 +45,10 @@ Give a short reason. Do not add any number the brief does not contain.
 PM_REPORT = """\
 You are the product manager of Axiom EarthLab. The engineer's verified result is below
 as JSON. Write a short report for the researcher (at most 100 words): what was verified,
-by finding ID (for example A1.1 or R1.2), and the stated limitations. Use only the
-finding IDs listed. Do not write digits, dates or month names: the system shows every
-value in a Findings table. Do not add causes, forecasts or advice.
+by finding ID (for example A1.1 or R1.2), and any declared_limitations. Use only the
+finding IDs listed. If declared_limitations is empty, do not mention limitations: the
+system adds the method limits. Do not write digits, dates or month names: the system
+shows every value below your report. Do not add causes, forecasts or advice.
 """
 
 

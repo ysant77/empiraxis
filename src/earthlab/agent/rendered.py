@@ -13,6 +13,8 @@ from collections.abc import Sequence
 from earthlab.agent.area_findings import AreaLedger
 from earthlab.agent.findings import FindingsLedger
 from earthlab.agent.limitations import LimitationArgs
+from earthlab.report.area_sections import AREA_LIMITATIONS
+from earthlab.report.markdown import LIMITATIONS
 from earthlab.verify.claims import Verdict
 
 _KINDS = {
@@ -21,6 +23,10 @@ _KINDS = {
     "peak_region": "region with the highest hourly PM2.5",
     "missing_hours": "missing hours",
     "hours_above": "hours above the threshold",
+}
+_QUANTITIES = {
+    "burned_area_ha": "mapped burned area",
+    "valid_fraction": "valid-data fraction",
 }
 
 
@@ -46,11 +52,34 @@ def _area_lines(area: AreaLedger) -> list[str]:
         if r.verdict is not Verdict.SUPPORTED:
             continue
         c = r.claim
+        what = _QUANTITIES.get(c.quantity.value, c.quantity.value)
         lines.append(
-            f"- {finding_id}: {c.quantity.value}, case {c.case_id}, month {c.month} UTC, "
+            f"- {finding_id}: {what}, case {c.case_id}, month {c.month} UTC, "
             f"QA policy {c.qa_policy.value}: {r.observed} {c.unit}"
         )
     return lines
+
+
+def verified_block(
+    ledger: FindingsLedger, area: AreaLedger, limitations: Sequence[LimitationArgs]
+) -> str:
+    """Each verified value and limit for the reader, or "" when there are none.
+
+    The model's text holds no numbers, so this block is where they reach the reader.
+    Values come from the verifier's recomputation and limits from fixed text.
+    """
+    pm25, areas = _pm25_lines(ledger), _area_lines(area)
+    codes = sorted({code.value for entry in limitations for code in entry.reasons})
+    limits = [*(AREA_LIMITATIONS if areas else ()), *(LIMITATIONS if pm25 else ())]
+    parts = []
+    if pm25 or areas:
+        parts += ["Verified findings (recomputed by the independent verifier):"]
+        parts += pm25 + areas
+    if codes:
+        parts.append("Declared limitations: " + ", ".join(codes) + ".")
+    if limits:
+        parts += ["Method limits:", *[f"- {item}" for item in limits]]
+    return "\n".join(parts)
 
 
 def render_answer(

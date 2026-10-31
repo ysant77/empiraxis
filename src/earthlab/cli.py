@@ -11,6 +11,7 @@ from typing import Any
 from earthlab.acquire.gate import load_approvals
 from earthlab.acquire.run import acquire_era5, acquire_firms, acquire_mcd64a1, write_manifest
 from earthlab.agent.budget import Budget
+from earthlab.agent.rendered import verified_block
 from earthlab.bench.heldout import HeldoutError, load_lock, scenario_file_record
 from earthlab.bench.official import OfficialSetup, check_only, run_official
 from earthlab.bench.protocol import load_protocol
@@ -103,7 +104,8 @@ def cmd_investigate(args: argparse.Namespace) -> int:
         c = r.claim
         fact = f"{c.kind.value} {c.region.value} = {r.observed} {c.unit}"
         print(f"{finding_id} {r.verdict.value}: {fact}")
-    print(f"\n{result.answer}\n\nreport: {report}")
+    block = verified_block(result.ledger, result.area_ledger, result.limitations)
+    print(f"\n{result.answer}\n\n{block}\n\nreport: {report}")
     for issue in result.answer_issues:
         print(f"answer not verified: {issue}")
     return exit_code(result.status.value)
@@ -136,7 +138,8 @@ def cmd_workflow(args: argparse.Namespace) -> int:
         print(f"needs input: {question}")
     if run.engineer is not None:
         print(f"report: {write_report(run_dir, args.data_dir)}")
-    print(f"\n{run.manager.report_text}\n\nstatus: {run.status} ({run.manager.report_source})")
+    print(f"\n{run.manager.report_text}\n\n{run.manager.findings_text}")
+    print(f"\nstatus: {run.status} ({run.manager.report_source})")
     return exit_code(run.status)
 
 

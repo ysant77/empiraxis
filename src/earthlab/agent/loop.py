@@ -249,7 +249,9 @@ class Investigator:
         if not state.answer:
             return None
         area_ok = {i for i, r in self._area.latest_by_id().items() if r in self._area.supported()}
-        audit = audit_answer(state.answer, self._ledger.latest_by_id(), area_ok)
+        audit = audit_answer(
+            state.answer, self._ledger.latest_by_id(), area_ok, self._area.covers_quality()
+        )
         outcome = "supported" if audit.passed else "unsupported"
         self._metrics.record_verification(Check.ANSWER.value, outcome)
         self._trace.append("answer_audit", "verifier", **audit.model_dump(mode="json"))
