@@ -453,6 +453,8 @@ class Investigator:
             )
 
     def _status_after_stop(self, *, budget_hit: bool) -> RunStatus:
+        if self._plan is not None:
+            self._plan.enforce_abstention(self._limitations)
         if self._limitations.entries:
             return RunStatus.ABSTAINED
         if self._all_supported():

@@ -52,6 +52,7 @@ _QUALITY_PASS = re.compile(
     r"|\b(?:high|sufficient|adequate|complete)\s+(?:coverage|valid)",
     re.IGNORECASE,
 )
+_NO_GAPS = re.compile(r"\bno\s+(?:missing|gaps?)\b", re.IGNORECASE)
 _SENTENCE_END = re.compile(r"(?<=[.!?;])\s+|\n+")
 _COMPARABLE = (ClaimKind.REGION_MAX, ClaimKind.REGION_MEAN)
 
@@ -164,7 +165,9 @@ def _reporting(sentence: str, quality_bound: bool) -> list[str]:
     issues = []
     if _NO_LIMITS.search(sentence):
         issues.append("do not say that no limitations exist; the system adds the method limits")
-    if _QUALITY_PASS.search(sentence) and not quality_bound and not _NOT.search(sentence):
+    match = _QUALITY_PASS.search(sentence)
+    vouched = match is not None and not _NOT.search(match.group(0))
+    if (vouched or _NO_GAPS.search(sentence)) and not quality_bound:
         issues.append("data-quality wording needs a supported quality finding; remove it")
     return issues
 

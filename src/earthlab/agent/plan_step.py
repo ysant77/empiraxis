@@ -23,7 +23,8 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from earthlab.acquire.gate import ApprovalRefused, authorize
-from earthlab.agent.limitations import DECLARE_TOOL, ReasonCode
+from earthlab.agent.limitations import DECLARE_TOOL, LimitationArgs, LimitationLog, ReasonCode
+from earthlab.cases.methods import CATALOGUE
 from earthlab.cases.models import ApprovalAction, HumanApproval
 from earthlab.cases.tools import CaseLibrary
 from earthlab.planning.critic import plan_digest, review_plan
@@ -73,6 +74,12 @@ _NEXT = {
 }
 
 
+_ABSTAIN_NOW = (
+    "The question needs an abstention. Call declare_limitation now with the suggested reason "
+    "codes. Do not collect evidence for a question the data cannot answer."
+)
+
+
 def suggested_reasons(report: CriticReport) -> list[str]:
     codes = {_REASONS[f.check] for f in report.findings if f.check in _REASONS}
     codes |= {_ABSTENTION_REASONS[a] for a in report.abstentions}
@@ -119,12 +126,24 @@ class PlanStep:
             "or call declare_limitation before using evidence tools"
         )
 
+    def enforce_abstention(self, log: LimitationLog) -> None:
+        """A reviewed causal abstention binds the run, even if the model never declares it."""
+        code = ReasonCode.CAUSATION_NOT_IDENTIFIABLE
+        if not self.reviews or code.value not in self.reviews[-1].abstentions:
+            return
+        if code not in log.codes():
+            reason = "The reviewed plan requires this abstention: observations cannot show a cause."
+            log.entries.append(LimitationArgs(reasons=[code], explanation=reason))
+            self.trace.append("abstention_enforced", "runtime", reason=code.value)
+
     def spec(self) -> ToolSpec:
         return ToolSpec(
             SUBMIT_PLAN_TOOL,
             "Submit your investigation plan before any other tool. A deterministic critic "
             "reviews it against the dataset registry; you may revise it once. Datasets: "
             + ", ".join(sorted(self.registry.candidates))
+            + ". Methods: "
+            + ", ".join(sorted(CATALOGUE))
             + ". Cases: "
             + ", ".join(self.cases.ids())
             + ".",
@@ -183,7 +202,7 @@ class PlanStep:
             "suggested_reason_codes": suggested_reasons(report),
             "approvals": self._gate(plan) if accepted else [],
             "revisions_left": left,
-            "next_step": _NEXT[verdict],
+            "next_step": _ABSTAIN_NOW if report.abstentions else _NEXT[verdict],
         }
         if plan.approval_requests and not accepted:
             reply["approvals_deferred"] = (

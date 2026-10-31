@@ -37,7 +37,7 @@ _CAUSE = re.compile(
 # is not a claim about what caused an observation.
 _AVAILABILITY = re.compile(
     r"\b(unavailab\w*|not available|not implemented|not pinned|approval|missing|no data|"
-    r"insufficient|quality gate|valid-data gate)\b",
+    r"insufficient|quality gate|valid-data gate|causation is not identifiable)\b",
     _I,
 )
 _CLAUSE_CHARS = 80
