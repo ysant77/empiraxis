@@ -24,7 +24,7 @@ def candidate(**overrides: Any) -> dict[str, Any]:
         "family": "meta-muse",
         "model_id": FAKE_CONFIG.model,
         "provider_id": FAKE_CONFIG.name,
-        "roles": ["product_manager", "geospatial_engineer"],
+        "roles": ["product_manager", "orchestrator", "geospatial_engineer"],
         "license": "Apache-2.0",
         "license_checked": True,
         "enabled": True,
@@ -43,8 +43,11 @@ def bindings(*candidates: dict[str, Any], status: str = "experimental") -> Bindi
     )
 
 
-def assignment(client: ChatClient) -> WorkflowAssignment:
+def assignment(client: ChatClient, *, separate: bool = False) -> WorkflowAssignment:
+    """Bind the scripted client to every role; `separate` adds the orchestrator."""
     return resolve_assignment(
         bindings(), {FAKE_CONFIG.name: FAKE_CONFIG}, client, client,
         pm_candidate="fake-glimmer", engineer_candidate="fake-glimmer",
+        orchestrator_client=client if separate else None,
+        orchestrator_candidate="fake-glimmer",
     )  # fmt: skip

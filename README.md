@@ -175,12 +175,28 @@ Controls that hold for the whole run:
 - **Retries.** With `--provider-retry`, a PM call gets the same single bounded retry as the
   investigator, inside the stage budget; every attempt is charged and traced.
 
-Every step is a hash-chained trace entry, and the Control Room shows the product manager
-and engineer as separate actors. Not built yet: the separate-orchestrator topology and a
-Llama product manager.
+**Two topologies** (both experimental, scripted-client tests only):
+
+| `--topology` | Model calls before the engineer | Who proposes the next stage |
+| --- | --- | --- |
+| `combined` (default) | the PM brief | the PM, as the brief's route |
+| `separate` | the PM brief, then an orchestrator call | a separately invoked orchestrator, with one tool, `submit_decision` |
+
+In both, Python validates and executes every transition. The orchestrator can only propose
+`assign_engineer` (for the brief's own case), `request_input` (with a clarification that
+adds no figure) or `decline`. Its decision has no field for permissions, spending,
+approvals or verdicts, and any extra field is refused; one correction is allowed. The
+separate topology binds the orchestrator role through `config/roles/bindings.yaml` and
+costs one more model call, which comes out of the same run budget.
+
+Every step is a hash-chained trace entry, and the Control Room shows the product manager,
+the orchestrator (separate topology) and the engineer as separate actors. Not built yet:
+a Llama product manager or orchestrator (the bindings support one once a candidate is
+approved and preflighted).
 
 ```bash
 uv run earthlab workflow "How much area burned in the Kalimantan study box in September 2015?"
+uv run earthlab workflow --topology separate "How much area burned in the Kalimantan study box in September 2015?"
 ```
 
 ## Evaluation

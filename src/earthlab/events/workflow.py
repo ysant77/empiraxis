@@ -12,21 +12,25 @@ def _workflow_start(state: State, entry: dict[str, Any]) -> None:
     data = entry["data"]
     question_event(state, entry)
     pm, engineer = data.get("pm") or {}, data.get("engineer") or {}
+    orch = (data.get("bindings") or {}).get("orchestrator")
+    middle = f", orchestrator {orch['provider_id']} / {orch['model_id']}" if orch else ""
     emit(
         state,
         entry,
         "system",
         "run_started",
         "executed",
-        f"Workflow started ({data.get('topology')} PM topology): product manager "
-        f"{pm.get('provider')} / {pm.get('model')}, engineer {engineer.get('provider')} / "
-        f"{engineer.get('model')}. The code controller owns every transition.",
+        f"Workflow started ({data.get('topology')} topology): product manager "
+        f"{pm.get('provider')} / {pm.get('model')}{middle}, engineer "
+        f"{engineer.get('provider')} / {engineer.get('model')}. "
+        "The code controller owns every transition.",
         task_id=data.get("task_id"),
     )
 
 
 _ROLES: dict[str, ActorRole] = {
     "product_manager": "product_manager",
+    "orchestrator": "orchestrator",
     "geospatial_engineer": "geospatial_engineer",
 }
 
@@ -138,7 +142,24 @@ def _pm_report(state: State, entry: dict[str, Any]) -> None:
     )
 
 
+def _decision_reviewed(state: State, entry: dict[str, Any]) -> None:
+    data = entry["data"]
+    valid = bool(data.get("valid"))
+    detail = f"decision {data.get('decision')}" if valid else "; ".join(data.get("issues", []))
+    emit(
+        state,
+        entry,
+        "system",
+        "orchestrator_decision_validated",
+        "approved" if valid else "rejected",
+        f"Orchestrator decision {'accepted' if valid else 'rejected'} by code checks: {detail}.",
+        receiver_role="orchestrator",
+        task_id=data.get("task_id"),
+    )
+
+
 WORKFLOW_HANDLERS = {
+    ("decision_reviewed", "runtime"): _decision_reviewed,
     ("workflow_start", "runtime"): _workflow_start,
     ("role_invocation", "runtime"): _role_invocation,
     ("brief_reviewed", "runtime"): _brief_reviewed,
