@@ -39,7 +39,7 @@ CAPABILITIES = [
     ("Independent verification", "implemented"),
     ("Plan critique (deterministic code)", "implemented"),
     ("Haze H1 wind-transport plausibility", "backend implemented (CLI), not in this UI"),
-    ("Product manager role", "planned"),
+    ("Product manager to engineer workflow", "experimental; local live runs, CLI only"),
     ("Implementation workers", "planned"),
 ]
 TAB_NAMES = ["Investigate", "Wildfire case", "Saved runs", "Verifier", "Data", "Challenge"]

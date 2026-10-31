@@ -19,6 +19,7 @@ from earthlab.agent.limitations import LimitationArgs, ReasonCode
 from earthlab.agent.loop import RunStatus
 from earthlab.agent.rendered import render_answer, verified_block
 from earthlab.report.evidence import month_or_error
+from earthlab.report.write import write_report
 from earthlab.runtime import Workspace, investigate, open_workspace
 from earthlab.safety.gate import CAUSAL_ABSTENTION
 from earthlab.safety.scope import answer_out_of_scope
@@ -145,3 +146,24 @@ def test_a_direct_run_without_verdict_records_fails_replay(
     del saved["rounds"]
     path.write_text(json.dumps(saved), encoding="utf-8")
     assert "the run has no verdict records" in replay_run(tmp_path, workspace).problems
+
+
+def test_a_limitation_only_run_has_no_pm25_chart(tmp_path: Path) -> None:
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    (run_dir / "result.json").write_text(json.dumps(_causal_result()), encoding="utf-8")
+    text = write_report(run_dir, REPO_DATA).read_text(encoding="utf-8")
+    assert "causation_not_identifiable" in text
+    assert "pm25_hourly.png" not in text and not (run_dir / "pm25_hourly.png").exists()
+
+
+def _causal_result() -> dict[str, Any]:
+    source = {"source_url": "u", "sha256": "s", "unit": "ug/m3", "timezone": "z", "licence": "l"}
+    limitation = {"reasons": ["causation_not_identifiable"], "explanation": "Cause is not shown."}
+    return {
+        "question": "q", "status": "abstained", "stop_reason": "x", "answer": "a", "rounds": [],
+        "provider": "p", "model": "m", "served_model": "m", "turns": 1, "tool_calls": 1,
+        "submissions": 0, "seconds": 1.0, "prompt_tokens": 1, "completion_tokens": 1,
+        "estimated_cost_usd": 0.0, "attribution": "t", "source": source,
+        "limitations": [limitation],
+    }  # fmt: skip

@@ -3,7 +3,8 @@
 # A role needs an enabled candidate, and enabling needs a passed preflight and a checked
 # licence.
 # Only muse-glimmer is enabled: as the single investigator (orchestrator, implemented)
-# and for the experimental PM and engineer workflow roles (scripted tests only so far).
+# and for the experimental PM and engineer workflow roles (live local runs recorded; see
+# docs/model-registry.md). These roles stay experimental: each scenario has few live runs.
 # Every other candidate is disabled until a human approves its download or endpoint.
 schema_version: "1"
 roles:
@@ -24,11 +25,14 @@ candidates:
     license_checked: true
     enabled: true
     preflight:
-      checked_on: "2026-10-27"
+      checked_on: "2026-11-01"
       json_schema: pass
       tool_call: pass
       served_model: muse-glimmer-30B
-      note: First live run and bench on the development Mac; investigator role only.
+      note: >-
+        17 live local runs at the last two tested commits, in the orchestrator, PM and engineer roles
+        with the guard on. Peak memory is not recorded here: the Mac reports system wired
+        memory only (26.5 GB peak, with other programs open).
 
   - candidate_id: llama-3-2-3b
     family: meta-llama

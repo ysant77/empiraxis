@@ -191,3 +191,22 @@ def test_recorded_approvals_report_their_expiry(tmp_path: Path) -> None:
         "     decided_at_utc: '2026-01-01T00:00:00Z', expires_at_utc: '2026-01-02T00:00:00Z'}\n"
     )
     assert recorded_approvals(tmp_path)[0]["state"] == "expired"
+
+
+def _shows_recomputed(result: dict[str, object]) -> None:
+    from earthlab.ui.workspace_tabs import _show_recomputed
+
+    _show_recomputed(result)
+
+
+def test_workspace_shows_verified_values_and_the_manager_report(offline: None) -> None:
+    result = {
+        "findings_text": "A1.1: mapped burned area",
+        "workflow": {"manager_result": {"report_text": "Verified.", "report_source": "pm_model"}},
+    }
+    app = AppTest.from_function(_shows_recomputed, args=(result,)).run()
+    assert not app.exception
+    assert [t.value for t in app.text] == ["A1.1: mapped burned area"]
+    assert "Verified." in [m.value for m in app.markdown]
+    empty = AppTest.from_function(_shows_recomputed, args=({},)).run()
+    assert not empty.exception and not empty.text
