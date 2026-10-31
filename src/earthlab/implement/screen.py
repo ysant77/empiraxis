@@ -3,12 +3,17 @@
 The screen reads the unified diff as text. It blocks a patch that touches a path outside
 the task, renames, copies, deletes, changes a file mode, adds a symlink or binary data,
 edits pytest configuration, weakens a test, or adds a call that could reach the shell,
-the network or the interpreter. Passing the screen is necessary, not sufficient: the
-trusted runner and a human still decide.
+the network or the interpreter. A new Python file must parse, and may import only the
+modules in ALLOWED_IMPORTS; obfuscated text and file or process access are blocked.
+
+This is a filter in front of human review, not a sandbox. A pattern list cannot prove
+code safe; the trusted isolated runner (docs/implementor-runner.md) and a human still
+decide, and nothing here runs the code.
 """
 
 from __future__ import annotations
 
+import ast
 import re
 from collections.abc import Iterator
 from dataclasses import dataclass
@@ -20,7 +25,14 @@ from earthlab.implement.contracts import (
     Severity,
 )
 
-SCREEN_ID = "patch-screen-v0"
+SCREEN_ID = "patch-screen-v1"
+ALLOWED_IMPORTS = frozenset(
+    {
+        "__future__", "bisect", "collections", "dataclasses", "datetime", "enum",
+        "functools", "itertools", "math", "numpy", "statistics", "typing", "zoneinfo",
+    }
+)  # fmt: skip
+_IMPORT_LINE = re.compile(r"^\s*(?:from\s+(\S+)\s+import|import\s+([\w.]+))")
 _HEADER = re.compile(r"^diff --git a/(\S+) b/(\S+)$")
 _STRUCTURAL = (
     ("rename from ", "rename"),
@@ -42,6 +54,10 @@ _UNSAFE: tuple[tuple[str, str], ...] = (
     ("filesystem", r"\b(shutil\.rmtree|os\.remove|os\.unlink|os\.rmdir|os\.chmod)\b"),
     ("environment", r"\bos\.environ\b|\bgetenv\s*\("),
     ("test_bypass", r"pytest\.(skip|xfail|importorskip)|mark\.(skip|skipif|xfail)|sys\.exit"),
+    ("dynamic_code", r"\b(globals|locals|vars|setattr|delattr)\s*\(|__builtins__|sys\.modules"),
+    ("obfuscation", r"\b(base64|codecs|zlib|binascii)\b|(\\x[0-9a-fA-F]{2}){4,}"),
+    ("filesystem", r"\bopen\s*\(|\.write_(text|bytes)\s*\(|\btempfile\b|\bglob\b"),
+    ("process", r"\b(threading|multiprocessing|signal|asyncio|atexit)\b"),
 )
 _UNSAFE_RE = tuple((check, re.compile(pattern)) for check, pattern in _UNSAFE)
 
@@ -56,6 +72,14 @@ class FilePatch:
 
 class PatchFormatError(ValueError):
     """The text is not a git unified diff the screen can read."""
+
+
+def _check_file_header(line: str, path: str) -> None:
+    """The ---/+++ names must be the diff header's own path, so no tool can write elsewhere."""
+    if line.startswith("--- ") and line[4:] not in (f"a/{path}", "/dev/null"):
+        raise PatchFormatError(f"old name {line[4:120]} does not match {path}")
+    if line.startswith("+++ ") and line[4:] != f"b/{path}":
+        raise PatchFormatError(f"new name {line[4:120]} does not match {path}")
 
 
 def parse_patch(diff: str) -> list[FilePatch]:
@@ -85,10 +109,15 @@ def parse_patch(diff: str) -> list[FilePatch]:
         if line.startswith("@@"):
             in_hunk = True
         elif not in_hunk:
+            _check_file_header(line, path)
             headers.append(line)
             new_file = new_file or line.startswith("new file mode")
-        elif line.startswith("+") and not line.startswith("+++"):
+        elif line.startswith("+"):
+            # Inside a hunk every "+" line is added content, even "+++x" (the Python
+            # line "++x"). Only the file header, before the first "@@", names a file.
             added.append(line[1:])
+        elif line and line[0] not in " -\\":
+            raise PatchFormatError(f"{path}: unexpected line in a hunk: {line[:80]}")
     close()
     if not files:
         raise PatchFormatError("no file in the patch")
@@ -110,7 +139,26 @@ def _finding(
     )
 
 
+def _imports(patch: FilePatch) -> Iterator[tuple[str, str]]:
+    """Parse a new file and check its imports; for an edit, read import lines only."""
+    if patch.new_file:
+        try:
+            tree = ast.parse("\n".join(patch.added), filename=patch.path)
+        except SyntaxError as exc:
+            yield "syntax_error", f"{patch.path}: {exc.msg} at line {exc.lineno}"
+            return
+        names = [a.name for n in ast.walk(tree) if isinstance(n, ast.Import) for a in n.names]
+        names += [n.module or "." for n in ast.walk(tree) if isinstance(n, ast.ImportFrom)]
+    else:
+        names = [m.group(1) or m.group(2) for t in patch.added if (m := _IMPORT_LINE.match(t))]
+    for name in names:
+        if name.split(".")[0] not in ALLOWED_IMPORTS:
+            yield "import_not_allowed", f"{patch.path} imports {name}"
+
+
 def _problems(task: ImplementationTaskV1, patch: FilePatch) -> Iterator[tuple[str, str]]:
+    if not patch.path.endswith(".py"):
+        yield "file_type", f"{patch.path} is not a Python source file"
     if patch.path not in task.allowed_paths:
         yield "path_not_allowed", f"{patch.path} is not in the task's allowed paths"
     if patch.path.rsplit("/", 1)[-1] in _TEST_CONFIG:
@@ -122,9 +170,13 @@ def _problems(task: ImplementationTaskV1, patch: FilePatch) -> Iterator[tuple[st
             if line.startswith(prefix):
                 yield check, f"{patch.path}: {line[:120]}"
     for number, text in enumerate(patch.added, start=1):
+        if len(text) > 300:
+            yield "obfuscation", f"{patch.path} added line {number} is {len(text)} characters"
         for check, pattern in _UNSAFE_RE:
             if pattern.search(text):
                 yield check, f"{patch.path} added line {number}: {text.strip()[:160]}"
+    if patch.path.endswith(".py"):
+        yield from _imports(patch)
 
 
 def screen_patch(
