@@ -72,6 +72,13 @@ class ToolRegistry:
     def names(self) -> list[str]:
         return sorted(self._tools)
 
+    def only(self, names: frozenset[str]) -> ToolRegistry:
+        """A registry with just these tools; any other name is then an unknown tool."""
+        scoped = ToolRegistry()
+        for name in sorted(names & set(self._tools)):
+            scoped.register(self._tools[name])
+        return scoped
+
     def schemas(self) -> list[dict[str, Any]]:
         return [self._tools[name].schema() for name in self.names()]
 

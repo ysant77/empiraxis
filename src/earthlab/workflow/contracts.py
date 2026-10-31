@@ -79,6 +79,7 @@ class EngineeringTaskV1(Strict):
     case_id: str
     allowed_dataset_ids: tuple[str, ...] = Field(min_length=1)
     allowed_method_ids: tuple[str, ...] = Field(min_length=1)
+    allowed_tool_names: tuple[str, ...] = Field(min_length=1)
     max_model_calls: int = Field(gt=0)
     max_tool_calls: int = Field(gt=0)
     max_seconds: float = Field(gt=0)

@@ -5,10 +5,20 @@ orchestrator, geospatial engineer, model reviewer) are bound to Meta families on
 implementor may be any open-weight family. A candidate serves a role only when it is
 enabled, lists the role under `roles`, has a checked licence and has passed preflight.
 There is no fallback: `bind` names one candidate or fails.
+
+Four facts are kept apart, because each fails for a different reason:
+
+- implementation: whether the role's code is implemented, experimental or planned;
+- provider: whether the candidate's endpoint is configured and enabled in providers.yaml;
+- preflight: whether a recorded preflight passed;
+- licence: whether a human checked the model licence.
+
+`bind_runtime` checks all four plus the identity of the client that will serve the role.
 """
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Literal, Self
 
@@ -17,6 +27,7 @@ from pydantic import Field, model_validator
 
 from earthlab.contracts import Strict
 from earthlab.implement.contracts import ModelFamily
+from earthlab.llm.providers import ProviderConfig
 
 BindableRole = Literal[
     "product_manager", "orchestrator", "geospatial_engineer", "implementor", "qa_reviewer"
@@ -26,6 +37,11 @@ SUPERVISING_ROLES: frozenset[str] = frozenset(
     {"product_manager", "orchestrator", "geospatial_engineer", "qa_reviewer"}
 )
 Check = Literal["pass", "fail", "text_only", "not_run"]
+Implementation = Literal["implemented", "experimental", "planned"]
+
+
+class BindingRefused(PermissionError):
+    """A role cannot be served by this candidate or this client now."""
 
 
 class Preflight(Strict):
@@ -42,7 +58,7 @@ class Preflight(Strict):
 
 class RolePolicy(Strict):
     families: tuple[ModelFamily, ...] = Field(min_length=1)
-    status: Literal["implemented", "planned"]
+    status: Implementation
 
 
 class Candidate(Strict):
@@ -109,6 +125,99 @@ class Bindings(Strict):
 
     def ready(self, role: BindableRole) -> tuple[Candidate, ...]:
         return tuple(c for c in self.candidates if role in c.roles)
+
+    def status(
+        self, role: BindableRole, candidate_id: str, providers: Mapping[str, ProviderConfig]
+    ) -> BindingStatus:
+        c = self.candidate(candidate_id)
+        endpoint = providers.get(c.provider_id or "")
+        provider: Literal["available", "disabled", "not_configured"] = (
+            "not_configured"
+            if endpoint is None
+            else "available"
+            if endpoint.enabled
+            else "disabled"
+        )
+        preflight: Literal["passed", "failed", "not_run"] = (
+            "not_run" if c.preflight is None else "passed" if c.preflight.passed() else "failed"
+        )
+        return BindingStatus(
+            role=role,
+            candidate_id=candidate_id,
+            listed=role in c.roles,
+            implementation=self.roles[role].status,
+            provider=provider,
+            preflight=preflight,
+            licence="approved" if c.license_checked else "not_checked",
+            approved_for_use=c.enabled,
+        )
+
+    def bind_runtime(
+        self,
+        role: BindableRole,
+        candidate_id: str,
+        client: ProviderConfig,
+        providers: Mapping[str, ProviderConfig],
+        *,
+        allow_experimental: bool = False,
+    ) -> RoleBinding:
+        """Bind the role to the candidate served by this client, or raise BindingRefused."""
+        state = self.status(role, candidate_id, providers)
+        problems = state.blockers(allow_experimental)
+        c = self.candidate(candidate_id)
+        if client.name != c.provider_id:
+            problems.append(f"client provider {client.name} is not {c.provider_id}")
+        if client.model != c.model_id:
+            problems.append(f"client model {client.model} is not {c.model_id}")
+        if problems:
+            raise BindingRefused(f"{role} <- {candidate_id}: " + "; ".join(problems))
+        return RoleBinding(
+            role=role,
+            candidate_id=candidate_id,
+            family=c.family,
+            model_id=c.model_id,
+            provider_id=client.name,
+            implementation=state.implementation,
+        )
+
+
+class BindingStatus(Strict):
+    role: BindableRole
+    candidate_id: str
+    listed: bool
+    implementation: Implementation
+    provider: Literal["available", "disabled", "not_configured"]
+    preflight: Literal["passed", "failed", "not_run"]
+    licence: Literal["approved", "not_checked"]
+    approved_for_use: bool
+
+    def blockers(self, allow_experimental: bool = False) -> list[str]:
+        """Every reason the role cannot run on this candidate now; empty when it can."""
+        found = [] if self.listed else [f"{self.candidate_id} is not listed for {self.role}"]
+        if self.implementation == "planned":
+            found.append(f"{self.role} is planned, not implemented")
+        if self.implementation == "experimental" and not allow_experimental:
+            found.append(f"{self.role} is experimental; it needs an explicit opt-in")
+        if self.provider != "available":
+            found.append(f"provider is {self.provider.replace('_', ' ')}")
+        if self.preflight != "passed":
+            found.append(f"preflight {self.preflight.replace('_', ' ')}")
+        if self.licence != "approved":
+            found.append("licence not checked")
+        if not self.approved_for_use:
+            found.append("candidate not approved for use")
+        return found
+
+
+class RoleBinding(Strict):
+    """The resolved binding a run records: which candidate serves which role, and how."""
+
+    role: BindableRole
+    candidate_id: str
+    family: ModelFamily
+    model_id: str
+    provider_id: str
+    implementation: Implementation
 
 
 def load_bindings(path: Path) -> Bindings:
