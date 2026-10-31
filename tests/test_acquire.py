@@ -5,9 +5,9 @@ from __future__ import annotations
 import csv
 import hashlib
 import json
-from datetime import date, datetime
+from datetime import date, datetime, tzinfo
 from pathlib import Path
-from typing import Any
+from typing import Any, Self
 
 import httpx
 import pytest
@@ -95,7 +95,16 @@ def _transport(reply: str, status: int = 200) -> httpx.MockTransport:
     return httpx.MockTransport(lambda request: httpx.Response(status, text=reply))
 
 
+class _InsideApprovalWindow(datetime):
+    """The real approvals expired by design; these tests check the download path."""
+
+    @classmethod
+    def now(cls, tz: tzinfo | None = None) -> Self:
+        return cls(2026, 10, 30, tzinfo=tz)
+
+
 def test_firms_errors_never_show_the_key(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setattr("earthlab.acquire.gate.datetime", _InsideApprovalWindow)
     case_file = load_case(CASE, ROOT)
     monkeypatch.setenv("FIRMS_API_KEY", KEY)
     bad = lambda: httpx.Client(transport=_transport(f"Invalid MAP_KEY {KEY}", 400))  # noqa: E731
@@ -110,6 +119,7 @@ def test_firms_errors_never_show_the_key(monkeypatch: pytest.MonkeyPatch, tmp_pa
 def test_firms_acquisition_writes_a_manifest(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
+    monkeypatch.setattr("earthlab.acquire.gate.datetime", _InsideApprovalWindow)
     monkeypatch.setenv("FIRMS_API_KEY", KEY)
     good = lambda: httpx.Client(transport=_transport("latitude,longitude\n-3.0,114.0\n"))  # noqa: E731
     manifest = acquire_firms(

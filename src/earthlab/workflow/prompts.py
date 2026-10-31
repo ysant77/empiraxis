@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import json
+from zoneinfo import ZoneInfo
 
+from earthlab.cases.models import ScientificCase
 from earthlab.cases.tools import CaseLibrary
 from earthlab.workflow.contracts import EngineeringTaskV1, ProductBriefV1
 
@@ -27,6 +29,8 @@ Call submit_brief exactly once:
   transport_plausibility, retrospective_estimation, prospective_prediction or
   causal_inference only when the request asks for that.
 - Restate the request. Do not add any number, place or date it does not contain.
+- A period keeps the whole span the request names, in the case's UTC offset, with the end
+  excluded. Never shorten a period to fit a check.
 """
 
 ORCHESTRATOR_SYSTEM = """\
@@ -52,13 +56,18 @@ shows every value below your report. Do not add causes, forecasts or advice.
 """
 
 
+def case_period(case: ScientificCase) -> str:
+    """The period in the case's own zone, as a brief must give it; the end is excluded."""
+    zone = ZoneInfo(case.period.local_zone)
+    start, end = case.period.start.astimezone(zone), case.period.end.astimezone(zone)
+    return f"{start.isoformat()} to {end.isoformat()}"
+
+
 def case_catalogue(cases: CaseLibrary) -> str:
     lines = []
     for case_id in cases.ids():
         case = cases.get(case_id).case
-        lines.append(
-            f"- {case_id}: {case.title} ({case.period.start.date()} to {case.period.end.date()})"
-        )
+        lines.append(f"- {case_id}: {case.title} ({case_period(case)}, end excluded)")
     return "\n".join(lines)
 
 

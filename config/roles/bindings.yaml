@@ -40,7 +40,7 @@ candidates:
 
   - candidate_id: muse-spark-open
     family: meta-muse
-    model_id: meta-models/muse-spark-open-1026
+    model_id: meta-models/muse-spark-open
     provider_id: baseten-spark-open
     planned_roles: [geospatial_engineer, implementor]
     license: verify on the model card before use

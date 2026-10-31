@@ -13,10 +13,11 @@ from earthlab.agent.messages import assistant_message
 from earthlab.cases.tools import CaseLibrary
 from earthlab.digest import payload_digest
 from earthlab.llm.types import ChatResponse
+from earthlab.planning.intent import asked_window
 from earthlab.tools.registry import ToolSpec
 from earthlab.workflow.calls import RoleCalls
 from earthlab.workflow.contracts import BriefProposal, ProductBriefV1, Topology
-from earthlab.workflow.prompts import PM_SYSTEM, case_catalogue
+from earthlab.workflow.prompts import PM_SYSTEM, case_catalogue, case_period
 
 SUBMIT_BRIEF = "submit_brief"
 PM_CALLS = 2  # the brief and one correction
@@ -72,10 +73,14 @@ def validate_brief(proposal: BriefProposal, request: str, cases: CaseLibrary) ->
             if start >= end:
                 issues.append("period_start must be before period_end")
             elif start < case.period.start or end > case.period.end:
-                issues.append(
-                    f"period is outside the case period {case.period.start.date()} to "
-                    f"{case.period.end.date()}"
-                )
+                issues.append(f"period is outside the case period {case_period(case)}")
+            elif case.variable == "air_pollution_observation":
+                asked = asked_window(request, case.period.local_zone)
+                if asked is not None and (start, end) != asked:
+                    issues.append(
+                        f"period must be the span the request names: {asked[0].isoformat()} "
+                        f"to {asked[1].isoformat()}"
+                    )
     # A product manager restates the request; it never adds a figure of its own.
     written = " ".join(
         [

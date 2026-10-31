@@ -16,6 +16,7 @@ from earthlab.implement.bindings import Bindings
 from earthlab.llm.client import ChatClient
 from earthlab.llm.providers import ProviderConfig
 from earthlab.runtime import RunOptions, Workspace, investigate
+from earthlab.safety.llama_guard import LlamaGuard
 from earthlab.workflow.assign import WorkflowAssignment, resolve_assignment
 from earthlab.workflow.calls import client_kind
 from earthlab.workflow.run import run_workflow
@@ -66,14 +67,15 @@ def run_scenario(
     run_dir: Path,
     assignment: WorkflowAssignment | None,
     options: RunOptions | None = None,
+    guard: LlamaGuard | None = None,
 ) -> ScoreV1:
-    """Run, then score from the recorded files only."""
+    """Run, then score from the recorded files only. A run without a guard says so."""
     budget = Budget(max_turns=scenario.max_turns or 12)
     engineer = client_for(arm.engineer)
     clients = [engineer]
     if assignment is None:
         investigate(
-            scenario.question, engineer, workspace, run_dir, budget=budget,
+            scenario.question, engineer, workspace, run_dir, budget=budget, guard=guard,
             options=options or RunOptions(plan_review=True),
         )  # fmt: skip
     else:
@@ -82,11 +84,12 @@ def run_scenario(
         clients += [pm, *([orchestrator] if orchestrator else [])]
         run_workflow(
             scenario.question, engineer, workspace, run_dir, assignment=assignment,
-            pm_client=pm, orchestrator_client=orchestrator, budget=budget,
+            pm_client=pm, orchestrator_client=orchestrator, budget=budget, guard=guard,
             options=options or RunOptions(),
         )  # fmt: skip
     live = all(client_kind(c) == "live_http" for c in clients)
     record = score(scenario, arm.id, run_facts(run_dir), "live" if live else "synthetic")
+    record = record.model_copy(update={"guarded": guard is not None})
     (run_dir / "score.json").write_text(
         json.dumps(
             {"scoring_version": SCORING_VERSION, **record.model_dump(mode="json")}, indent=2

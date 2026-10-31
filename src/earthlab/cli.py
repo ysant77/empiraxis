@@ -112,11 +112,17 @@ def cmd_investigate(args: argparse.Namespace) -> int:
 
 
 def cmd_workflow(args: argparse.Namespace) -> int:
-    """Product manager -> Geospatial Engineer hand-off; one provider serves both roles."""
+    """Product manager -> Geospatial Engineer hand-off; --provider serves unnamed roles."""
     providers = load_providers(args.providers)
     client = build_client(providers[args.provider])
-    # Refuses an unbound or unready role. One client serves every role in both topologies.
-    assignment = repo_assignment(providers, client, topology=args.topology)
+    pm, orchestrator = (
+        build_client(providers[name]) if name else None
+        for name in (args.pm_provider, args.orchestrator_provider)
+    )
+    # Refuses an unbound or unready role before any model call.
+    assignment = repo_assignment(
+        providers, client, topology=args.topology, pm_client=pm, orchestrator_client=orchestrator
+    )
     run_dir = new_run_dir(args.runs_dir)
     print(f"run: {run_dir}\nroles: {assignment.summary()}")
     run = run_workflow(
@@ -125,7 +131,8 @@ def cmd_workflow(args: argparse.Namespace) -> int:
         open_workspace(args.data_dir),
         run_dir,
         assignment=assignment,
-        orchestrator_client=client if args.topology == "separate" else None,
+        pm_client=pm,
+        orchestrator_client=(orchestrator or client) if args.topology == "separate" else None,
         budget=Budget(max_turns=args.max_turns, max_seconds=args.max_seconds),
         reasoning=args.reasoning,
         listener=_print_event,
@@ -450,6 +457,8 @@ def build_parser() -> argparse.ArgumentParser:
     flow = sub.add_parser("workflow", help="experimental: product manager -> engineer hand-off")
     _add_live_args(flow)
     flow.add_argument("--topology", choices=["combined", "separate"], default="combined")
+    flow.add_argument("--pm-provider", help="product manager provider (default: --provider)")
+    flow.add_argument("--orchestrator-provider", help="separate topology only")
     flow.set_defaults(func=cmd_workflow)
 
     _add_eval_parser(sub)

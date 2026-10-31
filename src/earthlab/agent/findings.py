@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Any
 
 from pydantic import Field
@@ -29,6 +30,13 @@ class FindingsLedger:
     @property
     def latest(self) -> list[VerificationResult]:
         return self.rounds[-1] if self.rounds else []
+
+    def spans(self, start: datetime, end: datetime) -> bool:
+        """True when the supported claims reach both ends of this window."""
+        claims = [r.claim for r in self.supported()]
+        return bool(claims) and (
+            min(c.start for c in claims) <= start and max(c.end for c in claims) >= end
+        )
 
     def all_supported(self) -> bool:
         latest = self.latest

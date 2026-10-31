@@ -23,12 +23,13 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from earthlab.acquire.gate import ApprovalRefused, authorize
+from earthlab.agent.findings import FindingsLedger
 from earthlab.agent.limitations import DECLARE_TOOL, LimitationArgs, LimitationLog, ReasonCode
 from earthlab.cases.methods import CATALOGUE
 from earthlab.cases.models import ApprovalAction, HumanApproval
 from earthlab.cases.tools import CaseLibrary
 from earthlab.planning.critic import plan_digest, review_plan
-from earthlab.planning.intent import enforce_requested_intent
+from earthlab.planning.intent import asked_window, enforce_requested_intent
 from earthlab.planning.outcomes import gate_refusal
 from earthlab.planning.plan import InvestigationPlan
 from earthlab.planning.proposal import PlanProposal, build_plan
@@ -98,6 +99,7 @@ class PlanStep:
     question: str = ""
     plans: list[InvestigationPlan] = field(default_factory=list)
     reviews: list[CriticReport] = field(default_factory=list)
+    window_short: bool = False
 
     def rejected(self) -> bool:
         return len(self.reviews) >= MAX_PLAN_SUBMISSIONS and self.reviews[-1].verdict == "revise"
@@ -135,6 +137,17 @@ class PlanStep:
             reason = "The reviewed plan requires this abstention: observations cannot show a cause."
             log.entries.append(LimitationArgs(reasons=[code], explanation=reason))
             self.trace.append("abstention_enforced", "runtime", reason=code.value)
+
+    def spans_question(self, ledger: FindingsLedger) -> bool:
+        """False when PM2.5 claims stop short of the months the question names."""
+        asked = asked_window(self.question)
+        if asked is None or not ledger.rounds or ledger.spans(*asked):
+            return True
+        if not self.window_short:
+            self.window_short = True
+            start, end = (moment.isoformat() for moment in asked)
+            self.trace.append("window_not_covered", "runtime", start=start, end=end)
+        return False
 
     def spec(self) -> ToolSpec:
         return ToolSpec(

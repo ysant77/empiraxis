@@ -15,7 +15,7 @@ CONFIG = ProviderConfig(
     name="test-hosted",
     kind="hosted",
     base_url="https://example.test/v1",
-    model="meta-models/muse-spark-open-1026",
+    model="meta-models/muse-spark-open",
     logical_model="muse-spark-open",
     api_key_env="EARTHLAB_TEST_KEY",
     usd_per_mtok_input=1.0,
@@ -132,7 +132,7 @@ def test_missing_key_and_unsafe_transport(monkeypatch: pytest.MonkeyPatch) -> No
 def test_shipped_config_loads_and_disabled_providers_refuse() -> None:
     providers = load_providers(Path(__file__).resolve().parents[1] / "config" / "providers.yaml")
     assert providers["local-glimmer"].enabled
-    assert providers["baseten-spark-open"].model == "meta-models/muse-spark-open-1026"
+    assert providers["baseten-spark-open"].model == "meta-models/muse-spark-open"
     assert providers["local-glimmer"].api_key() is None
     with pytest.raises(RuntimeError, match="disabled"):
         build_client(providers["baseten-spark-open"])
