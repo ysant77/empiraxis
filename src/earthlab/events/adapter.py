@@ -97,7 +97,7 @@ def _model_turn(state: State, entry: dict[str, Any]) -> None:
             "tool_requested",
             "proposed",
             f"Turn {data.get('turn')}: requested {', '.join(names)}.",
-            receiver_role="system" if actor == "product_manager" else "tool",
+            receiver_role="system" if data.get("role") else "tool",
             elapsed_ms=elapsed,
         )
     else:

@@ -20,7 +20,9 @@ TASK_ID = r"^[a-z0-9][a-z0-9._-]{0,79}$"
 SHA256 = r"^[0-9a-f]{64}$"
 
 Route = Literal["engineer", "needs_input", "out_of_scope"]
-Topology = Literal["combined"]  # one PM call also proposes the route; code decides it
+# combined: the PM call also proposes the route. separate: a distinct orchestrator call
+# proposes the next stage. In both, code validates and executes every transition.
+Topology = Literal["combined", "separate"]
 WorkflowStatus = Literal[
     "verified",
     "partial",
@@ -50,10 +52,20 @@ class BriefProposal(Strict):
     clarifications_needed: tuple[str, ...] = Field(default=(), max_length=3)
 
 
+class DecisionProposal(Strict):
+    """What a separate orchestrator model submits. It cannot grant a permission, approve
+    spending or mark a finding verified: those fields do not exist and extras are refused."""
+
+    decision: Literal["assign_engineer", "request_input", "decline"]
+    case_id: str | None = Field(default=None, max_length=80)
+    reason: str = Field(min_length=3, max_length=200)
+    clarification: str | None = Field(default=None, max_length=200)
+
+
 class RoleCall(Strict):
     """The configured model for a role call, and what the server says it served."""
 
-    role_id: Literal["product_manager", "geospatial_engineer"]
+    role_id: Literal["product_manager", "orchestrator", "geospatial_engineer"]
     provider: str
     model: str
     logical_model: str
@@ -66,6 +78,14 @@ class ProductBriefV1(Strict):
     request_sha256: str = Field(pattern=SHA256)  # the request text stays in the private trace
     topology: Topology = "combined"
     brief: BriefProposal
+    author: RoleCall
+
+
+class OrchestratorDecisionV1(Strict):
+    schema_version: Literal["1"] = "1"
+    task_id: str = Field(pattern=TASK_ID)
+    brief_sha256: str = Field(pattern=SHA256)
+    decision: DecisionProposal
     author: RoleCall
 
 

@@ -232,7 +232,11 @@ def test_a_plan_under_revision_cannot_reach_evidence_in_the_workflow(
         call("submit_brief", **brief()),
         call("submit_plan", **plan("10")),
         call("burned_area_summary", case_id=CASE, month="2015-10"),
-        call("declare_limitation", reasons=["insufficient_valid_data"], explanation="Gate."),
+        call(
+            "declare_limitation",
+            reasons=["insufficient_valid_data"],
+            explanation="Too few valid cells.",
+        ),
         say("No claim."),
         say("No finding."),
     ]
