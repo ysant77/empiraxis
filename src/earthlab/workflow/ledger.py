@@ -10,6 +10,7 @@ from __future__ import annotations
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from typing import Any
 
 from earthlab.agent.budget import Budget
 
@@ -18,8 +19,8 @@ from earthlab.agent.budget import Budget
 class RoleUsage:
     model_calls: int = 0
     tool_calls: int = 0
-    prompt_tokens: int = 0
-    completion_tokens: int = 0
+    prompt_tokens: int | None = 0  # None once any call did not report its usage
+    completion_tokens: int | None = 0
     cost_usd: float = 0.0
     seconds: float = 0.0
 
@@ -42,8 +43,8 @@ class WorkflowLedger:
         for u in self.usage.values():
             out.model_calls += u.model_calls
             out.tool_calls += u.tool_calls
-            out.prompt_tokens += u.prompt_tokens
-            out.completion_tokens += u.completion_tokens
+            out.prompt_tokens = _add(out.prompt_tokens, u.prompt_tokens)
+            out.completion_tokens = _add(out.completion_tokens, u.completion_tokens)
             out.cost_usd += u.cost_usd
         return out
 
@@ -75,8 +76,13 @@ class WorkflowLedger:
             return f"workflow time limit {b.max_seconds:.0f}s reached"
         return f"workflow cost above {b.max_usd} USD"
 
-    def charge(self, role: str, **amounts: float) -> None:
-        """Add measured use to a role. Unknown amounts must be passed as worst cases."""
+    def charge(self, role: str, **amounts: float | None) -> None:
+        """Add measured use to a role. Unknown costs must be passed as worst cases; an
+        unknown token count is passed as None and keeps the total unknown."""
         u = self.usage.setdefault(role, RoleUsage())
         for name, value in amounts.items():
-            setattr(u, name, getattr(u, name) + value)
+            setattr(u, name, _add(getattr(u, name), value))
+
+
+def _add(total: float | None, value: float | None) -> Any:
+    return None if total is None or value is None else total + value

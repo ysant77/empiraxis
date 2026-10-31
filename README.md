@@ -112,6 +112,16 @@ re-chained. `MANIFEST.json` records each source run, its trace SHA-256 and the r
 fields. Rebuild with `uv run python scripts/make_replay_fixture.py runs/bench/<bench id>`.
 Set `EARTHLAB_UI_MODE=operator` on a local machine to turn on live investigation.
 
+For a recorded workflow run, the Control Room adds a **Workflow run** panel, built only
+from the verified trace and `result.json`: the topology, each stage (PM brief,
+orchestrator decision, engineer assignment, plan review, tool calls, verified result, PM
+report), per-role calls, tokens, latency, cost, provider and configured versus served
+model, and every failed or retried model call. A value the record does not hold reads
+"unknown". A run whose clients were not real HTTP model endpoints is labelled a synthetic
+test run, never live collaboration. In a separate-topology run the `orchestrator` role is
+the separately invoked model orchestrator; everywhere else it is the single Muse
+investigator. No workflow run is in `examples/replay/`: none has been recorded live.
+
 ### Measured on the development Mac (MacBook Air M5, 32 GB)
 
 | Setting | Decode speed |

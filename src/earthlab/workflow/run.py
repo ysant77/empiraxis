@@ -40,7 +40,7 @@ from earthlab.verify.answer_audit import audit_answer
 from earthlab.verify.claims import Verdict
 from earthlab.workflow.assign import WorkflowAssignment, task_scope
 from earthlab.workflow.brief import PM_CALLS, propose_brief, validate_brief
-from earthlab.workflow.calls import RoleCalls
+from earthlab.workflow.calls import RoleCalls, client_kind
 from earthlab.workflow.contracts import (
     EngineeringReplyV1,
     EngineeringTaskV1,
@@ -176,6 +176,7 @@ class _Flow:
             topology=s.assignment.topology, pm={"provider": pm.name, "model": pm.model},
             engineer={"provider": s.client.config.name, "model": s.client.config.model},
             bindings=s.assignment.records(),
+            client_kinds={role: client_kind(c) for role, c in self._clients().items()},
             budget=s.budget.model_dump(), retry_policy=self.pm.retry.record(),
         )  # fmt: skip
         asked = self.gate.check_question(s.question)
@@ -199,6 +200,10 @@ class _Flow:
             if stopped is not None:
                 return self._finish(stopped, brief)
         return self._engineer(brief)
+
+    def _clients(self) -> dict[str, ChatClient]:
+        found = {"product_manager": self.pm.client, "geospatial_engineer": self.s.client}
+        return found | ({"orchestrator": self.orch.client} if self.orch else {})
 
     def _orchestrate(self, brief: ProductBriefV1) -> ManagerResultV1 | None:
         """Run the separate orchestrator; None means assign the engineer."""
