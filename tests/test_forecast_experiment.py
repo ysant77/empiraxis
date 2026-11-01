@@ -291,3 +291,11 @@ def test_a_failed_training_process_ends_the_ticket(
     monkeypatch.setattr(pipeline, "run_isolated", lambda *a: IsolatedRun(1, 0.1, 1.0, "boom"))
     done = run_experiment("deterministic", tmp_path / "run", None, SOURCE)
     assert done["status"] == "failed"
+
+
+def test_a_reason_cannot_state_a_number_the_evaluator_did_not_produce() -> None:
+    results = {"candidate-1": {"metrics": {"6": {"all": {"mae": 4.5721}}}}}
+    assert gate.unbacked_numbers("MAE of 4.57", results) == []
+    assert gate.unbacked_numbers("MAE of 3.99", results)
+    rec = Recommendation(outcome="abstain", reason="The MAE was 3.99 here.")
+    assert gate.permitted(rec, results)

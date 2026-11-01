@@ -39,7 +39,18 @@ from earthlab.forecast.contracts import (
 from earthlab.forecast.evaluator import compare
 from earthlab.forecast.gate import default_outcome, eligible, permitted, requirement_issues, verdict
 from earthlab.forecast.pipeline import FeatureSpec, TrainSpec, Workbench
-from earthlab.forecast.samples import HORIZONS, PRIMARY_HORIZON
+from earthlab.forecast.prompts import (
+    DATA_SYSTEM,
+    LEAD_SYSTEM,
+    ML_SYSTEM,
+    OBJECTIVE,
+    PM_SYSTEM,
+    RECOMMEND_SYSTEM,
+    REPORT_SYSTEM,
+    REVIEW_SYSTEM,
+    SINGLE_SYSTEM,
+)
+from earthlab.forecast.samples import PRIMARY_HORIZON
 from earthlab.llm.client import ChatClient
 from earthlab.llm.types import ProviderError, ToolCall
 from earthlab.metrics import EarthlabMetrics
@@ -54,33 +65,6 @@ FIXED = Assignment(
     window_hours=48, log_transform=True, architecture="gru", hidden=32, layers=1, max_epochs=12,
     loss="mae", reason="The preset for the arm with no model.",
 )  # fmt: skip
-OBJECTIVE = {
-    "objective": "Historical evaluation of regional hourly PM2.5 at issue time, arm A.",
-    "protocol": "docs/science-data-forecast-protocol.md, version 1",
-    "protocol_rules": {
-        "primary_horizon_hours": PRIMARY_HORIZON,
-        "horizons_hours": list(HORIZONS),
-        "reference": "B0 persistence",
-        "rule": "lower 95% limit of mean MAE skill above zero, and no region with a clear loss",
-    },
-    "not_in_scope": "operational forecasts, advice, AQI or PSI, any source or cause claim",
-}
-PM_SYSTEM = "You are the product manager. Turn the objective into typed requirements with the \
-submit_requirements tool. You can tighten the protocol rules. You cannot weaken them."
-LEAD_SYSTEM = "You are the Geospatial Lead. Read the data profile and choose one modest method \
-with assign_method. Explain why from this data. You do not compute results."
-DATA_SYSTEM = "You are the Data Scientist. Call profile_data, then build_features with the \
-ticket's values, then submit_data_report with the features_id from the tool."
-ML_SYSTEM = "You are the ML/DL Engineer. Call run_baselines first. Then call train_candidate \
-once. Then call submit_training_report with the model_id from the tool."
-REVIEW_SYSTEM = "You are the Geospatial Lead. Read the evaluator's table. Call review_results. \
-Choose refine, with a changed method, only if the table gives a reason. Otherwise finish."
-RECOMMEND_SYSTEM = "You are the Geospatial Lead. Call recommend. Use adopt_candidate only for a \
-model listed as eligible. Otherwise retain a baseline or abstain. A neural model that does \
-not beat the baselines is a valid result. State no cause, forecast or advice."
-REPORT_SYSTEM = "You are the product manager. Check the recommendation against the requirements \
-and call forward_decision. A person decides. You grant nothing."
-SINGLE_SYSTEM = "You run this whole experiment alone. Choose one modest method with assign_method."
 
 
 class Stopped(Exception):
@@ -106,6 +90,7 @@ class Flow:
         self.calls: dict[str, RoleCalls] = {}
         self.root = f"{run_dir.name.lower()}.pm"
         self.lead_task = f"{self.root}.lead"
+        self.requirements: Requirements | None = None
 
     def role(self, name: str) -> RoleCalls:
         if self.client is None:
@@ -212,8 +197,13 @@ class Flow:
     def invoke(self, phase: str, role: str, task: str, status: str | None = None) -> None:
         data: dict[str, Any] = {"phase": phase, "role": role, "task_id": task}
         if phase == "finished":
-            data |= {"status": status, "model_calls": 0}
+            data |= {"status": status, "model_calls": self.role_turns(role)}
         self.trace.append("role_invocation", "runtime", **data)
+
+    def role_turns(self, role: str) -> int:
+        """Model calls this role made so far in the run, from the trace."""
+        turns = (e["data"] for e in self.trace.records() if e["event"] == "model_turn")
+        return sum(t["role"] == role for t in turns)
 
     def handoff(self, task: str, parent: str, receiver: str, ticket: dict[str, Any]) -> None:
         self.trace.append(
@@ -307,6 +297,7 @@ def multi_agent(flow: Flow) -> Recommendation:
     requirements = flow.propose(
         PM, PM_SYSTEM, OBJECTIVE, "submit_requirements", Requirements, requirement_issues
     )
+    flow.requirements = requirements
     flow.handoff(flow.lead_task, flow.root, LEAD, requirements.model_dump(mode="json"))
     flow.invoke("started", LEAD, flow.lead_task)
     profile = flow.bench.profile()
@@ -453,6 +444,20 @@ def finish(flow: Flow, rec: Recommendation | None, status: str, reason: str) -> 
     return outcome
 
 
+def pm_context(flow: Flow, rec: Recommendation) -> dict[str, Any]:
+    """What the PM checks: its own requirements and the evaluator's result, not only the Lead's."""
+    assert flow.requirements is not None
+    return {
+        "requirements": flow.requirements.model_dump(mode="json"),
+        "recommendation": rec.model_dump(mode="json"),
+        "evaluator": {
+            "eligible": eligible(flow.bench.results),
+            "code_outcome": default_outcome(flow.bench.results),
+            "rule_issues": permitted(rec, flow.bench.results),
+        },
+    }
+
+
 def paired(flow: Flow) -> dict[str, Any]:
     """Each trained candidate against the best statistical baseline, on the same samples."""
     bench, out = flow.bench, {}
@@ -483,7 +488,7 @@ def run_experiment(
         rec = steps[arm](flow)
         if arm == "multi_agent":
             decision = flow.propose(
-                PM, REPORT_SYSTEM, rec.model_dump(mode="json"), "forward_decision", PmDecision
+                PM, REPORT_SYSTEM, pm_context(flow, rec), "forward_decision", PmDecision
             )
             flow.invoke("finished", LEAD, flow.lead_task, "verified")
             if not decision.forward_to_human:

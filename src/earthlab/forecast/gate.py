@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from typing import Any
 
@@ -53,6 +54,9 @@ def eligible(results: dict[str, dict[str, Any]]) -> list[str]:
 
 def permitted(rec: Recommendation, results: dict[str, dict[str, Any]]) -> list[str]:
     """Why a recommendation may not stand. Abstention is always allowed."""
+    numbers = unbacked_numbers(rec.reason, results)
+    if numbers:
+        return numbers
     if rec.outcome == "abstain":
         return []
     if rec.outcome == "retain_baseline":
@@ -65,6 +69,17 @@ def permitted(rec: Recommendation, results: dict[str, dict[str, Any]]) -> list[s
     if rec.model_id not in eligible(results):
         return [f"{rec.model_id} does not pass the rule on validation"]
     return []
+
+
+def unbacked_numbers(text: str, results: dict[str, Any]) -> list[str]:
+    """Decimal values in model text that no evaluator number rounds to."""
+    known = [float(value) for value in re.findall(r"-?\d+\.\d+", str(results))]
+    wrong = []
+    for value in re.findall(r"\d+\.\d+", text):
+        places = len(value.split(".")[1])
+        if not any(abs(round(abs(k), places) - float(value)) < 1e-9 for k in known):
+            wrong.append(f"{value} is not in the evaluator's results")
+    return wrong
 
 
 def default_outcome(results: dict[str, dict[str, Any]]) -> tuple[Outcome, str | None]:
