@@ -32,6 +32,9 @@ CHOICE: dict[str, Any] = {
 }  # fmt: skip
 
 
+STRATEGY = call("choose_strategy", strategy="small_neural", reason="Enough rows and labels.")
+
+
 class Trainer:
     def __init__(self, noise: float = 0.0):
         self.jobs: list[dict[str, Any]] = []
@@ -66,6 +69,7 @@ def trainer(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Trainer:
 def team_script(*tail: Any) -> list[Any]:
     return [
         call("review_scope", in_scope=True, note="Within the problem."),
+        STRATEGY,
         call("choose_method", **CHOICE),
         call("prepare_data"),
         call("submit_note", note="Prepared."),
@@ -151,8 +155,8 @@ def test_an_over_budget_choice_gets_one_correction_then_stops(
     costly = CHOICE | {"architecture": "tcn", "window_hours": 168, "hidden": 64, "layers": 2,
                        "max_epochs": 20}  # fmt: skip
     client = ScriptedClient(
-        [call("review_scope", in_scope=True, note="Fine."), call("choose_method", **costly),
-         call("choose_method", **costly)]
+        [call("review_scope", in_scope=True, note="Fine."), STRATEGY,
+         call("choose_method", **costly), call("choose_method", **costly)]
     )  # fmt: skip
     done = run("team", tmp_path / "run", client)
     assert done["status"] == "failed" and "over_budget" in done["reason"]
@@ -191,7 +195,7 @@ def test_every_artifact_in_the_record_matches_its_digest(trainer: Trainer, tmp_p
 
 def test_generated_code_in_a_proposal_is_refused(trainer: Trainer, tmp_path: Path) -> None:
     bad = call("choose_method", **(CHOICE | {"code": "import os; os.system('rm -rf /')"}))
-    client = ScriptedClient([call("review_scope", in_scope=True, note="Fine."), bad, bad])
+    client = ScriptedClient([call("review_scope", in_scope=True, note="Fine."), STRATEGY, bad, bad])
     done = run("team", tmp_path / "run", client)
     assert done["status"] == "failed" and not trainer.jobs
 
@@ -214,3 +218,33 @@ def test_replay_reports_a_changed_score(trainer: Trainer, tmp_path: Path) -> Non
     record["comparison"][0]["mae"] = 1.0
     path.write_text(json.dumps(record), encoding="utf-8")
     assert replay_run(tmp_path / "run")["mismatches"]
+
+
+def test_the_lead_can_decide_that_no_neural_model_is_needed(
+    trainer: Trainer, tmp_path: Path
+) -> None:
+    script = [
+        call("review_scope", in_scope=True, note="Within the problem."),
+        call("choose_strategy", strategy="statistical", reason="A ridge model may be enough."),
+        call("prepare_data"), call("submit_note", note="Prepared."),
+        call("train_models"), call("submit_note", note="Baselines ran."),
+        *closing("retain_baseline", "B4_lagged_ridge"),
+    ]  # fmt: skip
+    done = run("team", tmp_path / "run", ScriptedClient(script))
+    assert done["status"] == "awaiting_human", done["reason"]
+    assert not trainer.jobs and done["strategy"] == "statistical"
+    assert done["model_changed_the_plan"]
+
+
+def test_a_blocked_strategy_is_refused_and_abstention_is_a_result(
+    trainer: Trainer, tmp_path: Path
+) -> None:
+    script = [
+        call("review_scope", in_scope=True, note="Within the problem."),
+        call("choose_strategy", strategy="pretrained_transfer", reason="It is a strong model."),
+        call("choose_strategy", strategy="abstain_or_request", reason="Nothing fits this."),
+    ]
+    done = run("team", tmp_path / "run", ScriptedClient(script))
+    assert done["status"] == "abstained" and not trainer.jobs
+    checks = {c["strategy"]: c for c in done["suitability"]["checks"]}
+    assert not checks["pretrained_transfer"]["eligible"]

@@ -42,6 +42,7 @@ class ProblemSpecV1(Strict):
     target: str = Field(max_length=200)
     horizon_hours: int | None = Field(default=None, ge=1, le=72)
     threshold: float | None = Field(default=None, gt=0)
+    repeated_inference_per_day: int = Field(default=0, ge=0)
     permitted_evidence: tuple[str, ...] = Field(min_length=1, max_length=8)
     success_criteria: tuple[str, ...] = Field(min_length=1, max_length=8)
 
