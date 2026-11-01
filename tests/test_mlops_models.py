@@ -62,6 +62,17 @@ def test_an_unknown_method_or_the_wrong_task_is_refused() -> None:
         families.predict("ghost", "regression", x, {}, {})
 
 
+def test_a_classification_output_with_one_class_is_refused() -> None:
+    x, y = labels()
+    cfg = {"trees": 5, "depth": 2, "rate": 0.2}
+    for column in (np.zeros_like(y), np.ones_like(y), np.full_like(y, np.nan)):
+        with pytest.raises(ValueError, match="one class only"):
+            families.train("trees_classifier", "classification", x, column, cfg, 1)
+    both = np.hstack([y, np.zeros_like(y)])
+    with pytest.raises(ValueError, match="one class only"):
+        families.train("logistic", "classification", x, both, {"penalty": 1.0}, 1)
+
+
 def test_misaligned_rows_are_refused() -> None:
     x, y = data(50)
     with pytest.raises(ValueError, match="align"):

@@ -67,7 +67,25 @@ def cmd_mlops_predict(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_mlops_run(args: argparse.Namespace) -> int:
+    """Registered methods on the NEA series, scored by the existing evaluators."""
+    from earthlab.forecast.pipeline import SOURCE
+    from earthlab.harness import families_run as runs
+
+    spec = runs.RunSpec(lags=args.lags)
+    run = runs.run_regression if args.scenario == "regression" else runs.run_classification
+    print(json.dumps(run(args.out, args.registry, args.source or SOURCE, spec), indent=2))
+    return 0
+
+
 def add_mlops_parsers(sub: Any) -> None:
+    train = sub.add_parser("mlops-run", help="experimental: registered methods on real NEA data")
+    train.add_argument("scenario", choices=["regression", "classification"])
+    train.add_argument("--out", type=Path, required=True, help="folder for run artifacts")
+    train.add_argument("--registry", type=Path, required=True, help="registry folder")
+    train.add_argument("--source", type=Path, default=None, help="the NEA CSV")
+    train.add_argument("--lags", type=int, default=12)
+    train.set_defaults(func=cmd_mlops_run)
     run = sub.add_parser("mlops-predict", help="batch inference from a registered model bundle")
     run.add_argument("--registry", type=Path, required=True)
     run.add_argument("--bundle", required=True, help="the bundle's SHA-256 digest")

@@ -223,8 +223,13 @@ def train(
     """Validate the config, then fit. Hard-label rules are for the classifier adapters."""
     method = _pick(method_id, task)
     parsed = method.config.model_validate(dict(config))
-    if len(x) != len(y) or y.ndim != 2:
+    if y.ndim != 2 or len(x) != len(y):
         raise ValueError("x and y must align, and y needs one column per output")
+    if task == "classification":
+        for column in y.T:
+            known = column[~np.isnan(column)]
+            if len(known) == 0 or known.min() == known.max():
+                raise ValueError("a classification output has one class only, so it is refused")
     return method.fit(x, y, parsed, seed)
 
 
