@@ -1,0 +1,760 @@
+{
+ "schema": "earthlab-repro-v1",
+ "generated_from": "earthlab-live-runs-v53/manifest.jsonl and run folders",
+ "run_count": 19,
+ "scope_note": "Development questions. One run per cell in stage s3. Descriptive only. Stages s3 and s4 used the command line. Stage ui used the operator UI.",
+ "energy": "NOT_MEASURED",
+ "provider_cost": "local hardware, no provider charge",
+ "runs": [
+  {
+   "stage": "s3",
+   "scenario_id": "WD-01",
+   "arm": "direct",
+   "run_id": "20261031T164747Z-5bc359",
+   "git_sha": "5b915545106d108a20c7cc7be000900e89b9f7d6",
+   "tree_sha": "1e9535edaf1fa72be55ea33706344fbb337b8ff0",
+   "served_model": "muse-glimmer-30B",
+   "model_revision": "local-glimmer, Muse-Glimmer-30B-KQuant-17GB-Q4_K_M.gguf",
+   "weights_sha256": "4cc57c0f51040a226e5a72cc47b7613f7772950e460a665f7083de89f183f60e",
+   "runtime": "b11669-620d2225c",
+   "guard": {
+    "enabled": true,
+    "provider_and_digest": [
+     "local-llama-guard",
+     "ddc07af15606ec3342a3878b5631e58a1d8b42642a00a42efe4a8e81550c4f19"
+    ],
+    "loaded_at_start": false
+   },
+   "expected": "verified burned area with valid fraction; hectares shown to the reader",
+   "outcome": "verified",
+   "limitations": [],
+   "source_sha256": "2fb76e1c4e4208e92f49670602e303c86e21eaa3704651633323e50f51015de4",
+   "input_hashes": 8,
+   "wall_seconds": 229.6,
+   "prompt_tokens": 33098,
+   "completion_tokens": 929,
+   "run_id_source": "manifest",
+   "replay_at_record_time": {
+    "exit": 0,
+    "lines": [
+     "trace: 18 records, hash chain intact",
+     "verdicts reproduced: 0/0",
+     "area verdicts reproduced: 2/2",
+     "month checks reproduced: 1/1",
+     "input hashes: all match (8 files)"
+    ]
+   }
+  },
+  {
+   "stage": "s3",
+   "scenario_id": "WD-01",
+   "arm": "combined",
+   "run_id": "20261031T165139Z-a05c1e",
+   "git_sha": "5b915545106d108a20c7cc7be000900e89b9f7d6",
+   "tree_sha": "1e9535edaf1fa72be55ea33706344fbb337b8ff0",
+   "served_model": "muse-glimmer-30B",
+   "model_revision": "local-glimmer, Muse-Glimmer-30B-KQuant-17GB-Q4_K_M.gguf",
+   "weights_sha256": "4cc57c0f51040a226e5a72cc47b7613f7772950e460a665f7083de89f183f60e",
+   "runtime": "b11669-620d2225c",
+   "guard": {
+    "enabled": true,
+    "provider_and_digest": [
+     "local-llama-guard",
+     "ddc07af15606ec3342a3878b5631e58a1d8b42642a00a42efe4a8e81550c4f19"
+    ],
+    "loaded_at_start": true
+   },
+   "expected": "verified burned area with valid fraction; hectares shown to the reader",
+   "outcome": "verified",
+   "limitations": [],
+   "source_sha256": "2fb76e1c4e4208e92f49670602e303c86e21eaa3704651633323e50f51015de4",
+   "input_hashes": 8,
+   "wall_seconds": 648.7,
+   "prompt_tokens": 23946,
+   "completion_tokens": 1124,
+   "run_id_source": "manifest",
+   "replay_at_record_time": {
+    "exit": 0,
+    "lines": [
+     "trace: 32 records, hash chain intact",
+     "verdicts reproduced: 0/0",
+     "area verdicts reproduced: 2/2",
+     "month checks reproduced: 1/1",
+     "input hashes: all match (8 files)"
+    ]
+   }
+  },
+  {
+   "stage": "s3",
+   "scenario_id": "WD-01",
+   "arm": "separate",
+   "run_id": "20261031T170232Z-5a9bf4",
+   "git_sha": "5b915545106d108a20c7cc7be000900e89b9f7d6",
+   "tree_sha": "1e9535edaf1fa72be55ea33706344fbb337b8ff0",
+   "served_model": "muse-glimmer-30B",
+   "model_revision": "local-glimmer, Muse-Glimmer-30B-KQuant-17GB-Q4_K_M.gguf",
+   "weights_sha256": "4cc57c0f51040a226e5a72cc47b7613f7772950e460a665f7083de89f183f60e",
+   "runtime": "b11669-620d2225c",
+   "guard": {
+    "enabled": true,
+    "provider_and_digest": [
+     "local-llama-guard",
+     "ddc07af15606ec3342a3878b5631e58a1d8b42642a00a42efe4a8e81550c4f19"
+    ],
+    "loaded_at_start": true
+   },
+   "expected": "verified burned area with valid fraction; hectares shown to the reader",
+   "outcome": "verified",
+   "limitations": [],
+   "source_sha256": "2fb76e1c4e4208e92f49670602e303c86e21eaa3704651633323e50f51015de4",
+   "input_hashes": 8,
+   "wall_seconds": 635.0,
+   "prompt_tokens": 23423,
+   "completion_tokens": 1095,
+   "run_id_source": "manifest",
+   "replay_at_record_time": {
+    "exit": 0,
+    "lines": [
+     "trace: 35 records, hash chain intact",
+     "verdicts reproduced: 0/0",
+     "area verdicts reproduced: 2/2",
+     "month checks reproduced: 1/1",
+     "input hashes: all match (8 files)"
+    ]
+   }
+  },
+  {
+   "stage": "s3",
+   "scenario_id": "WD-02",
+   "arm": "combined",
+   "run_id": "20261031T171311Z-72e410",
+   "git_sha": "5b915545106d108a20c7cc7be000900e89b9f7d6",
+   "tree_sha": "1e9535edaf1fa72be55ea33706344fbb337b8ff0",
+   "served_model": "muse-glimmer-30B",
+   "model_revision": "local-glimmer, Muse-Glimmer-30B-KQuant-17GB-Q4_K_M.gguf",
+   "weights_sha256": "4cc57c0f51040a226e5a72cc47b7613f7772950e460a665f7083de89f183f60e",
+   "runtime": "b11669-620d2225c",
+   "guard": {
+    "enabled": true,
+    "provider_and_digest": [
+     "local-llama-guard",
+     "ddc07af15606ec3342a3878b5631e58a1d8b42642a00a42efe4a8e81550c4f19"
+    ],
+    "loaded_at_start": true
+   },
+   "expected": "abstained with insufficient_valid_data and no hectares",
+   "outcome": "abstained",
+   "limitations": [
+    "insufficient_valid_data"
+   ],
+   "source_sha256": "2fb76e1c4e4208e92f49670602e303c86e21eaa3704651633323e50f51015de4",
+   "input_hashes": 0,
+   "wall_seconds": 722.8,
+   "prompt_tokens": 28446,
+   "completion_tokens": 1834,
+   "run_id_source": "manifest",
+   "replay_at_record_time": {
+    "exit": 0,
+    "lines": [
+     "trace: 37 records, hash chain intact",
+     "verdicts reproduced: 0/0",
+     "area verdicts reproduced: 0/0",
+     "month checks reproduced: 0/0",
+     "input hashes: none recorded"
+    ]
+   }
+  },
+  {
+   "stage": "s3",
+   "scenario_id": "WD-02",
+   "arm": "separate",
+   "run_id": "20261031T172518Z-dc4d6c",
+   "git_sha": "5b915545106d108a20c7cc7be000900e89b9f7d6",
+   "tree_sha": "1e9535edaf1fa72be55ea33706344fbb337b8ff0",
+   "served_model": "muse-glimmer-30B",
+   "model_revision": "local-glimmer, Muse-Glimmer-30B-KQuant-17GB-Q4_K_M.gguf",
+   "weights_sha256": "4cc57c0f51040a226e5a72cc47b7613f7772950e460a665f7083de89f183f60e",
+   "runtime": "b11669-620d2225c",
+   "guard": {
+    "enabled": true,
+    "provider_and_digest": [
+     "local-llama-guard",
+     "ddc07af15606ec3342a3878b5631e58a1d8b42642a00a42efe4a8e81550c4f19"
+    ],
+    "loaded_at_start": true
+   },
+   "expected": "abstained with insufficient_valid_data and no hectares",
+   "outcome": "abstained",
+   "limitations": [
+    "insufficient_valid_data"
+   ],
+   "source_sha256": "2fb76e1c4e4208e92f49670602e303c86e21eaa3704651633323e50f51015de4",
+   "input_hashes": 0,
+   "wall_seconds": 720.0,
+   "prompt_tokens": 18399,
+   "completion_tokens": 1473,
+   "run_id_source": "manifest",
+   "replay_at_record_time": {
+    "exit": 0,
+    "lines": [
+     "trace: 35 records, hash chain intact",
+     "verdicts reproduced: 0/0",
+     "area verdicts reproduced: 0/0",
+     "month checks reproduced: 0/0",
+     "input hashes: none recorded"
+    ]
+   }
+  },
+  {
+   "stage": "s3",
+   "scenario_id": "WD-02",
+   "arm": "direct",
+   "run_id": "20261031T173723Z-49545f",
+   "git_sha": "5b915545106d108a20c7cc7be000900e89b9f7d6",
+   "tree_sha": "1e9535edaf1fa72be55ea33706344fbb337b8ff0",
+   "served_model": "muse-glimmer-30B",
+   "model_revision": "local-glimmer, Muse-Glimmer-30B-KQuant-17GB-Q4_K_M.gguf",
+   "weights_sha256": "4cc57c0f51040a226e5a72cc47b7613f7772950e460a665f7083de89f183f60e",
+   "runtime": "b11669-620d2225c",
+   "guard": {
+    "enabled": true,
+    "provider_and_digest": [
+     "local-llama-guard",
+     "ddc07af15606ec3342a3878b5631e58a1d8b42642a00a42efe4a8e81550c4f19"
+    ],
+    "loaded_at_start": true
+   },
+   "expected": "abstained with insufficient_valid_data and no hectares",
+   "outcome": "abstained",
+   "limitations": [
+    "insufficient_valid_data"
+   ],
+   "source_sha256": "2fb76e1c4e4208e92f49670602e303c86e21eaa3704651633323e50f51015de4",
+   "input_hashes": 0,
+   "wall_seconds": 242.6,
+   "prompt_tokens": 25093,
+   "completion_tokens": 965,
+   "run_id_source": "manifest",
+   "replay_at_record_time": {
+    "exit": 0,
+    "lines": [
+     "trace: 16 records, hash chain intact",
+     "verdicts reproduced: 0/0",
+     "area verdicts reproduced: 0/0",
+     "month checks reproduced: 0/0",
+     "input hashes: none recorded"
+    ]
+   }
+  },
+  {
+   "stage": "s3",
+   "scenario_id": "NEA",
+   "arm": "separate",
+   "run_id": "20261031T174128Z-7bd211",
+   "git_sha": "5b915545106d108a20c7cc7be000900e89b9f7d6",
+   "tree_sha": "1e9535edaf1fa72be55ea33706344fbb337b8ff0",
+   "served_model": "muse-glimmer-30B",
+   "model_revision": "local-glimmer, Muse-Glimmer-30B-KQuant-17GB-Q4_K_M.gguf",
+   "weights_sha256": "4cc57c0f51040a226e5a72cc47b7613f7772950e460a665f7083de89f183f60e",
+   "runtime": "b11669-620d2225c",
+   "guard": {
+    "enabled": true,
+    "provider_and_digest": [
+     "local-llama-guard",
+     "ddc07af15606ec3342a3878b5631e58a1d8b42642a00a42efe4a8e81550c4f19"
+    ],
+    "loaded_at_start": true
+   },
+   "expected": "verified peak_region, no AQI, health advice or cause",
+   "outcome": "verified",
+   "limitations": [],
+   "source_sha256": "2fb76e1c4e4208e92f49670602e303c86e21eaa3704651633323e50f51015de4",
+   "input_hashes": 0,
+   "wall_seconds": 740.7,
+   "prompt_tokens": 45538,
+   "completion_tokens": 1812,
+   "run_id_source": "manifest",
+   "replay_at_record_time": {
+    "exit": 0,
+    "lines": [
+     "trace: 40 records, hash chain intact",
+     "verdicts reproduced: 6/6",
+     "area verdicts reproduced: 0/0",
+     "month checks reproduced: 0/0",
+     "input hashes: none recorded"
+    ]
+   }
+  },
+  {
+   "stage": "s3",
+   "scenario_id": "NEA",
+   "arm": "direct",
+   "run_id": "20261031T175354Z-eeffbc",
+   "git_sha": "5b915545106d108a20c7cc7be000900e89b9f7d6",
+   "tree_sha": "1e9535edaf1fa72be55ea33706344fbb337b8ff0",
+   "served_model": "muse-glimmer-30B",
+   "model_revision": "local-glimmer, Muse-Glimmer-30B-KQuant-17GB-Q4_K_M.gguf",
+   "weights_sha256": "4cc57c0f51040a226e5a72cc47b7613f7772950e460a665f7083de89f183f60e",
+   "runtime": "b11669-620d2225c",
+   "guard": {
+    "enabled": true,
+    "provider_and_digest": [
+     "local-llama-guard",
+     "ddc07af15606ec3342a3878b5631e58a1d8b42642a00a42efe4a8e81550c4f19"
+    ],
+    "loaded_at_start": true
+   },
+   "expected": "verified peak_region, no AQI, health advice or cause",
+   "outcome": "verified",
+   "limitations": [],
+   "source_sha256": "2fb76e1c4e4208e92f49670602e303c86e21eaa3704651633323e50f51015de4",
+   "input_hashes": 0,
+   "wall_seconds": 301.5,
+   "prompt_tokens": 40655,
+   "completion_tokens": 1262,
+   "run_id_source": "manifest",
+   "replay_at_record_time": {
+    "exit": 0,
+    "lines": [
+     "trace: 19 records, hash chain intact",
+     "verdicts reproduced: 2/2",
+     "area verdicts reproduced: 0/0",
+     "month checks reproduced: 0/0",
+     "input hashes: none recorded"
+    ]
+   }
+  },
+  {
+   "stage": "s3",
+   "scenario_id": "NEA",
+   "arm": "combined",
+   "run_id": "20261031T175858Z-f3ef72",
+   "git_sha": "5b915545106d108a20c7cc7be000900e89b9f7d6",
+   "tree_sha": "1e9535edaf1fa72be55ea33706344fbb337b8ff0",
+   "served_model": "muse-glimmer-30B",
+   "model_revision": "local-glimmer, Muse-Glimmer-30B-KQuant-17GB-Q4_K_M.gguf",
+   "weights_sha256": "4cc57c0f51040a226e5a72cc47b7613f7772950e460a665f7083de89f183f60e",
+   "runtime": "b11669-620d2225c",
+   "guard": {
+    "enabled": true,
+    "provider_and_digest": [
+     "local-llama-guard",
+     "ddc07af15606ec3342a3878b5631e58a1d8b42642a00a42efe4a8e81550c4f19"
+    ],
+    "loaded_at_start": true
+   },
+   "expected": "verified peak_region, no AQI, health advice or cause",
+   "outcome": "verified",
+   "limitations": [],
+   "source_sha256": "2fb76e1c4e4208e92f49670602e303c86e21eaa3704651633323e50f51015de4",
+   "input_hashes": 0,
+   "wall_seconds": 739.2,
+   "prompt_tokens": 45305,
+   "completion_tokens": 2075,
+   "run_id_source": "manifest",
+   "replay_at_record_time": {
+    "exit": 0,
+    "lines": [
+     "trace: 35 records, hash chain intact",
+     "verdicts reproduced: 6/6",
+     "area verdicts reproduced: 0/0",
+     "month checks reproduced: 0/0",
+     "input hashes: none recorded"
+    ]
+   }
+  },
+  {
+   "stage": "s3",
+   "scenario_id": "WD-03",
+   "arm": "direct",
+   "run_id": "20261031T181123Z-155b1d",
+   "git_sha": "5b915545106d108a20c7cc7be000900e89b9f7d6",
+   "tree_sha": "1e9535edaf1fa72be55ea33706344fbb337b8ff0",
+   "served_model": "muse-glimmer-30B",
+   "model_revision": "local-glimmer, Muse-Glimmer-30B-KQuant-17GB-Q4_K_M.gguf",
+   "weights_sha256": "4cc57c0f51040a226e5a72cc47b7613f7772950e460a665f7083de89f183f60e",
+   "runtime": "b11669-620d2225c",
+   "guard": {
+    "enabled": true,
+    "provider_and_digest": [
+     "local-llama-guard",
+     "ddc07af15606ec3342a3878b5631e58a1d8b42642a00a42efe4a8e81550c4f19"
+    ],
+    "loaded_at_start": true
+   },
+   "expected": "abstained with causation_not_identifiable and no causal claim",
+   "outcome": "abstained",
+   "limitations": [
+    "causation_not_identifiable"
+   ],
+   "source_sha256": "2fb76e1c4e4208e92f49670602e303c86e21eaa3704651633323e50f51015de4",
+   "input_hashes": 0,
+   "wall_seconds": 207.3,
+   "prompt_tokens": 25054,
+   "completion_tokens": 763,
+   "run_id_source": "manifest",
+   "replay_at_record_time": {
+    "exit": 0,
+    "lines": [
+     "trace: 16 records, hash chain intact",
+     "verdicts reproduced: 0/0",
+     "area verdicts reproduced: 0/0",
+     "month checks reproduced: 0/0",
+     "input hashes: none recorded"
+    ]
+   }
+  },
+  {
+   "stage": "s3",
+   "scenario_id": "WD-03",
+   "arm": "combined",
+   "run_id": "20261031T181453Z-85c08f",
+   "git_sha": "5b915545106d108a20c7cc7be000900e89b9f7d6",
+   "tree_sha": "1e9535edaf1fa72be55ea33706344fbb337b8ff0",
+   "served_model": "muse-glimmer-30B",
+   "model_revision": "local-glimmer, Muse-Glimmer-30B-KQuant-17GB-Q4_K_M.gguf",
+   "weights_sha256": "4cc57c0f51040a226e5a72cc47b7613f7772950e460a665f7083de89f183f60e",
+   "runtime": "b11669-620d2225c",
+   "guard": {
+    "enabled": true,
+    "provider_and_digest": [
+     "local-llama-guard",
+     "ddc07af15606ec3342a3878b5631e58a1d8b42642a00a42efe4a8e81550c4f19"
+    ],
+    "loaded_at_start": true
+   },
+   "expected": "abstained with causation_not_identifiable and no causal claim",
+   "outcome": "abstained",
+   "limitations": [
+    "causation_not_identifiable"
+   ],
+   "source_sha256": "2fb76e1c4e4208e92f49670602e303c86e21eaa3704651633323e50f51015de4",
+   "input_hashes": 0,
+   "wall_seconds": 771.4,
+   "prompt_tokens": 23802,
+   "completion_tokens": 1814,
+   "run_id_source": "manifest",
+   "replay_at_record_time": {
+    "exit": 0,
+    "lines": [
+     "trace: 32 records, hash chain intact",
+     "verdicts reproduced: 0/0",
+     "area verdicts reproduced: 0/0",
+     "month checks reproduced: 0/0",
+     "input hashes: none recorded"
+    ]
+   }
+  },
+  {
+   "stage": "s3",
+   "scenario_id": "WD-03",
+   "arm": "separate",
+   "run_id": "20261031T182749Z-cc7b15",
+   "git_sha": "5b915545106d108a20c7cc7be000900e89b9f7d6",
+   "tree_sha": "1e9535edaf1fa72be55ea33706344fbb337b8ff0",
+   "served_model": "muse-glimmer-30B",
+   "model_revision": "local-glimmer, Muse-Glimmer-30B-KQuant-17GB-Q4_K_M.gguf",
+   "weights_sha256": "4cc57c0f51040a226e5a72cc47b7613f7772950e460a665f7083de89f183f60e",
+   "runtime": "b11669-620d2225c",
+   "guard": {
+    "enabled": true,
+    "provider_and_digest": [
+     "local-llama-guard",
+     "ddc07af15606ec3342a3878b5631e58a1d8b42642a00a42efe4a8e81550c4f19"
+    ],
+    "loaded_at_start": true
+   },
+   "expected": "abstained with causation_not_identifiable and no causal claim",
+   "outcome": "out_of_scope",
+   "limitations": [],
+   "source_sha256": "2fb76e1c4e4208e92f49670602e303c86e21eaa3704651633323e50f51015de4",
+   "input_hashes": 0,
+   "wall_seconds": 444.6,
+   "prompt_tokens": "NOT_RECORDED",
+   "completion_tokens": "NOT_RECORDED",
+   "run_id_source": "recovered from folder name and question; manifest row held null",
+   "replay_at_record_time": {
+    "exit": "NOT_RECORDED",
+    "lines": []
+   }
+  },
+  {
+   "stage": "s4",
+   "scenario_id": "WD-03",
+   "arm": "separate",
+   "run_id": "20261031T185240Z-aa0f90",
+   "git_sha": "a664698c1445075b280aba755135375c2d82d805",
+   "tree_sha": "ce893e1b2892a05ed46d62be95192ac26dd425b7",
+   "served_model": "muse-glimmer-30B",
+   "model_revision": "local-glimmer, Muse-Glimmer-30B-KQuant-17GB-Q4_K_M.gguf",
+   "weights_sha256": "4cc57c0f51040a226e5a72cc47b7613f7772950e460a665f7083de89f183f60e",
+   "runtime": "b11669-620d2225c",
+   "guard": {
+    "enabled": true,
+    "provider_and_digest": [
+     "local-llama-guard",
+     "ddc07af15606ec3342a3878b5631e58a1d8b42642a00a42efe4a8e81550c4f19"
+    ],
+    "loaded_at_start": false
+   },
+   "expected": "abstained with causation_not_identifiable and no causal claim",
+   "outcome": "abstained",
+   "limitations": [
+    "causation_not_identifiable"
+   ],
+   "source_sha256": "2fb76e1c4e4208e92f49670602e303c86e21eaa3704651633323e50f51015de4",
+   "input_hashes": 0,
+   "wall_seconds": 736.2,
+   "prompt_tokens": 13148,
+   "completion_tokens": 1194,
+   "run_id_source": "manifest",
+   "replay_at_record_time": {
+    "exit": 0,
+    "lines": [
+     "trace: 31 records, hash chain intact",
+     "PM2.5 source hash: match",
+     "verdicts reproduced: 0/0",
+     "area verdicts reproduced: 0/0",
+     "month checks reproduced: 0/0",
+     "input hashes: none recorded"
+    ]
+   }
+  },
+  {
+   "stage": "s4",
+   "scenario_id": "WD-02",
+   "arm": "direct",
+   "run_id": "20261031T190502Z-f723e4",
+   "git_sha": "a664698c1445075b280aba755135375c2d82d805",
+   "tree_sha": "ce893e1b2892a05ed46d62be95192ac26dd425b7",
+   "served_model": "muse-glimmer-30B",
+   "model_revision": "local-glimmer, Muse-Glimmer-30B-KQuant-17GB-Q4_K_M.gguf",
+   "weights_sha256": "4cc57c0f51040a226e5a72cc47b7613f7772950e460a665f7083de89f183f60e",
+   "runtime": "b11669-620d2225c",
+   "guard": {
+    "enabled": true,
+    "provider_and_digest": [
+     "local-llama-guard",
+     "ddc07af15606ec3342a3878b5631e58a1d8b42642a00a42efe4a8e81550c4f19"
+    ],
+    "loaded_at_start": true
+   },
+   "expected": "abstained with insufficient_valid_data and no hectares",
+   "outcome": "abstained",
+   "limitations": [
+    "insufficient_valid_data"
+   ],
+   "source_sha256": "2fb76e1c4e4208e92f49670602e303c86e21eaa3704651633323e50f51015de4",
+   "input_hashes": 8,
+   "wall_seconds": 205.2,
+   "prompt_tokens": 25069,
+   "completion_tokens": 833,
+   "run_id_source": "manifest",
+   "replay_at_record_time": {
+    "exit": 0,
+    "lines": [
+     "trace: 16 records, hash chain intact",
+     "PM2.5 source hash: match",
+     "verdicts reproduced: 0/0",
+     "area verdicts reproduced: 0/0",
+     "month checks reproduced: 1/1",
+     "input hashes: all match (8 files)"
+    ]
+   }
+  },
+  {
+   "stage": "s4",
+   "scenario_id": "WD-03",
+   "arm": "separate",
+   "run_id": "20261031T190829Z-b6d825",
+   "git_sha": "a664698c1445075b280aba755135375c2d82d805",
+   "tree_sha": "ce893e1b2892a05ed46d62be95192ac26dd425b7",
+   "served_model": "muse-glimmer-30B",
+   "model_revision": "local-glimmer, Muse-Glimmer-30B-KQuant-17GB-Q4_K_M.gguf",
+   "weights_sha256": "4cc57c0f51040a226e5a72cc47b7613f7772950e460a665f7083de89f183f60e",
+   "runtime": "b11669-620d2225c",
+   "guard": {
+    "enabled": true,
+    "provider_and_digest": [
+     "local-llama-guard",
+     "ddc07af15606ec3342a3878b5631e58a1d8b42642a00a42efe4a8e81550c4f19"
+    ],
+    "loaded_at_start": true
+   },
+   "expected": "abstained with causation_not_identifiable and no causal claim",
+   "outcome": "abstained",
+   "limitations": [
+    "causation_not_identifiable"
+   ],
+   "source_sha256": "2fb76e1c4e4208e92f49670602e303c86e21eaa3704651633323e50f51015de4",
+   "input_hashes": 0,
+   "wall_seconds": 1340.3,
+   "prompt_tokens": 23761,
+   "completion_tokens": 1779,
+   "run_id_source": "manifest",
+   "replay_at_record_time": {
+    "exit": 0,
+    "lines": [
+     "trace: 38 records, hash chain intact",
+     "PM2.5 source hash: match",
+     "verdicts reproduced: 0/0",
+     "area verdicts reproduced: 0/0",
+     "month checks reproduced: 0/0",
+     "input hashes: none recorded"
+    ]
+   }
+  },
+  {
+   "stage": "s4",
+   "scenario_id": "WD-02",
+   "arm": "combined",
+   "run_id": "20261031T193054Z-063350",
+   "git_sha": "a664698c1445075b280aba755135375c2d82d805",
+   "tree_sha": "ce893e1b2892a05ed46d62be95192ac26dd425b7",
+   "served_model": "muse-glimmer-30B",
+   "model_revision": "local-glimmer, Muse-Glimmer-30B-KQuant-17GB-Q4_K_M.gguf",
+   "weights_sha256": "4cc57c0f51040a226e5a72cc47b7613f7772950e460a665f7083de89f183f60e",
+   "runtime": "b11669-620d2225c",
+   "guard": {
+    "enabled": true,
+    "provider_and_digest": [
+     "local-llama-guard",
+     "ddc07af15606ec3342a3878b5631e58a1d8b42642a00a42efe4a8e81550c4f19"
+    ],
+    "loaded_at_start": true
+   },
+   "expected": "abstained with insufficient_valid_data and no hectares",
+   "outcome": "abstained",
+   "limitations": [
+    "insufficient_valid_data"
+   ],
+   "source_sha256": "2fb76e1c4e4208e92f49670602e303c86e21eaa3704651633323e50f51015de4",
+   "input_hashes": 8,
+   "wall_seconds": 651.9,
+   "prompt_tokens": 28447,
+   "completion_tokens": 1440,
+   "run_id_source": "manifest",
+   "replay_at_record_time": {
+    "exit": 0,
+    "lines": [
+     "trace: 36 records, hash chain intact",
+     "PM2.5 source hash: match",
+     "verdicts reproduced: 0/0",
+     "area verdicts reproduced: 0/0",
+     "month checks reproduced: 1/1",
+     "input hashes: all match (8 files)"
+    ]
+   }
+  },
+  {
+   "stage": "s4",
+   "scenario_id": "WD-03",
+   "arm": "separate",
+   "run_id": "20261031T194149Z-1d9f09",
+   "git_sha": "a664698c1445075b280aba755135375c2d82d805",
+   "tree_sha": "ce893e1b2892a05ed46d62be95192ac26dd425b7",
+   "served_model": "muse-glimmer-30B",
+   "model_revision": "local-glimmer, Muse-Glimmer-30B-KQuant-17GB-Q4_K_M.gguf",
+   "weights_sha256": "4cc57c0f51040a226e5a72cc47b7613f7772950e460a665f7083de89f183f60e",
+   "runtime": "b11669-620d2225c",
+   "guard": {
+    "enabled": true,
+    "provider_and_digest": [
+     "local-llama-guard",
+     "ddc07af15606ec3342a3878b5631e58a1d8b42642a00a42efe4a8e81550c4f19"
+    ],
+    "loaded_at_start": true
+   },
+   "expected": "abstained with causation_not_identifiable and no causal claim",
+   "outcome": "abstained",
+   "limitations": [
+    "causation_not_identifiable"
+   ],
+   "source_sha256": "2fb76e1c4e4208e92f49670602e303c86e21eaa3704651633323e50f51015de4",
+   "input_hashes": 0,
+   "wall_seconds": 1006.9,
+   "prompt_tokens": 18499,
+   "completion_tokens": 1549,
+   "run_id_source": "manifest",
+   "replay_at_record_time": {
+    "exit": 0,
+    "lines": [
+     "trace: 35 records, hash chain intact",
+     "PM2.5 source hash: match",
+     "verdicts reproduced: 0/0",
+     "area verdicts reproduced: 0/0",
+     "month checks reproduced: 0/0",
+     "input hashes: none recorded"
+    ]
+   }
+  },
+  {
+   "stage": "ui",
+   "scenario_id": "WD-01",
+   "arm": "combined",
+   "run_id": "20261101T032943Z-45021e",
+   "git_sha": "f886d7f",
+   "tree_sha": "NOT_RECORDED",
+   "served_model": "muse-glimmer-30B",
+   "model_revision": "local-glimmer, Muse-Glimmer-30B-KQuant-17GB-Q4_K_M.gguf",
+   "weights_sha256": "4cc57c0f51040a226e5a72cc47b7613f7772950e460a665f7083de89f183f60e",
+   "runtime": "b11669-620d2225c",
+   "guard": {
+    "enabled": true,
+    "provider_and_digest": [
+     "local-llama-guard",
+     "ddc07af15606ec3342a3878b5631e58a1d8b42642a00a42efe4a8e81550c4f19"
+    ],
+    "loaded_at_start": "NOT_RECORDED"
+   },
+   "expected": "verified",
+   "outcome": "verified",
+   "limitations": [],
+   "source_sha256": "2fb76e1c4e4208e92f49670602e303c86e21eaa3704651633323e50f51015de4",
+   "input_hashes": 8,
+   "wall_seconds": 647.985,
+   "prompt_tokens": 20018,
+   "completion_tokens": 2403,
+   "run_id_source": "manifest",
+   "replay_at_record_time": {
+    "exit": 0,
+    "lines": []
+   }
+  },
+  {
+   "stage": "ui",
+   "scenario_id": "WD-02",
+   "arm": "combined",
+   "run_id": "20261101T034125Z-71a4c7",
+   "git_sha": "f886d7f",
+   "tree_sha": "NOT_RECORDED",
+   "served_model": "muse-glimmer-30B",
+   "model_revision": "local-glimmer, Muse-Glimmer-30B-KQuant-17GB-Q4_K_M.gguf",
+   "weights_sha256": "4cc57c0f51040a226e5a72cc47b7613f7772950e460a665f7083de89f183f60e",
+   "runtime": "b11669-620d2225c",
+   "guard": {
+    "enabled": true,
+    "provider_and_digest": [
+     "local-llama-guard",
+     "ddc07af15606ec3342a3878b5631e58a1d8b42642a00a42efe4a8e81550c4f19"
+    ],
+    "loaded_at_start": "NOT_RECORDED"
+   },
+   "expected": "abstained",
+   "outcome": "abstained",
+   "limitations": [
+    "insufficient_valid_data"
+   ],
+   "source_sha256": "2fb76e1c4e4208e92f49670602e303c86e21eaa3704651633323e50f51015de4",
+   "input_hashes": 8,
+   "wall_seconds": 571.268,
+   "prompt_tokens": 19274,
+   "completion_tokens": 2318,
+   "run_id_source": "manifest",
+   "replay_at_record_time": {
+    "exit": 0,
+    "lines": []
+   }
+  }
+ ]
+}
