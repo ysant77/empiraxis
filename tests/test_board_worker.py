@@ -96,6 +96,29 @@ def test_the_worker_is_started_without_a_fork(
     assert seen["close_fds"] is False and "start_new_session" not in seen
 
 
+def test_the_worker_receives_no_credential_it_does_not_need(tmp_path: Path) -> None:
+    _board, run_id = queued(tmp_path)
+    parent = {
+        "PATH": "/bin", "HOME": "/h", "META_API_KEY": "m", "FIRMS_API_KEY": "f",
+        "EARTHLAB_OPERATOR_KEY": "o", "EARTHLAB_SECRET_TOKEN": "s", "BASETEN_API_KEY": "b",
+    }  # fmt: skip
+    assert worker.worker_env(run_id, tmp_path, parent) == {"PATH": "/bin", "HOME": "/h"}
+
+
+def test_the_worker_keeps_only_its_own_provider_key(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    _board, run_id = queued(tmp_path)
+
+    class Config:
+        enabled, api_key_env = True, "BASETEN_API_KEY"
+
+    monkeypatch.setattr(worker, "load_providers", lambda _path: {SPEC.provider: Config()})
+    parent = {"PATH": "/bin", "BASETEN_API_KEY": "b", "FIREWORKS_API_KEY": "f"}
+    keys = worker.worker_env(run_id, tmp_path, parent)
+    assert keys == {"PATH": "/bin", "BASETEN_API_KEY": "b"}
+
+
 def test_a_real_detached_worker_records_its_failure(tmp_path: Path) -> None:
     """The unknown provider fails inside a real process, without any model call."""
     board, run_id = queued(tmp_path)
