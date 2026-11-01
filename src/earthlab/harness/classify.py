@@ -31,6 +31,7 @@ from earthlab.harness.contracts import (
     SourceRef,
 )
 from earthlab.harness.seats import Seats
+from earthlab.harness.strategy import Strategy
 
 THRESHOLD = 35.0
 HORIZON = 6
@@ -115,7 +116,9 @@ class ClassificationAdapter:
     label = LABEL
     methods: tuple[str, ...] = ("persistence", "climatology", "logistic")
     limitations: tuple[str, ...] = LIMITATIONS
-    menu: type[BaseModel] = ClassifierChoice
+    pretrained: tuple[str, ...] = ()
+    default_strategy: Strategy = "statistical"
+    can_request = False
 
     def __init__(self, run_dir: Path, source: Path = Path("data/nea/Historical1hrPM2.5.csv")):
         self.folder, self.source = run_dir, source
@@ -126,6 +129,9 @@ class ClassificationAdapter:
         self.x_train = self.x_tune = self.x_score = np.empty(0)
         self.train_issues = np.empty(0, dtype=np.int64)
         self.tune_issues = np.empty(0, dtype=np.int64)
+
+    def menu_for(self, strategy: str) -> type[BaseModel] | None:
+        return ClassifierChoice if strategy == "statistical" else None
 
     def measure(self, problem: ProblemSpecV1) -> DatasetProfileV1:
         first, last = S.split_bounds("train")
@@ -186,6 +192,8 @@ class ClassificationAdapter:
         rate = np.nanmean(y_train, axis=0)
         self._keep(RATE, np.tile(rate, (len(self.issues), 1)), 0.5)
         self._keep(BASE, independent.persistence_alarm(self.truth, self.issues, THRESHOLD), 0.5)
+        if plan.config.get("strategy") != "statistical":
+            return {"models": "baselines only"}
         tune, scored = [], []
         for region in range(y_train.shape[1]):
             weights = fit_logistic(
@@ -229,7 +237,7 @@ class ClassificationAdapter:
         return ece if ece is not None and ece > independent.MAX_ECE else None
 
     def limits(self, report: EvaluationReportV1, chosen: str | None) -> tuple[str, ...]:
-        ece = self._uncalibrated(report, chosen) if chosen == LOGIT else None
+        ece = self._uncalibrated(report, chosen) if chosen == LOGIT and LOGIT in self.rows else None
         if ece is None:
             return LIMITATIONS
         text = f"Calibration error is {ece:.3f}, so {chosen} scores are ranks, not probabilities."
@@ -237,13 +245,12 @@ class ClassificationAdapter:
 
     def allowed(self, report: EvaluationReportV1) -> dict[str, list[str]]:
         out: dict[str, list[str]] = {"abstain": [], "retain_baseline": [BASE]}
-        if self._row(report, LOGIT).passes:
+        if LOGIT in self.rows and self._row(report, LOGIT).passes:
             out["adopt_limited" if self._uncalibrated(report, LOGIT) else "adopt"] = [LOGIT]
         return out
 
     def decide(self, report: EvaluationReportV1) -> DecisionRecordV1:
-        row = self._row(report, LOGIT)
-        if not row.passes:
+        if LOGIT not in self.rows or not self._row(report, LOGIT).passes:
             return DecisionRecordV1(
                 outcome="retain_baseline", selected=BASE, rejected=(LOGIT, RATE),
                 reason="The classifier failed a check; persistence stays the reference.",

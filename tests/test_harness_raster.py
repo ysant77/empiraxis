@@ -37,11 +37,12 @@ def test_segmentation_ends_in_a_resource_request_with_no_score(tmp_path: Path) -
     assert done["acceptance"]["no_segmentation_score"]
 
 
-def test_a_lead_that_picks_segmentation_cannot_adopt_it(tmp_path: Path) -> None:
+def test_a_lead_cannot_pick_segmentation_and_can_only_ask_for_it(tmp_path: Path) -> None:
     client = ScriptedClient(
         [
             call("review_scope", in_scope=True, note="Within the problem."),
-            call("choose_method", method="segmentation_pretrained", reason="It is newer."),
+            call("choose_strategy", strategy="pretrained_transfer", reason="It is newer."),
+            call("choose_strategy", strategy="abstain_or_request", reason="Inputs do not fit."),
             call("prepare_data"),
             call("submit_note", note="Checked."),
             call("train_models"),

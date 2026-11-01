@@ -73,6 +73,7 @@ def test_the_lead_choice_sets_the_real_fit(tmp_path: Path, monkeypatch: pytest.M
     client = ScriptedClient(
         [
             call("review_scope", in_scope=True, note="Within the problem."),
+            call("choose_strategy", strategy="statistical", reason="Enough rows."),
             call("choose_method", lags=6, penalty=10.0, balanced=False, reason="Few lags."),
             call("prepare_data"),
             call("submit_note", note="Prepared."),

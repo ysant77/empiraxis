@@ -28,6 +28,7 @@ from earthlab.harness.contracts import (
     SourceRef,
 )
 from earthlab.harness.seats import Seats, Stopped
+from earthlab.harness.strategy import Strategy
 
 ELEVATED = "above_55_mae"
 BASE_METHODS = ("persistence", "naive", "climatology", "ridge")
@@ -51,13 +52,19 @@ class RegressionAdapter:
     label = ARM_LABEL
     methods: tuple[str, ...] = (*BASE_METHODS, "gru", "tcn")
     limitations: tuple[str, ...] = LIMITATIONS
-    menu: type[BaseModel] = Assignment
+    pretrained: tuple[str, ...] = ()
+    default_strategy: Strategy = "small_neural"
+    can_request = False
 
     def __init__(self, run_dir: Path, source: Path = SOURCE):
         self.bench = Workbench(run_dir, source)
         self.features_id = ""
         self.trained = 0
+        self.chosen = "small_neural"
         self.notes: list[str] = []
+
+    def menu_for(self, strategy: str) -> type[BaseModel] | None:
+        return Assignment if strategy == "small_neural" else None
 
     def measure(self, problem: ProblemSpecV1) -> DatasetProfileV1:
         summary = self.bench.profile()["summary"]
@@ -107,8 +114,11 @@ class RegressionAdapter:
 
     def train(self, plan: ExperimentPlanV1, seats: Seats) -> dict[str, Any]:
         c = plan.config
+        self.chosen = str(c.get("strategy"))
         if REFERENCE not in self.bench.results:
             self.bench.baselines(int(c["window_hours"]))
+        if self.chosen != "small_neural":
+            return {"models": "baselines only", "strategy": self.chosen}
         self.trained += 1
         name = f"candidate-{self.trained}"
         spec = TrainSpec(
@@ -199,7 +209,8 @@ class RegressionAdapter:
         return {
             "profile_written": (folder / "data_profile.json").is_file(),
             "baselines_evaluated": sum(n[0] == "B" for n in results) == 5,
-            "neural_model_trained": any(n.startswith("candidate") for n in results),
+            "neural_model_when_chosen": self.chosen != "small_neural"
+            or any(n.startswith("candidate") for n in results),
             "every_model_has_predictions_hash": all(
                 "predictions_sha256" in r for r in results.values()
             ),

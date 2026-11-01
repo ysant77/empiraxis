@@ -36,13 +36,18 @@ from earthlab.harness.contracts import (
 from earthlab.harness.gates import Refusal
 from earthlab.harness.lifecycle import Lifecycle
 from earthlab.harness.seats import Seats, Stopped, usage
+from earthlab.harness.strategy import Strategy, SuitabilityReportV1, assess
 from earthlab.llm.client import ChatClient
 from earthlab.llm.types import ProviderError
 
 Arm = Literal["fixed", "single", "team"]
+BUDGET_SECONDS = 1200.0
 PM, LEAD, DATA, ML = "product_manager", "geospatial_engineer", "data_specialist", "ml_engineer"
 SCOPE_SYSTEM = "You are the product manager. Read the request and the problem. Call review_scope. \
 Set in_scope false only if the request asks for more than the problem allows. You grant nothing."
+STRATEGY_SYSTEM = "You are the Geospatial Lead. Decide whether modeling is needed at all. Read \
+the suitability checks and call choose_strategy with one eligible strategy. Prefer the simplest \
+one that can meet the criteria. Explain why from the facts. Abstention is a valid choice."
 PLAN_SYSTEM = "You are the Geospatial Lead. Read the data profile and choose one modest method \
 with choose_method. Explain why from this data. You do not compute results."
 DATA_SYSTEM = "You are the Data Scientist. Call prepare_data, then submit_note."
@@ -54,6 +59,11 @@ simpler method or an abstention is a valid result. State no cause, forecast or a
 FORWARD_SYSTEM = "You are the product manager. Check the recommendation against the problem and \
 the evaluator's report, then call forward_decision. Set forward_to_human true when they agree, \
 so a person can decide. Set it false only if a stated criterion fails, and name it."
+
+
+class StrategyChoice(Strict):
+    strategy: Strategy
+    reason: str = Field(min_length=5, max_length=400)
 
 
 class ScopeReview(Strict):
@@ -86,8 +96,11 @@ class Adapter(Protocol):
     label: str
     methods: tuple[str, ...]
     limitations: tuple[str, ...]
-    menu: type[BaseModel]
+    pretrained: tuple[str, ...]
+    can_request: bool
+    default_strategy: Strategy
 
+    def menu_for(self, strategy: str) -> type[BaseModel] | None: ...
     def measure(self, problem: ProblemSpecV1) -> DatasetProfileV1: ...
     def preset(self) -> BaseModel: ...
     def plan(self, choice: BaseModel, plan_id: str, by: Literal["preset", "model"]) -> (
@@ -117,6 +130,7 @@ class Engine:
         self.run_dir = run_dir
         self.digests: dict[str, str] = {}
         self.plan: ExperimentPlanV1 | None = None
+        self.suits: SuitabilityReportV1 | None = None
         self.preset_config: dict[str, Any] = {}
 
     def keep(self, name: str, record: BaseModel, task: str) -> None:
@@ -128,23 +142,39 @@ class Engine:
         details = [f"{r.code}: {r.detail}" for r in found]
         return self.close("refused", "; ".join(details), None, None, codes)
 
-    def choose(self, profile: DatasetProfileV1, attempt: int) -> ExperimentPlanV1:
+    def pick_strategy(self, suits: SuitabilityReportV1) -> str:
+        """Whether to model at all. A model can pick only what code found eligible."""
+        if self.arm == "fixed":
+            return self.adapter.default_strategy
+
+        def issues(value: StrategyChoice) -> list[str]:
+            return [] if value.strategy in suits.eligible() else [f"{value.strategy} is blocked"]
+
+        sent = {"problem": self.problem, "suitability": suits}
+        return self.seats.propose(
+            LEAD, STRATEGY_SYSTEM, sent, "choose_strategy", StrategyChoice, issues
+        ).strategy
+
+    def choose(self, profile: DatasetProfileV1, attempt: int, strategy: str) -> ExperimentPlanV1:
         """The Lead's menu choice, or the preset. Code refuses a plan outside the gates."""
         adapter, plan_id = self.adapter, f"plan-{attempt}"
-        self.preset_config = adapter.plan(adapter.preset(), plan_id, "preset").config
+        tag = {"strategy": strategy}
+        base = adapter.plan(adapter.preset(), plan_id, "preset")
+        self.preset_config = base.config
+        menu = adapter.menu_for(strategy)
 
         def issues(choice: BaseModel) -> list[str]:
             built = adapter.plan(choice, plan_id, "model")
             found = gates.check_plan(built, profile, adapter.methods, adapter.estimate(built))
             return [f"{r.code}: {r.detail}" for r in found]
 
-        if self.arm == "fixed":
-            return adapter.plan(adapter.preset(), plan_id, "preset")
+        if self.arm == "fixed" or menu is None:
+            changed = "model" if strategy != adapter.default_strategy else "preset"
+            return base.model_copy(update={"config": base.config | tag, "decided_by": changed})
         context = {"problem": self.problem.model_dump(mode="json"), "data": profile}
-        choice = self.seats.propose(
-            LEAD, PLAN_SYSTEM, context, "choose_method", adapter.menu, issues
-        )
-        return adapter.plan(choice, plan_id, "model")
+        choice = self.seats.propose(LEAD, PLAN_SYSTEM, context, "choose_method", menu, issues)
+        plan = adapter.plan(choice, plan_id, "model")
+        return plan.model_copy(update={"config": plan.config | tag})
 
     def tickets(self, plan: ExperimentPlanV1) -> None:
         """The specialists' work, or the same adapter calls with no model."""
@@ -246,7 +276,13 @@ class Engine:
         if found:
             return self.refuse(found)
         self.life.move("profiled", "controller")
-        plan = self.choose(profile, 1)
+        self.suits = assess(problem, profile, BUDGET_SECONDS, adapter.pretrained)
+        self.keep("suitability", self.suits, seats.root)
+        strategy = self.pick_strategy(self.suits)
+        if strategy == "abstain_or_request" and not adapter.can_request:
+            self.life.move("abstained", "controller", strategy=strategy)
+            return self.close("abstained", "the Lead chose to run no experiment", None, None, [])
+        plan = self.choose(profile, 1, strategy)
         found = gates.check_plan(plan, profile, adapter.methods, adapter.estimate(plan))
         if found:
             return self.refuse(found)
@@ -254,24 +290,27 @@ class Engine:
         self.life.move("planned", "controller", plan_sha256=self.digests["plan-1"])
         self.plan = plan
         report = self.report_for(plan)
-        report = self.maybe_refine(profile, report)
+        report = self.maybe_refine(profile, report, strategy)
         decision = self.recommend(report)
         self.keep("decision", decision, seats.root)
         self.life.move("reviewed", "controller", outcome=decision.outcome)
+        return self.forward(decision, report)
+
+    def forward(self, decision: DecisionRecordV1, report: EvaluationReportV1) -> dict[str, Any]:
+        seats = self.seats
         if self.arm == "team":
-            sent = {"problem": problem, "decision": decision, "report": report}
+            sent = {"problem": self.problem, "decision": decision, "report": report}
             pm = seats.propose(PM, FORWARD_SYSTEM, sent, "forward_decision", PmDecision)
             seats.invoke("finished", LEAD, seats.lead_task, "verified")
             if not pm.forward_to_human:
                 self.life.move("abstained", "controller", note=pm.note)
                 return self.close("needs_revision", pm.note, decision, report, [])
         self.life.move("forwarded", "controller", decision_sha256=self.digests["decision"])
-        return self.close(
-            "awaiting_human", "evidence ready for a human decision", decision, report, []
-        )
+        ready = "evidence ready for a human decision"
+        return self.close("awaiting_human", ready, decision, report, [])
 
     def maybe_refine(
-        self, profile: DatasetProfileV1, report: EvaluationReportV1
+        self, profile: DatasetProfileV1, report: EvaluationReportV1, strategy: str
     ) -> EvaluationReportV1:
         """One refinement at most, and only by a model that read the evaluator's report."""
         if self.arm == "fixed":
@@ -281,7 +320,7 @@ class Engine:
         if seen.action != "refine":
             return report
         self.life.move("reviewed", "controller", action="refine", reason=seen.reason)
-        plan = self.choose(profile, 2)
+        plan = self.choose(profile, 2, strategy)
         self.keep("plan-2", plan, self.seats.root)
         self.life.move("planned", "controller", plan_sha256=self.digests["plan-2"])
         self.plan = plan
@@ -293,7 +332,8 @@ class Engine:
     ) -> dict[str, Any]:  # fmt: skip
         plan, adapter = self.plan, self.adapter
         changed = plan is not None and plan.decided_by == "model" and (
-            plan.config != self.preset_config
+            {k: v for k, v in plan.config.items() if k != "strategy"} != self.preset_config
+            or plan.config.get("strategy") != adapter.default_strategy
         )  # fmt: skip
         outcome: dict[str, Any] = {
             "status": status, "reason": reason, "arm": self.arm, "kind": self.problem.kind,
@@ -305,7 +345,8 @@ class Engine:
             else "single agent",
             "split_scored": report.split_scored if report else None,
             "test_period": "not evaluated; it needs a lock and a human decision",
-            "artifacts": self.digests,
+            "artifacts": self.digests, "strategy": plan.config.get("strategy") if plan else None,
+            "suitability": self.suits.model_dump(mode="json") if self.suits else None,
         }  # fmt: skip
         if report is not None and decision is not None:
             outcome |= {

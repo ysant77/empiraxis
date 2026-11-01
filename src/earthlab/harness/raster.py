@@ -27,6 +27,7 @@ from earthlab.harness.contracts import (
     SourceRef,
 )
 from earthlab.harness.seats import Seats
+from earthlab.harness.strategy import Strategy
 from earthlab.report.area_sections import AREA_LIMITATIONS
 from earthlab.tools.burned_area_tools import month_report
 from earthlab.verify import burned_area_check as independent
@@ -60,15 +61,22 @@ class RasterAdapter:
     label = LABEL
     methods: tuple[str, ...] = (DETERMINISTIC, SEGMENTATION)
     limitations: tuple[str, ...] = LIMITATIONS
-    menu: type[BaseModel] = RasterChoice
+    pretrained: tuple[str, ...] = ()
+    can_request = True
 
     def __init__(self, run_dir: Path, wanted: str = DETERMINISTIC, root: Path = Path(".")):
         self.folder, self.wanted, self.root = run_dir, wanted, root.resolve()
+        self.default_strategy: Strategy = (
+            "deterministic" if wanted == DETERMINISTIC else "abstain_or_request"
+        )
         self.library = CaseLibrary.load(self.root / "config" / "cases", self.root)
         self.reports: dict[str, dict[str, Any]] = {}
         self.profile: DatasetProfileV1 | None = None
         self.method = wanted
         self.refusals: list[gates.Refusal] = []
+
+    def menu_for(self, strategy: str) -> type[BaseModel] | None:
+        return None
 
     def measure(self, problem: ProblemSpecV1) -> DatasetProfileV1:
         case = self.library.get(CASE)
@@ -104,7 +112,8 @@ class RasterAdapter:
         return 0.0
 
     def prepare(self, plan: ExperimentPlanV1) -> dict[str, Any]:
-        self.method = str(plan.config["method"])
+        asked = plan.config.get("strategy") == "abstain_or_request"
+        self.method = SEGMENTATION if asked else DETERMINISTIC
         assert self.profile is not None
         if self.method == SEGMENTATION:
             self.refusals = gates.check_segmentation(self.profile)

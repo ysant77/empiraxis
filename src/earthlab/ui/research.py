@@ -9,7 +9,7 @@ from __future__ import annotations
 import streamlit as st
 
 from earthlab.cases.models import ScientificCase
-from earthlab.ui import common
+from earthlab.ui import common, experiments
 from earthlab.ui.workspace_tabs import (
     tab_data,
     tab_investigate,
@@ -122,6 +122,7 @@ def render() -> None:
         "Ask a question, inspect the study area, the evidence and the verified findings.",
     )
     common.replay_notice()
+    experiments.request_panel()
     left, right = common.columns(2)
     with left:
         start_panel()
