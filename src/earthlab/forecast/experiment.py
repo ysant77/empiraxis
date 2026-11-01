@@ -59,7 +59,7 @@ from earthlab.trace import RunTrace
 from earthlab.workflow.calls import RoleCalls, client_kind
 from earthlab.workflow.ledger import WorkflowLedger
 
-Arm = Literal["deterministic", "single_agent", "multi_agent"]
+Arm = Literal["deterministic", "single_agent", "multi_agent", "tiers"]
 PM, LEAD, DATA, ML = "product_manager", "geospatial_engineer", "data_specialist", "ml_engineer"
 FIXED = Assignment(
     window_hours=48, log_transform=True, architecture="gru", hidden=32, layers=1, max_epochs=12,
@@ -368,7 +368,7 @@ def _sensitivity(flow: Flow, rec: Recommendation) -> dict[str, Any] | None:
 def acceptance(flow: Flow, rec: Recommendation) -> dict[str, bool]:
     """Goal satisfaction, the same checks on every arm, from artifacts alone."""
     folder, results = flow.bench.folder, flow.bench.results
-    trained = [n for n in results if n.startswith("candidate")]
+    trained = [n for n in results if n.startswith(("candidate", "student"))]
     return {
         "data_profile_written": (folder / "data_profile.json").is_file(),
         "five_baselines_evaluated": sum(n[0] == "B" for n in results) == 5,

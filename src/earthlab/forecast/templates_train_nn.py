@@ -92,6 +92,8 @@ def fit(data: dict[str, np.ndarray], job: dict[str, Any], out: Path) -> dict[str
     make: Any = {"gru": Gru, "tcn": TemporalCnn}[job["architecture"]]
     model: Any = make(inputs, job["hidden"], job["layers"], y_all.shape[1])
     optimiser = torch.optim.Adam(model.parameters(), lr=job["learning_rate"])
+    soft = np.load(job["soft"]) if job.get("soft") else None
+    blend = float(job.get("soft_weight", 0.0))
     best, stale, history = float("inf"), 0, []
     started = time.perf_counter()
     for epoch in range(job["max_epochs"]):
@@ -103,7 +105,12 @@ def fit(data: dict[str, np.ndarray], job: dict[str, Any], out: Path) -> dict[str
             x = torch.from_numpy(windows(data, train[take], job["window"], job["offset"])).float()
             y = torch.from_numpy(y_all[take]).float()
             known = torch.from_numpy(known_all[take]).float()
-            loss = loss_of(model(x), y, known, job["loss"])
+            pred = model(x)
+            loss = loss_of(pred, y, known, job["loss"])
+            if soft is not None:
+                teacher = torch.from_numpy(soft[take]).float()
+                mimic = loss_of(pred, teacher, torch.ones_like(teacher), job["loss"])
+                loss = (1 - blend) * loss + blend * mimic
             optimiser.zero_grad()
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), 1.0)
@@ -124,11 +131,16 @@ def fit(data: dict[str, np.ndarray], job: dict[str, Any], out: Path) -> dict[str
                 break
     model.load_state_dict(torch.load(out / "model.pt", weights_only=True))
     model.eval()
+    timed = time.perf_counter()
     np.save(out / "valid_scaled.npy", predict(model, data, valid, job))
+    predict_seconds = time.perf_counter() - timed
+    if job.get("save_train"):
+        np.save(out / "train_scaled.npy", predict(model, data, train, job))
     return {
         "history": history,
         "epochs_run": len(history),
         "train_seconds": round(time.perf_counter() - started, 2),
+        "predict_seconds": round(predict_seconds, 3),
         "parameters": sum(p.numel() for p in model.parameters()),
         "model_sha256": hashlib.sha256((out / "model.pt").read_bytes()).hexdigest(),
         "torch": torch.__version__,
