@@ -6,12 +6,14 @@ import hashlib
 import io
 import json
 import tarfile
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
 from haze_synthetic import write_nea
 
 from earthlab.harness.audit import (
+    _recorded_permission,
     audit_asset,
     audit_firms,
     audit_mcd64a1,
@@ -72,6 +74,8 @@ def test_firms_hashes_pass_and_static_flags_are_counted(tmp_path: Path, approval
     assert entry.profile.local_state == "verified" and not entry.problems
     assert "'0': 1" in entry.checks[-1] and "'2': 1" in entry.checks[-1]
     assert entry.profile.data_kind == "observation" and entry.profile.availability == "unknown"
+    assert entry.profile.permission == "recorded_expired"
+    assert entry.profile.permission_expires_utc == datetime(2026, 10, 31, 8, tzinfo=UTC)
 
 
 def test_a_changed_file_is_reported_as_a_hash_mismatch(tmp_path: Path, approvals: Path) -> None:
@@ -80,6 +84,13 @@ def test_a_changed_file_is_reported_as_a_hash_mismatch(tmp_path: Path, approvals
     entry = audit_firms(manifest, approvals)
     assert entry.profile.local_state == "hash_mismatch"
     assert any("sha256 differs" in p for p in entry.problems)
+
+
+def test_a_record_is_active_only_before_its_expiry(approvals: Path) -> None:
+    before = datetime(2026, 10, 30, tzinfo=UTC)
+    assert _recorded_permission("test-download", approvals, before)[0] == "recorded_active"
+    assert _recorded_permission("test-download", approvals)[0] == "recorded_expired"
+    assert _recorded_permission("unknown-id", approvals) == ("needs_approval", None)
 
 
 def test_mcd64a1_is_a_derived_product_not_ground_truth(tmp_path: Path, approvals: Path) -> None:

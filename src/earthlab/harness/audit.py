@@ -11,9 +11,11 @@ import argparse
 import csv
 import json
 import tarfile
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from earthlab.acquire.gate import load_approvals
 from earthlab.cases.models import BoundingBox
 from earthlab.contracts import Strict
 from earthlab.data.nea_pm25 import load_pm25
@@ -22,6 +24,7 @@ from earthlab.digest import file_digest
 from earthlab.harness.audit_catalogue import NOT_ACQUIRED, unacquired_profile
 from earthlab.harness.suitability import (
     DatasetSuitabilityV1,
+    Permission,
     VariableSpec,
     parse_timestamp,
 )
@@ -62,6 +65,21 @@ def _box(raw: dict[str, float]) -> BoundingBox:
     )  # fmt: skip
 
 
+def _recorded_permission(
+    approval_id: str | None, approvals: Path, now: datetime | None = None
+) -> tuple[Permission, datetime | None]:
+    """A recorded approval in config/approvals is not a signed ResourceApprovalV1.
+
+    The label says whether the record is still active, and the value keeps its expiry.
+    """
+    found = [a for a in load_approvals(approvals) if a.approval_id == approval_id]
+    if not found:
+        return "needs_approval", None
+    expires = found[0].expires_at_utc
+    live = expires > (now or datetime.now(UTC))
+    return ("recorded_active" if live else "recorded_expired"), expires
+
+
 def _manifest_profile(
     manifest: Path, approvals: Path, variables: tuple[VariableSpec, ...], **fixed: Any
 ) -> AuditEntry:
@@ -71,13 +89,15 @@ def _manifest_profile(
     hashes = ",".join(entry["sha256"][:12] for entry in raw["files"])
     state = "verified" if not problems else "hash_mismatch"
     cover = raw["coverage"]
+    permission, expires = _recorded_permission(raw.get("approval_id"), approvals)
     profile = DatasetSuitabilityV1(
         dataset_id=raw["asset_id"], revision=str(raw.get("version", "")),
         source_url=raw["source_url"], variables=variables, crs=raw.get("crs"),
         area=_box(raw["extent"]), first_time=parse_timestamp(cover["start"]),
         last_time=parse_timestamp(cover["end"]), license=raw["licence"],
         bytes_estimate=raw["total_bytes"], local_state=state, local_path=str(manifest.parent),
-        local_sha256=raw["files"][0]["sha256"], permission="covered_signed", **fixed,
+        local_sha256=raw["files"][0]["sha256"], permission=permission,
+        permission_expires_utc=expires, **fixed,
     )  # fmt: skip
     checks = (f"{len(raw['files'])} file hashes, size and byte cap checked: {hashes}",)
     bad = tuple(problems)

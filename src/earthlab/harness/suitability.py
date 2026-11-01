@@ -21,8 +21,9 @@ Availability = Literal["logged", "modelled", "unknown", "not_applicable"]
 DataKind = Literal["observation", "reanalysis", "issued_forecast", "derived_product", "weights"]
 LocalState = Literal["verified", "hash_mismatch", "unverified", "absent", "not_acquired"]
 Permission = Literal[
-    "covered_signed", "chat_only_unsigned", "needs_approval", "denied", "not_required"
-]
+    "covered_signed", "recorded_active", "recorded_expired", "chat_only_unsigned",
+    "needs_approval", "denied", "not_required",
+]  # fmt: skip
 Evidence = Literal[
     "historical_research", "hindsight_diagnostic", "issue_time_forecast",
     "transport_plausibility", "method_input",
@@ -68,6 +69,7 @@ class DatasetSuitabilityV1(Strict):
     local_sha256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
     allowed_evidence: tuple[Evidence, ...] = ()
     permission: Permission
+    permission_expires_utc: datetime | None = None
     notes: tuple[str, ...] = ()
 
     @model_validator(mode="after")
