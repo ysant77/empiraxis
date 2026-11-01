@@ -20,9 +20,10 @@ from earthlab.contracts import Strict
 from earthlab.digest import payload_digest
 from earthlab.forecast.contracts import ARM_LABEL, PmDecision, Recommendation
 from earthlab.forecast.evaluator import compare
-from earthlab.forecast.experiment import PM, Flow, Stopped, finish
+from earthlab.forecast.experiment import PM, Flow, finish
 from earthlab.forecast.gate import default_outcome, eligible, permitted, verdict
 from earthlab.forecast.pipeline import FeatureSpec, TrainSpec, Workbench
+from earthlab.harness.seats import Stopped
 from earthlab.llm.client import ChatClient
 from earthlab.llm.types import ProviderError
 from earthlab.workflow.calls import client_kind
@@ -86,6 +87,14 @@ def distillation_check(bench: Workbench) -> dict[str, Any]:
     return {**pair, "helped": pair["low"] > 0}
 
 
+def _train(flow: Flow, name: str, features_id: str, spec: TrainSpec) -> None:
+    record = flow.bench.train(name, features_id, spec)
+    if record.get("failed"):
+        raise Stopped(f"the training of {name} failed")
+    flow.log.training_seconds += float(record["wall_seconds"])
+    flow.log.peak_rss_mb = max(flow.log.peak_rss_mb, float(record["peak_rss_mb"]))
+
+
 def train_tiers(flow: Flow, plan: TierPlan) -> dict[str, Any]:
     bench = flow.bench
     built = bench.build_features(FeatureSpec(plan.window_hours, True))
@@ -97,8 +106,7 @@ def train_tiers(flow: Flow, plan: TierPlan) -> dict[str, Any]:
             hidden=plan.teacher_hidden, layers=plan.teacher_layers,
             seed=20261101 + seat, save_train=True,
         )  # fmt: skip
-        if bench.train(name, built["features_id"], spec).get("failed"):
-            raise Stopped(f"the training of {name} failed")
+        _train(flow, name, built["features_id"], spec)
         members.append(name)
     soft = bench.ensemble(TEACHER, members, built["features_id"])["soft_path"]
     size = plan.student_hidden
@@ -106,8 +114,7 @@ def train_tiers(flow: Flow, plan: TierPlan) -> dict[str, Any]:
         (DIRECT, TrainSpec(hidden=size)),
         (DISTILLED, TrainSpec(hidden=size, soft=soft, soft_weight=plan.soft_weight)),
     ):
-        if bench.train(name, built["features_id"], spec).get("failed"):
-            raise Stopped(f"the training of {name} failed")
+        _train(flow, name, built["features_id"], spec)
     return distillation_check(bench)
 
 

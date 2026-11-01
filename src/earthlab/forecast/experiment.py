@@ -11,16 +11,10 @@ not in any file this run reads.
 from __future__ import annotations
 
 import json
-import time
-from collections.abc import Callable
-from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal
 
-from pydantic import BaseModel, ValidationError
-
-from earthlab.agent.budget import Budget, BudgetMeter, BudgetStop
-from earthlab.agent.messages import assistant_message
+from earthlab.agent.budget import BudgetStop
 from earthlab.digest import file_digest, payload_digest
 from earthlab.forecast.contracts import (
     ARM_LABEL,
@@ -51,13 +45,10 @@ from earthlab.forecast.prompts import (
     SINGLE_SYSTEM,
 )
 from earthlab.forecast.samples import PRIMARY_HORIZON
+from earthlab.harness.seats import Seats, Stopped, usage
 from earthlab.llm.client import ChatClient
-from earthlab.llm.types import ProviderError, ToolCall
-from earthlab.metrics import EarthlabMetrics
-from earthlab.team.delegate import tool_schema
-from earthlab.trace import RunTrace
-from earthlab.workflow.calls import RoleCalls, client_kind
-from earthlab.workflow.ledger import WorkflowLedger
+from earthlab.llm.types import ProviderError
+from earthlab.workflow.calls import client_kind
 
 Arm = Literal["deterministic", "single_agent", "multi_agent", "tiers"]
 PM, LEAD, DATA, ML = "product_manager", "geospatial_engineer", "data_specialist", "ml_engineer"
@@ -67,149 +58,11 @@ FIXED = Assignment(
 )  # fmt: skip
 
 
-class Stopped(Exception):
-    """A role gave no usable proposal inside its calls. The run ends without a result."""
-
-
-@dataclass
-class ArmLog:
-    arm: Arm
-    started: float = field(default_factory=time.perf_counter)
-    training_seconds: float = 0.0
-    tools: int = 0
-    rejected: int = 0
-    peak_rss_mb: float = 0.0
-
-
-class Flow:
+class Flow(Seats):
     def __init__(self, arm: Arm, run_dir: Path, client: ChatClient | None, bench: Workbench):
-        self.log, self.run_dir, self.bench = ArmLog(arm), run_dir, bench
-        self.trace = RunTrace(run_dir / "trace.jsonl")
-        self.ledger = WorkflowLedger(Budget(max_turns=40, max_tool_calls=40, max_seconds=5400.0))
-        self.client = client
-        self.calls: dict[str, RoleCalls] = {}
-        self.root = f"{run_dir.name.lower()}.pm"
-        self.lead_task = f"{self.root}.lead"
+        super().__init__(arm, run_dir, client, OBJECTIVE)
+        self.bench = bench
         self.requirements: Requirements | None = None
-
-    def role(self, name: str) -> RoleCalls:
-        if self.client is None:
-            raise Stopped("the deterministic arm has no model")
-        if name not in self.calls:
-            metrics = EarthlabMetrics()
-            self.calls[name] = RoleCalls(name, self.client, self.trace, metrics, self.ledger)
-        return self.calls[name]
-
-    def _meter(self, turns: int) -> BudgetMeter:
-        stage = self.ledger.stage(turns)
-        if stage is None:
-            raise BudgetStop(self.ledger.why_stopped())
-        return BudgetMeter(stage)
-
-    def propose[T: BaseModel](
-        self, role: str, system: str, user: Any, name: str, model: type[T],
-        check: Callable[[T], list[str]] | None = None,
-    ) -> T:  # fmt: skip
-        """One schema-only call and one correction. Code checks the result."""
-        tool = tool_schema(name, f"Submit {name}.", model)
-        messages = [
-            {"role": "system", "content": system},
-            {"role": "user", "content": json.dumps(user, default=str)},
-        ]
-        issues = ["no proposal was submitted"]
-        meter = self._meter(2)
-        for _ in range(2):
-            resp = self.role(role).call(meter, messages, [tool], "auto")
-            messages.append(assistant_message(resp))
-            call = next((c for c in resp.tool_calls if c.name == name), None)
-            if call is None:
-                issues = [f"call {name}"]
-                messages.append({"role": "user", "content": issues[0]})
-                continue
-            try:
-                value = model.model_validate_json(call.arguments)
-                issues = check(value) if check else []
-            except ValidationError as exc:
-                issues = [f"{'.'.join(map(str, e['loc']))}: {e['msg']}" for e in exc.errors()][:5]
-                value = None
-            self.trace.append(
-                "proposal_reviewed", "runtime", role=role, tool=name, valid=not issues,
-                issues=issues, proposal=None if value is None else value.model_dump(mode="json"),
-            )  # fmt: skip
-            if value is not None and not issues:
-                return value
-            body = json.dumps({"issues": issues})
-            messages.extend(
-                {"role": "tool", "tool_call_id": c.id, "content": body} for c in resp.tool_calls
-            )
-        raise Stopped(f"{name}: {'; '.join(issues)}")
-
-    def tool(self, call: ToolCall, handler: Callable[[str], dict[str, Any]]) -> dict[str, Any]:
-        self.log.tools += 1
-        try:
-            body = handler(call.arguments)
-        except (ValidationError, ValueError) as exc:
-            self.log.rejected += 1
-            error = f"{type(exc).__name__}: {str(exc)[:200]}"
-            self.trace.append(
-                "tool_result", "runtime", name=call.name, outcome="rejected", error=error,
-                arguments=call.arguments, data={},
-            )  # fmt: skip
-            return {"error": error}
-        refs = {k: v for k, v in body.items() if k in ("sha256", "features_id", "model_id")}
-        self.trace.append(
-            "tool_result", "runtime", name=call.name, outcome="executed", error=None,
-            arguments=call.arguments, data=refs,
-        )  # fmt: skip
-        return body
-
-    def loop(
-        self, role: str, system: str, ticket: dict[str, Any], turns: int,
-        tools: dict[str, tuple[type[BaseModel], Callable[[str], dict[str, Any]]]],
-        finish: str, finish_model: type[BaseModel],
-    ) -> str:  # fmt: skip
-        """A bounded tool loop. It returns the arguments of the closing submission."""
-        schemas = [tool_schema(n, f"Call {n}.", m) for n, (m, _) in tools.items()]
-        schemas.append(tool_schema(finish, f"Call {finish}.", finish_model))
-        messages: list[dict[str, Any]] = [
-            {"role": "system", "content": system},
-            {"role": "user", "content": json.dumps(ticket, default=str)},
-        ]
-        meter = self._meter(turns)
-        for _ in range(turns):
-            resp = self.role(role).call(meter, messages, schemas, "auto")
-            messages.append(assistant_message(resp))
-            for call in resp.tool_calls:
-                if call.name == finish:
-                    return call.arguments
-                entry = tools.get(call.name)
-                if entry is None:
-                    body = self.tool(call, _not_on_ticket)
-                else:
-                    body = self.tool(call, entry[1])
-                messages.append(
-                    {"role": "tool", "tool_call_id": call.id, "content": json.dumps(body)}
-                )
-            if not resp.tool_calls:
-                raise Stopped(f"{role} stopped without {finish}")
-        raise Stopped(f"{role} used its turns without {finish}")
-
-    def invoke(self, phase: str, role: str, task: str, status: str | None = None) -> None:
-        data: dict[str, Any] = {"phase": phase, "role": role, "task_id": task}
-        if phase == "finished":
-            data |= {"status": status, "model_calls": self.role_turns(role)}
-        self.trace.append("role_invocation", "runtime", **data)
-
-    def role_turns(self, role: str) -> int:
-        """Model calls this role made so far in the run, from the trace."""
-        turns = (e["data"] for e in self.trace.records() if e["event"] == "model_turn")
-        return sum(t["role"] == role for t in turns)
-
-    def handoff(self, task: str, parent: str, receiver: str, ticket: dict[str, Any]) -> None:
-        self.trace.append(
-            "task_handoff", "runtime", task_id=task, parent_task_id=parent, receiver=receiver,
-            brief_sha256=payload_digest(OBJECTIVE), task_sha256=payload_digest(ticket), task=ticket,
-        )  # fmt: skip
 
     def data_tools(self, spec: Assignment) -> dict[str, Any]:
         def profile(_args: str) -> dict[str, Any]:
@@ -261,10 +114,6 @@ class Flow:
             },
             "label": ARM_LABEL,
         }
-
-
-def _not_on_ticket(_args: str) -> dict[str, Any]:
-    raise ValueError("this tool is not on the ticket")
 
 
 def specialists(flow: Flow, spec: Assignment, name: str) -> str:
@@ -380,26 +229,6 @@ def acceptance(flow: Flow, rec: Recommendation) -> dict[str, bool]:
             f["last_visible_label"] < "2024" for f in flow.bench.features.values()
         ),
         "recommendation_allowed_by_rule": not permitted(rec, results),
-    }
-
-
-def usage(flow: Flow) -> dict[str, Any]:
-    total, entries = flow.ledger.total(), list(flow.trace.records())
-    turns = [e["data"] for e in entries if e["event"] == "model_turn"]
-    return {
-        "wall_seconds": round(time.perf_counter() - flow.log.started, 1),
-        "inference_seconds": round(sum(float(t["wall_seconds"]) for t in turns), 1),
-        "training_seconds": round(flow.log.training_seconds, 1),
-        "peak_training_rss_mb": flow.log.peak_rss_mb,
-        "model_calls": total.model_calls,
-        "prompt_tokens": total.prompt_tokens,
-        "completion_tokens": total.completion_tokens,
-        "cached_tokens": "not exposed by this provider",
-        "retries": sum(e["event"] == "model_retry_skipped" for e in entries),
-        "provider_faults": sum(e["event"] == "model_error" for e in entries),
-        "tool_calls": flow.log.tools,
-        "rejected_tool_calls": flow.log.rejected,
-        "human_interventions": 0,
     }
 
 
