@@ -76,6 +76,26 @@ def experiment_panel(run_dir: Path) -> None:
         st.dataframe(_usage_rows(record), use_container_width=True, hide_index=True)
 
 
+def request_panel() -> None:
+    """The request, its scope and the verified recommendation of the run named in the URL."""
+    label = st.query_params.get("run", "")
+    run_dir = dict(common.run_choices()).get(label)
+    record = record_of(run_dir) if run_dir is not None else None
+    if run_dir is None or record is None:
+        return
+    with common.panel("Experiment request", "experimental", "Recorded run, not a live answer."):
+        path = run_dir / "artifacts" / "request.json"
+        if path.is_file():
+            st.write(json.loads(path.read_text(encoding="utf-8"))["objective"])
+        rec = record.get("recommendation") or {}
+        st.write(
+            f"Run {label}. Arm {record['arm']}. Strategy {record.get('strategy')}. Status "
+            f"{record['status']}. Recommendation: {rec.get('outcome', 'none')} "
+            f"{rec.get('model_id') or ''}. A person decides. {UNLOCKED}"
+        )
+        st.warning(" ".join(record["limitations"]))
+
+
 def decide(run_dir: Path, approve: bool, key: str) -> ResourceApprovalV1:
     """Sign one decision on this exact record. The first decision stands."""
     if not key_matches(key):

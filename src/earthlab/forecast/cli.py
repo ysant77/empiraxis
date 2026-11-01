@@ -9,6 +9,7 @@ from typing import Any
 
 from earthlab.forecast.experiment import run_experiment
 from earthlab.forecast.tiers import run_tiers
+from earthlab.harness.compare import build, load_runs, markdown
 from earthlab.harness.replay import replay_run
 from earthlab.harness.scenarios import SCENARIOS, SUMMARY, run_scenario
 from earthlab.llm.client import build_client
@@ -55,7 +56,15 @@ def cmd_harness_replay(args: argparse.Namespace) -> int:
     return 1 if out["mismatches"] else 0
 
 
+def cmd_harness_compare(args: argparse.Namespace) -> int:
+    print(markdown(build(load_runs(args.manifest))))
+    return 0
+
+
 def add_forecast_parsers(sub: Any) -> None:
+    table = sub.add_parser("harness-compare", help="the three arms, from saved run records")
+    table.add_argument("manifest", type=Path)
+    table.set_defaults(func=cmd_harness_compare)
     again = sub.add_parser("harness-replay", help="reproduce a saved run with no model")
     again.add_argument("run", type=Path)
     again.set_defaults(func=cmd_harness_replay)
