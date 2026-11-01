@@ -6,7 +6,14 @@ import json
 from pathlib import Path
 from typing import Any
 
-from earthlab.harness.compare import NOT_MEASURED, agrees_with_code, build, load_runs, markdown
+from earthlab.harness.compare import (
+    NOT_MEASURED,
+    agrees_with_code,
+    build,
+    cell,
+    load_runs,
+    markdown,
+)
 
 
 def _run(folder: Path, name: str, record: dict[str, Any]) -> str:
@@ -40,6 +47,18 @@ def test_a_failed_run_stays_in_the_count_and_unknown_is_not_zero(tmp_path: Path)
     assert team["energy"] == NOT_MEASURED and team["billed_usd"] == NOT_MEASURED
     fixed = report["scenarios"]["s"]["fixed"]
     assert fixed["wall_seconds"] == NOT_MEASURED and fixed["ended_in_refusal_or_abstention"] == 1
+
+
+def test_usage_records_do_not_prove_a_bill_of_zero() -> None:
+    usage = {"prompt_tokens": 10, "model_calls": 1}
+    rows = [{"record": {"usage": usage}}, {"record": {"usage": usage}}]
+    assert cell(rows)["billed_usd"] == NOT_MEASURED
+
+
+def test_a_bill_needs_a_record_from_every_run() -> None:
+    billed = {"record": {"usage": {"billed_usd": 0.25}}}
+    assert cell([billed, billed])["billed_usd"] == 0.5
+    assert cell([billed, {"record": {"usage": {}}}])["billed_usd"] == NOT_MEASURED
 
 
 def test_the_three_dimensions_print_apart(tmp_path: Path) -> None:
