@@ -113,7 +113,7 @@ def test_the_worker_keeps_only_its_own_provider_key(
     class Config:
         enabled, api_key_env = True, "BASETEN_API_KEY"
 
-    monkeypatch.setattr(worker, "load_providers", lambda _path: {"mock": Config()})
+    monkeypatch.setattr(worker, "load_providers", lambda _path: {SPEC.provider: Config()})
     parent = {"PATH": "/bin", "BASETEN_API_KEY": "b", "FIREWORKS_API_KEY": "f"}
     keys = worker.worker_env(run_id, tmp_path, parent)
     assert keys == {"PATH": "/bin", "BASETEN_API_KEY": "b"}
