@@ -286,8 +286,18 @@ def test_human_approval_and_denial_stay_separate_from_evaluation(
     assert outcome(run, ridge) == "verified_approved"
 
 
-def test_a_synthetic_source_gives_a_labelled_smoke_test(run: Run, tmp_path: Path) -> None:
-    out = accept(run.registry, run.bundles["M_ridge"], run.folder, run.source, tmp_path / "e")
+@pytest.fixture(scope="module")
+def accepted(
+    base: Run, tmp_path_factory: pytest.TempPathFactory
+) -> tuple[DeploymentReadinessV1, Path]:
+    out = tmp_path_factory.mktemp("accepted")
+    return accept(base.registry, base.bundles["M_ridge"], base.folder, base.source, out), out
+
+
+def test_a_synthetic_source_gives_a_labelled_smoke_test(
+    base: Run, accepted: tuple[DeploymentReadinessV1, Path]
+) -> None:
+    out, folder = accepted
     assert out.inference.state == "synthetic_smoke" and out.inference.matches_reference
     assert out.inference.rows_compared > 0 and out.inference.max_abs_difference is not None
     assert out.inference.output_mae == out.inference.reference_mae
@@ -297,7 +307,7 @@ def test_a_synthetic_source_gives_a_labelled_smoke_test(run: Run, tmp_path: Path
     assert out.resources.seconds_total is not None and out.resources.peak_rss_mb
     assert out.high_pm25 is not None and out.human_approval == "none"
     assert out.missing_operational_evidence
-    with (tmp_path / "e" / f"input-{run.bundles['M_ridge'][:12]}.csv").open() as stream:
+    with (folder / f"input-{base.bundles['M_ridge'][:12]}.csv").open() as stream:
         assert sum(1 for _ in stream) - 1 <= S.SEALED_FROM
 
 
@@ -309,9 +319,10 @@ def test_a_refused_bundle_gets_a_report_and_no_inference(run: Run, tmp_path: Pat
     assert json.loads(saved.read_text("utf-8"))["production_ready"] is False
 
 
-def test_a_readiness_record_cannot_claim_production(run: Run, tmp_path: Path) -> None:
-    out = accept(run.registry, run.bundles["M_ridge"], run.folder, run.source, tmp_path)
-    data = out.model_dump(mode="json")
+def test_a_readiness_record_cannot_claim_production(
+    accepted: tuple[DeploymentReadinessV1, Path],
+) -> None:
+    data = accepted[0].model_dump(mode="json")
     with pytest.raises(ValidationError):
         DeploymentReadinessV1.model_validate({**data, "production_ready": True})
     with pytest.raises(ValidationError):

@@ -24,7 +24,7 @@ from earthlab.digest import file_digest
 from earthlab.efficiency.artifacts import ArtifactRef
 from earthlab.forecast import evaluator as forecast_eval
 from earthlab.forecast import samples as S
-from earthlab.forecast.dataset import REGIONS, label_at, load_grid
+from earthlab.forecast.dataset import REGIONS, label_at
 from earthlab.harness import attest as authority
 from earthlab.harness import hindcast
 from earthlab.harness.contracts import EvaluationReportV1
@@ -56,7 +56,7 @@ MISSING = (
 
 def export_input(source: Path, path: Path) -> Path:
     """The published rows up to the validation end, for the batch command. Test rows stay out."""
-    values = load_grid(source)[0].values[: S.split_bounds("validation")[1] + 1]
+    values = authority.parsed_source(source)[0].values[: S.split_bounds("validation")[1] + 1]
     with path.open("w", newline="", encoding="utf-8") as stream:
         out = csv.writer(stream)
         out.writerow(("time", *REGIONS))
@@ -132,7 +132,7 @@ def compare(
     gap = float(np.abs(made - kept).max())
     reference, mae = None, None
     if bundle.task == "regression":
-        truth = forecast_eval.read_truth(files.source)[0]
+        truth = authority.parsed_source(files.source)[1]
         line = forecast_eval.evaluate(truth, issues, [S.PRIMARY_HORIZON], made[:, None, :])
         report = EvaluationReportV1.model_validate_json(files.report.read_bytes())
         mae = round(line[str(S.PRIMARY_HORIZON)]["all"]["mae"], 3)
@@ -146,7 +146,7 @@ def compare(
 
 
 def _data(folder: Path, source: Path) -> DataValidityV1:
-    values = load_grid(source)[0].values[: S.SEALED_FROM]
+    values = authority.parsed_source(source)[0].values[: S.SEALED_FROM]
     align = hindcast.check(source, values)
     digest = file_digest(source)
     quality = folder / "quality-report.json"

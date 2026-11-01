@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -20,7 +21,7 @@ from earthlab.efficiency.artifacts import ArtifactRef
 from earthlab.forecast import evaluator as forecast_eval
 from earthlab.forecast import gate
 from earthlab.forecast import samples as S
-from earthlab.forecast.dataset import label_at, load_grid
+from earthlab.forecast.dataset import Grid, label_at, load_grid
 from earthlab.harness import eval_classify
 from earthlab.harness.classify import HORIZON, SCORED_FROM, THRESHOLD
 from earthlab.harness.contracts import EvaluationReportV1, ModelScore
@@ -75,6 +76,18 @@ def run_files(
         folder / "families-classification-evaluation.json", folder / f"probabilities-{name}.npz",
         source, name,
     )  # fmt: skip
+
+
+@lru_cache(maxsize=2)
+def _parse(path: Path, digest: str) -> tuple[Grid, np.ndarray]:
+    return load_grid(path)[0], forecast_eval.read_truth(path)[0]
+
+
+def parsed_source(path: Path) -> tuple[Grid, np.ndarray, str]:
+    """The source's grid and the evaluator's truth. Equal bytes parse once in one process."""
+    digest = file_digest(path)
+    grid, truth = _parse(path, digest)
+    return grid, truth, digest
 
 
 def protocol_digest(evaluator: str) -> str:
@@ -197,8 +210,7 @@ def attest(registry: Registry, ref: ArtifactRef, files: RunFiles) -> EvaluationR
     if bundle.family != "hybrid":
         load(registry, ref)
     report, row, report_sha = _report(bundle, files)
-    grid = load_grid(files.source)[0]
-    truth, source_sha = forecast_eval.read_truth(files.source)
+    grid, truth, source_sha = parsed_source(files.source)
     if source_sha != feature.source_sha256 or source_sha != fitted.source_sha256:
         raise EvidenceRefused("the source file is not the one this bundle was fitted on")
     saved, predictions_sha = read_predictions(files, bundle.task)
@@ -235,4 +247,6 @@ def admit(registry: Registry, ref: ArtifactRef, files: RunFiles) -> Status:
     return registry.evaluate(ref, record, files.report)
 
 
-__all__ = ["EvidenceRefused", "RunFiles", "admit", "attest", "reproduce", "run_files"]
+__all__ = [
+    "EvidenceRefused", "RunFiles", "admit", "attest", "parsed_source", "reproduce", "run_files",
+]  # fmt: skip
