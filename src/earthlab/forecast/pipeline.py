@@ -140,14 +140,26 @@ class Workbench:
         self.features[name] = {**reference, "scaler": scaler}
         return reference
 
-    def _store(self, name: str, issues: np.ndarray, prediction: np.ndarray) -> dict[str, Any]:
+    def _store(
+        self,
+        name: str,
+        issues: np.ndarray,
+        prediction: np.ndarray,
+        horizons: tuple[int, ...] = S.HORIZONS,
+    ) -> dict[str, Any]:
         path = self.folder / f"predictions-{name}.npz"
-        np.savez(path, issues=issues, predictions=prediction, horizons=np.array(S.HORIZONS))
-        scored = evaluate(self.truth, issues, list(S.HORIZONS), prediction)
+        np.savez(path, issues=issues, predictions=prediction, horizons=np.array(horizons))
+        scored = evaluate(self.truth, issues, list(horizons), prediction)
         record = {"model": name, "predictions_sha256": file_digest(path), "metrics": scored}
         self.results[name] = record
         self._save(f"evaluation-{name}.json", record)
         return record
+
+    def score(
+        self, name: str, issues: np.ndarray, prediction: np.ndarray, horizons: tuple[int, ...]
+    ) -> dict[str, Any]:
+        """Store and evaluate predictions made outside the workbench, such as registry methods."""
+        return self._store(name, issues, prediction, horizons)
 
     def baselines(self, window: int) -> dict[str, dict[str, Any]]:
         """B0 to B4 on validation, frozen before any candidate trains."""
