@@ -13,8 +13,10 @@ from earthlab.events.adapter import load_run
 from earthlab.events.fixture import (
     LABEL,
     MODEL_TURN_DROPPED,
+    WORKFLOW_LABEL,
     FixtureSourceError,
     copy_redacted,
+    copy_redacted_workflow,
     sha256_file,
 )
 from earthlab.events.manifest import ManifestError, read_manifest, verified_run, write_manifest
@@ -162,7 +164,7 @@ def test_committed_fixture_holds_redacted_real_runs() -> None:
     manifest = read_manifest(REPLAY)
     assert LABEL in manifest["note"]
     for entry in manifest["runs"]:
-        assert entry["label"] == LABEL and entry["split"] == "development"
+        assert entry["label"] in (LABEL, WORKFLOW_LABEL) and entry["split"] == "development"
         assert len(entry["source_trace_sha256"]) == 64 and entry["redaction_version"] == "1"
         assert "model_turn.reasoning" in entry["removed_fields"]
         run_dir = verified_run(REPLAY, entry["run"])
@@ -174,10 +176,25 @@ def test_committed_fixture_holds_redacted_real_runs() -> None:
 
 @pytest.mark.skipif(not SOURCE_BENCH.is_dir(), reason="source bench is only on the build machine")
 def test_committed_fixture_matches_its_source_hashes() -> None:
-    for entry in read_manifest(REPLAY)["runs"]:
+    bench_runs = [r for r in read_manifest(REPLAY)["runs"] if "source_bench" in r]
+    assert len(bench_runs) == 2
+    for entry in bench_runs:
         source = SOURCE_BENCH / entry["source_bench"] / "runs" / entry["source_run"]
         assert sha256_file(source / "trace.jsonl") == entry["source_trace_sha256"]
         assert sha256_file(source / "result.json") == entry["source_result_sha256"]
+
+
+def test_committed_live_workflow_runs_replay_as_recorded() -> None:
+    workflow = [r for r in read_manifest(REPLAY)["runs"] if r["label"] == WORKFLOW_LABEL]
+    assert {r["scenario_id"]: r["run"] for r in workflow} == {
+        "WD-01": "live-september-verified",
+        "WD-02": "live-october-abstained",
+    }
+    for entry in workflow:
+        assert entry["source_commit"] and len(entry["source_result_sha256"]) == 64
+        run_dir = verified_run(REPLAY, entry["run"])
+        starts = [r for r in records(run_dir / "trace.jsonl") if r["event"] == "workflow_start"]
+        assert set(starts[0]["data"]["client_kinds"].values()) == {"live_http"}
 
 
 def test_tampered_fixture_fails_closed(tmp_path: Path) -> None:
@@ -191,3 +208,48 @@ def test_tampered_fixture_fails_closed(tmp_path: Path) -> None:
     write_manifest(root, entries, note="rewritten by hand")  # an edited manifest is not enough
     with pytest.raises(TraceIntegrityError):
         load_run(verified_run(root, "sb05-september"))
+
+
+def write_workflow_run(root: Path, status: str = "verified", kind: str = "live_http") -> Path:
+    root.mkdir(parents=True)
+    trace = RunTrace(root / "trace.jsonl")
+    trace.append(
+        "workflow_start", "runtime", client_kinds={"product_manager": kind}, topology="combined"
+    )
+    trace.append(
+        "model_turn",
+        "model",
+        turn=1,
+        content=DRAFT,
+        reasoning=SECRET,
+        request_id="x",
+        tool_calls=[],
+    )
+    (root / "result.json").write_text(json.dumps({"status": status}), encoding="utf-8")
+    return root
+
+
+def test_a_live_workflow_run_is_copied_without_model_text(tmp_path: Path) -> None:
+    source = write_workflow_run(tmp_path / "source")
+    entry = copy_redacted_workflow(source, tmp_path / "copy", "WD-01", "verified", "abc")
+    text = (tmp_path / "copy" / "trace.jsonl").read_text(encoding="utf-8")
+    assert SECRET not in text and DRAFT not in text
+    assert entry["source_commit"] == "abc" and entry["label"] == WORKFLOW_LABEL
+    assert "model_turn.reasoning" in entry["removed_fields"]
+    assert RunTrace(tmp_path / "copy" / "trace.jsonl").verify() == 2
+
+
+@pytest.mark.parametrize(
+    ("folder", "status", "kind", "reason"),
+    [
+        ("source", "abstained", "live_http", "not verified"),
+        ("source", "verified", "scripted", "not a live run"),
+        ("heldout-run", "verified", "live_http", "held-out"),
+    ],
+)
+def test_a_wrong_workflow_source_is_refused(
+    tmp_path: Path, folder: str, status: str, kind: str, reason: str
+) -> None:
+    source = write_workflow_run(tmp_path / folder, status, kind)
+    with pytest.raises(FixtureSourceError, match=reason):
+        copy_redacted_workflow(source, tmp_path / "copy", "WD-01", "verified", "abc")

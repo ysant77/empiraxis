@@ -44,6 +44,56 @@
         "result.json": "1c3027a664dd39b05f9580c8f9911c12c35494029faf5cc7591dcbcc0c73e845",
         "trace.jsonl": "2068f2f94fcaa81702d5e1f2bc68be220975cb87445a325fcc729a62efe9eb71"
       }
+    },
+    {
+      "run": "live-september-verified",
+      "scenario_id": "WD-01",
+      "split": "development",
+      "label": "development, visible questions; real Muse Glimmer workflow run; redacted copy",
+      "source_run": "20261101T032943Z-45021e",
+      "source_commit": "f886d7f",
+      "source_trace_sha256": "4eeb029a5a2d8da7a7b45b001fd6d9449111d09c38584929dfa7fdc166fac994",
+      "source_result_sha256": "6404cfe62b2094475f83704a59abdfb8ff82eb6404fcb7a4e8095bb9232a2bdd",
+      "removed_fields": [
+        "model_turn.content",
+        "model_turn.reasoning",
+        "model_turn.request_id",
+        "model_turn.tool_calls.arguments (submit_brief)",
+        "model_turn.tool_calls.arguments (submit_plan)",
+        "tool_result.arguments and data (submit_plan)"
+      ],
+      "redaction_version": "1",
+      "files": {
+        "burn_map_2015-09.png": "0b07b619fab732d3440ae31c95388e0153b622ee5606299f1b8521658b4d3fe9",
+        "report.md": "b2413eb9c396225b2d558f0313f86c4feb712e120d8a95fbcf921b3b6e76d245",
+        "result.json": "6404cfe62b2094475f83704a59abdfb8ff82eb6404fcb7a4e8095bb9232a2bdd",
+        "trace.jsonl": "eecb838a884d9f6303092a1548d91f1f95b20d7a1f6f22f77f0f9f7e8dfd624e"
+      }
+    },
+    {
+      "run": "live-october-abstained",
+      "scenario_id": "WD-02",
+      "split": "development",
+      "label": "development, visible questions; real Muse Glimmer workflow run; redacted copy",
+      "source_run": "20261101T034125Z-71a4c7",
+      "source_commit": "f886d7f",
+      "source_trace_sha256": "2686ee574b36400f6d54fe6a66b9d85d5ff0fb9bfa103a213066ac826380ba3c",
+      "source_result_sha256": "3cb0c59b73b53cfcd88963c0f1f7f7f33d663f6e64cdf27d8bed13b6620cc0ad",
+      "removed_fields": [
+        "model_turn.content",
+        "model_turn.reasoning",
+        "model_turn.request_id",
+        "model_turn.tool_calls.arguments (submit_brief)",
+        "model_turn.tool_calls.arguments (submit_plan)",
+        "tool_result.arguments and data (submit_plan)"
+      ],
+      "redaction_version": "1",
+      "files": {
+        "burn_map_2015-10.png": "2c5977648c549607053d3a8539d956f4faebad47d585a19b64d2dfed9f4bff19",
+        "report.md": "99f5a1812fb720a7439f9638e175928f8f478dff24f24b4aba5fe3aee724f4d8",
+        "result.json": "3cb0c59b73b53cfcd88963c0f1f7f7f33d663f6e64cdf27d8bed13b6620cc0ad",
+        "trace.jsonl": "877e55991f358c4f6a1b155b86c19843193ff204e66d3b794d52334ecd9d9ac9"
+      }
     }
   ]
 }

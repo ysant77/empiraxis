@@ -1,6 +1,7 @@
-"""Build a redacted, re-chained replay copy of a recorded development bench run.
+"""Build a redacted, re-chained replay copy of a recorded development run.
 
-The source trace must verify, and the bench row must show a pass. The copy drops model
+The source trace must verify. A bench run needs a passing bench row, and a workflow run
+must end in the status the caller expects. The copy drops model
 reasoning, raw model message text and provider request IDs. Tool arguments and data are
 kept only for allow-listed tools. The research question is kept: development questions
 are visible. Held-out sources are refused. Source timestamps are kept.
@@ -19,6 +20,7 @@ from earthlab.trace import RunTrace
 
 REDACTION_VERSION = "1"
 LABEL = "development, visible questions; real Muse Glimmer run; redacted copy"
+WORKFLOW_LABEL = "development, visible questions; real Muse Glimmer workflow run; redacted copy"
 PUBLIC_TOOLS = frozenset(
     {
         "assess_case",
@@ -87,10 +89,8 @@ def _check_source(bench_dir: Path, run_name: str) -> dict[str, Any]:
     raise FixtureSourceError(f"no arm B bench row for {run_name}")
 
 
-def copy_redacted(bench_dir: Path, run_name: str, out_dir: Path) -> dict[str, Any]:
-    """Write trace.jsonl and result.json for one run; return its manifest provenance."""
-    row = _check_source(bench_dir, run_name)
-    source = bench_dir / "runs" / run_name
+def _copy(source: Path, out_dir: Path) -> set[str]:
+    """Write the redacted trace and the result; return the removed fields."""
     source_trace = source / "trace.jsonl"
     records = RunTrace(source_trace).verify()
     shutil.rmtree(out_dir, ignore_errors=True)
@@ -103,6 +103,48 @@ def copy_redacted(bench_dir: Path, run_name: str, out_dir: Path) -> dict[str, An
     if copy.verify() != records:
         raise FixtureSourceError("the redacted copy has a different record count")
     shutil.copyfile(source / "result.json", out_dir / "result.json")
+    return removed
+
+
+def copy_redacted_workflow(
+    source: Path, out_dir: Path, scenario_id: str, status: str, source_commit: str
+) -> dict[str, Any]:
+    """Redact one live workflow run that ended as expected; return its manifest provenance."""
+    if any(HELDOUT_MARK in part.lower() for part in source.resolve().parts):
+        raise FixtureSourceError("held-out sources are never copied")
+    result = json.loads((source / "result.json").read_text(encoding="utf-8"))
+    if result["status"] != status:
+        raise FixtureSourceError(f"{source.name} is not {status}: {result['status']}")
+    kinds = _client_kinds(source)
+    if kinds != {"live_http"}:
+        raise FixtureSourceError(f"{source.name} is not a live run: {sorted(kinds)}")
+    removed = _copy(source, out_dir)
+    return {
+        "scenario_id": scenario_id,
+        "split": "development",
+        "label": WORKFLOW_LABEL,
+        "source_run": source.name,
+        "source_commit": source_commit,
+        "source_trace_sha256": sha256_file(source / "trace.jsonl"),
+        "source_result_sha256": sha256_file(source / "result.json"),
+        "removed_fields": sorted(removed),
+        "redaction_version": REDACTION_VERSION,
+    }
+
+
+def _client_kinds(source: Path) -> set[str]:
+    for entry in RunTrace(source / "trace.jsonl").records():
+        if entry["event"] == "workflow_start":
+            return set((entry["data"].get("client_kinds") or {}).values())
+    return set()
+
+
+def copy_redacted(bench_dir: Path, run_name: str, out_dir: Path) -> dict[str, Any]:
+    """Write trace.jsonl and result.json for one run; return its manifest provenance."""
+    row = _check_source(bench_dir, run_name)
+    source = bench_dir / "runs" / run_name
+    source_trace = source / "trace.jsonl"
+    removed = _copy(source, out_dir)
     return {
         "scenario_id": row["scenario_id"],
         "split": "development",

@@ -1,0 +1,335 @@
+{
+  "question": "How much area did MODIS MCD64A1 map as burned in the Kalimantan study box during September 2015?",
+  "status": "verified",
+  "stop_reason": "final answer given",
+  "answer": "The MODIS MCD64A1 product maps burned area in the Kalimantan study box for the requested period under primary QA as reported in finding A1.1. The valid-data coverage for the same period is shown in finding A1.2, indicating the quality gate is satisfied. This is an observational summary only; mapped burned area reflects the satellite product definition and does not represent forest loss, emissions, or cause.",
+  "provider": "local-glimmer",
+  "model": "muse-glimmer-30B",
+  "served_model": "muse-glimmer-30B",
+  "turns": 4,
+  "tool_calls": 3,
+  "submissions": 1,
+  "skipped_tool_calls": 0,
+  "seconds": 336.193,
+  "prompt_tokens": 18428,
+  "completion_tokens": 1183,
+  "estimated_cost_usd": 0.0,
+  "source": {
+    "dataset_id": "nea-historical-1hr-pm25",
+    "source_url": "https://data.gov.sg/datasets/d_6c0d5fc34838b12472475fdb73c0af29/view",
+    "sha256": "2fb76e1c4e4208e92f49670602e303c86e21eaa3704651633323e50f51015de4",
+    "licence": "Singapore Open Data Licence v1.0",
+    "unit": "ug/m3",
+    "timezone": "Asia/Singapore",
+    "spatial_support": "Five NEA reporting regions (north, south, east, west, central). Not station coordinates."
+  },
+  "attribution": "Contains information from Historical 1-hr PM2.5 accessed on 27 October 2026 from data.gov.sg, which is made available under the terms of the Singapore Open Data Licence version 1.0.",
+  "safety": [
+    {
+      "stage": "question",
+      "allowed": true,
+      "blocked_by": null,
+      "reason": null,
+      "guard": "llama-guard-3-8b: safe",
+      "guard_codes": []
+    },
+    {
+      "stage": "answer",
+      "allowed": true,
+      "blocked_by": null,
+      "reason": null,
+      "guard": "llama-guard-3-8b: safe",
+      "guard_codes": []
+    }
+  ],
+  "answer_issues": [],
+  "answer_source": "model",
+  "findings_text": "Verified findings (recomputed by the independent verifier):\n- A1.1: mapped burned area, case kalimantan-2015-burned-area, month 2015-09 UTC, QA policy primary: 77426.0 ha\n- A1.2: valid-data fraction, case kalimantan-2015-burned-area, month 2015-09 UTC, QA policy primary: 0.970144 fraction\nMethod limits:\n- MCD64A1 maps burned area at 500 m resolution. It is not forest loss, destroyed trees or emissions.\n- FIRMS detections are thermal anomalies at satellite overpass time. They are context only and not burned area.\n- A month whose valid-land fraction is below the pre-registered gate is not reported.\n- The report makes no claim about what caused the fires or who is responsible.",
+  "answer_audit": {
+    "numbers": [],
+    "dates": [],
+    "unknown_citations": [],
+    "misleading": [],
+    "language": null
+  },
+  "findings": [],
+  "limitations": [],
+  "area_findings": [
+    {
+      "id": "A1.1",
+      "case_id": "kalimantan-2015-burned-area",
+      "month": "2015-09",
+      "quantity": "burned_area_ha",
+      "value": 77426.0,
+      "statement": "MODIS MCD64A1 maps burned area in the Kalimantan study box for September 2015 as 77426 hectares under primary QA policy.",
+      "qa_policy": "primary",
+      "unit": "ha",
+      "observed": 77426.0,
+      "verdict": "supported",
+      "check": "value",
+      "reason": "matches the recomputed 77426.0 ha",
+      "source_sha256": "126a6c506d0d05b7f913f36ea98925de67773c68ce19194b1759a9b9acc6bfe2"
+    },
+    {
+      "id": "A1.2",
+      "case_id": "kalimantan-2015-burned-area",
+      "month": "2015-09",
+      "quantity": "valid_fraction",
+      "value": 0.970144,
+      "statement": "Valid data fraction for September 2015 in the Kalimantan study box is 0.970144 under primary QA policy.",
+      "qa_policy": "primary",
+      "unit": "fraction",
+      "observed": 0.970144,
+      "verdict": "supported",
+      "check": "coverage",
+      "reason": "recomputed valid fraction is 0.970",
+      "source_sha256": "126a6c506d0d05b7f913f36ea98925de67773c68ce19194b1759a9b9acc6bfe2"
+    }
+  ],
+  "area_rounds": [
+    [
+      {
+        "claim": {
+          "case_id": "kalimantan-2015-burned-area",
+          "month": "2015-09",
+          "quantity": "burned_area_ha",
+          "value": 77426.0,
+          "statement": "MODIS MCD64A1 maps burned area in the Kalimantan study box for September 2015 as 77426 hectares under primary QA policy.",
+          "qa_policy": "primary"
+        },
+        "verdict": "supported",
+        "check": "value",
+        "observed": 77426.0,
+        "reason": "matches the recomputed 77426.0 ha",
+        "source_sha256": "126a6c506d0d05b7f913f36ea98925de67773c68ce19194b1759a9b9acc6bfe2"
+      },
+      {
+        "claim": {
+          "case_id": "kalimantan-2015-burned-area",
+          "month": "2015-09",
+          "quantity": "valid_fraction",
+          "value": 0.970144,
+          "statement": "Valid data fraction for September 2015 in the Kalimantan study box is 0.970144 under primary QA policy.",
+          "qa_policy": "primary"
+        },
+        "verdict": "supported",
+        "check": "coverage",
+        "observed": 0.970144,
+        "reason": "recomputed valid fraction is 0.970",
+        "source_sha256": "126a6c506d0d05b7f913f36ea98925de67773c68ce19194b1759a9b9acc6bfe2"
+      }
+    ]
+  ],
+  "rounds": [],
+  "evidence": {
+    "files": {
+      "config/cases/kalimantan-2015-burned-area.yaml": "477e74381225ea0a77b7cd9c3220dca32ef4da1a7e10f67f832efc5f082f8d67",
+      "config/methods/mcd64a1_burned_area.yaml": "5cb0735405c1c6a8b55889c8bb4eef4107a5e9b16ccfa4db73da600f0b8ced71",
+      "config/methods/mcd64a1_qa_sensitivity.yaml": "47359a7d51ba54d510e4d477f92ca28a792cd58eef2d195ca69fd61405bd2e3e",
+      "data/kalimantan-2015/firms-modis-sp-kalimantan-2015.manifest.json": "0d758768d0d19e82daf134ac29e3a66330181b0347de301fd9888925d5caefd6",
+      "data/kalimantan-2015/firms_modis_sp_2015_09_2015_11.csv": "75bf1fbcbc9a550a996ba00ba3262bc21a6c78f71a6ac5bbe415835449988fb8",
+      "data/kalimantan-2015/mcd64a1-061-kalimantan-2015.manifest.json": "f49c834020cf5c72b9e3ccca47c9743635ca79cac4d505d51191840a60b8c9ce",
+      "data/kalimantan-2015/mcd64a1_2015_09.tif": "126a6c506d0d05b7f913f36ea98925de67773c68ce19194b1759a9b9acc6bfe2",
+      "data/kalimantan-2015/mcd64a1_2015_10.tif": "daf5546584de91a14cccf6636a2c3c225575ae188471894f35460530eedd0145"
+    },
+    "months": [
+      {
+        "case_id": "kalimantan-2015-burned-area",
+        "month": "2015-09",
+        "area_ha": 77426.0,
+        "valid_fraction": 0.970144,
+        "check": {
+          "month": "2015-09",
+          "verifier_burned_pixels": 3623,
+          "verifier_area_m2": 774259703.4,
+          "verifier_valid_fraction": 0.970144,
+          "ee_burned_pixels": 3618,
+          "verifier_area_per_pixel_m2": 213706.79,
+          "ee_area_per_pixel_m2": 213706.79,
+          "allowed_count_difference": 69,
+          "c1_count_ok": true,
+          "c2_per_pixel_area_ok": true,
+          "c3_tool_vs_verifier_ok": true,
+          "gate_ok": true,
+          "passed": true,
+          "notes": []
+        },
+        "source_sha256": "126a6c506d0d05b7f913f36ea98925de67773c68ce19194b1759a9b9acc6bfe2",
+        "firms_detections": 5863
+      }
+    ]
+  },
+  "plan_reviews": [
+    {
+      "schema_version": "1",
+      "rules_version": "1",
+      "report_id": "20261101t032943z-45021e.plan.r1.critique",
+      "task": {
+        "task_id": "20261101t032943z-45021e.critique",
+        "role_id": "scientific_critic",
+        "visibility": "internal",
+        "parent_task_id": "20261101t032943z-45021e",
+        "child_task_ids": []
+      },
+      "reviewer_kind": "deterministic_rules",
+      "plan_id": "20261101t032943z-45021e.plan",
+      "plan_revision": 1,
+      "plan_sha256": "8e553d0863389d0558cdc4bff1b1f567d8982e0a53edf2f03c18e69b9c3a095f",
+      "registry_sha256": "47d8c6d3bb572b7684bc2f31835fed056da03a44760018964ce13a25e82827a3",
+      "verdict": "accept",
+      "abstentions": [],
+      "findings": []
+    }
+  ],
+  "workflow": {
+    "topology": "combined",
+    "bindings": {
+      "pm": {
+        "role": "product_manager",
+        "candidate_id": "muse-glimmer",
+        "family": "meta-muse",
+        "model_id": "muse-glimmer-30B",
+        "provider_id": "local-glimmer",
+        "implementation": "experimental"
+      },
+      "engineer": {
+        "role": "geospatial_engineer",
+        "candidate_id": "muse-glimmer",
+        "family": "meta-muse",
+        "model_id": "muse-glimmer-30B",
+        "provider_id": "local-glimmer",
+        "implementation": "experimental"
+      }
+    },
+    "orchestrator_decision": null,
+    "usage": {
+      "product_manager": {
+        "model_calls": 2,
+        "tool_calls": 0,
+        "prompt_tokens": 1590,
+        "completion_tokens": 1220,
+        "cost_usd": 0.0,
+        "seconds": 304.55448087496916
+      },
+      "geospatial_engineer": {
+        "model_calls": 4,
+        "tool_calls": 3,
+        "prompt_tokens": 18428,
+        "completion_tokens": 1183,
+        "cost_usd": 0.0,
+        "seconds": 336.193
+      },
+      "total": {
+        "model_calls": 6,
+        "tool_calls": 3,
+        "prompt_tokens": 20018,
+        "completion_tokens": 2403,
+        "cost_usd": 0.0,
+        "seconds": 647.985
+      }
+    },
+    "budget": {
+      "max_turns": 12,
+      "max_tool_calls": 24,
+      "max_submissions": 3,
+      "max_seconds": 3600.0,
+      "max_usd": 1.0,
+      "max_output_tokens": 4096
+    },
+    "pm_calls": 2,
+    "brief": {
+      "schema_version": "1",
+      "task_id": "20261101t032943z-45021e",
+      "request_sha256": "3387bf32e872489e066bd21e8d431038f16f5f0315d83794b5bdd03a833c4100",
+      "topology": "combined",
+      "brief": {
+        "route": "engineer",
+        "case_id": "kalimantan-2015-burned-area",
+        "normalized_question": "How much area did MODIS MCD64A1 map as burned in the Kalimantan study box during September 2015?",
+        "intent": "observational_summary",
+        "target_quantity": "burned area",
+        "period_start": "2015-09-01T07:00:00+07:00",
+        "period_end": "2015-10-01T07:00:00+07:00",
+        "constraints": [],
+        "clarifications_needed": []
+      },
+      "author": {
+        "role_id": "product_manager",
+        "provider": "local-glimmer",
+        "model": "muse-glimmer-30B",
+        "logical_model": "muse-glimmer-30b",
+        "served_model": "muse-glimmer-30B"
+      }
+    },
+    "engineering_task": {
+      "schema_version": "1",
+      "task_id": "20261101t032943z-45021e.ge",
+      "parent_task_id": "20261101t032943z-45021e",
+      "brief_sha256": "332bc824f2042d0b0e3292aebcb99e7a51e7942e2d3681152c5b021ea9bdb18c",
+      "role_id": "geospatial_engineer",
+      "objective": "How much area did MODIS MCD64A1 map as burned in the Kalimantan study box during September 2015?",
+      "case_id": "kalimantan-2015-burned-area",
+      "allowed_dataset_ids": [
+        "firms-modis-sp-kalimantan-2015",
+        "mcd64a1-061-kalimantan-2015"
+      ],
+      "allowed_method_ids": [
+        "mcd64a1_burned_area"
+      ],
+      "allowed_tool_names": [
+        "assess_case",
+        "burned_area_summary",
+        "declare_limitation",
+        "submit_area_findings",
+        "submit_plan"
+      ],
+      "max_model_calls": 11,
+      "max_tool_calls": 24,
+      "max_seconds": 3415.4667474579765,
+      "max_cost_usd": 1.0,
+      "approval_scope": "read-only pinned files",
+      "expected_output": "reviewed plan and verified claims"
+    },
+    "engineering_reply": {
+      "schema_version": "1",
+      "task_id": "20261101t032943z-45021e.ge",
+      "status": "verified",
+      "plan_sha256": [
+        "8e553d0863389d0558cdc4bff1b1f567d8982e0a53edf2f03c18e69b9c3a095f"
+      ],
+      "critic_verdicts": [
+        "accept"
+      ],
+      "supported_finding_ids": [
+        "A1.1",
+        "A1.2"
+      ],
+      "limitation_reasons": [],
+      "elapsed_ms": 338160,
+      "author": {
+        "role_id": "geospatial_engineer",
+        "provider": "local-glimmer",
+        "model": "muse-glimmer-30B",
+        "logical_model": "muse-glimmer-30b",
+        "served_model": "muse-glimmer-30B"
+      }
+    },
+    "manager_result": {
+      "schema_version": "1",
+      "task_id": "20261101t032943z-45021e",
+      "status": "verified",
+      "verified_finding_refs": [
+        "A1.1",
+        "A1.2"
+      ],
+      "typed_limitations": [],
+      "report_text": "Verification is complete.\n\nMODIS MCD64A1 burned area for the Kalimantan study box for the requested period under primary QA is reported in finding A1.1.\n\nValid-data coverage for the same period is shown in finding A1.2, indicating the quality gate is satisfied.\n\nThe summary is observational only. Mapped burned area reflects the satellite product definition.",
+      "findings_text": "Verified findings (recomputed by the independent verifier):\n- A1.1: mapped burned area, case kalimantan-2015-burned-area, month 2015-09 UTC, QA policy primary: 77426.0 ha\n- A1.2: valid-data fraction, case kalimantan-2015-burned-area, month 2015-09 UTC, QA policy primary: 0.970144 fraction\nMethod limits:\n- MCD64A1 maps burned area at 500 m resolution. It is not forest loss, destroyed trees or emissions.\n- FIRMS detections are thermal anomalies at satellite overpass time. They are context only and not burned area.\n- A month whose valid-land fraction is below the pre-registered gate is not reported.\n- The report makes no claim about what caused the fires or who is responsible.",
+      "report_source": "pm_model",
+      "source_hashes": [
+        "2fb76e1c4e4208e92f49670602e303c86e21eaa3704651633323e50f51015de4"
+      ],
+      "followup_questions": []
+    }
+  }
+}
