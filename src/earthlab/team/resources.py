@@ -65,6 +65,12 @@ def _is_loopback(host: str) -> bool:
         return False
 
 
+def holds_secret(text: str, request: ResourceRequestV1) -> bool:
+    """Secret-shaped text, other than this request's own public pinned digest."""
+    pinned = request.expected_sha256 if request.max_bytes > MAX_BYTES else None
+    return bool(_SECRET_SHAPES.search(text.replace(pinned, "") if pinned else text))
+
+
 class ResourceRequestV1(Strict):
     """Exact bounds of one transfer. The human decision is bound to these bytes."""
 
@@ -205,7 +211,7 @@ class ResourceDesk:
         dumped = request.model_dump(mode="json")
         pinned = ("url", "expected_sha256") if request.max_bytes > MAX_BYTES else ()
         scanned = {k: v for k, v in dumped.items() if k not in pinned}  # exact catalogue values
-        if _SECRET_SHAPES.search(json.dumps(scanned)):
+        if holds_secret(json.dumps(scanned), request):
             raise RequestRefused("the request holds text shaped like a secret")
         if (self.root / request.request_id).exists():
             raise RequestRefused("this request ID exists")
@@ -223,9 +229,11 @@ class ResourceDesk:
         before, after = _NEXT[role]
         if view.status != before:
             raise RequestRefused(f"{role} cannot act on a request in state {view.status}")
+        kept = "note withheld: it held text shaped like a secret"
+        kept = kept if holds_secret(note, view.request) else note[:300]
         self._trace(request_id).append(
             "resource_reviewed", role, role=role, reviewer=reviewer, endorsed=endorse,
-            status=after if endorse else "refused", note=note[:300],
+            status=after if endorse else "refused", note=kept,
         )  # fmt: skip
         return self.view(request_id)
 

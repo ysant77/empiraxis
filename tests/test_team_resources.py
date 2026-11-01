@@ -380,6 +380,11 @@ def test_a_pinned_digest_is_not_a_secret_but_a_token_in_text_still_is(
     monkeypatch.chdir(Path(__file__).resolve().parents[1])
     desk = ResourceDesk(tmp_path)
     assert desk.open(ResourceRequestV1(**_large())).status == "proposed"
+    named = _large(request_id="named", risk=f"Digest {_large()['expected_sha256']} is pinned.")
+    assert desk.open(ResourceRequestV1(**named)).status == "proposed"
     leaked = _large(request_id="leak", purpose="Use sk-abcdefgh12345678 for this.")
     with pytest.raises(RequestRefused, match="shaped like a secret"):
         desk.open(ResourceRequestV1(**leaked))
+    view = desk.review("named", "geospatial_engineer", "m", True, "Bearer abc123 is the key.")
+    assert "abc123" not in json.dumps(list(desk._trace("named").records()))
+    assert view.status == "lead_endorsed"
