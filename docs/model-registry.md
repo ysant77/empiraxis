@@ -17,12 +17,17 @@ a Muse arm. A disabled candidate cannot serve a role.
 | Revision | Weights SHA-256 `4cc57c0f51040a22...` | Digest `ddc07af15606...` |
 | Quantization | Q4_K_M KQuant, 16.76 GB, with DFlash drafter | Q4_K_M, 4.9 GB |
 | Context | 32,768 tokens | Not measured |
-| Licence | Apache-2.0 as recorded. No licence file is beside the weights: check the model card before release | Llama community licence: check before release |
+| Licence | Apache-2.0, with `LICENSE` and `USAGE_POLICY.md`, in `meta-models/Muse-Glimmer-30B-GGUF` revision `b44f1072` (checked 2026-11-01). The local weights folder holds no copy | Llama community licence: check before release |
 | Tools | Tool calls and JSON schema pass | Not applicable |
 | Cost | No provider charge. Energy is not measured | No provider charge. Energy is not measured |
 | Speed | About 4 to 5 completion tokens per second | Not measured separately |
 | Memory | System wired peak 26.5 GB and swap peak 19.3 GB, with other programs open. Process RSS does not show model memory | Included in the system figures |
 | Reliability | 17 of 17 live runs gave a correct status or a safe stop. See below | Guard was on in all 17 runs |
+
+The usage policy also applies to outputs of this system. Do not represent model output as
+human-generated, and disclose known dangers to end users. EarthLab labels model text and
+states its limits in every report. The policy prohibits some uses, for example the operation
+of critical infrastructure. EarthLab is a retrospective research prototype only.
 
 ## Live evidence
 

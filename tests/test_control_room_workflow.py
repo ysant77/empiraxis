@@ -47,7 +47,7 @@ def test_the_control_room_shows_a_labelled_synthetic_workflow(
 ) -> None:
     app = AppTest.from_file(str(APP), default_timeout=120)
     app.query_params["view"] = "control"
-    app.session_state["control_run"] = workflow_replay
+    app.session_state[common.SHARED_RUN] = f"replay/{workflow_replay}"
     done = app.run()
     assert not done.error
     warnings = " ".join(str(w.value) for w in done.warning)

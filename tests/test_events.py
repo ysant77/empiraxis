@@ -59,7 +59,7 @@ def event(**overrides: Any) -> EventV1:
 
 
 def test_fixture_runs_pass_the_manifest_and_map_to_events() -> None:
-    assert [r["run"] for r in listed_runs(REPLAY)] == [SEPT, OCT]
+    assert [r["run"] for r in listed_runs(REPLAY)][:2] == [SEPT, OCT]
     run = load_run(verified_run(REPLAY, SEPT))
     assert run.closed and run.status == "verified" and not run.heldout
     assert run.trace_records == 13

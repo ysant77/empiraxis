@@ -22,7 +22,6 @@ from earthlab.report.burn_map import burn_map
 from earthlab.report.write import DEFAULT_WINDOW, write_report
 from earthlab.science.burned_area import QaPolicy
 from earthlab.tools.burned_area_tools import mcd64a1_asset_id, month_report
-from earthlab.trace import RunTrace
 from earthlab.ui import common
 from earthlab.ui.live import run_live
 from earthlab.verify.claims import Claim, ClaimKind
@@ -53,6 +52,10 @@ def _verdict_rows(rounds: list[list[dict[str, Any]]]) -> list[dict[str, Any]]:
 def show_result(run_dir: Path) -> None:
     result = json.loads((run_dir / "result.json").read_text(encoding="utf-8"))
     st.subheader(f"Status: {result['status']}")
+    if "rounds" not in result:  # the workflow stopped before the engineer ran
+        _show_recomputed(result)
+        return
+    _show_recomputed(result)
     findings = [f for f in result.get("findings", []) if f["verdict"] == "supported"]
     if findings or result["rounds"]:
         st.markdown("**Findings (verified claims)**")
@@ -61,7 +64,6 @@ def show_result(run_dir: Path) -> None:
     for issue in result.get("answer_issues", []):
         st.error(f"Not verified: {issue}")
     st.write(result["answer"] or "_No final answer._")
-    _show_recomputed(result)
     if result["rounds"]:
         st.dataframe(_verdict_rows(result["rounds"]), use_container_width=True)
     _show_area(result, run_dir)
@@ -159,40 +161,26 @@ def tab_investigate() -> None:
     question = st.text_area("Research question", DEFAULT_QUESTION, height=110)
     run_dir = run_live(question)
     if run_dir is not None:
-        write_report(run_dir, common.DATA_DIR)
+        if "rounds" in json.loads((run_dir / "result.json").read_text(encoding="utf-8")):
+            write_report(run_dir, common.DATA_DIR)
         show_result(run_dir)
 
 
-def _run_choices() -> list[tuple[str, Path | None]]:
-    """Replay runs by name; operator mode adds saved local runs."""
-    choices: list[tuple[str, Path | None]] = [(f"replay/{n}", None) for n in common.replay_names()]
-    if common.ui_mode() == "operator" and common.RUNS_DIR.is_dir():
-        found = sorted(
-            common.RUNS_DIR.rglob("result.json"), key=lambda p: p.stat().st_mtime, reverse=True
-        )
-        choices += [(str(p.parent.relative_to(common.RUNS_DIR)), p.parent) for p in found[:200]]
-    return choices
-
-
 def tab_runs() -> None:
-    choices = _run_choices()
-    if not choices:
+    picked = common.pick_run()
+    if picked is None:
         st.info("No recorded runs are available.")
         return
-    labels = [c[0] for c in choices]
-    picked = st.selectbox("Recorded run", labels)
-    local = dict(choices)[picked]
-    if local is None:
-        run_dir, events, error = common.load_replay(picked.removeprefix("replay/"))
-        if run_dir is None or events is None:
-            st.error(f"Run not shown. Integrity check failed: {error}")
-            return
-        records = events.trace_records
+    run_dir, events, error = common.open_run(*picked)
+    if run_dir is None or events is None:
+        st.error(f"Run not shown. Integrity check failed: {error}")
+        return
+    if picked[1] is None:
         split = common.replay_entry(events.run_id).get("split", "unknown")
-        st.caption(f"Split: {split}. Provenance: {common.replay_provenance()}")
+        st.caption(f"Split: {split}. Provenance: {common.run_provenance(None)}")
     else:
-        run_dir, records = local, RunTrace(local / "trace.jsonl").verify()
-    st.success(f"Trace hash chain intact ({records} records).")
+        st.caption(f"Provenance: {common.run_provenance(picked[1])}")
+    st.success(f"Trace hash chain intact ({events.trace_records} records).")
     show_result(run_dir)
 
 

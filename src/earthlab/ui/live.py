@@ -8,12 +8,21 @@ from typing import Any
 import streamlit as st
 
 from earthlab.agent.budget import Budget
-from earthlab.llm.client import build_client
-from earthlab.llm.providers import load_providers
+from earthlab.llm.client import ChatClient, build_client
+from earthlab.llm.providers import ProviderConfig, load_providers
 from earthlab.llm.raw import RawCompletionClient
-from earthlab.runtime import investigate, new_run_dir
+from earthlab.runtime import RunOptions, investigate, new_run_dir
 from earthlab.safety.llama_guard import LlamaGuard
 from earthlab.ui import common
+from earthlab.workflow.assign import repo_assignment
+from earthlab.workflow.contracts import Topology
+from earthlab.workflow.run import run_workflow
+
+ROUTES: dict[str, Topology | None] = {
+    "Direct Muse investigator (baseline)": None,
+    "Muse PM, deterministic orchestrator, Muse engineer": "combined",
+    "Muse PM, separate LLM orchestrator, Muse engineer": "separate",
+}
 
 
 def _listener(status: Any) -> Any:
@@ -27,8 +36,54 @@ def _listener(status: Any) -> Any:
             status.write(f"Safety check on the {data['stage']}: {verdict}")
         elif record["event"] == "tool_result":
             status.write(f"`{data['name']}` -> {data['outcome']}")
+        elif record["event"] == "brief_reviewed":
+            status.write(f"Typed brief checked by Python: valid {data['valid']}, {data['route']}")
+        elif record["event"] == "decision_reviewed":
+            status.write(f"Orchestrator proposal checked by Python: valid {data['valid']}")
+        elif record["event"] == "task_handoff":
+            status.write(f"Task handed to the {data['receiver']}")
+        elif record["event"] == "plan_reviewed":
+            status.write(f"Plan critic (code): {data['verdict']}")
 
     return listener
+
+
+def _guard(configs: dict[str, ProviderConfig], name: str) -> LlamaGuard | None:
+    if name == "none":
+        return None
+    return LlamaGuard(RawCompletionClient(configs[name]), configs[name].logical_model)
+
+
+def _run(
+    question: str,
+    topology: Topology | None,
+    client: ChatClient,
+    configs: dict[str, ProviderConfig],
+    guard: LlamaGuard | None,
+    reasoning: str,
+    listener: Any,
+) -> Path:
+    """One bounded run on the same options as the command line. Python keeps all authority."""
+    run_dir = new_run_dir(common.RUNS_DIR)
+    settings: dict[str, Any] = {
+        "budget": Budget(),
+        "reasoning": reasoning,
+        "listener": listener,
+        "guard": guard,
+        "options": RunOptions(plan_review=True, render_fallback=True),
+    }
+    if topology is None:
+        investigate(
+            question, client, common.workspace(), run_dir, metrics=common.metrics(), **settings
+        )
+        return run_dir
+    assignment = repo_assignment(configs, client, topology=topology)
+    orchestrator = client if topology == "separate" else None
+    run_workflow(
+        question, client, common.workspace(), run_dir,
+        assignment=assignment, orchestrator_client=orchestrator, **settings,
+    )  # fmt: skip
+    return run_dir
 
 
 def run_live(question: str) -> Path | None:
@@ -36,28 +91,17 @@ def run_live(question: str) -> Path | None:
     configs = {n: c for n, c in load_providers(common.PROVIDERS).items() if c.enabled}
     planners = [n for n, c in configs.items() if "guard" not in c.logical_model]
     provider = st.selectbox("Meta model endpoint", planners)
+    route = st.selectbox("Execution route", list(ROUTES))
     reasoning = st.selectbox("Reasoning strength", ["low", "medium", "high"])
     guards = [n for n, c in configs.items() if "guard" in c.logical_model]
     guard_name = st.selectbox("Safety model (Meta Llama Guard)", [*guards, "none"])
     if not st.button("Run investigation", type="primary"):
         return None
-    guard = (
-        None
-        if guard_name == "none"
-        else LlamaGuard(RawCompletionClient(configs[guard_name]), configs[guard_name].logical_model)
-    )
-    run_dir = new_run_dir(common.RUNS_DIR)
     with st.status("Investigating with a Meta open-weight model...", expanded=True) as status:
-        investigate(
-            question,
-            build_client(configs[provider]),
-            common.workspace(),
-            run_dir,
-            metrics=common.metrics(),
-            budget=Budget(),
-            reasoning=reasoning,
-            listener=_listener(status),
-            guard=guard,
+        client = build_client(configs[provider])
+        guard = _guard(configs, guard_name)
+        run_dir = _run(
+            question, ROUTES[route], client, configs, guard, reasoning, _listener(status)
         )
         status.update(label="Investigation finished", state="complete")
     return run_dir

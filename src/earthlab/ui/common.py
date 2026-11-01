@@ -28,6 +28,7 @@ REPLAY_DIR = Path(os.environ.get("EARTHLAB_REPLAY_DIR", "examples/replay"))
 PROVIDERS = Path("config/providers.yaml")
 METRICS_PORT = int(os.environ.get("EARTHLAB_METRICS_PORT", "9464"))
 Status = Literal["implemented", "experimental", "planned", "unavailable"]
+SHARED_RUN = "shared_run"
 REPLAY_NOTE = "Replay mode: recorded artifacts only. No model is called."
 MAP_CAPTION = (
     "Map source: NASA MODIS MCD64A1 v061 monthly burned area, 500 m pixels, after the "
@@ -116,6 +117,44 @@ def load_replay(name: str) -> tuple[Path | None, RunEvents | None, str | None]:
         return run_dir, load_run(run_dir), None
     except (ManifestError, TraceIntegrityError, RuntimeError) as exc:
         return None, None, f"{type(exc).__name__}: {exc}"
+
+
+def run_choices() -> list[tuple[str, Path | None]]:
+    """Replay runs by name; operator mode adds saved local runs."""
+    choices: list[tuple[str, Path | None]] = [(f"replay/{n}", None) for n in replay_names()]
+    if ui_mode() == "operator" and RUNS_DIR.is_dir():
+        found = sorted(RUNS_DIR.rglob("result.json"), key=lambda p: p.stat().st_mtime, reverse=True)
+        choices += [(str(p.parent.relative_to(RUNS_DIR)), p.parent) for p in found[:200]]
+    return choices
+
+
+def pick_run() -> tuple[str, Path | None] | None:
+    """The recorded run, shared by every surface, so each one shows the same execution."""
+    choices = run_choices()
+    if not choices:
+        return None
+    labels = [label for label, _ in choices]
+    shared = st.session_state.get(SHARED_RUN)
+    index = labels.index(shared) if shared in labels else 0
+    picked: str = st.selectbox("Recorded run", labels, index=index)
+    st.session_state[SHARED_RUN] = picked
+    return picked, dict(choices)[picked]
+
+
+def open_run(label: str, local: Path | None) -> tuple[Path | None, RunEvents | None, str | None]:
+    """A replay copy through its allowlist, or a saved local run. Any doubt fails closed."""
+    if local is None:
+        return load_replay(label.removeprefix("replay/"))
+    try:
+        return local, load_run(local), None
+    except (TraceIntegrityError, RuntimeError, OSError, KeyError, ValueError) as exc:
+        return None, None, f"{type(exc).__name__}: {exc}"
+
+
+def run_provenance(local: Path | None) -> str:
+    if local is not None:
+        return "Local saved run, read from its own hash-chained trace. It is not a redacted copy."
+    return replay_provenance()
 
 
 def replay_provenance() -> str:
