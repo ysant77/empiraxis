@@ -96,6 +96,39 @@ The command writes one JSON line per issue. Each line holds the bundle digest, t
 
 The bundle also holds the weights digest, the feature record, the seed, the environment pins and the training metrics.
 
+## S2 hybrid: frozen S1 encoder and a shallow head
+
+The hybrid method is `frozen_gru_logistic`. It feeds the last hidden state of a frozen S1 GRU to a logistic head. The comparison list is fixed: the persistence alarm, logistic, trees_classifier and the frozen hybrid. The train rate stays as a majority-class reference.
+
+### Chronology protocol
+
+The S2 split is fixed. Fit the head on 2014 to 2018. Tune calibration and the alarm cut on 2019 to 2021. Score on 2022 to 2023. The sealed test period is never read.
+
+The S1 trainer picks its best epoch with the validation MAE over 2019 to 2023. That span includes the scored years. An encoder from that run has seen the scored samples during selection. The protocol cannot make such an encoder clean, so code refuses it.
+
+Code applies these rules before it computes any embedding. One failure refuses reuse, and the message lists every reason.
+
+1. The architecture, the input channels, the preprocessing digest and the source digest equal what S2 builds. The preprocessing digest covers the exact `series`, `mask` and `calendar` arrays.
+2. The encoder trained only on samples up to the classifier's train end.
+3. The encoder's selection span does not overlap the scored span. Both spans run from the first issue to the last target.
+4. The selection span is declared. Code reads it from the issue lists of the training job, not from a person.
+
+A refused hybrid appears under `blocked` with its reasons. The other methods still run.
+
+A clean encoder needs a new S1 run that selects its epoch on 2019 to 2021 only. Such a run is not part of this change. Its tune years overlap its selection span, so the cut and calibration are optimistic. The summary says so in `notes.selection`. The scored years stay clean.
+
+The encoder trained on 2014 to 2018, and the head fits on the same years. The embeddings of the head's train samples can look better than later embeddings. The tune and scored years show the real effect.
+
+### Encoder export and reuse
+
+- The approved template `forecast/templates_export_encoder.py` runs in the isolated environment. It reads one state dict with tensor-only loading and writes the GRU weights to npz.
+- The host applies the weights in numpy. No generated code runs on the host.
+- The manifest records the architecture, sizes, window, digests, spans and code revision. The registry stores it as a record.
+- A hybrid bundle names its encoder record. No other bundle may name one.
+- `mlops-predict` refuses hybrid bundles. The path has no encoder inputs yet.
+
+The numpy GRU is tested against a gate-by-gate reference. It is not tested against torch, because torch is absent from the test environment. Compare it with the exported model before you trust a result.
+
 ## Promotion and rollback
 
 1. Code registers the bundle as `candidate`.
@@ -125,7 +158,8 @@ Answer each item with evidence. One "no" means the bundle stays `research` or `v
 ## Limits
 
 - No bundle can reach `deployed_production`. There is no code for operational evidence.
-- The methods are small. Trees use at most 200 trees of depth 4. There is no neural method here yet.
+- The methods are small. Trees use at most 200 trees of depth 4. The only neural part is a frozen encoder. This layer trains no neural model.
+- No hybrid has run yet. No encoder exists that passes the chronology rules.
 - `mlops-run` has been tested on a synthetic file in the test suite. No number from the real NEA file is claimed here.
 - The data checks on the NEA series report issues. The run saves them and does not stop on them.
 - The persistence method fills a missing lag with the train mean. The `B0_persistence` baseline looks back six hours instead. The two can differ in hours with a gap.
