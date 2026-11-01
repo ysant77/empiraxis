@@ -50,7 +50,8 @@ def experiment_panel(run_dir: Path) -> None:
     record = record_of(run_dir)
     if record is None:
         return
-    with common.panel("Experiment E1", "experimental", record["evidence_label"]):
+    title = f"Experiment: {record['problem_id']}" if "kind" in record else "Experiment E1"
+    with common.panel(title, "experimental", record["evidence_label"]):
         st.warning(" ".join(record["limitations"]))
         rec = record.get("recommendation") or {}
         st.write(

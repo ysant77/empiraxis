@@ -233,7 +233,7 @@ def _specialist(run_dir: Path, result: dict[str, Any]) -> None:
     """Executed specialist work only: a run without a ticket shows no specialist row."""
     ticket = result.get("ticket")
     if "evidence_label" in result:
-        st.caption("This experiment's specialist tasks are in the Experiment E1 panel.")
+        st.caption("This experiment's specialist tasks are in its experiment panel.")
         return
     if ticket is None:
         st.caption("This run has no specialist ticket.")
