@@ -58,7 +58,7 @@ def _cards() -> None:
     with cols[1], common.panel("Model training", "experimental"):
         st.write("E1 only: small models, approved template, isolated. See the run panel.")
     with cols[2], common.panel("Segmentation (Prithvi)", "planned"):
-        st.write("Candidate only. Inputs and labels not checked.")
+        st.write("Not run. Downloads wait for a person. Fits HLS imagery, not PM2.5.")
     with cols[3], common.panel("Experiment tracker (MLflow)", "planned"):
         st.write("Proposed for real experiments only. Not installed.")
 
@@ -232,6 +232,9 @@ def specialist_rows(result: dict[str, Any]) -> list[dict[str, Any]]:
 def _specialist(run_dir: Path, result: dict[str, Any]) -> None:
     """Executed specialist work only: a run without a ticket shows no specialist row."""
     ticket = result.get("ticket")
+    if "evidence_label" in result:
+        st.caption("This experiment's specialist tasks are in the Experiment E1 panel.")
+        return
     if ticket is None:
         st.caption("This run has no specialist ticket.")
         return

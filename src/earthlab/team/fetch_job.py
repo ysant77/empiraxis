@@ -67,6 +67,10 @@ def fetch(job: dict[str, object], token: str | None) -> dict[str, object]:
         if kind not in allowed:
             raise ValueError(f"content type {kind or 'none'} is not approved")
         digest, size = write_capped(resp.iter_bytes(), target, int(str(job["max_bytes"])))
+    expected = job.get("expected_sha256")
+    if expected and digest != expected:
+        target.unlink()
+        raise ValueError("the file does not match the pinned digest")
     with target.open("rb") as head:
         if head.read(4).startswith(EXECUTABLE_MAGIC):
             target.unlink()

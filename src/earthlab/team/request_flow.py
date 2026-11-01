@@ -120,6 +120,7 @@ def run_request(
         asset=str(need["asset"]),
         url=str(need["url"]),
         max_bytes=int(need["max_bytes"]),
+        expected_sha256=need.get("sha256"),
         content_types=tuple(need["content_types"]),
         license_terms=str(need["license_terms"]),
         credential_name=need.get("credential_name"),

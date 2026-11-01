@@ -104,6 +104,7 @@ class Broker:
             "domain": request.domain,
             "target": str(target),
             "max_bytes": request.max_bytes,
+            "expected_sha256": request.expected_sha256,
             "content_types": list(request.content_types),
             "timeout_seconds": TIMEOUT_SECONDS,
         }

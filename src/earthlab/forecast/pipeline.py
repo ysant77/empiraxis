@@ -45,6 +45,10 @@ class TrainSpec:
     max_epochs: int = 12
     loss: str = "mae"
     learning_rate: float = 0.001
+    seed: int = SEED
+    soft: str | None = None  # teacher predictions on the train samples, scaled
+    soft_weight: float = 0.0
+    save_train: bool = False
 
 
 class Workbench:
@@ -192,7 +196,7 @@ class Workbench:
         out.mkdir(exist_ok=True)
         job = {
             **asdict(spec), "window": feature["spec"]["window"], "offset": S.USABLE_OFFSET,
-            "seed": SEED, "threads": THREADS, "batch": 256, "patience": 3,
+            "threads": THREADS, "batch": 256, "patience": 3,
             "data": feature["path"],
         }  # fmt: skip
         (out / "job.json").write_text(json.dumps(job, indent=2), encoding="utf-8")
@@ -217,6 +221,26 @@ class Workbench:
         record["wall_seconds"], record["peak_rss_mb"] = run.wall_seconds, run.peak_rss_mb
         record["features_sha256"] = feature["sha256"]
         self._save(f"evaluation-{name}.json", record)
+        return record
+
+    def ensemble(self, name: str, members: list[str], features_id: str) -> dict[str, Any]:
+        """The mean of trained members, scored as one model. It also writes the soft targets."""
+        feature = self.features[features_id]
+        folders = [self.folder / f"train-{m}" for m in members]
+        valid = np.mean([np.load(f / "valid_scaled.npy") for f in folders], axis=0)
+        soft = (self.folder / f"soft-{name}.npy").resolve()
+        np.save(soft, np.mean([np.load(f / "train_scaled.npy") for f in folders], axis=0))
+        issues = S.issue_times("validation", feature["spec"]["window"])
+        shaped = valid.reshape(len(valid), len(S.HORIZONS), -1)
+        record = self._store(name, issues, feature["scaler"].invert(shaped))
+        made = [self.results[m]["training"] for m in members]
+        record["training"] = {
+            "parameters": sum(t["parameters"] for t in made),
+            "train_seconds": round(sum(t["train_seconds"] for t in made), 2),
+            "predict_seconds": round(sum(t["predict_seconds"] for t in made), 3),
+            "model_sha256": payload_digest([t["model_sha256"] for t in made]),
+        }
+        record["soft_path"] = str(soft)
         return record
 
     def prediction(self, name: str) -> dict[int, np.ndarray]:

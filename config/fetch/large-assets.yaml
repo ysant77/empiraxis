@@ -1,0 +1,19 @@
+# Large assets a request may name, at exact pinned revisions. Being listed grants nothing: a
+# person still approves each transfer. Add an entry only with a human decision.
+assets:
+  prithvi-burnscars-weights:
+    need: Pretrained burn-scar weights to act as the expensive teacher tier for a small student.
+    asset: Prithvi-EO-2.0-300M-BurnScars weights (revision a3f2c410)
+    url: https://huggingface.co/ibm-nasa-geospatial/Prithvi-EO-2.0-300M-BurnScars/resolve/a3f2c410e45b8ac7417976614528a872f024d831/Prithvi_EO_V2_300M_BurnScars.pt
+    max_bytes: 1297798380
+    sha256: 0c5f9334be9a75c9006387ab8f3dc05a55ea7fb5ef7956717316be57c62954d3
+    content_types: [application/octet-stream]
+    license_terms: Apache-2.0, as stated on the model card
+  hls-burn-scars-chips:
+    need: Labelled six-band HLS chips, the only inputs that fit the Prithvi burn-scar weights.
+    asset: HLS Burn Scars dataset (revision 1864285e)
+    url: https://huggingface.co/datasets/ibm-nasa-geospatial/hls_burn_scars/resolve/1864285e25010d346a842e4f068b1a1d4248ed6d/hls_burn_scars.tar.gz
+    max_bytes: 2645552531
+    sha256: 4e6f99a75cb2c500547b20662a15cbd531dc421376f815e91846ea542798e8e6
+    content_types: [application/gzip, application/octet-stream]
+    license_terms: Check the dataset card before approval

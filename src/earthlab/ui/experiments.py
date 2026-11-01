@@ -13,9 +13,10 @@ from typing import Any
 
 import streamlit as st
 
+from earthlab.board.progress import fold
 from earthlab.digest import file_digest
 from earthlab.team.resources import ResourceApprovalV1, key_matches, operator_key, sign
-from earthlab.ui import common
+from earthlab.ui import board_view, common
 
 DECISION_FILE = "decision.json"
 APPROVER = "local operator (holder of the operator key)"
@@ -38,6 +39,12 @@ def _roles(record: dict[str, Any]) -> list[dict[str, Any]]:
     return list((record.get("roles") or {}).values())
 
 
+def _tasks(run_dir: Path) -> list[dict[str, Any]]:
+    """The experiment's task tree, from its trace, as every other surface shows it."""
+    entries = board_view.read_trace(run_dir)
+    return board_view.task_rows(fold(run_dir.name, entries).tasks)
+
+
 def experiment_panel(run_dir: Path) -> None:
     record = record_of(run_dir)
     if record is None:
@@ -54,8 +61,16 @@ def experiment_panel(run_dir: Path) -> None:
             "Skill is against persistence at +6 h, with 95% block-bootstrap limits. "
             "Evaluator: separate code that reads the published file and stored predictions."
         )
+        if record.get("tiers"):
+            st.dataframe(record["tiers"], use_container_width=True, hide_index=True)
+            pair = record.get("distillation") or {}
+            st.write(
+                f"Distillation helped against the direct student: {pair.get('helped')}. "
+                "This is a rehearsal on PM2.5 data, not a Prithvi result."
+            )
         checks = record.get("acceptance") or {}
         st.table([{"check": k, "passed": v} for k, v in checks.items()])
+        st.dataframe(_tasks(run_dir), use_container_width=True, hide_index=True)
         st.dataframe(_roles(record), use_container_width=True, hide_index=True)
         st.dataframe(_usage_rows(record), use_container_width=True, hide_index=True)
 

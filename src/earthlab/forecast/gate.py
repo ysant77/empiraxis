@@ -48,7 +48,7 @@ def eligible(results: dict[str, dict[str, Any]]) -> list[str]:
     passing = [
         n for n, r in results.items() if n != REFERENCE and n[:2] != "B1" and verdict(n, r).passed
     ]
-    passing = [n for n in passing if n[:2] not in ("B2", "B3")]
+    passing = [n for n in passing if n[:2] not in ("B2", "B3") and not n.startswith("member")]
     return sorted(passing, key=lambda n: results[n]["metrics"][str(PRIMARY_HORIZON)]["all"]["mae"])
 
 
