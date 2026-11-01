@@ -44,6 +44,8 @@ class Imagery(Strict):
     resolution_m: float | None = Field(default=None, gt=0)
     coverage_fraction: float | None = Field(default=None, ge=0, le=1)
     hyperspectral: bool = False
+    footprint: BoundingBox | None = None
+    band_order_source: Literal["file", "documentation", "none"] = "file"
 
 
 class Weights(Strict):
@@ -119,6 +121,12 @@ def _extra(req: SegmentationRequestV1) -> list[gates.Refusal]:
         out.append(gates.Refusal(gates.Code.INCOMPATIBLE_INPUTS, "band order differs from HLS"))
     if len(bands) != len(set(bands)):
         out.append(gates.Refusal(gates.Code.INCOMPATIBLE_INPUTS, "a band appears twice"))
+    if bands and img.band_order_source == "none":
+        out.append(gates.Refusal(gates.Code.INCOMPATIBLE_INPUTS, "no evidence for band order"))
+    if img.footprint is not None and _apart(img.footprint, req.aoi):
+        out.append(
+            gates.Refusal(gates.Code.NO_USABLE_DATA, "the imagery lies outside the task area")
+        )
     if not img.crs:
         out.append(gates.Refusal(gates.Code.INCOMPATIBLE_INPUTS, "the CRS is not stated"))
     if img.coverage_fraction is None or img.coverage_fraction < MIN_COVERAGE:
@@ -128,6 +136,15 @@ def _extra(req: SegmentationRequestV1) -> list[gates.Refusal]:
         detail = "MCD64A1 is not ground truth for a model that learns from it"
         out.append(gates.Refusal(gates.Code.MISSING_LABELS, detail))
     return out
+
+
+def _apart(a: BoundingBox, b: BoundingBox) -> bool:
+    return (
+        a.max_lon < b.min_lon
+        or b.max_lon < a.min_lon
+        or a.max_lat < b.min_lat
+        or b.max_lat < a.min_lat
+    )
 
 
 def _resource_refusals(req: SegmentationRequestV1) -> list[gates.Refusal]:
@@ -157,12 +174,20 @@ def _needs(req: SegmentationRequestV1, refusals: list[gates.Refusal]) -> list[Ne
     return needs
 
 
+def _caveats(req: SegmentationRequestV1) -> tuple[str, ...]:
+    if req.imagery.band_order_source == "documentation":
+        return ("band order rests on the dataset card; the files carry no band names",)
+    return ()
+
+
 def gate(req: SegmentationRequestV1) -> SegmentationGateV1:
     """Authorize, ask for resources, or refuse. A model cannot change the result."""
     refusals = [*gates.check_segmentation(_profile(req)), *_extra(req), *_resource_refusals(req)]
     refusals = list({(r.code, r.detail): r for r in refusals}.values())
     if not refusals:
-        return SegmentationGateV1(request_id=req.request_id, outcome="authorized")
+        return SegmentationGateV1(
+            request_id=req.request_id, outcome="authorized", notes=_caveats(req)
+        )
     hard = req.imagery.hyperspectral
     alternatives = (
         "MCD64A1 monthly burned area with its quality gate (already local)",
@@ -172,7 +197,7 @@ def gate(req: SegmentationRequestV1) -> SegmentationGateV1:
         request_id=req.request_id, outcome="refused" if hard else "request_resources",
         refusals=tuple(refusals), needs=tuple(_needs(req, refusals)), alternatives=alternatives,
         route=() if hard else ROUTE,
-        notes=("no segmentation score exists: nothing was run",),
+        notes=("no segmentation score exists: nothing was run", *_caveats(req)),
     )  # fmt: skip
 
 
