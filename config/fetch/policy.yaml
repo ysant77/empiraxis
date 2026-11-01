@@ -1,0 +1,4 @@
+# Public, no-key sources approved ahead of time by the repository owner, with fixed limits.
+# Empty: no source is preapproved, so every transfer goes to a person. Add an entry only
+# with a human decision. Fields: domain, license_terms, max_bytes, expires_utc.
+preapproved: []

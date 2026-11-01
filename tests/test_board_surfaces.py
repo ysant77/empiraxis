@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import shutil
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -12,6 +13,7 @@ pytest.importorskip("streamlit")
 from streamlit.testing.v1 import AppTest
 
 from earthlab.board.store import BOARD_FILE, Board, RunSpec
+from earthlab.team.resources import OPERATOR_KEY_ENV, ResourceDesk, ResourceRequestV1
 from earthlab.ui import common, live
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -148,3 +150,54 @@ def test_a_tampered_operator_run_shows_no_state(operator: Path) -> None:
         handle.write('{"tampered": true}\n')
     text = shown(open_view("control", run_id))
     assert "Run state not shown" in text and "trace status verified" not in text
+
+
+def pending_request(runs: Path) -> None:
+    desk = ResourceDesk(runs)
+    desk.open(
+        ResourceRequestV1(
+            request_id="req-1",
+            parent_task_id="lead.data",
+            purpose="Compare the gate with a second table.",
+            asset="mock table",
+            url="http://127.0.0.1:9/a.csv",
+            max_bytes=4096,
+            content_types=("text/csv",),
+            license_terms="mock terms",
+            credential_name="MOCK_API_TOKEN",
+            expires_utc=datetime.now(UTC) + timedelta(days=1),
+            scientific_need="A second table lets the Lead check the gate.",
+            risk="Low.",
+        )
+    )
+    desk.review("req-1", "geospatial_engineer", "m", True, "needed")
+    desk.review("req-1", "product_manager", "m", True, "in scope")
+
+
+def test_a_pending_request_needs_the_operator_key(
+    operator: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv(OPERATOR_KEY_ENV, "test-operator-key")
+    pending_request(operator)
+    app = open_view("control", "replay/live-october-abstained")
+    assert "credential_required: MOCK_API_TOKEN" in shown(app)
+    assert next(b for b in app.button if b.label == "Approve").disabled
+    next(t for t in app.text_input if t.label == "Operator key").set_value("wrong").run()
+    next(b for b in app.button if b.label == "Deny").click().run()
+    assert any("operator key is not valid" in e.value for e in app.error)
+    assert ResourceDesk(operator).view("req-1").status == "pm_endorsed"
+    next(t for t in app.text_input if t.label == "Operator key").set_value(
+        "test-operator-key"
+    ).run()
+    next(b for b in app.button if b.label == "Deny").click().run()
+    assert ResourceDesk(operator).view("req-1").status == "denied"
+
+
+def test_without_an_operator_key_no_decision_control_is_shown(
+    operator: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delenv(OPERATOR_KEY_ENV, raising=False)
+    pending_request(operator)
+    app = open_view("control", "replay/live-october-abstained")
+    assert "No operator key is set" in shown(app)
+    assert not [b for b in app.button if b.label in ("Approve", "Deny")]
