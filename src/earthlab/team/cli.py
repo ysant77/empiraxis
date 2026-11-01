@@ -13,6 +13,7 @@ from earthlab.llm.providers import load_providers
 from earthlab.runtime import new_run_dir, open_workspace
 from earthlab.team.delegate import replay_delegation, run_delegation
 from earthlab.team.request_flow import run_request
+from earthlab.team.resources import large_assets
 from earthlab.workflow.assign import BINDINGS_FILE
 
 
@@ -56,7 +57,7 @@ MOCK_NEED: dict[str, Any] = {
 
 def cmd_resource_request(args: argparse.Namespace) -> int:
     config = load_providers(args.providers)[args.provider]
-    need = {**MOCK_NEED, "url": args.url}
+    need = large_assets()[args.asset] if args.asset else {**MOCK_NEED, "url": args.url}
     view = run_request(args.runs_dir, build_client(config), need, args.request_id, args.parent_task)
     print(f"request: {args.request_id}\nstatus: {view.status}\nreviewers: {view.reviewers}")
     return 0 if view.status == "pm_endorsed" else 2
@@ -72,9 +73,10 @@ def add_team_parsers(sub: Any) -> None:
     run.add_argument("--providers", type=Path, default=Path("config/providers.yaml"))
     run.add_argument("--runs-dir", type=Path, default=Path("runs"))
     run.set_defaults(func=cmd_delegate)
-    ask = sub.add_parser("resource-request", help="experimental: mock request, stops at a person")
+    ask = sub.add_parser("resource-request", help="experimental: a request that stops at a person")
     ask.add_argument("request_id")
-    ask.add_argument("--url", required=True)
+    ask.add_argument("--url", default="http://127.0.0.1:9/mock")
+    ask.add_argument("--asset", help="a key in config/fetch/large-assets.yaml")
     ask.add_argument("--parent-task", default="demo.lead.data")
     ask.add_argument("--provider", default="local-glimmer")
     ask.add_argument("--providers", type=Path, default=Path("config/providers.yaml"))

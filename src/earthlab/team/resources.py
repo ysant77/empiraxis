@@ -21,7 +21,8 @@ from pathlib import Path
 from typing import Any, Literal
 from urllib.parse import urlsplit
 
-from pydantic import Field, field_validator
+import yaml
+from pydantic import Field, field_validator, model_validator
 
 from earthlab.contracts import Strict
 from earthlab.digest import payload_digest
@@ -29,6 +30,7 @@ from earthlab.trace import RunTrace
 
 OPERATOR_KEY_ENV = "EARTHLAB_OPERATOR_KEY"
 MAX_BYTES = 50_000_000
+LARGE_ASSETS = Path("config/fetch/large-assets.yaml")
 REQUESTS_DIR = "requests"
 APPROVAL_FILE = "approval.json"
 Status = Literal[
@@ -48,6 +50,14 @@ class RequestRefused(ValueError):
     """The request or the step breaks a rule. Nothing changed."""
 
 
+def large_assets(path: Path = LARGE_ASSETS) -> dict[str, dict[str, Any]]:
+    """The catalogue of pinned large assets. Being listed grants nothing."""
+    if not path.is_file():
+        return {}
+    assets: dict[str, dict[str, Any]] = yaml.safe_load(path.read_text("utf-8"))["assets"]
+    return assets
+
+
 def _is_loopback(host: str) -> bool:
     try:
         return ipaddress.ip_address(host).is_loopback
@@ -65,7 +75,8 @@ class ResourceRequestV1(Strict):
     purpose: str = Field(min_length=5, max_length=300)
     asset: str = Field(min_length=3, max_length=120)
     url: str = Field(max_length=500)
-    max_bytes: int = Field(gt=0, le=MAX_BYTES)
+    max_bytes: int = Field(gt=0)
+    expected_sha256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
     content_types: tuple[str, ...] = Field(min_length=1, max_length=4)
     license_terms: str = Field(min_length=3, max_length=200)
     credential_name: str | None = Field(default=None, pattern=r"^[A-Z][A-Z0-9_]{2,40}$")
@@ -87,6 +98,18 @@ class ResourceRequestV1(Strict):
         if parts.scheme == "http" and parts.hostname and _is_loopback(parts.hostname):
             return value  # the local mock server only
         raise ValueError("only https, or http on a loopback mock, is allowed")
+
+    @model_validator(mode="after")
+    def _within_cap(self) -> ResourceRequestV1:
+        """Above the cap, the exact URL, size and digest must be in the catalogue."""
+        if self.max_bytes <= MAX_BYTES:
+            return self
+        for entry in large_assets().values():
+            if (entry["url"], entry["max_bytes"], entry["sha256"]) == (
+                self.url, self.max_bytes, self.expected_sha256,
+            ):  # fmt: skip
+                return self
+        raise ValueError("a transfer above the cap must match a pinned catalogue entry")
 
     @property
     def domain(self) -> str:

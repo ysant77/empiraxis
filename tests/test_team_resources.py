@@ -21,6 +21,7 @@ from earthlab.team.resources import (
     RequestRefused,
     ResourceDesk,
     ResourceRequestV1,
+    large_assets,
 )
 
 KEY = "test-operator-key"
@@ -345,3 +346,29 @@ def test_a_lead_refusal_never_reaches_the_pm(tmp_path: Path) -> None:
     client = scripted(call(ASK, **ASKED), call(ENDORSE, endorse=False, note="Not needed."))
     view = run_request(tmp_path, client, need(), "req-1", "lead.data")
     assert view.status == "refused" and len(client.requests) == 2
+
+
+def _large(**change: Any) -> dict[str, Any]:
+    entry = large_assets()["prithvi-burnscars-weights"]
+    return {
+        "request_id": "weights", "parent_task_id": "tiers", "purpose": "A teacher tier.",
+        "asset": entry["asset"], "url": entry["url"], "max_bytes": entry["max_bytes"],
+        "expected_sha256": entry["sha256"], "content_types": entry["content_types"],
+        "license_terms": entry["license_terms"], "scientific_need": "A costly teacher.",
+        "risk": "Disk use.", "expires_utc": datetime.now(UTC) + timedelta(hours=1),
+    } | change  # fmt: skip
+
+
+def test_a_large_transfer_must_match_the_pinned_catalogue(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(Path(__file__).resolve().parents[1])
+    assert ResourceRequestV1(**_large()).max_bytes > 50_000_000
+    for change in (
+        {"url": "https://example.org/other.pt"},
+        {"max_bytes": 3_000_000_000},
+        {"expected_sha256": "0" * 64},
+        {"expected_sha256": None},
+    ):
+        with pytest.raises(ValidationError):
+            ResourceRequestV1(**_large(**change))

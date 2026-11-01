@@ -54,6 +54,13 @@ def experiment_panel(run_dir: Path) -> None:
             "Skill is against persistence at +6 h, with 95% block-bootstrap limits. "
             "Evaluator: separate code that reads the published file and stored predictions."
         )
+        if record.get("tiers"):
+            st.dataframe(record["tiers"], use_container_width=True, hide_index=True)
+            pair = record.get("distillation") or {}
+            st.write(
+                f"Distillation helped against the direct student: {pair.get('helped')}. "
+                "This is a rehearsal on PM2.5 data, not a Prithvi result."
+            )
         checks = record.get("acceptance") or {}
         st.table([{"check": k, "passed": v} for k, v in checks.items()])
         st.dataframe(_roles(record), use_container_width=True, hide_index=True)

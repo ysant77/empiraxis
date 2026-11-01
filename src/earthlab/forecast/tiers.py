@@ -35,7 +35,7 @@ The teacher may be costly. The student must stay small. Explain why from the giv
 PICK_SYSTEM = "You are the Geospatial Lead. Call recommend. Use adopt_candidate only for a model \
 listed as eligible. Prefer the smallest model the paired results support. Otherwise retain a \
 baseline or abstain. If distillation_helped is false, say so. State no cause or advice."
-PASS_SYSTEM = "You are the product manager. Check the recommendation against the evaluator's \
+FORWARD_SYSTEM = "You are the product manager. Check the recommendation against the evaluator's \
 result and call forward_decision. Set forward_to_human true when they agree, so a person can \
 decide. Set it false only if a stated check fails, and name it. You grant nothing."
 
@@ -101,10 +101,10 @@ def train_tiers(flow: Flow, plan: TierPlan) -> dict[str, Any]:
             raise Stopped(f"the training of {name} failed")
         members.append(name)
     soft = bench.ensemble(TEACHER, members, built["features_id"])["soft_path"]
-    small = {"hidden": plan.student_hidden, "layers": 1}
+    size = plan.student_hidden
     for name, spec in (
-        (DIRECT, TrainSpec(**small)),
-        (DISTILLED, TrainSpec(**small, soft=soft, soft_weight=plan.soft_weight)),
+        (DIRECT, TrainSpec(hidden=size)),
+        (DISTILLED, TrainSpec(hidden=size, soft=soft, soft_weight=plan.soft_weight)),
     ):
         if bench.train(name, built["features_id"], spec).get("failed"):
             raise Stopped(f"the training of {name} failed")
@@ -149,6 +149,7 @@ def run_tiers(
     )  # fmt: skip
     try:
         if client is None:
+            bench.profile()
             check = train_tiers(flow, FIXED_PLAN)
             rec = code_pick(flow, check)
             status, reason = "awaiting_human", "evidence ready for a human decision"
@@ -163,7 +164,7 @@ def run_tiers(
                 lambda r: permitted(r, bench.results),
             )  # fmt: skip
             sent = {"recommendation": rec.model_dump(mode="json"), "evaluator": facts}
-            pm = flow.propose(PM, PASS_SYSTEM, sent, "forward_decision", PmDecision)
+            pm = flow.propose(PM, FORWARD_SYSTEM, sent, "forward_decision", PmDecision)
             flow.invoke("finished", LEAD, flow.lead_task, "verified")
             status, reason = (
                 ("awaiting_human", "evidence ready for a human decision")

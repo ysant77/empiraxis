@@ -83,39 +83,47 @@ def predict(
     return np.concatenate(outs)
 
 
+def one_epoch(
+    model: Any, optimiser: Any, data: dict[str, np.ndarray], job: dict[str, Any],
+    order: np.ndarray, soft: np.ndarray | None,
+) -> float:  # fmt: skip
+    """One pass. With a teacher, the loss blends the labels and the teacher's values."""
+    train, blend, total = data["train_issues"], float(job.get("soft_weight", 0.0)), 0.0
+    for start in range(0, len(order), job["batch"]):
+        take = order[start : start + job["batch"]]
+        x = torch.from_numpy(windows(data, train[take], job["window"], job["offset"])).float()
+        y = torch.from_numpy(data["train_y"][take]).float()
+        known = torch.from_numpy(data["train_known"][take]).float()
+        pred = model(x)
+        loss = loss_of(pred, y, known, job["loss"])
+        if soft is not None:
+            teacher = torch.from_numpy(soft[take]).float()
+            mimic = loss_of(pred, teacher, torch.ones_like(teacher), job["loss"])
+            loss = (1 - blend) * loss + blend * mimic
+        optimiser.zero_grad()
+        loss.backward()
+        nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+        optimiser.step()
+        total += float(loss) * len(take)
+    return total
+
+
 def fit(data: dict[str, np.ndarray], job: dict[str, Any], out: Path) -> dict[str, Any]:
     torch.manual_seed(job["seed"])
     rng = np.random.default_rng(job["seed"])
     train, valid = data["train_issues"], data["valid_issues"]
-    y_all, known_all = data["train_y"], data["train_known"]
+    y_all = data["train_y"]
     inputs = data["series"].shape[1] * 2 + data["calendar"].shape[1]
     make: Any = {"gru": Gru, "tcn": TemporalCnn}[job["architecture"]]
     model: Any = make(inputs, job["hidden"], job["layers"], y_all.shape[1])
     optimiser = torch.optim.Adam(model.parameters(), lr=job["learning_rate"])
     soft = np.load(job["soft"]) if job.get("soft") else None
-    blend = float(job.get("soft_weight", 0.0))
     best, stale, history = float("inf"), 0, []
     started = time.perf_counter()
     for epoch in range(job["max_epochs"]):
         model.train()
         order = rng.permutation(len(train))
-        total = 0.0
-        for start in range(0, len(order), job["batch"]):
-            take = order[start : start + job["batch"]]
-            x = torch.from_numpy(windows(data, train[take], job["window"], job["offset"])).float()
-            y = torch.from_numpy(y_all[take]).float()
-            known = torch.from_numpy(known_all[take]).float()
-            pred = model(x)
-            loss = loss_of(pred, y, known, job["loss"])
-            if soft is not None:
-                teacher = torch.from_numpy(soft[take]).float()
-                mimic = loss_of(pred, teacher, torch.ones_like(teacher), job["loss"])
-                loss = (1 - blend) * loss + blend * mimic
-            optimiser.zero_grad()
-            loss.backward()
-            nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-            optimiser.step()
-            total += float(loss) * len(take)
+        total = one_epoch(model, optimiser, data, job, order, soft)
         model.eval()
         pred = predict(model, data, valid, job)
         known = data["valid_known"]

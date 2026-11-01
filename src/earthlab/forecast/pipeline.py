@@ -238,6 +238,7 @@ class Workbench:
             "parameters": sum(t["parameters"] for t in made),
             "train_seconds": round(sum(t["train_seconds"] for t in made), 2),
             "predict_seconds": round(sum(t["predict_seconds"] for t in made), 3),
+            "model_sha256": payload_digest([t["model_sha256"] for t in made]),
         }
         record["soft_path"] = str(soft)
         return record
