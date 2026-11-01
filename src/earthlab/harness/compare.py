@@ -44,6 +44,12 @@ def _numbers(rows: list[dict[str, Any]], key: str) -> list[float]:
     return [float(v) for v in found if isinstance(v, int | float)]
 
 
+def _billed(rows: list[dict[str, Any]]) -> float | str:
+    """A sum only when every run holds a recorded bill. Usage records are not a bill."""
+    bills = _numbers(rows, "billed_usd")
+    return round(sum(bills), 6) if rows and len(bills) == len(rows) else NOT_MEASURED
+
+
 def _picked(record: dict[str, Any]) -> str:
     rec = record.get("recommendation") or {}
     return f"{rec.get('outcome', record.get('status', 'none'))} {rec.get('model_id') or ''}".strip()
@@ -85,7 +91,7 @@ def cell(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "rejected_tool_calls": sum(_numbers(rows, "rejected_tool_calls")),
         "human_interventions": sum(_numbers(rows, "human_interventions")),
         "energy": NOT_MEASURED,
-        "billed_usd": 0.0 if records and all(r.get("usage") for r in records) else NOT_MEASURED,
+        "billed_usd": _billed(rows),
     }
 
 

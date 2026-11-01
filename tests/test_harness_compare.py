@@ -42,6 +42,18 @@ def test_a_failed_run_stays_in_the_count_and_unknown_is_not_zero(tmp_path: Path)
     assert fixed["wall_seconds"] == NOT_MEASURED and fixed["ended_in_refusal_or_abstention"] == 1
 
 
+def test_usage_records_do_not_prove_a_bill_of_zero() -> None:
+    usage = {"prompt_tokens": 10, "model_calls": 1}
+    rows = [{"record": {"usage": usage}}, {"record": {"usage": usage}}]
+    assert cell(rows)["billed_usd"] == NOT_MEASURED
+
+
+def test_a_bill_needs_a_record_from_every_run() -> None:
+    billed = {"record": {"usage": {"billed_usd": 0.25}}}
+    assert cell([billed, billed])["billed_usd"] == 0.5
+    assert cell([billed, {"record": {"usage": {}}}])["billed_usd"] == NOT_MEASURED
+
+
 def test_the_three_dimensions_print_apart(tmp_path: Path) -> None:
     text = markdown(build(load_runs(_write(tmp_path))))
     for title in ("Scientific result", "Engineering cost", "Agent cost"):
