@@ -3,7 +3,8 @@
 The secret stays out of every prompt, trace, task file and event. It reaches one child
 process, in that process's environment, for the length of one transfer. A preapproved
 public transfer uses the same path with no credential. Network limits are enforced by the
-fetch code; the operating system does not isolate the child process.
+fetch code, which refuses non-public addresses; the operating system does not isolate the
+child process, so this broker is scoped to trusted local experimentation.
 """
 
 from __future__ import annotations
