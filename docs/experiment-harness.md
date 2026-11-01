@@ -76,5 +76,8 @@ Scenario A needs `EARTHLAB_TRAIN_PYTHON`, set to the pinned training environment
 - A failed run ends in `failed`. Training resumes from a checkpoint, but the engine does not
   resume a run at a lifecycle stage.
 - The specialist tools take no arguments in the harness. The Lead's choice sets the job.
+- Isolated training works on macOS only, through `sandbox-exec`. Elsewhere it is refused and
+  nothing trains. The sandbox refuses network and writes outside the output folder; it does
+  not restrict reads.
 - Isolation applies to neural training. Classical adapters run in process, and they are
   fixed code with menu values.
