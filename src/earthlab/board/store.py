@@ -25,6 +25,7 @@ from earthlab.workflow.contracts import Topology
 RunState = Literal["queued", "running", "finished", "failed", "interrupted"]
 ACTIVE: tuple[RunState, ...] = ("queued", "running")
 UNCLAIMED_SECONDS = 60.0
+PREPARE_TRIES = 20
 BOARD_FILE = "board.sqlite"
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS runs (
@@ -98,15 +99,26 @@ class Board:
         self._clock = clock
         self._alive = alive
         path.parent.mkdir(parents=True, exist_ok=True)
-        with self._connect() as db:
-            db.executescript(_SCHEMA)
+        self._prepare()
+
+    def _prepare(self) -> None:
+        """WAL mode ignores the busy timeout, so two first openers need a bounded retry."""
+        for attempt in range(PREPARE_TRIES):
+            try:
+                with self._connect() as db:
+                    db.execute("PRAGMA journal_mode=WAL")
+                    db.executescript(_SCHEMA)
+                return
+            except sqlite3.OperationalError:
+                if attempt == PREPARE_TRIES - 1:
+                    raise
+                time.sleep(0.05 * (attempt + 1))
 
     @contextmanager
     def _connect(self) -> Iterator[sqlite3.Connection]:
         db = sqlite3.connect(self.path, timeout=5.0, isolation_level=None)
         db.row_factory = sqlite3.Row
         try:
-            db.execute("PRAGMA journal_mode=WAL")
             yield db
         finally:
             db.close()
