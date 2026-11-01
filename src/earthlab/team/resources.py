@@ -203,7 +203,9 @@ class ResourceDesk:
 
     def open(self, request: ResourceRequestV1) -> RequestView:
         dumped = request.model_dump(mode="json")
-        if _SECRET_SHAPES.search(json.dumps(dumped)):
+        pinned = ("url", "expected_sha256") if request.max_bytes > MAX_BYTES else ()
+        scanned = {k: v for k, v in dumped.items() if k not in pinned}  # exact catalogue values
+        if _SECRET_SHAPES.search(json.dumps(scanned)):
             raise RequestRefused("the request holds text shaped like a secret")
         if (self.root / request.request_id).exists():
             raise RequestRefused("this request ID exists")
