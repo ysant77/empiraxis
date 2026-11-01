@@ -152,7 +152,8 @@ def test_replay_has_no_live_or_unapproved_interactive_controls(offline: None) ->
     for label in ("Send to assistant", "Submit challenge"):
         assert next(b for b in app.button if b.label == label).disabled
     control = open_view("control")
-    assert next(b for b in control.button if b.label == "Approve pending action").disabled
+    assert not [b for b in control.button if "Approve" in b.label or "Deny" in b.label]
+    assert not [t for t in control.text_input if t.label == "Operator key"]
 
 
 def test_phone_layout_stacks_every_panel(offline: None) -> None:

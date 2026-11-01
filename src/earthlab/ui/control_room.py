@@ -25,7 +25,7 @@ from earthlab.events.contract import (
 )
 from earthlab.events.redact import visible_events
 from earthlab.events.workflow_view import ROLE_NAMES, WorkflowView, load_workflow
-from earthlab.ui import board_view, common
+from earthlab.ui import approvals, board_view, common
 
 APPROVALS_DIR = Path("config/approvals")
 ROLE_ORDER = (
@@ -210,8 +210,6 @@ def _human_control(run: RunEvents | None) -> None:
                 st.dataframe(rows, use_container_width=True, hide_index=True)
             else:
                 st.write("This run asked the approval gate for nothing.")
-        st.button("Approve pending action", disabled=True)
-        st.caption(common.status_text("planned", "An approval queue in the UI is not implemented."))
         if run is not None:
             st.dataframe(_durations(run), use_container_width=True, hide_index=True)
 
@@ -285,4 +283,5 @@ def render() -> None:
         _topology()
         _telemetry()
     with right:
+        approvals.queue_panel()
         _human_control(run)

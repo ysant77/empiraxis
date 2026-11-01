@@ -73,7 +73,7 @@ class QaArgs(BaseModel):
     qa_policy: str
 
 
-def _schema(name: str, text: str, model: type[BaseModel]) -> dict[str, Any]:
+def tool_schema(name: str, text: str, model: type[BaseModel]) -> dict[str, Any]:
     params = model.model_json_schema()
     params.pop("title", None)
     return {
@@ -149,7 +149,7 @@ class _Flow:
         return role.call(self._stage(1), messages, [tool], "auto")
 
     def propose(self) -> CheckProposal:
-        tool = _schema(PROPOSE_CHECK, "Propose the months to check.", CheckProposal)
+        tool = tool_schema(PROPOSE_CHECK, "Propose the months to check.", CheckProposal)
         user = json.dumps({"case": self.case_file.case.case_id, "months": self.months})
         resp = self._ask(self.lead, LEAD_SYSTEM, user, tool)
         issues = ["no proposal was submitted"]
@@ -229,8 +229,8 @@ class _Flow:
     def work(self, ticket: SpecialistTicketV1) -> QaTableProposal | None:
         """The specialist's bounded loop. None when it stops without a usable table."""
         tools = [
-            _schema(QA_TOOL, "Read one month under one QA policy.", QaArgs),
-            _schema(SUBMIT_TABLE, "Submit the finished table.", QaTableProposal),
+            tool_schema(QA_TOOL, "Read one month under one QA policy.", QaArgs),
+            tool_schema(SUBMIT_TABLE, "Submit the finished table.", QaTableProposal),
         ]
         brief = ticket.model_dump(include={"objective", "months", "qa_policies"})
         messages: list[dict[str, Any]] = [
@@ -284,7 +284,7 @@ class _Flow:
         )
 
     def review(self, result: SpecialistResultV1) -> LeadReview | None:
-        tool = _schema(REVIEW, "Accept the table or send it back.", LeadReview)
+        tool = tool_schema(REVIEW, "Accept the table or send it back.", LeadReview)
         user = json.dumps(result.model_dump(mode="json", include={"rows", "acceptance"}))
         resp = self._ask(self.lead, REVIEW_SYSTEM, user, tool)
         calls = [c for c in resp.tool_calls if c.name == REVIEW]
