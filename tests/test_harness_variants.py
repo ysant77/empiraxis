@@ -152,3 +152,31 @@ def test_the_reminder_is_bounded_so_a_silent_model_still_stops(tmp_path: Path) -
     with pytest.raises(Stopped, match="stopped without submit_note"):
         seats.loop("r", "s", {}, 3, {}, "submit_note", Note, "Call submit_note now.")
     assert len(client.requests) == 2
+
+
+def test_a_repeated_tool_call_returns_the_first_result_and_runs_the_adapter_once(
+    tmp_path: Path, request: pytest.FixtureRequest
+) -> None:
+    stub = request.getfixturevalue("trainer")
+    pm, lead, _ = clients()
+    worker = ScriptedClient(
+        [
+            call("prepare_data"), call("prepare_data"), call("submit_note", note="Prepared."),
+            call("train_models"), call("train_models"), call("submit_note", note="Trained."),
+        ]
+    )  # fmt: skip
+    roles = {
+        "product_manager": pm, "geospatial_engineer": lead,
+        "data_specialist": worker, "ml_engineer": worker,
+    }  # fmt: skip
+    path = tmp_path / "run"
+    done = run_harness(
+        "team", ResearchRequestV1(request_id="r1", objective="Predict PM2.5."), PM25_PROBLEM,
+        RegressionAdapter(path, SOURCE), path, lead, role_clients=roles,
+    )  # fmt: skip
+    assert done["status"] == "awaiting_human"
+    results = [
+        m["content"] for r in worker.requests for m in r["messages"] if m.get("role") == "tool"
+    ]
+    assert len(set(results)) == 2 and len(results) >= 2
+    assert len(stub.jobs) == 1  # the ML tool ran once although the model called it twice

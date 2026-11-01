@@ -212,9 +212,15 @@ class Engine:
             seats.handoff(task, seats.lead_task, owner, ticket.model_dump(mode="json"))
             seats.invoke("started", owner, task)
 
-            def handler(_args: str, call: Any = run) -> dict[str, Any]:
-                result: dict[str, Any] = call()
-                return result
+            first: dict[str, Any] = {}
+
+            def handler(
+                _args: str, call: Any = run, held: dict[str, Any] = first
+            ) -> dict[str, Any]:
+                """Run the adapter once. A repeated call gets the first result."""
+                if not held:
+                    held.update(call())
+                return dict(held)
 
             seats.loop(
                 owner, self.prompts.system(mark), ticket.model_dump(mode="json"), 3,
