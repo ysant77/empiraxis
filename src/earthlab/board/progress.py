@@ -42,6 +42,7 @@ MOVES: dict[str, frozenset[str]] = {
 # verified result, and a person reads it.
 OUTCOME_STATUS: dict[str, TaskStatus] = {
     "verified": "verified",
+    "needs_revision": "needs_revision",
     "partial": "review",
     "abstained": "review",
     "answer_unverified": "review",
@@ -53,11 +54,12 @@ OUTCOME_STATUS: dict[str, TaskStatus] = {
     "provider_error": "failed",
     "failed": "failed",
 }
-_NEEDS_REVIEW = frozenset({"verified", "partial", "abstained"})
+_NEEDS_REVIEW = frozenset({"verified", "needs_revision", "partial", "abstained"})
 _ROLE_WORK = {
     "product_manager": "Product manager is writing the brief",
     "orchestrator": "Orchestrator is deciding the next stage",
-    "geospatial_engineer": "Geospatial engineer is planning and running tools",
+    "geospatial_engineer": "Geospatial Lead is working",
+    "data_specialist": "Data specialist is working on its ticket",
 }
 
 
@@ -123,6 +125,15 @@ def _start_workflow(view: Progress, data: dict[str, Any]) -> None:
     view.kind, view.root = "workflow", task_id
     view.tasks[task_id] = TaskRow(task_id, None, "product_manager", "running")
     _note(view, "Request received; safety check on the question")
+
+
+def _start_delegation(view: Progress, data: dict[str, Any]) -> None:
+    task_id = str(data["task_id"])
+    view.kind, view.root = "workflow", task_id
+    view.tasks[task_id] = TaskRow(
+        task_id, None, "geospatial_engineer", "running", input_sha256=data.get("parent_trace_head")
+    )
+    _note(view, f"Delegation under run {data.get('parent_run_id')}")
 
 
 def _start_direct(view: Progress) -> None:
@@ -215,6 +226,8 @@ def apply(view: Progress, entry: dict[str, Any]) -> None:
     view.head = str(entry["hash"])
     if event == "workflow_start":
         _start_workflow(view, data)
+    elif event == "delegation_start":
+        _start_delegation(view, data)
     elif view.root is None:
         _start_direct(view)
     handler = _HANDLERS.get(event)
@@ -222,6 +235,10 @@ def apply(view: Progress, entry: dict[str, Any]) -> None:
         handler(view, data)
     elif event == "plan_reviewed":
         _note(view, f"Plan critic (code): {data.get('verdict')}")
+    elif event == "acceptance_checked":
+        _note(view, f"Acceptance checks (code): passed {data.get('passed')}")
+    elif event == "lead_reviewed":
+        _note(view, f"Lead review: accepted {data.get('accepted')}")
 
 
 def fold(run_id: str, entries: Iterable[dict[str, Any]]) -> Progress:

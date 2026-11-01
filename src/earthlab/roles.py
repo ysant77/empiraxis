@@ -16,6 +16,7 @@ RoleId = Literal[
     "product_manager",
     "orchestrator",
     "geospatial_engineer",
+    "data_specialist",
     "implementor",
     "qa_reviewer",
     "scientific_critic",
@@ -38,10 +39,12 @@ IMPLEMENTED_ROLES: frozenset[RoleId] = frozenset(
         "system",
     }
 )
-EXPERIMENTAL_ROLES: frozenset[RoleId] = frozenset({"product_manager", "geospatial_engineer"})
+EXPERIMENTAL_ROLES: frozenset[RoleId] = frozenset(
+    {"product_manager", "geospatial_engineer", "data_specialist"}
+)
 PLANNED_ROLES: frozenset[RoleId] = frozenset({"implementor", "qa_reviewer"})
 MODEL_AGENT_ROLES: frozenset[RoleId] = frozenset(
-    {"orchestrator", "product_manager", "geospatial_engineer"}
+    {"orchestrator", "product_manager", "geospatial_engineer", "data_specialist"}
 )
 # Roles that may write an investigation plan. Code components and the critic never do;
 # the product manager only proposes a question.
@@ -52,7 +55,8 @@ ROLE_LABELS: dict[str, str] = {
     "human_director": "Human director",
     "product_manager": "Product manager (Meta model; structures the request, no tools)",
     "orchestrator": "Muse research orchestrator (investigator)",
-    "geospatial_engineer": "Geospatial engineer (Muse; plan-reviewed investigator on one case)",
+    "geospatial_engineer": "Geospatial Lead (Muse; plan-reviewed investigator, delegates tickets)",
+    "data_specialist": "Data specialist (one read-only tool on one ticket; code recomputes it)",
     "implementor": "Implementation worker (Meta or non-Meta model; proposes patches only)",
     "qa_reviewer": "Model reviewer (findings only; cannot override tests or the verifier)",
     "scientific_critic": "Scientific critic (deterministic plan rules, code, not a model)",
