@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import json
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -45,8 +45,12 @@ def _not_on_ticket(_args: str) -> dict[str, Any]:
 
 
 class Seats:
-    def __init__(self, arm: str, run_dir: Path, client: ChatClient | None, brief: Any):
+    def __init__(
+        self, arm: str, run_dir: Path, client: ChatClient | None, brief: Any,
+        role_clients: Mapping[str, ChatClient] | None = None,
+    ):  # fmt: skip
         self.log, self.run_dir, self.brief = ArmLog(arm), run_dir, brief
+        self.role_clients = dict(role_clients or {})
         self.trace = RunTrace(run_dir / "trace.jsonl")
         self.ledger = WorkflowLedger(Budget(max_turns=40, max_tool_calls=40, max_seconds=5400.0))
         self.client = client
@@ -59,7 +63,8 @@ class Seats:
             raise Stopped("the deterministic arm has no model")
         if name not in self.calls:
             metrics = EarthlabMetrics()
-            self.calls[name] = RoleCalls(name, self.client, self.trace, metrics, self.ledger)
+            client = self.role_clients.get(name, self.client)
+            self.calls[name] = RoleCalls(name, client, self.trace, metrics, self.ledger)
         return self.calls[name]
 
     def _meter(self, turns: int) -> BudgetMeter:
@@ -128,9 +133,12 @@ class Seats:
     def loop(
         self, role: str, system: str, ticket: dict[str, Any], turns: int,
         tools: dict[str, tuple[type[BaseModel], Callable[[str], dict[str, Any]]]],
-        finish: str, finish_model: type[BaseModel],
+        finish: str, finish_model: type[BaseModel], reminder: str | None = None,
     ) -> str:  # fmt: skip
-        """A bounded tool loop. It returns the arguments of the closing submission."""
+        """A bounded tool loop. It returns the arguments of the closing submission.
+
+        A reminder is controller text. It follows each tool result and one plain-text reply.
+        """
         schemas = [tool_schema(n, f"Call {n}.", m) for n, (m, _) in tools.items()]
         schemas.append(tool_schema(finish, f"Call {finish}.", finish_model))
         messages: list[dict[str, Any]] = [
@@ -138,6 +146,7 @@ class Seats:
             {"role": "user", "content": json.dumps(ticket, default=str)},
         ]
         meter = self._meter(turns)
+        nudged = False
         for _ in range(turns):
             resp = self.role(role).call(meter, messages, schemas, "auto")
             messages.append(assistant_message(resp))
@@ -152,7 +161,12 @@ class Seats:
                 messages.append(
                     {"role": "tool", "tool_call_id": call.id, "content": json.dumps(body)}
                 )
-            if not resp.tool_calls:
+            if resp.tool_calls and reminder:
+                messages.append({"role": "user", "content": reminder})
+            elif not resp.tool_calls and reminder and not nudged:
+                nudged = True
+                messages.append({"role": "user", "content": reminder})
+            elif not resp.tool_calls:
                 raise Stopped(f"{role} stopped without {finish}")
         raise Stopped(f"{role} used its turns without {finish}")
 

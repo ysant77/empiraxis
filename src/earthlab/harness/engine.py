@@ -10,6 +10,7 @@ results. A run says a model changed the work only if the plan differs from the p
 from __future__ import annotations
 
 import json
+from collections.abc import Mapping
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any, Literal, Protocol
@@ -37,6 +38,7 @@ from earthlab.harness.gates import Refusal
 from earthlab.harness.lifecycle import Lifecycle
 from earthlab.harness.seats import Seats, Stopped, usage
 from earthlab.harness.strategy import Strategy, SuitabilityReportV1, assess
+from earthlab.harness.variants import BASELINE_ID, PromptSet, PromptVariant, resolve
 from earthlab.llm.client import ChatClient
 from earthlab.llm.types import ProviderError
 
@@ -59,6 +61,13 @@ simpler method or an abstention is a valid result. State no cause, forecast or a
 FORWARD_SYSTEM = "You are the product manager. Check the recommendation against the problem and \
 the evaluator's report, then call forward_decision. Set forward_to_human true when they agree, \
 so a person can decide. Set it false only if a stated criterion fails, and name it."
+
+
+DEFAULT_PROMPTS = {
+    "scope": SCOPE_SYSTEM, "strategy": STRATEGY_SYSTEM, "plan": PLAN_SYSTEM, "data": DATA_SYSTEM,
+    "ml": ML_SYSTEM, "review": REVIEW_SYSTEM, "decide": DECIDE_SYSTEM, "forward": FORWARD_SYSTEM,
+}  # fmt: skip
+BASELINE = PromptVariant(id=BASELINE_ID, description="The engine default prompts.")
 
 
 class StrategyChoice(Strict):
@@ -119,12 +128,14 @@ class Adapter(Protocol):
 class Engine:
     def __init__(
         self, arm: Arm, request: ResearchRequestV1, problem: ProblemSpecV1, adapter: Adapter,
-        run_dir: Path, client: ChatClient | None,
+        run_dir: Path, client: ChatClient | None, *,
+        role_clients: Mapping[str, ChatClient] | None = None, variant: PromptVariant = BASELINE,
     ):  # fmt: skip
         if (client is None) != (arm == "fixed"):
             raise ValueError("the fixed arm has no model and the other arms have one")
         self.arm, self.request, self.problem, self.adapter = arm, request, problem, adapter
-        self.seats = Seats(arm, run_dir, client, problem.model_dump(mode="json"))
+        self.prompts: PromptSet = resolve(variant, DEFAULT_PROMPTS)
+        self.seats = Seats(arm, run_dir, client, problem.model_dump(mode="json"), role_clients)
         self.life = Lifecycle(run_dir, self.seats.trace)
         self.store = ArtifactStore(run_dir, self.seats.trace)
         self.run_dir = run_dir
@@ -152,7 +163,7 @@ class Engine:
 
         sent = {"problem": self.problem, "suitability": suits}
         return self.seats.propose(
-            LEAD, STRATEGY_SYSTEM, sent, "choose_strategy", StrategyChoice, issues
+            LEAD, self.prompts.system("strategy"), sent, "choose_strategy", StrategyChoice, issues
         ).strategy
 
     def choose(self, profile: DatasetProfileV1, attempt: int, strategy: str) -> ExperimentPlanV1:
@@ -172,7 +183,9 @@ class Engine:
             changed = "model" if strategy != adapter.default_strategy else "preset"
             return base.model_copy(update={"config": base.config | tag, "decided_by": changed})
         context = {"problem": self.problem.model_dump(mode="json"), "data": profile}
-        choice = self.seats.propose(LEAD, PLAN_SYSTEM, context, "choose_method", menu, issues)
+        choice = self.seats.propose(
+            LEAD, self.prompts.system("plan"), context, "choose_method", menu, issues
+        )
         plan = adapter.plan(choice, plan_id, "model")
         return plan.model_copy(update={"config": plan.config | tag})
 
@@ -183,9 +196,9 @@ class Engine:
             adapter.prepare(plan)
             adapter.train(plan, seats)
             return
-        for owner, system, tool, run, mark in (
-            (DATA, DATA_SYSTEM, "prepare_data", lambda: adapter.prepare(plan), "data"),
-            (ML, ML_SYSTEM, "train_models", lambda: adapter.train(plan, seats), "ml"),
+        for owner, tool, run, mark in (
+            (DATA, "prepare_data", lambda: adapter.prepare(plan), "data"),
+            (ML, "train_models", lambda: adapter.train(plan, seats), "ml"),
         ):
             task = f"{seats.lead_task}.{mark}-{plan.plan_id}"
             ticket = SpecialistTaskV1(
@@ -204,8 +217,8 @@ class Engine:
                 return result
 
             seats.loop(
-                owner, system, ticket.model_dump(mode="json"), 3,
-                {tool: (NoArgs, handler)}, "submit_note", Note,
+                owner, self.prompts.system(mark), ticket.model_dump(mode="json"), 3,
+                {tool: (NoArgs, handler)}, "submit_note", Note, self.prompts.reminder(mark),
             )  # fmt: skip
             seats.invoke("finished", owner, task, "verified")
 
@@ -236,7 +249,9 @@ class Engine:
 
         limits = self.adapter.limits(report, code.selected)
         facts = {"report": table, "allowed": allowed, "limitations": limits}
-        picked = self.seats.propose(LEAD, DECIDE_SYSTEM, facts, "recommend", LeadDecision, issues)
+        picked = self.seats.propose(
+            LEAD, self.prompts.system("decide"), facts, "recommend", LeadDecision, issues
+        )
         return code.model_copy(
             update={
                 "outcome": picked.outcome, "selected": picked.model_id, "reason": picked.reason,
@@ -246,7 +261,7 @@ class Engine:
 
     def pm_scope(self) -> bool:
         seats, sent = self.seats, {"request": self.request, "problem": self.problem}
-        seen = seats.propose(PM, SCOPE_SYSTEM, sent, "review_scope", ScopeReview)
+        seen = seats.propose(PM, self.prompts.system("scope"), sent, "review_scope", ScopeReview)
         if not seen.in_scope:
             self.life.move("abstained", "controller", note=seen.note)
             return False
@@ -260,7 +275,8 @@ class Engine:
             "experiment_start", "runtime", task_id=seats.root, arm=self.arm, kind=problem.kind,
             client={"kind": "none" if seats.client is None else "model"},
             problem_sha256=payload_digest(problem.model_dump(mode="json")),
-            evidence_label=adapter.label,
+            evidence_label=adapter.label, prompt_variant=self.prompts.variant_id,
+            prompt_digests=self.prompts.digests(),
         )  # fmt: skip
         self.keep("request", self.request, seats.root)
         self.keep("problem", problem, seats.root)
@@ -300,7 +316,9 @@ class Engine:
         seats = self.seats
         if self.arm == "team":
             sent = {"problem": self.problem, "decision": decision, "report": report}
-            pm = seats.propose(PM, FORWARD_SYSTEM, sent, "forward_decision", PmDecision)
+            pm = seats.propose(
+                PM, self.prompts.system("forward"), sent, "forward_decision", PmDecision
+            )
             seats.invoke("finished", LEAD, seats.lead_task, "verified")
             if not pm.forward_to_human:
                 self.life.move("abstained", "controller", note=pm.note)
@@ -316,7 +334,9 @@ class Engine:
         if self.arm == "fixed":
             return report
         table = report.model_dump(mode="json")
-        seen = self.seats.propose(LEAD, REVIEW_SYSTEM, table, "review_results", ResultReview)
+        seen = self.seats.propose(
+            LEAD, self.prompts.system("review"), table, "review_results", ResultReview
+        )
         if seen.action != "refine":
             return report
         self.life.move("reviewed", "controller", action="refine", reason=seen.reason)
@@ -362,6 +382,8 @@ class Engine:
                 "acceptance": adapter.acceptance(report),
                 "code_outcome": adapter.decide(report).outcome,
             }  # fmt: skip
+        outcome["prompt_variant"] = self.prompts.variant_id
+        outcome["prompt_digests"] = self.prompts.digests()
         outcome["usage"] = usage(self.seats)
         outcome["roles"] = {n: c.identity_record() for n, c in self.seats.calls.items()}
         self.seats.trace.append(
@@ -375,10 +397,13 @@ class Engine:
 
 def run_harness(
     arm: Arm, request: ResearchRequestV1, problem: ProblemSpecV1, adapter: Adapter,
-    run_dir: Path, client: ChatClient | None = None,
+    run_dir: Path, client: ChatClient | None = None, *,
+    role_clients: Mapping[str, ChatClient] | None = None, variant: PromptVariant = BASELINE,
 ) -> dict[str, Any]:  # fmt: skip
     """One run to a result, a refusal, or a clear failure state."""
-    engine = Engine(arm, request, problem, adapter, run_dir, client)
+    engine = Engine(
+        arm, request, problem, adapter, run_dir, client, role_clients=role_clients, variant=variant
+    )
     try:
         return engine.run()
     except BudgetStop as stop:
