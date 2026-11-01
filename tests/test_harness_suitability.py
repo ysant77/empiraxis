@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from pydantic import ValidationError
@@ -13,6 +13,7 @@ from earthlab.harness.suitability import (
     Code,
     TimestampError,
     check_timestamps,
+    measure_availability,
     parse_timestamp,
     preflight,
 )
@@ -64,11 +65,43 @@ def test_logged_and_modelled_availability_need_their_facts() -> None:
         profile(availability="modelled")
     modelled = profile(availability="modelled", latency_hours=6.0, data_kind="observation")
     report = preflight(plan(arm="issue_time_forecast"), [modelled])
+    assert report.verdict == "not_alignable" and Code.MODELLED_AVAILABILITY in codes(report)
+    report = preflight(plan(arm="simulated_availability_hindcast"), [modelled])
     assert report.verdict == "aligned_with_caveats" and Code.MODELLED_AVAILABILITY in codes(report)
+    with pytest.raises(ValidationError, match="modelled availability"):
+        profile(
+            availability="modelled", latency_hours=6.0, data_kind="observation",
+            allowed_evidence=("issue_time_forecast",),
+        )  # fmt: skip
+
+
+def test_an_issue_time_forecast_needs_a_measured_log_for_each_input() -> None:
     logged = profile(
         availability="logged", available_at_field="available_at", data_kind="issued_forecast"
     )
-    assert preflight(plan(arm="issue_time_forecast"), [logged]).verdict == "aligned"
+    report = preflight(plan(arm="issue_time_forecast"), [logged])
+    assert report.verdict == "not_alignable" and Code.MISSING_AVAILABLE_AT in codes(report)
+    issue = datetime(2024, 1, 2, tzinfo=UTC)
+    early = (issue, issue - timedelta(hours=1))
+    good = measure_availability("era5-sl", "a" * 64, [early])
+    assert preflight(plan(arm="issue_time_forecast"), [logged], (good,)).verdict == "aligned"
+    late = measure_availability("era5-sl", "a" * 64, [early, (issue, issue + timedelta(hours=1))])
+    report = preflight(plan(arm="issue_time_forecast"), [logged], (late,))
+    assert late.late_inputs == 1 and Code.LATE_INPUT in codes(report)
+    assert report.verdict == "not_alignable"
+    empty = measure_availability("era5-sl", "a" * 64, [])
+    report = preflight(plan(arm="issue_time_forecast"), [logged], (empty,))
+    assert report.verdict == "not_alignable"
+    with pytest.raises(TimestampError):
+        measure_availability("era5-sl", "a" * 64, [(datetime(2024, 1, 2), issue)])
+
+
+def test_a_reanalysis_is_not_a_simulated_availability_hindcast() -> None:
+    report = preflight(plan(arm="simulated_availability_hindcast"), [profile()])
+    assert report.verdict == "not_alignable" and Code.REANALYSIS_AS_FORECAST in codes(report)
+    unknown = profile(data_kind="observation")
+    report = preflight(plan(arm="simulated_availability_hindcast"), [unknown])
+    assert report.verdict == "not_alignable" and Code.MISSING_AVAILABLE_AT in codes(report)
 
 
 def test_a_unit_mismatch_blocks_the_join() -> None:

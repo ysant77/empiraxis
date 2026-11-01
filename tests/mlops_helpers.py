@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import hashlib
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import numpy as np
 
 from earthlab.efficiency.artifacts import ArtifactRef
+from earthlab.harness.contracts import EvaluationReportV1, ModelScore
 from earthlab.mlops import families, preprocess
 from earthlab.mlops.contracts import (
     EnvironmentV1,
@@ -18,6 +20,7 @@ from earthlab.mlops.contracts import (
     PostprocessV1,
     Span,
 )
+from earthlab.mlops.evidence import EvaluationRecordV1
 from earthlab.mlops.registry import Registry
 from earthlab.team.resources import ResourceApprovalV1, sign
 
@@ -26,6 +29,15 @@ KEY = "operator-test-key-value"
 NAMES = ("north", "south")
 CONFIG = PipelineConfigV1(lags=3, calendar=False, availability_offset_hours=2)
 ISSUES = np.arange(10, 150)
+EVALUATOR = "earthlab.forecast.evaluator"
+REPORT = EvaluationReportV1(
+    evaluator=EVALUATOR, evaluator_sha256="b" * 64, split_scored="validation", reference="base",
+    scores=(
+        ModelScore(model="good", metrics={}, passes=True),
+        ModelScore(model="bad", metrics={}, passes=False, reasons=("worse than the base",)),
+    ),
+).model_dump_json()  # fmt: skip
+REPORT_SHA = hashlib.sha256(REPORT.encode()).hexdigest()
 
 
 def series(rows: int = 200) -> np.ndarray:
@@ -57,7 +69,7 @@ def stored_bundle(registry: Registry, name: str = "m", seed: int = 1) -> ModelBu
         feature=registry.put_feature(fitted, artifact),
         postprocess=PostprocessV1(invert_scaling=True), output_names=NAMES, seed=seed,
         environment=EnvironmentV1(python="3.12", packages=(("numpy", "2"),)),
-        training_metrics={"mae": 1.0},
+        training_metrics={"mae": 1.0}, evaluation_sha256=REPORT_SHA,
         card=ModelCardV1(intended_use="research", limitations=("Historical only.",)),
         code_revision="abc",
     )  # fmt: skip
@@ -71,9 +83,29 @@ def approval(ref: ArtifactRef, approved: bool = True) -> ResourceApprovalV1:
     return body.model_copy(update={"signature": sign(body, KEY)})
 
 
+def report_file(folder: Path) -> Path:
+    path = folder / "evaluation-report.json"
+    path.write_text(REPORT, encoding="utf-8")
+    return path
+
+
+def record(ref: ArtifactRef, registry: Registry, passed: bool = True) -> EvaluationRecordV1:
+    """A record that agrees with the saved report, as the evaluator's code would write it."""
+    bundle = registry.bundle(ref)
+    return EvaluationRecordV1(
+        bundle_sha256=ref.sha256, model_row="good" if passed else "bad", evaluator=EVALUATOR,
+        evaluator_sha256="b" * 64, protocol_sha256="c" * 64, report_sha256=REPORT_SHA,
+        source_sha256=SHA, feature_sha256=bundle.feature.sha256, predictions_sha256="d" * 64,
+        split_scored="validation", reference="base", reproduction="exact", passes=passed,
+        reasons=() if passed else ("worse than the base",), metrics={},
+    )  # fmt: skip
+
+
+def evaluate(registry: Registry, ref: ArtifactRef, folder: Path, passed: bool = True) -> str:
+    return registry.evaluate(ref, record(ref, registry, passed), report_file(folder))
+
+
 def approve(registry: Registry, ref: ArtifactRef, folder: Path) -> None:
     """Move a candidate through the evaluator and the signed human record."""
-    report = folder / f"evaluation-{ref.sha256[:8]}.json"
-    report.write_text("{}", encoding="utf-8")
-    registry.evaluate(ref, report, True)
+    evaluate(registry, ref, folder)
     registry.decide(ref, approval(ref), KEY)

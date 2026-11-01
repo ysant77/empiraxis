@@ -25,8 +25,9 @@ from earthlab.forecast import samples as S
 from earthlab.forecast.contracts import LIMITATIONS
 from earthlab.forecast.dataset import REGIONS, label_at
 from earthlab.forecast.pipeline import SEED, SOURCE
+from earthlab.harness import attest as authority
 from earthlab.harness import eval_classify as independent
-from earthlab.harness import hybrid
+from earthlab.harness import hindcast, hybrid
 from earthlab.harness.classify import (
     BASE,
     HORIZON,
@@ -199,9 +200,9 @@ def _card(intended: str) -> ModelCardV1:
 
 def _register(
     registry: Registry, prep: Prepared, fit: Fit, task: families.Task, post: PostprocessV1,
-    report_path: Path, score: Any, name: str, encoder: ArtifactRef | None = None,
+    report_path: Path, score: Any, name: str, source: Path, encoder: ArtifactRef | None = None,
 ) -> dict[str, Any]:  # fmt: skip
-    """Store the bundle, then let the evaluator's verdict move it. A human decides later."""
+    """Store the bundle, then let a recomputed verdict move it. A human decides later."""
     method = families.METHODS[fit.method_id]
     bundle = ModelBundleV1(
         model_name=name, method_id=fit.method_id, family=method.family, task=task,
@@ -214,7 +215,8 @@ def _register(
         code_revision=_revision(), encoder=encoder,
     )  # fmt: skip
     ref = registry.register(bundle)
-    status = registry.evaluate(ref, report_path, bool(score.passes))
+    files = authority.run_files(bundle, report_path.parent, source, score.model)
+    status = authority.admit(registry, ref, files)
     return {"model": score.model, "bundle": ref.sha256, "status": status,
             "reasons": list(score.reasons)}  # fmt: skip
 
@@ -242,7 +244,7 @@ def _summary(
     summary = {
         "scenario": scenario, "registry": str(registry.root), "report": str(path),
         "split_scored": report.split_scored, "bundles": bundles, "blocked": blocked,
-        "quality_issues": quality, "notes": notes,
+        "quality_issues": quality, "notes": notes, "scientific_label": hindcast.LABEL,
         "scores": {s.model: {"passes": s.passes, "low": s.low, "high": s.high}
                    for s in report.scores},
     }  # fmt: skip
@@ -265,6 +267,7 @@ def run_regression(
         "train": S.issue_times("train", WINDOW),
         "validation": S.issue_times("validation", WINDOW),
     }
+    hindcast.require(folder, source, values)
     quality = _quality(values, bench.truth_sha, folder)
     prep = _prepare(registry, values, bench.truth_sha, spec.lags, issues)
     y_train = prep.scaled[issues["train"] + PRIMARY]
@@ -281,7 +284,7 @@ def run_regression(
     path = _write_report(folder, "regression", report)
     rows = {s.model: s for s in report.scores}
     bundles = [
-        _register(registry, prep, fit, "regression", post, path, rows[f"M_{k}"], f"s1-{k}")
+        _register(registry, prep, fit, "regression", post, path, rows[f"M_{k}"], f"s1-{k}", source)
         for k, fit in fits.items()
     ]
     return _summary("regression", registry, report, path, bundles, blocked, quality, {})
@@ -359,6 +362,7 @@ def run_classification(
     }  # fmt: skip
     adapter.issues = issues["scored"]
     values = adapter.grid.values[: S.SEALED_FROM]
+    hindcast.require(folder, source, values)
     quality = _quality(values, adapter.truth_sha, folder)
     prep = _prepare(registry, values, adapter.truth_sha, spec.lags, issues)
     y = {k: independent.labels(adapter.truth, v, HORIZON, THRESHOLD) for k, v in issues.items()}
@@ -380,15 +384,23 @@ def run_classification(
     report = adapter.evaluate()
     path = _write_report(folder, "classification", report)
     rows = {s.model: s for s in report.scores}
-    bundles = [
-        _register(
-            registry, h.prep, h.fit, "classification", posts[k], path, rows[k], f"s2-{k}", h.encoder
-        )
-        for k, h in heads.items()
-    ]  # fmt: skip
+    bundles = _register_heads(registry, heads, posts, path, rows, source)
     if overlap := _overlap_note(registry, encoder, issues):
         notes["selection"] = overlap
     return _summary("classification", registry, report, path, bundles, blocked, quality, notes)
+
+
+def _register_heads(
+    registry: Registry, heads: dict[str, Head], posts: dict[str, PostprocessV1], path: Path,
+    rows: dict[str, Any], source: Path,
+) -> list[dict[str, Any]]:  # fmt: skip
+    return [
+        _register(
+            registry, h.prep, h.fit, "classification", posts[k], path, rows[k], f"s2-{k}", source,
+            h.encoder,
+        )
+        for k, h in heads.items()
+    ]  # fmt: skip
 
 
 def _score_heads(
@@ -403,7 +415,7 @@ def _score_heads(
                for k in ("tune", "scored")}  # fmt: skip
         posts[name], cut, notes[name] = _declare(raw["tune"], y["tune"])
         bare = posts[name].model_copy(update={"alarm_cut": None})
-        adapter.rows[name] = (postprocess.classification(bare, raw["scored"]), cut)
+        adapter.keep(name, postprocess.classification(bare, raw["scored"]), cut)
     return posts, notes
 
 

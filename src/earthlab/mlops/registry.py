@@ -1,7 +1,7 @@
 """Offline registries on the shared content-addressed store, with an append-only status log.
 
 Records are immutable. A status is a hash-chained event: code opens a model as `candidate`,
-only the evaluator's digest moves it on, and only a valid signed human record approves it.
+only a typed evaluator record moves it on, and only a valid signed human record approves it.
 Weights load through one allowlisted path that never unpickles anything.
 """
 
@@ -24,12 +24,14 @@ from earthlab.efficiency.artifacts import (
     MissingArtifactError,
     canonical,
 )
+from earthlab.harness.contracts import EvaluationReportV1
 from earthlab.mlops.contracts import (
     FeatureArtifactV1,
     FittedPipelineV1,
     ModelBundleV1,
     Status,
 )
+from earthlab.mlops.evidence import TRUSTED_EVALUATORS, EvaluationRecordV1
 from earthlab.team.resources import ResourceApprovalV1, key_matches, sign
 from earthlab.trace import RunTrace
 
@@ -152,14 +154,44 @@ class Registry:
         name = self.bundle(ref).model_name
         self.log.append(EVENT, actor, model=ref.sha256, name=name, to=to, **evidence)
 
-    def evaluate(self, ref: ArtifactRef, evaluation_path: Path, passed: bool) -> Status:
-        """The evaluator's saved report, by digest. A failed evaluation rejects the model."""
+    def _check_record(
+        self, ref: ArtifactRef, record: EvaluationRecordV1, report_path: Path
+    ) -> None:
+        """The record must name this bundle and agree with the saved report, row by row."""
+        bundle = self.bundle(ref)
+        feature = self.record(bundle.feature, FeatureArtifactV1)
+        if record.bundle_sha256 != ref.sha256:
+            raise IllegalStatus("the evaluation names a different bundle")
+        if record.feature_sha256 != bundle.feature.sha256:
+            raise IllegalStatus("the evaluation names a different feature artifact")
+        if record.source_sha256 != feature.source_sha256:
+            raise IllegalStatus("the evaluation names a different input dataset")
+        if not report_path.is_file():
+            raise MissingArtifactError(report_path.name)
+        digest = file_digest(report_path)
+        if digest != record.report_sha256 or digest != bundle.evaluation_sha256:
+            raise IllegalStatus("the evaluation report is not the one this bundle names")
+        report = EvaluationReportV1.model_validate_json(report_path.read_bytes())
+        if report.evaluator not in TRUSTED_EVALUATORS or report.evaluator != record.evaluator:
+            raise IllegalStatus(f"{record.evaluator} is not the trusted evaluator of this report")
+        if report.evaluator_sha256 != record.evaluator_sha256:
+            raise IllegalStatus("the evaluator code differs from the code that wrote the report")
+        rows = [s for s in report.scores if s.model == record.model_row]
+        if not rows or (rows[0].passes, rows[0].reasons) != (record.passes, record.reasons):
+            raise IllegalStatus("the verdict differs from the report row")
+
+    def evaluate(self, ref: ArtifactRef, record: EvaluationRecordV1, report_path: Path) -> Status:
+        """The verdict comes from the checked record. A failed evaluation rejects the model."""
         if self.status(ref) != "candidate":
             raise IllegalStatus("only a candidate can be evaluated")
-        if not evaluation_path.is_file():
-            raise MissingArtifactError(evaluation_path.name)
-        to: Status = "evaluated" if passed else "rejected"
-        self._move(ref, to, "evaluator", evaluation_sha256=file_digest(evaluation_path))
+        self._check_record(ref, record, report_path)
+        if record.passes and record.reproduction != "exact":
+            raise IllegalStatus("a pass needs predictions reproduced from this bundle")
+        to: Status = "evaluated" if record.passes else "rejected"
+        self._move(
+            ref, to, "evaluator", evaluation_sha256=record.report_sha256,
+            evaluation_record=self.store.put_record(record).sha256,
+        )  # fmt: skip
         return to
 
     def decide(self, ref: ArtifactRef, approval: ResourceApprovalV1, key: str) -> Status:

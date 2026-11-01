@@ -3,11 +3,14 @@
 `DatasetSuitabilityV1` is a profile that code builds from a manifest or from a catalogue
 entry. A model never writes it. `preflight` joins the profiles of a task and fails closed:
 if a fact is absent, the join is refused. ERA5 is a reanalysis. It supports a hindsight
-diagnostic and never an operational forecast input.
+diagnostic and never an operational forecast input. An issue-time forecast needs a measured
+log of when each input became available. A modelled latency supports only a simulated
+hindcast, and the arm says so.
 """
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Literal
@@ -26,9 +29,12 @@ Permission = Literal[
 ]  # fmt: skip
 Evidence = Literal[
     "historical_research", "hindsight_diagnostic", "issue_time_forecast",
-    "transport_plausibility", "method_input",
+    "simulated_availability_hindcast", "transport_plausibility", "method_input",
 ]  # fmt: skip
-Arm = Literal["issue_time_forecast", "hindsight_diagnostic", "retrospective_association"]
+Arm = Literal[
+    "issue_time_forecast", "simulated_availability_hindcast", "hindsight_diagnostic",
+    "retrospective_association",
+]  # fmt: skip
 TimeConvention = Literal["instant", "hour_ending", "hour_beginning", "interval", "unknown"]
 Support = Literal["point", "region", "grid_cell", "swath", "scene"]
 Accumulation = Literal["instant", "accumulated", "rate", "not_applicable"]
@@ -86,7 +92,20 @@ class DatasetSuitabilityV1(Strict):
         reanalysis = self.data_kind == "reanalysis"
         if reanalysis and "issue_time_forecast" in self.allowed_evidence:
             raise ValueError("a reanalysis is never an issue-time forecast input")
+        if self.availability == "modelled" and "issue_time_forecast" in self.allowed_evidence:
+            raise ValueError("modelled availability is never issue-time forecast evidence")
         return self
+
+
+class AvailabilityEvidenceV1(Strict):
+    """Measured from a log of when each input became available. Code writes this record."""
+
+    schema_version: Literal["1"] = "1"
+    dataset_id: str
+    log_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    checked_inputs: int = Field(ge=0)
+    late_inputs: int = Field(ge=0)
+    smallest_margin_hours: float | None = None
 
 
 class Code(StrEnum):
@@ -98,6 +117,7 @@ class Code(StrEnum):
     MISSING_AVAILABLE_AT = "missing_available_at"
     REANALYSIS_AS_FORECAST = "reanalysis_as_forecast"
     MODELLED_AVAILABILITY = "modelled_availability"
+    LATE_INPUT = "late_input"
     HINDSIGHT_LABEL = "hindsight_label"
     MISSING_VARIABLE = "missing_variable"
     UNIT_MISMATCH = "unit_mismatch"
@@ -202,20 +222,53 @@ def _disjoint(a: BoundingBox, b: BoundingBox) -> bool:
     )  # fmt: skip
 
 
-def _availability(plan: JoinPlanV1, p: DatasetSuitabilityV1) -> list[Finding]:
+def measure_availability(
+    dataset_id: str, log_sha256: str, pairs: Iterable[tuple[datetime, datetime]]
+) -> AvailabilityEvidenceV1:
+    """Each pair is (issue time, available-at time). A time with no zone is refused."""
+    margins = []
+    for issue, available in pairs:
+        if issue.tzinfo is None or available.tzinfo is None:
+            raise TimestampError("an availability log needs time zones")
+        margins.append((issue - available).total_seconds() / 3600)
+    return AvailabilityEvidenceV1(
+        dataset_id=dataset_id, log_sha256=log_sha256, checked_inputs=len(margins),
+        late_inputs=sum(m < 0 for m in margins),
+        smallest_margin_hours=min(margins) if margins else None,
+    )  # fmt: skip
+
+
+def _logged(p: DatasetSuitabilityV1, log: AvailabilityEvidenceV1 | None) -> list[Finding]:
+    if log is None or log.checked_inputs == 0:
+        return [_find(p, Code.MISSING_AVAILABLE_AT, True, "no availability log was measured")]
+    if log.late_inputs:
+        detail = f"{log.late_inputs} of {log.checked_inputs} inputs arrived after the issue time"
+        return [_find(p, Code.LATE_INPUT, True, detail)]
+    return []
+
+
+def _availability(
+    plan: JoinPlanV1, p: DatasetSuitabilityV1, log: AvailabilityEvidenceV1 | None
+) -> list[Finding]:
     if plan.arm == "hindsight_diagnostic" and p.data_kind == "reanalysis":
         return [
             _find(p, Code.HINDSIGHT_LABEL, False, "label the result a perfect-weather hindcast")
         ]
-    if plan.arm != "issue_time_forecast":
+    if plan.arm not in ("issue_time_forecast", "simulated_availability_hindcast"):
         return []
+    prospective = plan.arm == "issue_time_forecast"
     out = []
     if p.data_kind == "reanalysis":
         out.append(_find(p, Code.REANALYSIS_AS_FORECAST, True, "reanalysis was not known at issue"))
     if p.availability in ("unknown", "not_applicable"):
         out.append(_find(p, Code.MISSING_AVAILABLE_AT, True, "no available-at metadata"))
     if p.availability == "modelled":
-        out.append(_find(p, Code.MODELLED_AVAILABILITY, False, "label it a modelled hindcast"))
+        detail = "a modelled latency is not a logged time" if prospective else (
+            "label it a simulated-availability hindcast"
+        )  # fmt: skip
+        out.append(_find(p, Code.MODELLED_AVAILABILITY, prospective, detail))
+    if p.availability == "logged" and prospective:
+        out += _logged(p, log)
     return out
 
 
@@ -287,9 +340,14 @@ def _leak(target: str, detail: str) -> Finding:
     return Finding(dataset_id=target, code=Code.LEAKAGE, blocking=True, detail=detail)
 
 
-def preflight(plan: JoinPlanV1, profiles: list[DatasetSuitabilityV1]) -> AlignmentReportV1:
+def preflight(
+    plan: JoinPlanV1,
+    profiles: list[DatasetSuitabilityV1],
+    logs: tuple[AvailabilityEvidenceV1, ...] = (),
+) -> AlignmentReportV1:
     """Join checks over every input. Any blocking finding makes the plan not alignable."""
     by_id = {p.dataset_id: p for p in profiles}
+    measured = {log.dataset_id: log for log in logs}
     findings: list[Finding] = []
     for name in plan.inputs:
         profile = by_id.get(name)
@@ -297,8 +355,8 @@ def preflight(plan: JoinPlanV1, profiles: list[DatasetSuitabilityV1]) -> Alignme
             findings.append(Finding(dataset_id=name, code=Code.NOT_ACQUIRED, blocking=True,
                                     detail="no profile for this input"))  # fmt: skip
             continue
-        findings += _state(profile)
-        for check in (_availability, _units, _space_time, _quality, _supports):
+        findings += _state(profile) + _availability(plan, profile, measured.get(name))
+        for check in (_units, _space_time, _quality, _supports):
             findings += check(plan, profile)
     if plan.evaluation_start is not None and plan.window_end > plan.evaluation_start:
         detail = "the input window reaches into the evaluation period"

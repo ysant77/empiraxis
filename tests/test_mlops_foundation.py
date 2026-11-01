@@ -8,6 +8,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+from mlops_helpers import REPORT_SHA, evaluate
 from pydantic import ValidationError
 
 from earthlab.efficiency.artifacts import (
@@ -198,7 +199,7 @@ def bundle(registry: Registry, name: str = "m", seed: int = 1) -> ModelBundleV1:
         config={"alpha": 1.0}, weights_sha256=registry.put_arrays({"w": np.ones(3)}),
         feature=stored_feature(registry), postprocess=PostprocessV1(), output_names=("north",),
         seed=seed, environment=EnvironmentV1(python="3.12", packages=(("numpy", "2"),)),
-        training_metrics={"mae": 1.0},
+        training_metrics={"mae": 1.0}, evaluation_sha256=REPORT_SHA,
         card=ModelCardV1(intended_use="research", limitations=("Historical only.",)),
         code_revision="abc",
     )  # fmt: skip
@@ -235,7 +236,7 @@ def test_only_a_signed_record_on_this_bundle_approves(
     registry = Registry(tmp_path / "r")
     ref = registry.register(bundle(registry))
     other = registry.register(bundle(registry, seed=2))
-    assert registry.evaluate(ref, report, True) == "evaluated"
+    assert evaluate(registry, ref, tmp_path) == "evaluated"
     with pytest.raises(IllegalStatus, match="different bundle"):
         registry.decide(ref, approval(other, True), KEY)
     with pytest.raises(IllegalStatus, match="not valid"):
@@ -250,7 +251,7 @@ def test_a_human_rejection_stands(
     monkeypatch.setenv(OPERATOR_KEY_ENV, KEY)
     registry = Registry(tmp_path / "r")
     ref = registry.register(bundle(registry))
-    registry.evaluate(ref, report, True)
+    evaluate(registry, ref, tmp_path)
     assert registry.decide(ref, approval(ref, False), KEY) == "rejected"
     with pytest.raises(IllegalStatus):
         registry.decide(ref, approval(ref, True), KEY)
@@ -260,7 +261,7 @@ def test_a_human_rejection_stands(
 def test_a_failed_evaluation_rejects_the_model(tmp_path: Path, report: Path) -> None:
     registry = Registry(tmp_path / "r")
     ref = registry.register(bundle(registry))
-    assert registry.evaluate(ref, report, False) == "rejected"
+    assert evaluate(registry, ref, tmp_path, False) == "rejected"
 
 
 def test_rollback_finds_the_previous_approved_bundle(
@@ -270,7 +271,7 @@ def test_rollback_finds_the_previous_approved_bundle(
     registry = Registry(tmp_path / "r")
     refs = [registry.register(bundle(registry, seed=s)) for s in (1, 2)]
     for ref in refs:
-        registry.evaluate(ref, report, True)
+        evaluate(registry, ref, tmp_path)
         registry.decide(ref, approval(ref, True), KEY)
     assert registry.latest_approved("m") == refs[1]
     assert registry.latest_approved("m", skip=1) == refs[0]

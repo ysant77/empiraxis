@@ -30,7 +30,7 @@ class FeatureMatrix:
     dropped: int
 
 
-def _names(config: PipelineConfigV1, columns: tuple[str, ...]) -> tuple[str, ...]:
+def feature_names(config: PipelineConfigV1, columns: tuple[str, ...]) -> tuple[str, ...]:
     names = [f"{c}_lag{lag}" for lag in range(config.lags) for c in columns]
     if config.missing == "mask":
         names += [f"{name}_known" for name in list(names)]
@@ -67,7 +67,7 @@ def fit(
     return FittedPipelineV1(
         config=config, source_sha256=source_sha256, columns=columns, fit_span=span,
         fit_rows=len(part), means=tuple(float(v) for v in means),
-        stds=tuple(float(v) for v in stds), feature_names=_names(config, columns),
+        stds=tuple(float(v) for v in stds), feature_names=feature_names(config, columns),
     )  # fmt: skip
 
 

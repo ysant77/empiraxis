@@ -78,6 +78,35 @@ def cmd_mlops_run(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_mlops_verify(args: argparse.Namespace) -> int:
+    """A read-only check of one saved bundle. Exit 2 means refused."""
+    from earthlab.harness.verify import verify_bundle
+
+    ref = ArtifactRef(kind="record", sha256=args.bundle)
+    done = verify_bundle(Registry(args.registry), ref, args.run, args.source)
+    text = done.model_dump_json(indent=2)
+    if args.output is not None:
+        args.output.write_text(text, encoding="utf-8")
+    print(text)
+    return 2 if done.outcome == "refused" else 0
+
+
+def cmd_mlops_accept(args: argparse.Namespace) -> int:
+    """Verify, run the batch command, and write the readiness report. Exit 2 means refused."""
+    from earthlab.harness.accept import accept
+
+    done = accept(args.registry, args.bundle, args.run, args.source, args.out)
+    print(done.model_dump_json(indent=2))
+    return 2 if done.verification_outcome == "refused" else 0
+
+
+def _bundle_args(parser: Any) -> None:
+    parser.add_argument("--registry", type=Path, required=True)
+    parser.add_argument("--bundle", required=True, help="the bundle's SHA-256 digest")
+    parser.add_argument("--run", type=Path, required=True, help="the families run folder")
+    parser.add_argument("--source", type=Path, required=True, help="the NEA CSV")
+
+
 def add_mlops_parsers(sub: Any) -> None:
     train = sub.add_parser("mlops-run", help="experimental: registered methods on real NEA data")
     train.add_argument("scenario", choices=["regression", "classification"])
@@ -96,3 +125,11 @@ def add_mlops_parsers(sub: Any) -> None:
         "--allow-research", action="store_true", help="also serve a candidate or evaluated bundle"
     )
     run.set_defaults(func=cmd_mlops_predict)
+    check = sub.add_parser("mlops-verify", help="offline integrity check of one model bundle")
+    _bundle_args(check)
+    check.add_argument("--output", type=Path, default=None, help="also write the JSON here")
+    check.set_defaults(func=cmd_mlops_verify)
+    done = sub.add_parser("mlops-accept", help="verify, run batch inference, report readiness")
+    _bundle_args(done)
+    done.add_argument("--out", type=Path, required=True, help="folder for the evidence")
+    done.set_defaults(func=cmd_mlops_accept)

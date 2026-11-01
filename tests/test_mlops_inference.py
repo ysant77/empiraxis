@@ -8,7 +8,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from mlops_helpers import KEY, NAMES, SHA, approve, series, stored_bundle, times
+from mlops_helpers import KEY, NAMES, SHA, approve, evaluate, series, stored_bundle, times
 
 from earthlab.cli import main
 from earthlab.digest import file_digest
@@ -76,7 +76,7 @@ def test_a_rejected_bundle_is_refused_even_for_research(tmp_path: Path) -> None:
     ref = registry.register(stored_bundle(registry))
     report = tmp_path / "evaluation.json"
     report.write_text("{}", encoding="utf-8")
-    registry.evaluate(ref, report, False)
+    evaluate(registry, ref, tmp_path, False)
     with pytest.raises(InputRefused, match="rejected"):
         run(registry, ref, allow_research=True)
 
@@ -86,7 +86,7 @@ def test_an_evaluated_bundle_is_not_approved(tmp_path: Path) -> None:
     ref = registry.register(stored_bundle(registry))
     report = tmp_path / "evaluation.json"
     report.write_text("{}", encoding="utf-8")
-    registry.evaluate(ref, report, True)
+    evaluate(registry, ref, tmp_path)
     with pytest.raises(InputRefused, match="evaluated"):
         run(registry, ref)
 
