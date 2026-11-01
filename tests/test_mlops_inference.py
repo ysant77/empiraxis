@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
+import json
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import numpy as np
 import pytest
 from mlops_helpers import KEY, NAMES, SHA, approve, series, stored_bundle, times
 
+from earthlab.cli import main
+from earthlab.digest import file_digest
 from earthlab.efficiency.artifacts import ArtifactRef
 from earthlab.mlops import preprocess
 from earthlab.mlops.contracts import (
@@ -190,3 +194,67 @@ def test_rollback_serves_the_previous_approved_bundle(tmp_path: Path) -> None:
     assert registry.latest_approved("m", skip=2) is None
     assert previous is not None
     assert {p.bundle_sha256 for p in run(registry, previous)} == {first.sha256}
+
+
+def write_input(path: Path, rows: int = 150, blank: int | None = None, hours: int = 1) -> Path:
+    values = series(rows)
+    lines = ["time,north,south"]
+    for i, (a, b) in enumerate(values):
+        stamp = datetime(2020, 1, 1) + timedelta(hours=hours * i)
+        first = "" if i == blank else str(a)
+        lines.append(f"{stamp.isoformat()},{first},{b}")
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return path
+
+
+def predict_args(tmp_path: Path, ref: ArtifactRef, source: Path, *extra: str) -> list[str]:
+    return [
+        "mlops-predict", "--registry", str(tmp_path / "r"), "--bundle", ref.sha256,
+        "--input", str(source), "--output", str(tmp_path / "out.jsonl"), *extra,
+    ]  # fmt: skip
+
+
+def test_the_cli_writes_one_json_line_per_issue(tmp_path: Path) -> None:
+    registry = Registry(tmp_path / "r")
+    ref = registry.register(stored_bundle(registry))
+    approve(registry, ref, tmp_path)
+    source = write_input(tmp_path / "in.csv")
+    assert main(predict_args(tmp_path, ref, source)) == 0
+    lines = (tmp_path / "out.jsonl").read_text(encoding="utf-8").splitlines()
+    first, last = json.loads(lines[0]), json.loads(lines[-1])
+    assert first["issue_index"] == 4 and last["issue_index"] == 151  # rows + offset - 1
+    assert last["readiness"] == "validated_experimental" and last["bundle_sha256"] == ref.sha256
+    assert last["source_sha256"] == file_digest(source) and len(lines) == 148
+
+
+def test_the_cli_refuses_an_unapproved_bundle_unless_research_is_allowed(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    registry = Registry(tmp_path / "r")
+    ref = registry.register(stored_bundle(registry))
+    source = write_input(tmp_path / "in.csv")
+    assert main(predict_args(tmp_path, ref, source)) == 2
+    assert "candidate" in capsys.readouterr().err and not (tmp_path / "out.jsonl").exists()
+    assert (
+        main(predict_args(tmp_path, ref, source, "--allow-research", "--first-issue", "100")) == 0
+    )
+    assert (
+        json.loads((tmp_path / "out.jsonl").read_text().splitlines()[0])["readiness"] == "research"
+    )
+
+
+def test_the_cli_refuses_a_bad_digest_a_gap_or_an_irregular_grid(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    registry = Registry(tmp_path / "r")
+    ref = registry.register(stored_bundle(registry))
+    approve(registry, ref, tmp_path)
+    ok = write_input(tmp_path / "in.csv")
+    bad = ArtifactRef.model_construct(kind="record", sha256="zz")
+    assert main(predict_args(tmp_path, bad, ok)) == 2
+    assert main(predict_args(tmp_path, ref, write_input(tmp_path / "g.csv", blank=100))) == 2
+    assert "missing feature" in capsys.readouterr().err
+    assert main(predict_args(tmp_path, ref, write_input(tmp_path / "h.csv", hours=2))) == 2
+    assert "regular" in capsys.readouterr().err
+    stray = ArtifactRef(kind="record", sha256=SHA)
+    assert main(predict_args(tmp_path, stray, ok)) == 2
