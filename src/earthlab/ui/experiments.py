@@ -15,6 +15,7 @@ import streamlit as st
 
 from earthlab.board.progress import fold
 from earthlab.digest import file_digest
+from earthlab.harness.lifecycle import Lifecycle
 from earthlab.team.resources import ResourceApprovalV1, key_matches, operator_key, sign
 from earthlab.ui import board_view, common
 
@@ -86,6 +87,8 @@ def decide(run_dir: Path, approve: bool, key: str) -> ResourceApprovalV1:
     signed = approval.model_copy(update={"signature": sign(approval, key)})
     with (run_dir / DECISION_FILE).open("x", encoding="utf-8") as out:
         out.write(signed.model_dump_json(indent=2))
+    if (run_dir / "artifacts").is_dir():
+        Lifecycle(run_dir).human_decision(signed, approval.request_sha256, key)
     return signed
 
 

@@ -9,6 +9,7 @@ from typing import Any
 
 from earthlab.forecast.experiment import run_experiment
 from earthlab.forecast.tiers import run_tiers
+from earthlab.harness.replay import replay_run
 from earthlab.harness.scenarios import SCENARIOS, SUMMARY, run_scenario
 from earthlab.llm.client import build_client
 from earthlab.llm.providers import load_providers
@@ -48,7 +49,16 @@ def cmd_harness(args: argparse.Namespace) -> int:
     return 0 if done["status"] in ("awaiting_human", "refused") else 2
 
 
+def cmd_harness_replay(args: argparse.Namespace) -> int:
+    out = replay_run(args.run)
+    print(json.dumps(out, indent=2))
+    return 1 if out["mismatches"] else 0
+
+
 def add_forecast_parsers(sub: Any) -> None:
+    again = sub.add_parser("harness-replay", help="reproduce a saved run with no model")
+    again.add_argument("run", type=Path)
+    again.set_defaults(func=cmd_harness_replay)
     run = sub.add_parser("harness", help="experimental: one problem through the shared lifecycle")
     run.add_argument("scenario", choices=sorted(SCENARIOS))
     run.add_argument("--arm", choices=["fixed", "single", "team"], default="fixed")

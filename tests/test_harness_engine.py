@@ -14,10 +14,12 @@ from earthlab.board.progress import fold
 from earthlab.digest import file_digest
 from earthlab.forecast import pipeline
 from earthlab.forecast.isolated import IsolatedRun
+from earthlab.harness.artifacts import MissingArtifact
 from earthlab.harness.contracts import ResearchRequestV1
 from earthlab.harness.engine import run_harness
 from earthlab.harness.lifecycle import Lifecycle
 from earthlab.harness.regression import PM25_PROBLEM, RegressionAdapter
+from earthlab.harness.replay import replay_run
 from earthlab.harness.scenarios import run_scenario
 from earthlab.llm.types import ProviderError, ProviderErrorKind
 from earthlab.trace import RunTrace
@@ -185,3 +187,30 @@ def test_every_artifact_in_the_record_matches_its_digest(trainer: Trainer, tmp_p
     done = run_scenario("pm25-regression", "fixed", tmp_path / "run", None)
     for name, digest in done["artifacts"].items():
         assert file_digest(tmp_path / "run" / "artifacts" / f"{name}.json") == digest
+
+
+def test_generated_code_in_a_proposal_is_refused(trainer: Trainer, tmp_path: Path) -> None:
+    bad = call("choose_method", **(CHOICE | {"code": "import os; os.system('rm -rf /')"}))
+    client = ScriptedClient([call("review_scope", in_scope=True, note="Fine."), bad, bad])
+    done = run("team", tmp_path / "run", client)
+    assert done["status"] == "failed" and not trainer.jobs
+
+
+def test_replay_reproduces_a_run_and_refuses_a_changed_artifact(
+    trainer: Trainer, tmp_path: Path
+) -> None:
+    done = run_scenario("pm25-regression", "fixed", tmp_path / "run", None)
+    out = replay_run(tmp_path / "run")
+    assert out["mismatches"] == [] and out["models_rechecked"] == len(done["comparison"])
+    (tmp_path / "run" / "artifacts" / "profile.json").write_text("{}", encoding="utf-8")
+    with pytest.raises(MissingArtifact, match="does not match"):
+        replay_run(tmp_path / "run")
+
+
+def test_replay_reports_a_changed_score(trainer: Trainer, tmp_path: Path) -> None:
+    run_scenario("pm25-regression", "fixed", tmp_path / "run", None)
+    path = tmp_path / "run" / "result.json"
+    record = json.loads(path.read_text(encoding="utf-8"))
+    record["comparison"][0]["mae"] = 1.0
+    path.write_text(json.dumps(record), encoding="utf-8")
+    assert replay_run(tmp_path / "run")["mismatches"]
