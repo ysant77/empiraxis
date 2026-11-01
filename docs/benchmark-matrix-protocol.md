@@ -54,35 +54,52 @@ An arm names a provider for each role and a prompt variant. Arms are in the `arm
 `config/benchmark/matrix.yaml`. Muse-designated roles are listed in `muse_roles`. The runner
 refuses an arm if a Muse role maps to another model.
 
-| Arm | Kind | PM | Lead | Specialists | Prompt variant |
-|---|---|---|---|---|---|
-| F | fixed | none | none | none | none |
-| S-M | single | none | Muse | none | baseline |
-| T-M-base | team | Muse | Muse | Muse | `baseline` (control) |
-| T-M-v1 | team | Muse | Muse | Muse | `note-close-v1` |
-| T-M-v2 | team | Muse | Muse | Muse | `note-close-reminder-v1` |
-| T-M-win | team | Muse | Muse | Muse | the screening winner |
-| T-pm3 | team | Llama 3.2 3B | Muse | Muse | the screening winner |
-| T-sp4 | team | Muse | Muse | Qwen3 4B Instruct 2507 | the screening winner |
-| T-sp8 | team | Muse | Muse | Llama 3.1 8B | the screening winner (reserve) |
+| Arm | Kind | PM | Lead | Specialists | Prompt variant | Ranked |
+|---|---|---|---|---|---|---|
+| F | fixed | none | none | none | none | yes |
+| S-M | single | none | Muse | none | baseline | yes |
+| T-M-base | team | Muse | Muse | Muse | `baseline` (control) | yes |
+| T-M-v1 | team | Muse | Muse | Muse | `note-close-v1` | yes |
+| T-M-v2 | team | Muse | Muse | Muse | `note-close-reminder-v1` | yes |
+| T-M-win | team | Muse | Muse | Muse | the screening winner | yes |
+| T-pm3 | team | Llama 3.2 3B | Muse | Muse | the screening winner | yes |
+| T-sp4 | team | Muse | Muse | Qwen3 4B Instruct 2507 | the screening winner | yes |
+| T-sp4-tuned | team | Muse | Muse | Qwen3 4B Instruct 2507 | `qwen-tuned-v1` (section 7) | yes |
+| T-sp8 | team | Muse | Muse | Llama 3.1 8B | the screening winner (reserve) | yes |
+| S-q4 | single | none | Qwen3 4B | none | baseline | **no** |
+| S-l3 | single | none | Llama 3.2 3B | none | baseline | **no** |
 
-The Lead is always Muse. The gate for `geospatial_engineer` allows Meta Muse only. This
-protocol does not change the gate.
+The Lead is Muse in every ranked arm. The gate for `geospatial_engineer` allows Meta Muse
+only. This protocol does not change the gate. Arms S-q4 and S-l3 are the fallback of section
+9.3. They put a small model in the Lead seat with no Muse server up. They do not meet the
+Lead gate. The runner checks them in the specialist gate instead. They carry `ranked: false`,
+the manifest records it, and the report prints "no: Lead gate waived". They are never named a
+best system.
 
 ### 3.2 Stages
 
 A screening pass finds a working variant and a first view of the small-model arms. A paired
-confirm pass tests the winner against the control. The full factorial is 9 arms by 4
+confirm pass tests the winner against the control. The full factorial is 12 arms by 4
 scenarios by at least 3 repeats. It would need more than 40 hours. It is not run.
+
+Default path, if the memory probe passes: `screen-muse`, `tune-prompt`, `screen-mixed`,
+`screen-tuned`, `confirm`.
 
 | Stage | Server block | Cells (scenario: arms, repeats) | Runs |
 |---|---|---|---|
 | `screen-muse` | none, then `muse` | regression: F, S-M. exceedance, burn-method, segmentation: F, S-M, T-M-v1, T-M-v2. 1 repeat. | 14 |
-| `screen-mixed` | `muse+<small model>` | exceedance, burn-method, segmentation: T-pm3, T-sp4. 1 repeat. | 6 |
-| `confirm` | `muse` | exceedance: S-M, T-M-base, T-M-win, 1 repeat. burn-method: T-M-base, T-M-win, 2 repeats. | 7 |
+| `tune-prompt` | Qwen3 4B alone | Offline prompt tuning on 12 synthetic tickets (section 7). No scenario runs. | 0 |
+| `screen-mixed` | `muse+<small model>` | exceedance: T-sp4. burn-method, segmentation: T-pm3, T-sp4. 1 repeat. | 5 |
+| `screen-tuned` | `muse+qwen` | burn-method, segmentation: T-sp4-tuned. 1 repeat. | 2 |
+| `confirm` | `muse` | exceedance: T-M-base, T-M-win. burn-method: T-M-base, T-M-win, 2 repeats. | 6 |
+| `fallback-single` | one small model alone | Only if the probe fails. exceedance, burn-method, segmentation: S-q4, S-l3. 1 repeat. It replaces `screen-mixed` and `screen-tuned`. | 6 |
 
 `pm25-regression` has no team cell. The team took 31 minutes there in round 1 and did not
 fail. A team run there would use time that the defect scenarios need more.
+
+`T-M-base` is the same-session control (owner decision, 2026-11-01). Round 1 stays the before
+state. The control runs the baseline prompts with the tool-call cache (section 6.2), so it
+differs from round 1 in that one controller change.
 
 ### 3.3 Order
 
@@ -98,21 +115,26 @@ Order is rotated, not random, so a reader can reproduce it. `harness/matrix.py` 
 ### 3.4 Wall-time estimate
 
 Minutes per run come from round 1 wall times, rounded up. They are in the `budget` block of
-the matrix file. Two values are guesses: the single-agent time on segmentation (5 minutes) and
-every small-model arm (the Muse team time is used as a ceiling). Muse runs at about 5 tokens
-per second on one slot. No other speed has been measured.
+the matrix file. Three kinds of value are guesses: the single-agent time on segmentation (5
+minutes), every small-model arm (the Muse time is used as a ceiling), and the tuning stage (50
+minutes, section 7). Muse runs at about 5 tokens per second on one slot. No other speed has
+been measured.
 
 | Stage | Model time (h) | With 4 min per server switch (h) |
 |---|---|---|
 | `screen-muse` | 2.33 | 2.40 |
-| `screen-mixed` | 1.57 | 1.70 |
-| `confirm` | 2.48 | 2.55 |
+| `tune-prompt` | 0.83 | 0.83 |
+| `screen-mixed` | 1.20 | 1.33 |
+| `screen-tuned` | 0.42 | 0.48 |
+| `confirm` | 2.20 | 2.26 |
 | Preflight of the small models (once) | | 0.42 |
-| **Total** | | **7.07** |
+| **Default path total** | | **7.72** |
+| Fallback path (`fallback-single` instead of the two mixed stages) | | 7.14 |
 
-The budget is 8.0 hours. The reserve is 0.9 hours. The reserve pays for arm T-sp8 on one
-cell (about 0.4 hours) or a rerun after one infrastructure fault. The runner takes
-`--minutes-left` and stops before a run that would overrun.
+The budget is 8.0 hours. The reserve on the default path is 0.28 hours. That is one rerun of
+a short cell. Arm T-sp8 does not fit and runs only if an earlier stage is dropped. The runner
+takes `--minutes-left` and stops before a run that would overrun. If `tune-prompt` or
+`screen-muse` runs over, drop `screen-tuned` first, then the second repeat in `confirm`.
 
 Run `uv run python scripts/run_benchmark_matrix.py plan screen-muse screen-mixed confirm` to
 print the order and the estimate.
@@ -177,6 +199,7 @@ preset.
 
 Apply the steps in order. Stop at the first step that gives one answer.
 
+0. Leave out each arm with `ranked: false`.
 1. Remove each arm with a disqualifier (section 4.2).
 2. Keep the arms with the highest VGC share. Count all planned runs of the arm.
 3. Among those, keep the arm with the lowest median wall time. If two arms are within 10 percent
@@ -184,7 +207,7 @@ Apply the steps in order. Stop at the first step that gives one answer.
 4. Keep the arm with the lowest median total tokens. Arm F has zero tokens.
 5. If a tie remains, keep the simpler arm: fixed, then single, then team.
 
-Arm F takes part in the ranking. A model arm is the best system only if it has a higher VGC
+Arm F takes part in the ranking. Unranked arms are reported in their own table. A model arm is the best system only if it has a higher VGC
 share than F, or an equal share with a stated benefit that F lacks. If F ties or wins, the
 report says that the deterministic pipeline is enough for the tested scenarios.
 
@@ -236,53 +259,60 @@ to do after the result.
 A reminder has no new authority. It names no tool that is not on the ticket. The loop still
 ends with `Stopped` if the model stays silent twice. A test shows both cases.
 
-Known gap, not fixed here: a repeated call of `prepare_data` or `train_models` runs the
-adapter again. The reminder text says not to repeat. A cache of the first result is a better
-fix and belongs in a separate change.
+Tool-call cache (commit `72715a6`): a repeated call of `prepare_data` or `train_models` used
+to run the adapter again. The ticket handler now runs the adapter once and returns the first
+result to a repeated call. It applies to every arm, including the control. A scripted test
+shows one adapter run for two model calls. Round-1 team times include such repeats, so the new
+team times are not directly comparable. The report says so.
 
 ## 7. Prompt optimizer: DSPy
 
-Decision: do not adopt DSPy in the overnight matrix. Keep it as an optional offline tool.
-Nothing in this repository imports it.
+Decision (owner, 2026-11-01): keep DSPy as an offline developer tool, run it after
+`screen-muse` on Qwen3 4B Instruct, not on Muse. It measures a "before" and an "after" score.
+Nothing in `src/` imports it, and `pyproject.toml` does not list it.
 
 | Item | Fact |
 |---|---|
-| Package | `dspy` 3.4.1, released 2026-10-12. Wheel SHA-256 `afda9e7f8b3d46be0829af19ac1153a6feaa6db5923f2b1011eef547fb15ce2d`. |
-| Licence | MIT (Stanford Future Data Systems). Read from the package metadata. |
-| Optimizers | MIPROv2 (instruction and few-shot search) and GEPA (`gepa` 0.1.4, MIT, wheel SHA-256 `12b971039599625c156d2231f6d72a29c31a22e9c237689459b5f1a3c353f532`). |
-| Install | A separate virtual environment outside `pyproject.toml`. Pin with hashes. `dspy` pulls 45 requirements, including `litellm` (MIT). Review the lock file before an install. Not installed now. |
+| Package | `dspy` 3.4.1, released 2026-10-12, MIT (Stanford Future Data Systems). Wheel SHA-256 `afda9e7f8b3d46be0829af19ac1153a6feaa6db5923f2b1011eef547fb15ce2d`. |
+| Optimizer | MIPROv2 in instruction-only mode (no demos). GEPA 0.1.4 (MIT) is in the lock for a later trial. |
+| Environment | `~/Documents/meta-ai/prompt-optimizer-env`, outside the repo. Built from `tools/prompt_optimizer/requirements.lock` with `--require-hashes`: 66 packages, including `litellm` 1.106.6 (MIT) and `openai` 2.54.0. `import dspy` and `from dspy.teleprompt import MIPROv2, GEPA` work. |
+| Tool | `tools/prompt_optimizer/optimize.py`. `--dry-run` needs no model and passes. The live run has not been made. |
 
-Comparison with the reviewer from the efficiency work:
+Comparison with the reviewer from the efficiency work (`efficiency/prompt_review.py`). The
+reviewer is static and calls no model. It flags missing constraints and contradictions, and a
+person applies each change. It cannot see a tool-sequence failure. DSPy scores a prompt by live
+calls and proposes new text. The two do not overlap. This is not a second controller: it does
+not run in the product, and it does not change a repo prompt. A candidate enters the repo
+only as a new variant ID after a person has reviewed the text.
 
-| | Static reviewer | DSPy MIPROv2 or GEPA |
-|---|---|---|
-| Model calls | None | Hundreds. Each trial scores the dev set with live calls. |
-| Output | Findings and candidate changes for a person | A rewritten prompt |
-| Scoring | Text rules | A metric that you supply |
-| Fit to the defect | Cannot see a tool-sequence failure | Can score it |
+Fit and cost:
 
-Fit to this project:
+- On Muse, a light search needs about 300 calls, about 5 hours. That does not fit. On Qwen3 4B
+  the guess is 50 minutes in total (guess, not measured): 8 trials on 8 training tickets,
+  proposer calls, and three held-out scores. Its server is up on port 8081 alone, so Muse is not
+  loaded.
+- Weakness: a prompt tuned on a 4B model may not hold on another model. The candidate is only
+  used in arm T-sp4-tuned, with Qwen3 4B in the specialist role.
+- Drop rule: if the candidate does not beat both the default text and `note-close-v1` on the
+  4 held-out tickets, drop it and say so. Skip `screen-tuned`.
 
-- Budget. One specialist trial is about 3 calls. At about 5 tokens per second, Muse needs about
-  1 minute per call. A light MIPROv2 search of 10 trials on 10 dev tasks is about 300 calls. That
-  is about 5 hours. It does not fit the 8-hour budget.
-- GEPA needs a reflection model that is stronger than the task model. The only strong local
-  model is Muse. The same cost applies.
-- Small task models (Qwen3 4B, Llama 3.2 3B) are fast, but a prompt tuned on them may not hold on
-  Muse. A worker trial on 2026-11-01 used Qwen3 4B (thinking build) for patch tasks. All 9 trials hit the length limit with no result.
-- A second engine next to the reviewer would add a second place for prompt decisions. The
-  addendum forbids a second controller. A prompt search is not a controller, but the same
-  principle applies: measure first, change one thing.
+Dev tasks: `config/benchmark/specialist_dev_tickets.yaml`. Twelve synthetic tickets, 6 for
+each specialist role, built from the tool schemas. They hold no PM2.5 data, no held-out item
+and no test-period value. Tickets 01 to 04 of each role train. Tickets 05 and 06 stay out for
+the final score.
 
-If the owner wants a trial after the matrix:
+Metric: `closes_cleanly` (`harness/closure.py`). It is 1 when the transcript holds exactly one
+ticket-tool call, then one `submit_note` call, and nothing else. A test keeps the tool's copy
+equal to the repo's. No model judges the result.
 
-- Dev tasks: the specialist closing task only. Use 12 synthetic tickets, built from the two
-  `prepare_data` and `train_models` tool schemas, with no real data and no held-out item.
-- Metric: deterministic. 1 if the transcript ends with exactly one tool call and one valid
-  `submit_note`. 0 otherwise. No model judges the result.
-- Output: a candidate text in a file. A person reviews it. It enters `prompt_variants.yaml` as a
-  new variant ID through a normal pull request. The optimizer never writes a repo prompt.
-- Drop rule: if 3 trials on the 4B model do not raise the metric above `note-close-v1`, drop it.
+Output: `candidate.json` with the candidate text, three held-out scores (default, `note-close-v1`,
+candidate), the SHA-256 of the text and of the lock file, and `needs_review: true`.
+
+Use of the candidate: a person reads the text and adds it to `prompt_variants.yaml` as
+`qwen-tuned-v1`. The runner refuses `T-sp4-tuned` until that variant exists. This is the review
+gate. The "before" evidence is the held-out score of the default text. The "after" evidence is
+the held-out score of the candidate and the `screen-tuned` runs. With 4 held-out tickets and 2
+runs, the report states the counts and no more.
 
 ## 8. Reporting
 
@@ -319,8 +349,11 @@ licence column comes from the model card tag. A person must read the full licenc
 `license_checked` becomes true. The Llama licences carry an acceptable-use policy and a naming
 duty for derived works. No download happens before that check.
 
-Total new download for the three small models: 9.44 GB. No payment, account or token is
-needed for these three repositories.
+Download status (2026-11-01): the Qwen3 4B file is downloaded to
+`~/Documents/meta-ai/models-bench/qwen3-4b-instruct-2507-gguf/` at the pinned revision. Its size
+(2,497,281,120 B) and SHA-256 match this table. The owner approved this Apache-2.0 file. The two
+Llama files are not downloaded. They need the owner to accept the Llama licence. No payment,
+account or token is needed for any of the three repositories.
 
 Tool-call support is stated by each model card (Llama 3.1 and 3.2, Qwen3 2507, gpt-oss). The
 preflight in Phase 2 is the proof. A model that fails the preflight does not run. In an earlier patch-writing trial, Qwen3 4B (thinking build) and Gemma 3 4B produced no
@@ -352,23 +385,34 @@ The mixed arms need two servers at once (Muse on 8080, the small model on 8081),
 Lead stays Muse. This conflicts with the rule "one model server at a time". It is an owner
 decision (section 11, O1).
 
-If the owner agrees, run a memory probe before `screen-mixed`: load both servers, close other
-programs, send 10 short calls to each, and sample wired memory and swap every 5 seconds. Pass
-if the wired peak is at most 28.0 GB and swap does not grow during the probe. If it fails, the
-mixed stage is dropped, and the report says that the machine did not fit the arm. Only one
-small model loads at a time.
+The owner kept the rule: mixed arms stand only if the memory probe passes. The server rule
+does not change. Run the probe before `screen-mixed`: load both servers, close other programs,
+send 10 short calls to each, and sample wired memory and swap every 5 seconds. Pass if the wired
+peak is at most 28.0 GB and swap does not grow during the probe. Only one small model loads at
+a time.
+
+Fallback if the probe fails: drop `screen-mixed` and `screen-tuned`. Run `fallback-single`. It
+tests each small model alone in a single-agent arm (S-q4, S-l3), with no Muse server up. These
+arms do not meet the Lead gate. Their label is "Lead gate waived". They are never ranked and
+never named a best system. They show only whether a small model can complete the scenarios by
+itself. Without Muse, the Lead seat has no gate-approved model, so a pass there does not
+authorise the small model for the Lead role. S-l3 needs the Llama licence and download first.
+The report says that the machine did not fit the mixed arms.
 
 ### 9.4 Phase 2 order
 
-1. Owner confirms the licence texts and O1 to O3. A person flips `license_checked`.
-2. Download the three files into one new empty folder each. Check the SHA-256 against section 9.1.
-3. Preflight each small model alone on port 8081: JSON schema, one tool call, one 3-call
-   specialist loop. Record the result in `bindings.yaml`. Enable only the models that pass.
-4. Run `screen-muse` with the Muse server alone, `fixed` cells first.
-5. Choose the winner by the rule in section 5.2.
-6. Run the memory probe. If it passes, run `screen-mixed`, one small model at a time.
+1. Done: Qwen3 4B downloaded and verified. A person reads the licence texts and flips
+   `license_checked`. The owner accepts the Llama licences before those files download.
+2. Preflight each small model alone on port 8081: JSON schema, one tool call, one 3-call
+   specialist loop. Record the result in `bindings.yaml`. Enable only models that pass.
+3. Run `screen-muse` with the Muse server alone, `fixed` cells first.
+4. Choose the winner by the rule in section 5.2.
+5. Run `tune-prompt` with Qwen3 4B alone. A person reviews the candidate and adds
+   `qwen-tuned-v1`, or drops it.
+6. Run the memory probe. If it passes, run `screen-mixed` and `screen-tuned`, one small model at
+   a time. If it fails, run `fallback-single`.
 7. Run `confirm` with `--winner`.
-8. Write the report with `harness-compare`. Keep the old round-1 results as a separate table.
+8. Write the report with `harness-compare`. Keep the round-1 results as a separate table.
 
 ## 10. Known limits
 
@@ -381,16 +425,20 @@ small model loads at a time.
   the two changes.
 - Two Muse sessions share one slot. Do not run anything else on the Mac during a measured run.
 
-## 11. Owner decisions needed
+## 11. Owner decisions (answered 2026-11-01)
 
-| ID | Question | Recommendation |
+| ID | Question | Answer |
 |---|---|---|
-| O1 | Allow two model servers at once (Muse and one small model), after the memory probe? | Yes, with the probe. Without it, `screen-mixed` cannot run. |
-| O2 | Include the control arm `T-M-base` in `confirm`? It reruns the baseline prompts. Round 1 stays the before state. | Yes. Without a same-session control, the paired claim has no base. |
-| O3 | Read the Llama 3.1 and 3.2 licences and allow the download of three files (9.44 GB)? | Yes after reading. |
-| O4 | Add the `openai`/gpt-oss family to the specialist gate? | No, not for the hackathon. |
-| O5 | Run DSPy after the matrix, on 12 synthetic specialist tickets? | Only if time is left after Nov 3. |
+| O1 | Two servers at once? | Only if the memory probe passes. The server rule is unchanged. Fallback in section 9.3. |
+| O2 | Include `T-M-base` in `confirm`? | Yes. |
+| O3 | Download of the model files | Qwen3 4B (Apache-2.0): approved and done. Llama files: wait for the owner to accept the licence. |
+| O4 | Add the gpt-oss family to the gate? | No. |
+| O5 | DSPy | Yes, offline, on Qwen3 4B, with person review (section 7). |
+
+Open: the owner must accept the Llama 3.1 and 3.2 licences before arms T-pm3, T-sp8 and S-l3
+can run. Without them, those arms are dropped and the report says so.
 
 ## 12. Amendments
 
-None.
+None. The edits of 2026-11-01 (second revision: control in `confirm`, tuning stage,
+fallback arms, tool-call cache) were made before any stage started.
