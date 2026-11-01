@@ -165,6 +165,13 @@ class ModelBundleV1(Strict):
     evaluation_sha256: Sha | None = None
     card: ModelCardV1
     code_revision: str
+    encoder: ArtifactRef | None = None
+
+    @model_validator(mode="after")
+    def _encoder_matches_family(self) -> ModelBundleV1:
+        if (self.family == "hybrid") != (self.encoder is not None):
+            raise ValueError("a hybrid bundle names its frozen encoder and no other bundle does")
+        return self
 
 
 class TrialV1(Strict):

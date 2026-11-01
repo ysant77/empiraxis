@@ -71,6 +71,8 @@ def predict_batch(
     if status == "rejected" or (status != "approved" and not allow_research):
         raise InputRefused(f"a {status} bundle does not serve this request")
     bundle, fitted = load(registry, ref)
+    if bundle.family == "hybrid":
+        raise InputRefused("a hybrid bundle needs its encoder inputs, which this path lacks")
     if columns != fitted.columns:
         raise InputRefused(f"the input columns {columns} differ from {fitted.columns}")
     begun = time.perf_counter()

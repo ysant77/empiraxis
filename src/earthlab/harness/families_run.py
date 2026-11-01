@@ -12,7 +12,7 @@ from __future__ import annotations
 import json
 import platform
 import subprocess
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from importlib.metadata import version
 from pathlib import Path
 from typing import Any
@@ -26,6 +26,7 @@ from earthlab.forecast.contracts import LIMITATIONS
 from earthlab.forecast.dataset import REGIONS, label_at
 from earthlab.forecast.pipeline import SEED, SOURCE
 from earthlab.harness import eval_classify as independent
+from earthlab.harness import hybrid
 from earthlab.harness.classify import (
     BASE,
     HORIZON,
@@ -36,6 +37,7 @@ from earthlab.harness.classify import (
 )
 from earthlab.harness.contracts import EvaluationReportV1
 from earthlab.harness.regression import RegressionAdapter
+from earthlab.mlops import encoder as enc
 from earthlab.mlops import families, postprocess, preprocess
 from earthlab.mlops.contracts import (
     ColumnRule,
@@ -58,6 +60,7 @@ PRIMARY = S.PRIMARY_HORIZON
 UNIT = "ug/m3"
 REGRESSION_METHODS = ("persistence", "climatology", "ridge", "trees")
 CLASSIFICATION_METHODS = ("logistic", "trees_classifier")
+HYBRID = "frozen_gru_logistic"
 Config = dict[str, float | int | str | bool]
 
 
@@ -66,6 +69,7 @@ def _default_configs() -> dict[str, Config]:
     return {
         "persistence": {}, "climatology": {}, "ridge": {"alpha": 100.0}, "trees": tree,
         "logistic": {"penalty": 1.0, "balanced": True}, "trees_classifier": dict(tree),
+        "frozen_gru_logistic": {"penalty": 1.0, "balanced": True},
     }  # fmt: skip
 
 
@@ -139,24 +143,33 @@ def _prepare(
     fitted = preprocess.fit(
         config, values, REGIONS, Span(first=0, last=train_end), train_end, source_sha
     )
-    x, arrays = {}, {}
+    x = {}
     for name, rows in issues.items():
         when = [label_at(int(i)) for i in rows]
-        built = preprocess.build(fitted, values, rows, S.SEALED_FROM, when)
-        x[name] = built.x
-        arrays[f"{name}_x"], arrays[f"{name}_issues"] = built.x, rows
+        x[name] = preprocess.build(fitted, values, rows, S.SEALED_FROM, when).x
+    ref = _store_feature(registry, fitted, source_sha, x, issues, fitted.feature_names)
+    return Prepared(fitted, ref, x, preprocess.scale(fitted, values))
+
+
+def _store_feature(
+    registry: Registry, fitted: FittedPipelineV1, source_sha: str, x: dict[str, np.ndarray],
+    issues: dict[str, np.ndarray], names: tuple[str, ...],
+) -> ArtifactRef:  # fmt: skip
+    """The feature artifact: spans, names and the digest of the stored matrices."""
+    train_end = S.split_bounds("train")[1]
+    arrays = {
+        f"{k}_{kind}": v for k, m in x.items() for kind, v in (("x", m), ("issues", issues[k]))
+    }
     last = max(int(v.max()) for k, v in issues.items() if k != "train")
     first = min(int(v.min()) for k, v in issues.items() if k != "train")
     artifact = FeatureArtifactV1(
         fitted_pipeline=registry.store.put_record(fitted), source_sha256=source_sha,
         train_span=Span(first=0, last=train_end), validation_span=Span(first=first, last=last),
-        feature_names=fitted.feature_names, availability_offset_hours=S.USABLE_OFFSET,
+        feature_names=names, availability_offset_hours=S.USABLE_OFFSET,
         last_input_index=last - S.USABLE_OFFSET, rows=sum(len(m) for m in x.values()),
         dropped_rows=0, code_revision=_revision(), matrix_sha256=registry.put_arrays(arrays),
     )  # fmt: skip
-    return Prepared(
-        fitted, registry.put_feature(fitted, artifact), x, preprocess.scale(fitted, values)
-    )
+    return registry.put_feature(fitted, artifact)
 
 
 def _fit_all(
@@ -186,7 +199,7 @@ def _card(intended: str) -> ModelCardV1:
 
 def _register(
     registry: Registry, prep: Prepared, fit: Fit, task: families.Task, post: PostprocessV1,
-    report_path: Path, score: Any, name: str,
+    report_path: Path, score: Any, name: str, encoder: ArtifactRef | None = None,
 ) -> dict[str, Any]:  # fmt: skip
     """Store the bundle, then let the evaluator's verdict move it. A human decides later."""
     method = families.METHODS[fit.method_id]
@@ -198,7 +211,7 @@ def _register(
         subgroups={k: float(v) for k, v in _numbers(score.subgroups).items()},
         evaluation_sha256=file_digest(report_path),
         card=_card(f"Research comparison of {fit.method_id} on historical NEA PM2.5."),
-        code_revision=_revision(),
+        code_revision=_revision(), encoder=encoder,
     )  # fmt: skip
     ref = registry.register(bundle)
     status = registry.evaluate(ref, report_path, bool(score.passes))
@@ -296,14 +309,49 @@ def _declare(raw_tune: np.ndarray, y_tune: np.ndarray) -> tuple[PostprocessV1, f
     return PostprocessV1(calibration=calibration, alarm_cut=cut), cut, notes
 
 
+@dataclass(frozen=True)
+class Head:
+    """One classifier with the inputs it was fitted on, and its encoder when it has one."""
+
+    fit: Fit
+    prep: Prepared
+    encoder: ArtifactRef | None = None
+
+
+def _hybrid_head(
+    registry: Registry, prep: Prepared, spec: RunSpec, facts: Facts, y: dict[str, np.ndarray],
+    where: tuple[Path, Path, dict[str, np.ndarray]], encoder: ArtifactRef | None,
+) -> tuple[Head | None, str | None]:  # fmt: skip
+    """The frozen hybrid, or None with the reason. A refusal never stops the other methods."""
+    if encoder is None:
+        return None, "no frozen encoder was supplied"
+    folder, source, issues = where
+    try:
+        emb, ref = hybrid.embeddings(registry, encoder, folder, source, issues, "scored")
+    except enc.ReuseRefused as exc:
+        return None, str(exc)
+    ready = replace(facts, pretrained_approved=True)
+    fits, blocked = _fit_all("classification", (HYBRID,), spec, ready, emb["train"], y["train"])
+    if HYBRID not in fits:
+        return None, blocked[HYBRID]
+    names = tuple(f"gru_{i}" for i in range(emb["train"].shape[1]))
+    feature = _store_feature(registry, prep.fitted, prep.fitted.source_sha256, emb, issues, names)
+    return Head(fits[HYBRID], replace(prep, feature=feature, x=emb), ref), None
+
+
 def run_classification(
-    folder: Path, registry_root: Path, source: Path = SOURCE, spec: RunSpec | None = None
-) -> dict[str, Any]:
-    """S2: PM2.5 above 35 ug/m3 at T+6 h. Same samples as the pm25-exceedance scenario."""
+    folder: Path, registry_root: Path, source: Path = SOURCE, spec: RunSpec | None = None,
+    encoder: ArtifactRef | None = None,
+) -> dict[str, Any]:  # fmt: skip
+    """S2: PM2.5 above 35 ug/m3 at T+6 h. Same samples as the pm25-exceedance scenario.
+
+    The fixed comparison is the persistence alarm, logistic, trees_classifier and the frozen
+    hybrid. The hybrid needs an exported encoder that passes the reuse checks.
+    """
     spec = spec or RunSpec()
     folder.mkdir(parents=True, exist_ok=True)
     adapter, registry = ClassificationAdapter(folder, source), Registry(registry_root)
-    window = spec.lags + 8
+    window = max(spec.lags + 8, WINDOW)
     valid = S.issue_times("validation", window, (HORIZON,))
     issues = {
         "train": S.issue_times("train", window, (HORIZON,)),
@@ -319,20 +367,56 @@ def run_classification(
     fits, blocked = _fit_all(
         "classification", CLASSIFICATION_METHODS, spec, facts, prep.x["train"], y["train"]
     )
-    posts: dict[str, PostprocessV1] = {}
-    notes: dict[str, list[str]] = {}
-    for method_id, fit in fits.items():
-        raw = {k: families.predict(method_id, "classification", prep.x[k], fit.state, fit.config)
-               for k in ("tune", "scored")}  # fmt: skip
-        posts[method_id], cut, notes[method_id] = _declare(raw["tune"], y["tune"])
-        prob = postprocess.classification(posts[method_id].model_copy(update={"alarm_cut": None}),
-                                          raw["scored"])  # fmt: skip
-        adapter.rows[method_id] = (prob, cut)
+    heads = {k: Head(fit, prep) for k, fit in fits.items()}
+    hybrid_head, why = _hybrid_head(
+        registry, prep, spec, facts, y, (folder, source, issues), encoder
+    )
+    if hybrid_head is not None:
+        heads[HYBRID] = hybrid_head
+        blocked.pop(HYBRID, None)
+    elif why is not None:
+        blocked[HYBRID] = why
+    posts, notes = _score_heads(adapter, heads, y)
     report = adapter.evaluate()
     path = _write_report(folder, "classification", report)
     rows = {s.model: s for s in report.scores}
     bundles = [
-        _register(registry, prep, fit, "classification", posts[k], path, rows[k], f"s2-{k}")
-        for k, fit in fits.items()
-    ]
+        _register(
+            registry, h.prep, h.fit, "classification", posts[k], path, rows[k], f"s2-{k}", h.encoder
+        )
+        for k, h in heads.items()
+    ]  # fmt: skip
+    if overlap := _overlap_note(registry, encoder, issues):
+        notes["selection"] = overlap
     return _summary("classification", registry, report, path, bundles, blocked, quality, notes)
+
+
+def _score_heads(
+    adapter: ClassificationAdapter, heads: dict[str, Head], y: dict[str, np.ndarray]
+) -> tuple[dict[str, PostprocessV1], dict[str, list[str]]]:
+    """Declare calibration and cut on the tune years, then store the scored probabilities."""
+    posts: dict[str, PostprocessV1] = {}
+    notes: dict[str, list[str]] = {}
+    for name, head in heads.items():
+        fit, x = head.fit, head.prep.x
+        raw = {k: families.predict(fit.method_id, "classification", x[k], fit.state, fit.config)
+               for k in ("tune", "scored")}  # fmt: skip
+        posts[name], cut, notes[name] = _declare(raw["tune"], y["tune"])
+        bare = posts[name].model_copy(update={"alarm_cut": None})
+        adapter.rows[name] = (postprocess.classification(bare, raw["scored"]), cut)
+    return posts, notes
+
+
+def _overlap_note(
+    registry: Registry, encoder: ArtifactRef | None, issues: dict[str, np.ndarray]
+) -> list[str]:
+    """Scored samples are always clean. The tune years may overlap the encoder's selection."""
+    if encoder is None:
+        return []
+    chosen = registry.record(encoder, enc.EncoderManifestV1).selection_span
+    tune = issues["tune"]
+    if chosen is not None and chosen.first <= int(tune.max()) and int(tune.min()) <= chosen.last:
+        return [
+            "the encoder was selected on tune samples, so the cut and calibration are optimistic"
+        ]
+    return []

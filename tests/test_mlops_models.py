@@ -84,11 +84,12 @@ def test_misaligned_rows_are_refused() -> None:
 def test_eligibility_comes_from_measured_facts() -> None:
     few = Facts("classification", 5_000, 3, True, True)
     blocked = families.eligible(few)
-    assert set(blocked) == {"logistic", "trees_classifier"}
-    assert all("positive labels" in str(reason) for reason in blocked.values())
+    assert set(blocked) == {"logistic", "trees_classifier", "frozen_gru_logistic"}
+    assert all("positive labels" in str(blocked[m]) for m in ("logistic", "trees_classifier"))
     assert families.eligible(Facts("classification", 5_000, None, True, True))["logistic"]
     rich = families.eligible(Facts("classification", 5_000, 400, True, True))
-    assert rich == {"logistic": None, "trees_classifier": None}
+    assert rich["logistic"] is None and rich["trees_classifier"] is None
+    assert "frozen encoder" in str(rich["frozen_gru_logistic"])
     small = families.eligible(Facts("regression", 200, None, False, True))
     assert small["trees"] and small["climatology"] and small["ridge"] is None
     assert small["persistence"] is None

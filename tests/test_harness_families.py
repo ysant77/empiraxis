@@ -14,8 +14,12 @@ from earthlab.digest import file_digest
 from earthlab.efficiency.artifacts import ArtifactRef
 from earthlab.forecast import samples as S
 from earthlab.forecast.dataset import GRID_END, GRID_START, REGIONS
+from earthlab.forecast.pipeline import FeatureSpec, Workbench
+from earthlab.harness.classify import SCORED_FROM
 from earthlab.harness.families_run import RunSpec, run_classification, run_regression
+from earthlab.harness.hybrid import embeddings, write_manifest
 from earthlab.mlops.contracts import FeatureArtifactV1
+from earthlab.mlops.encoder import EncoderManifestV1, ReuseRefused
 from earthlab.mlops.registry import Registry
 
 FAST = RunSpec(
@@ -25,6 +29,7 @@ FAST = RunSpec(
         "trees": {"trees": 5, "depth": 2, "rate": 0.3},
         "logistic": {"penalty": 1.0, "balanced": True},
         "trees_classifier": {"trees": 5, "depth": 2, "rate": 0.3},
+        "frozen_gru_logistic": {"penalty": 1.0, "balanced": True},
     },
 )  # fmt: skip
 
@@ -131,7 +136,7 @@ def test_too_few_positive_labels_block_the_classifiers(tmp_path: Path) -> None:
         lines.append(stamp + "," + ",".join(f"{v:.1f}" for v in 8 + rng.random(5)))
     flat.write_text("\n".join(lines) + "\n", encoding="utf-8")
     done = run_classification(tmp_path / "run", tmp_path / "registry", flat, FAST)
-    assert set(done["blocked"]) == {"logistic", "trees_classifier"}
+    assert set(done["blocked"]) == {"logistic", "trees_classifier", "frozen_gru_logistic"}
     assert done["bundles"] == [] and set(done["scores"]) == {"persistence_alarm", "train_rate"}
 
 
@@ -150,3 +155,80 @@ def test_the_run_command_prints_the_summary(
     assert main(args) == 0
     assert seen["lags"] == 6 and seen["registry"] == tmp_path / "r"
     assert '"scenario": "regression"' in capsys.readouterr().out
+
+
+def tiny_encoder(
+    registry: Registry, source: Path, folder: Path, clean: bool, digest: str | None = None
+) -> ArtifactRef:
+    """A random 4-unit GRU with a manifest built the way an export builds it."""
+    bench = Workbench(folder, source)
+    with np.load(bench.build_features(FeatureSpec(8, True))["path"]) as saved:
+        arrays = {k: saved[k] for k in saved.files}
+    if clean:  # selection on the tune years only: scored years stay unseen
+        valid = arrays["valid_issues"]
+        arrays["valid_issues"] = valid[valid + 6 < SCORED_FROM]
+    rng = np.random.default_rng(4)
+    weights = {
+        "weight_ih_l0": rng.normal(0, 0.5, (12, 14)), "weight_hh_l0": rng.normal(0, 0.5, (12, 4)),
+        "bias_ih_l0": rng.normal(0, 0.1, 12), "bias_hh_l0": rng.normal(0, 0.1, 12),
+    }  # fmt: skip
+    path = folder / "encoder.npz"
+    np.savez(path, **weights)  # type: ignore[arg-type]
+    job: dict[str, object] = {"hidden": 4, "layers": 1, "window": 8, "offset": 2}
+    ref = write_manifest(
+        registry, path, job, {"model_sha256": "b" * 64}, arrays, bench.truth_sha, "rev"
+    )
+    if digest is not None:
+        manifest = registry.record(ref, EncoderManifestV1)
+        ref = registry.store.put_record(
+            manifest.model_copy(update={"preprocessing_sha256": digest})
+        )
+    return ref
+
+
+FIXED = {"persistence_alarm", "train_rate", "logistic", "trees_classifier", "frozen_gru_logistic"}
+
+
+def test_a_clean_encoder_gives_the_fixed_comparison_and_a_hybrid_bundle(
+    source: Path, tmp_path: Path
+) -> None:
+    registry = Registry(tmp_path / "registry")
+    ref = tiny_encoder(registry, source, tmp_path / "run", clean=True)
+    done = run_classification(tmp_path / "run", tmp_path / "registry", source, FAST, ref)
+    assert set(done["scores"]) == FIXED and done["blocked"] == {}
+    states = {row["model"]: row["status"] for row in done["bundles"]}
+    assert set(states) == {"logistic", "trees_classifier", "frozen_gru_logistic"}
+    hybrid_row = next(r for r in done["bundles"] if r["model"] == "frozen_gru_logistic")
+    bundle = registry.bundle(ArtifactRef(kind="record", sha256=hybrid_row["bundle"]))
+    assert bundle.family == "hybrid" and bundle.encoder == ref
+    feature = registry.record(bundle.feature, FeatureArtifactV1)
+    assert feature.feature_names == ("gru_0", "gru_1", "gru_2", "gru_3")
+    assert any("optimistic" in n for n in done["notes"]["selection"])
+    assert registry.latest_approved("s2-frozen_gru_logistic") is None
+
+
+def test_an_encoder_selected_on_the_scored_years_is_refused_and_the_rest_still_run(
+    source: Path, tmp_path: Path
+) -> None:
+    registry = Registry(tmp_path / "registry")
+    ref = tiny_encoder(registry, source, tmp_path / "run", clean=False)  # selection 2019 to 2023
+    done = run_classification(tmp_path / "run", tmp_path / "registry", source, FAST, ref)
+    assert "selected on samples" in done["blocked"]["frozen_gru_logistic"]
+    assert set(done["scores"]) == FIXED - {"frozen_gru_logistic"}
+    assert {r["model"] for r in done["bundles"]} == {"logistic", "trees_classifier"}
+
+
+def test_a_changed_preprocessing_digest_is_refused(source: Path, tmp_path: Path) -> None:
+    registry = Registry(tmp_path / "registry")
+    ref = tiny_encoder(registry, source, tmp_path / "run", clean=True, digest="d" * 64)
+    issues = {
+        "train": np.arange(100, 200),
+        "scored": np.arange(S.SEALED_FROM - 500, S.SEALED_FROM - 400),
+    }
+    with pytest.raises(ReuseRefused, match="preprocessing digest"):
+        embeddings(registry, ref, tmp_path / "run", source, issues, "scored")
+
+
+def test_no_encoder_leaves_the_hybrid_blocked_with_a_reason(source: Path, tmp_path: Path) -> None:
+    done = run_classification(tmp_path / "run", tmp_path / "registry", source, FAST)
+    assert done["blocked"]["frozen_gru_logistic"] == "no frozen encoder was supplied"

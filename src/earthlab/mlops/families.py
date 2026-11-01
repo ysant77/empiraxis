@@ -164,6 +164,12 @@ def _needs_rows(rows: int) -> Callable[[Facts], str | None]:
     return lambda facts: None if facts.rows >= rows else f"fewer than {rows} training rows"
 
 
+def _needs_encoder(facts: Facts) -> str | None:
+    if not facts.pretrained_approved:
+        return "no frozen encoder passed the reuse checks"
+    return _needs_classes(facts)
+
+
 def _needs_classes(facts: Facts) -> str | None:
     if facts.positives is None or facts.positives < MIN_POSITIVES:
         return f"fewer than {MIN_POSITIVES} positive labels"
@@ -188,6 +194,10 @@ METHODS: dict[str, Method] = {
         Method(
             "logistic", "traditional_ml", ("classification",), LogisticConfig,
             _fit_logistic, _apply_logistic, _needs_classes,
+        ),
+        Method(
+            "frozen_gru_logistic", "hybrid", ("classification",), LogisticConfig,
+            _fit_logistic, _apply_logistic, _needs_encoder,
         ),
         Method(
             "trees", "traditional_ml", ("regression",), TreeConfig,
