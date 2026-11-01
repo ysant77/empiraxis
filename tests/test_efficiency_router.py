@@ -126,13 +126,14 @@ def test_policy_b_needs_its_provider_enabled() -> None:
 
 def test_unvalidated_model_cannot_be_enabled_or_chosen() -> None:
     raw = deepcopy(_repo()[0].model_dump(mode="json"))
-    llama = next(c for c in raw["candidates"] if c["candidate_id"] == "llama-3-2-3b")
+    llama = next(c for c in raw["candidates"] if c["candidate_id"] == "llama-3-1-8b")
     llama |= {
         "roles": ["product_manager"],
         "planned_roles": [],
         "enabled": True,
         "license_checked": True,
         "provider_id": "local-small",
+        "preflight": None,
     }  # no preflight
     with pytest.raises(ValueError, match="passed preflight"):
         Bindings.model_validate(raw)

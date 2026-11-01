@@ -75,8 +75,9 @@ def test_muse_arms_pass_the_gates_and_a_disabled_small_model_does_not(
     plan: MatrixPlan, providers: dict[str, ProviderConfig], bindings: Bindings
 ) -> None:
     assert gate_blockers(plan.arm("T-M-v1"), bindings, providers) == []
-    found = gate_blockers(plan.arm("T-sp4"), bindings, providers)
-    assert found and any("local-qwen3-4b-2507" in f or "qwen3-4b-2507" in f for f in found)
+    assert gate_blockers(plan.arm("T-sp4"), bindings, providers) == []  # preflight passed
+    found = gate_blockers(plan.arm("T-sp8"), bindings, providers)  # its preflight failed
+    assert found and any("llama-3-1-8b" in f for f in found)
 
 
 def test_a_muse_role_cannot_be_served_by_another_model(
@@ -175,14 +176,16 @@ def test_the_runner_refuses_before_any_run(plan: MatrixPlan, tmp_path: Path) -> 
     calls: list[dict[str, Any]] = []
     with pytest.raises(Refused, match="pinned commit"):
         stage(plan, tmp_path, run_one=fake_run(calls), pin="b" * 40)
-    with pytest.raises(Refused, match=r"disabled|not_run"):
+    off = yaml.safe_load((CONFIG / "roles" / "bindings.yaml").read_text(encoding="utf-8"))
+    for candidate in off["candidates"]:
+        if candidate["candidate_id"] == "qwen3-4b-2507":
+            candidate |= {"enabled": False, "planned_roles": ["data_specialist"], "roles": []}
+    with pytest.raises(Refused, match="not approved for use"):
         run_stage(
             plan, "screen-mixed", "muse+local-qwen3-4b-2507",
             variants=load_variants(CONFIG / "benchmark" / "prompt_variants.yaml"),
             providers=load_providers(CONFIG / "providers.yaml"),
-            bindings=Bindings.model_validate(
-                yaml.safe_load((CONFIG / "roles" / "bindings.yaml").read_text(encoding="utf-8"))
-            ),
+            bindings=Bindings.model_validate(off),
             pin=PIN, repo=ROOT, out_dir=tmp_path / "m", winner="note-close-v1",
             run_one=fake_run(calls), head_of=lambda _r: (PIN, False),
         )  # fmt: skip
@@ -206,7 +209,11 @@ def test_a_waived_lead_gate_needs_a_single_unranked_arm_and_still_checks_the_mod
         ArmSpec(arm_id="x", arm="single", lead="local-qwen3-4b-2507", lead_gate_waived=True)
     fallback = plan.arm("S-q4")
     assert not fallback.ranked and fallback.block == "local-qwen3-4b-2507"
-    found = gate_blockers(fallback, bindings, providers)
+    assert gate_blockers(fallback, bindings, providers) == []  # Qwen passed its preflight
+    failed = ArmSpec(
+        arm_id="y", arm="single", lead="local-llama-3-1-8b", lead_gate_waived=True, ranked=False
+    )
+    found = gate_blockers(failed, bindings, providers)
     assert any("data_specialist" in f for f in found)  # judged in the specialist seat
 
 

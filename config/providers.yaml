@@ -83,7 +83,7 @@ providers:
     usd_per_mtok_input: 0.0
     usd_per_mtok_output: 0.0
     price_source: local hardware, not billed
-    enabled: false
+    enabled: true
 
   - name: local-qwen3-4b-2507
     kind: local
@@ -94,4 +94,4 @@ providers:
     usd_per_mtok_input: 0.0
     usd_per_mtok_output: 0.0
     price_source: local hardware, not billed
-    enabled: false
+    enabled: true

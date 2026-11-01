@@ -213,9 +213,10 @@ def test_a_model_reviewer_can_block_but_the_rule_is_the_same_for_every_family() 
         assert acceptance(task(), r, (), run(r), human(r)).accepted is True
 
 
-def test_repository_bindings_load_and_only_glimmer_is_enabled() -> None:
+def test_repository_bindings_load_and_only_preflighted_models_are_enabled() -> None:
     bindings = load_bindings(ROOT / "config" / "roles" / "bindings.yaml")
-    assert [c.candidate_id for c in bindings.candidates if c.enabled] == ["muse-glimmer"]
+    enabled = [c.candidate_id for c in bindings.candidates if c.enabled]
+    assert enabled == ["muse-glimmer", "llama-3-2-3b", "qwen3-4b-2507"]
     assert [c.candidate_id for c in bindings.ready("orchestrator")] == ["muse-glimmer"]
     assert bindings.ready("implementor") == ()
     with pytest.raises(PermissionError, match="planned for implementor"):
