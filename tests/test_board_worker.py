@@ -91,7 +91,7 @@ def test_the_worker_is_started_without_a_fork(
         seen.update(kwargs)
         return Started()
 
-    monkeypatch.setattr(worker.subprocess, "Popen", popen)
+    monkeypatch.setattr("earthlab.board.worker.subprocess.Popen", popen)
     assert worker.spawn("r", tmp_path) == 7
     assert seen["close_fds"] is False and "start_new_session" not in seen
 
