@@ -22,6 +22,8 @@ ui = ["streamlit>=1.40"]
 acquire = ["earthengine-api>=1.0", "cdsapi==0.7.7"]
 # GRIB reading for the haze ERA5 extract; eccodeslib bundles the ecCodes C library.
 haze = ["eccodes==2.50.0", "eccodeslib==2.50.0.33"]
+# Experimental A2A adapter around the bounded engineer; see earthlab.a2a.
+a2a = ["a2a-sdk[http-server]==1.2.2", "uvicorn>=0.30"]
 
 [project.scripts]
 earthlab = "earthlab.cli:main"
