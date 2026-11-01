@@ -231,7 +231,7 @@ def _experiment_start(state: State, entry: dict[str, Any]) -> None:
         "system",
         "run_started",
         "executed",
-        f"Historical evaluation E1, arm {data.get('arm')}. {data.get('evidence_label')}. "
+        f"Historical evaluation, arm {data.get('arm')}. {data.get('evidence_label')}. "
         "Not a forecast of any future date.",
         task_id=data.get("task_id"),
     )
@@ -250,7 +250,32 @@ def _proposal_reviewed(state: State, entry: dict[str, Any]) -> None:
     )
 
 
+def _harness_transition(state: State, entry: dict[str, Any]) -> None:
+    data, actor = entry["data"], entry["actor"]
+    human = actor == "human"
+    emit(
+        state,
+        entry,
+        "system",
+        "approval_resolved" if human else "plan_reviewed",
+        "approved" if data.get("to") == "approved" else "rejected" if human else "executed",
+        f"Lifecycle: {data.get('from')} to {data.get('to')}, by the {actor}.",
+    )
+
+
+def _artifact_stored(state: State, entry: dict[str, Any]) -> None:
+    data = entry["data"]
+    emit(
+        state, entry, "system", "tool_completed", "executed",
+        f"Artifact {data.get('name')} stored, sha256 {str(data.get('sha256'))[:12]}.",
+    )  # fmt: skip
+
+
 WORKFLOW_HANDLERS = {
+    ("harness_transition", "controller"): _harness_transition,
+    ("harness_transition", "evaluator"): _harness_transition,
+    ("harness_transition", "human"): _harness_transition,
+    ("artifact_stored", "runtime"): _artifact_stored,
     ("experiment_start", "runtime"): _experiment_start,
     ("proposal_reviewed", "runtime"): _proposal_reviewed,
     ("delegation_start", "runtime"): _delegation_start,
