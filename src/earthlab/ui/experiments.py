@@ -42,7 +42,7 @@ def _roles(record: dict[str, Any]) -> list[dict[str, Any]]:
 def _tasks(run_dir: Path) -> list[dict[str, Any]]:
     """The experiment's task tree, from its trace, as every other surface shows it."""
     entries = board_view.read_trace(run_dir)
-    return board_view.task_rows(fold(entries).tasks)
+    return board_view.task_rows(fold(run_dir.name, entries).tasks)
 
 
 def experiment_panel(run_dir: Path) -> None:
