@@ -48,5 +48,5 @@ years. The scored years stay clean. The numpy GRU matches torch to 2.6e-7 on 53 
 
 ## Not done
 
-Bounded tuning has tests but no real search run. `mlops-predict` has tests but no run on a real
+Bounded tuning has tests but no real search run. `mlops-predict` now has a run on real data, in `docs/model-acceptance-v1.md`. At this report it had tests but no run on a real
 bundle. No bundle has a human decision.

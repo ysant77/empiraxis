@@ -132,7 +132,7 @@ The numpy GRU is tested against a gate-by-gate reference. It is not tested again
 ## Promotion and rollback
 
 1. Code registers the bundle as `candidate`.
-2. The independent evaluator writes a report. The registry stores its digest and moves the bundle to `evaluated` or `rejected`.
+2. The independent evaluator writes a report. `harness.attest` recomputes the model row from the saved weights, preprocessing, predictions and source. The registry takes that typed record, checks it against the report, and moves the bundle to `evaluated` or `rejected`. No caller can pass a verdict.
 3. A human signs a record that names the bundle digest. Only then does the bundle become `approved`.
 4. To roll back, ask for the previous approved bundle: `Registry.latest_approved(name, skip=1)`. Serve its digest with `mlops-predict`.
 

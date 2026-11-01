@@ -21,9 +21,9 @@ from earthlab.forecast import gate
 from earthlab.forecast import samples as S
 from earthlab.harness import attest as authority
 from earthlab.harness import hindcast
-from earthlab.harness.accept import accept
+from earthlab.harness.accept import accept, compare
 from earthlab.harness.contracts import EvaluationReportV1
-from earthlab.harness.families_run import run_regression
+from earthlab.harness.families_run import run_classification, run_regression
 from earthlab.harness.verify import HYBRID_REFUSAL, verify_bundle
 from earthlab.mlops.contracts import FeatureArtifactV1, FittedPipelineV1, ModelBundleV1
 from earthlab.mlops.evidence import DeploymentReadinessV1
@@ -330,6 +330,29 @@ def test_the_commands_report_a_refusal_by_exit_code(
     bad = ["mlops-accept", *args, "--bundle", run.bundles["M_persistence"], "--out", str(tmp_path)]
     assert main(bad) == 2
     capsys.readouterr()
+
+
+def test_a_classifier_is_recomputed_and_compared_by_its_alarms(run: Run, tmp_path: Path) -> None:
+    done = run_classification(tmp_path / "s2", tmp_path / "registry", run.source, FAST)
+    registry = Registry(tmp_path / "registry")
+    row = next(b for b in done["bundles"] if b["model"] == "logistic")
+    ref = ArtifactRef(kind="record", sha256=row["bundle"])
+    bundle = registry.bundle(ref)
+    files = authority.run_files(bundle, tmp_path / "s2", run.source)
+    made = authority.attest(registry, ref, files)
+    assert made.reproduction == "exact" and made.passes == (row["status"] == "evaluated")
+    saved, _ = authority.read_predictions(files, "classification")
+    alarms = (saved["probabilities"] >= float(saved["cut"])).astype(float)
+    output = tmp_path / "out.jsonl"
+    lines = [
+        json.dumps({"issue_index": int(i), "values": v.tolist()})
+        for i, v in zip(saved["issues"], alarms, strict=True)
+    ]
+    output.write_text("\n".join(lines) + "\n", "utf-8")
+    evidence = compare(bundle, files, output, "a" * 64, "synthetic_smoke")
+    assert evidence.matches_reference and evidence.max_abs_difference == 0.0
+    output.write_text(lines[0] + "\n", "utf-8")
+    assert not compare(bundle, files, output, "a" * 64, "synthetic_smoke").matches_reference
 
 
 def test_the_report_row_needs_a_trusted_evaluator(run: Run) -> None:

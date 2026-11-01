@@ -10,6 +10,7 @@ from __future__ import annotations
 import csv
 import json
 import os
+import resource
 import subprocess
 import sys
 import tempfile
@@ -65,6 +66,17 @@ def export_input(source: Path, path: Path) -> Path:
     return path
 
 
+def _wait(child: subprocess.Popen[bytes], deadline: float) -> tuple[int, resource.struct_rusage]:
+    """Wait for this child alone, so its memory is its own. Stop it at the deadline."""
+    while True:
+        pid, state, usage = os.wait4(child.pid, os.WNOHANG)
+        if pid:
+            return state, usage
+        if time.perf_counter() > deadline:
+            child.kill()
+        time.sleep(0.05)
+
+
 def run_batch(
     registry: Path, ref: ArtifactRef, data: Path, output: Path, first: int
 ) -> tuple[int, str, float, float]:
@@ -77,7 +89,7 @@ def run_batch(
     with tempfile.TemporaryFile() as errors:
         begun = time.perf_counter()
         child = subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=errors)  # noqa: S603
-        _, state, usage = os.wait4(child.pid, 0)
+        state, usage = _wait(child, begun + COMMAND_TIMEOUT)
         seconds = time.perf_counter() - begun
         errors.seek(0)
         return (
