@@ -13,6 +13,8 @@ from datetime import datetime, timedelta
 
 from earthlab.contracts import Strict
 from earthlab.data.nea_pm25 import Pm25Dataset
+from earthlab.haze.contracts import EvidenceClass
+from earthlab.haze.evidence import Provenance
 from earthlab.haze.geometry import H1_SOURCE_BOXES
 from earthlab.haze.h0 import NORMAL_MAX, H0Report
 from earthlab.haze.sector import H1Params, MetHour, MetSeries, TransportStatus, combine, lag_check
@@ -41,13 +43,11 @@ class BoxRates(Strict):
 
 
 class BaseRateReport(Strict):
-    method_id: str
-    method_version: str
     level: str
     hour_convention: HourConvention
     hours_checked: int
     boxes: tuple[BoxRates, ...]
-    limitations: tuple[str, ...]
+    provenance: Provenance
 
 
 def _rate(group: str, statuses: list[TransportStatus]) -> GroupRate:
@@ -112,11 +112,18 @@ def run_base_rate(
         _box_rates(i, lookups[s.box_id], labels, params) for i, s in enumerate(H1_SOURCE_BOXES)
     )
     return BaseRateReport(
-        method_id=METHOD_ID,
-        method_version=METHOD_VERSION,
         level="+".join(sorted({series.level for series in met.values()})),
         hour_convention=convention,
         hours_checked=len(labels),
         boxes=boxes,
-        limitations=LIMITATIONS,
+        provenance=Provenance(
+            evidence_class=EvidenceClass.TRANSPORT_PLAUSIBILITY,
+            method_id=METHOD_ID,
+            method_version=METHOD_VERSION,
+            sources=h0.provenance.sources
+            + tuple(dict.fromkeys(ref for s in met.values() for ref in s.sources)),
+            limitations=LIMITATIONS,
+            parameters={"hour_convention": convention.value, "high_pm_ug_m3": HIGH_PM},
+            synthetic=h0.provenance.synthetic,
+        ),
     )

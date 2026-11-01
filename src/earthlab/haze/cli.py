@@ -152,9 +152,10 @@ def cmd_base_rate(args: argparse.Namespace) -> int:
     snapshot, path = open_snapshot(args.nea)
     dataset = load_pm25(path, snapshot)
     h0 = describe(dataset, H1_WINDOW)
+    reports = {level: run_base_rate(h0, dataset, m) for level, m in met_by_level(args.met).items()}
     levels = {
-        level: run_base_rate(h0, dataset, met).model_dump(mode="json")
-        for level, met in sorted(met_by_level(args.met).items())
+        level: {"report": report.model_dump(mode="json"), "digest": output_digest(report)}
+        for level, report in sorted(reports.items())
     }
     args.out.parent.mkdir(parents=True, exist_ok=True)
     document = {"h0_digest": output_digest(h0), "levels": levels}

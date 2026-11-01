@@ -195,6 +195,8 @@ def test_a_constant_wind_shows_that_a_pass_says_nothing_about_haze(tmp_path: Pat
     assert groups["all_hours"].rate == 1.0 and groups["clean_at_or_below_55"].rate == 1.0
     assert groups["above_150"].hours == 0 and groups["above_150"].rate is None
     assert report.hours_checked == groups["all_hours"].hours > 0
+    assert report.provenance.evidence_class is EvidenceClass.TRANSPORT_PLAUSIBILITY
+    assert len(report.provenance.sources) >= 2
 
 
 def test_undecided_hours_leave_no_rate() -> None:

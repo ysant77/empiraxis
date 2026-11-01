@@ -109,6 +109,16 @@ def test_reanalysis_feature_valid_after_issue_time_is_refused() -> None:
         FeatureSet(issue_time=ISSUE, target_valid_time=ISSUE + timedelta(hours=6), features=(leak,))
 
 
+def test_reanalysis_without_a_publication_time_is_refused() -> None:
+    past = _feature(TimeRole.REANALYSIS, ISSUE - timedelta(hours=6))
+    with pytest.raises(ValidationError, match="needs its publication time"):
+        FeatureSet(issue_time=ISSUE, target_valid_time=ISSUE + timedelta(hours=6), features=(past,))
+    known = _feature(
+        TimeRole.REANALYSIS, ISSUE - timedelta(days=9), available_at=ISSUE - timedelta(days=1)
+    )
+    FeatureSet(issue_time=ISSUE, target_valid_time=ISSUE + timedelta(hours=6), features=(known,))
+
+
 def test_forecast_feature_issued_after_prediction_issue_time_is_refused() -> None:
     late_run = _feature(
         TimeRole.FORECAST, ISSUE + timedelta(hours=6), source_issue_time=ISSUE + timedelta(hours=1)
