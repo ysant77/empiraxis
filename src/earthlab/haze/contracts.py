@@ -166,8 +166,9 @@ class FeatureSet(Strict):
     """Inputs for one prediction issued at issue_time. Any look-ahead is refused.
 
     An observation or reanalysis value is known no earlier than its valid time, so a
-    valid time after the issue time is a leak. A forecast value may be valid later,
-    but its run must have been issued, and published, by the issue time.
+    valid time after the issue time is a leak. A reanalysis is published long after its
+    valid time, so it needs a recorded publication time. A forecast value may be valid
+    later, but its run must have been issued, and published, by the issue time.
     """
 
     issue_time: datetime
@@ -184,6 +185,11 @@ class FeatureSet(Strict):
         if self.target_valid_time <= self.issue_time:
             raise ValueError("target must be valid after the issue time")
         for feature in self.features:
+            if feature.time_role is TimeRole.REANALYSIS and feature.available_at is None:
+                raise ValueError(
+                    f"feature {feature.name!r} is not known at issue time: "
+                    "a reanalysis value needs its publication time"
+                )
             if feature.known_by() > self.issue_time:
                 raise ValueError(
                     f"feature {feature.name!r} ({feature.time_role.value}) was not known "
