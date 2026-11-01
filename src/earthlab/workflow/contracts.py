@@ -65,7 +65,7 @@ class DecisionProposal(Strict):
 class RoleCall(Strict):
     """The configured model for a role call, and what the server says it served."""
 
-    role_id: Literal["product_manager", "orchestrator", "geospatial_engineer"]
+    role_id: Literal["product_manager", "orchestrator", "geospatial_engineer", "data_specialist"]
     provider: str
     model: str
     logical_model: str

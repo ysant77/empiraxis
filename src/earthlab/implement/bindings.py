@@ -30,7 +30,12 @@ from earthlab.implement.contracts import ModelFamily
 from earthlab.llm.providers import ProviderConfig
 
 BindableRole = Literal[
-    "product_manager", "orchestrator", "geospatial_engineer", "implementor", "qa_reviewer"
+    "product_manager",
+    "orchestrator",
+    "geospatial_engineer",
+    "data_specialist",
+    "implementor",
+    "qa_reviewer",
 ]
 META_FAMILIES: frozenset[str] = frozenset({"meta-muse", "meta-llama"})
 SUPERVISING_ROLES: frozenset[str] = frozenset(

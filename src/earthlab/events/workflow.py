@@ -32,6 +32,7 @@ _ROLES: dict[str, ActorRole] = {
     "product_manager": "product_manager",
     "orchestrator": "orchestrator",
     "geospatial_engineer": "geospatial_engineer",
+    "data_specialist": "data_specialist",
 }
 
 
@@ -89,16 +90,17 @@ def _brief_reviewed(state: State, entry: dict[str, Any]) -> None:
 def _task_handoff(state: State, entry: dict[str, Any]) -> None:
     data = entry["data"]
     task = data.get("task") if isinstance(data.get("task"), dict) else {}
+    receiver = _ROLES.get(str(data.get("receiver")), "geospatial_engineer")
     emit(
         state,
         entry,
         "system",
         "task_handoff_created",
         "approved",
-        f"Engineering task {data.get('task_id')} for case {task.get('case_id')}: "
-        f"{len(task.get('allowed_dataset_ids', []))} allowed dataset(s), method "
-        f"{', '.join(task.get('allowed_method_ids', []))}; read-only.",
-        receiver_role="geospatial_engineer",
+        f"{receiver.replace('_', ' ').capitalize()} task {data.get('task_id')} for case "
+        f"{task.get('case_id')}: {len(task.get('allowed_dataset_ids', []))} allowed dataset(s), "
+        f"tools {', '.join(task.get('allowed_tools', [])) or 'by case'}; read-only.",
+        receiver_role=receiver,
         task_id=data.get("task_id"),
         evidence_refs=[f"sha256:{data.get('brief_sha256')}", f"sha256:{data.get('task_sha256')}"],
     )
@@ -108,15 +110,20 @@ def _result_delivered(state: State, entry: dict[str, Any]) -> None:
     data = entry["data"]
     reply = data.get("reply") if isinstance(data.get("reply"), dict) else {}
     found = ", ".join(reply.get("supported_finding_ids", [])) or "none"
+    receiver = _ROLES.get(str(data.get("receiver")), "product_manager")
+    summary = f"Engineer result {reply.get('status')} sent to the product manager; verified "
+    summary += f"findings: {found}."
+    if receiver != "product_manager":
+        checks = reply.get("acceptance") or {}
+        summary = f"Specialist table sent to the Lead; acceptance passed {checks.get('passed')}."
     emit(
         state,
         entry,
         "system",
         "verified_result_delivered",
         "completed",
-        f"Engineer result {reply.get('status')} sent to the product manager; verified "
-        f"findings: {found}.",
-        receiver_role="product_manager",
+        summary,
+        receiver_role=receiver,
         task_id=data.get("task_id"),
         evidence_refs=[f"sha256:{data.get('reply_sha256')}"],
     )
@@ -158,7 +165,68 @@ def _decision_reviewed(state: State, entry: dict[str, Any]) -> None:
     )
 
 
+def _delegation_start(state: State, entry: dict[str, Any]) -> None:
+    data = entry["data"]
+    lead, specialist = data.get("lead") or {}, data.get("specialist") or {}
+    emit(
+        state,
+        entry,
+        "system",
+        "run_started",
+        "executed",
+        f"Delegation under run {data.get('parent_run_id')}: Lead {lead.get('provider')} / "
+        f"{lead.get('model')}, specialist {specialist.get('provider')} / "
+        f"{specialist.get('model')}. The code controller owns every transition.",
+        task_id=data.get("task_id"),
+    )
+
+
+def _ticket_reviewed(state: State, entry: dict[str, Any]) -> None:
+    data = entry["data"]
+    valid = bool(data.get("valid"))
+    emit(
+        state,
+        entry,
+        "system",
+        "brief_validated",
+        "approved" if valid else "rejected",
+        f"Ticket proposal checked by code: valid {valid}.",
+        task_id=data.get("task_id"),
+    )
+
+
+def _acceptance(state: State, entry: dict[str, Any]) -> None:
+    data = entry["data"]
+    passed = bool(data.get("passed"))
+    emit(
+        state,
+        entry,
+        "verifier",
+        "claim_verified",
+        "completed" if passed else "failed",
+        f"Acceptance checks recomputed by code: passed {passed}.",
+        task_id=data.get("task_id"),
+    )
+
+
+def _lead_reviewed(state: State, entry: dict[str, Any]) -> None:
+    data = entry["data"]
+    emit(
+        state,
+        entry,
+        "geospatial_engineer",
+        "revision_proposed",
+        "completed",
+        f"Lead review: accepted {data.get('accepted')}.",
+        task_id=data.get("task_id"),
+    )
+
+
 WORKFLOW_HANDLERS = {
+    ("delegation_start", "runtime"): _delegation_start,
+    ("ticket_reviewed", "runtime"): _ticket_reviewed,
+    ("acceptance_checked", "verifier"): _acceptance,
+    ("lead_reviewed", "runtime"): _lead_reviewed,
     ("decision_reviewed", "runtime"): _decision_reviewed,
     ("workflow_start", "runtime"): _workflow_start,
     ("role_invocation", "runtime"): _role_invocation,

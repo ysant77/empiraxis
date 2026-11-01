@@ -35,6 +35,7 @@ from earthlab.metrics import EarthlabMetrics
 from earthlab.report.write import DEFAULT_WINDOW, write_report
 from earthlab.runtime import RunOptions, investigate, new_run_dir, open_workspace
 from earthlab.safety.llama_guard import LlamaGuard
+from earthlab.team.cli import add_team_parsers
 from earthlab.tools.burned_area_tools import case_report
 from earthlab.verify.claims import Claim
 from earthlab.verify.replay import replay_run
@@ -479,6 +480,7 @@ def build_parser() -> argparse.ArgumentParser:
     replay = sub.add_parser("replay", help="re-verify a saved run offline, no model needed")
     replay.add_argument("run_dir", type=Path)
     replay.set_defaults(func=cmd_replay)
+    add_team_parsers(sub)
     report = sub.add_parser("report", help="render report.md for a saved run, no model needed")
     report.add_argument("run_dir", type=Path)
     report.set_defaults(func=cmd_report)

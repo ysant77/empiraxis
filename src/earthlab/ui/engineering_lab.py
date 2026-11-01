@@ -214,11 +214,39 @@ def _run_evidence() -> None:
             f"Status: {result['status']}. {len(evidence_files(result))} input hashes recorded."
         )
         st.dataframe(evidence_rows(result), use_container_width=True, hide_index=True)
+    with common.panel("Specialist tasks", "experimental", "From this run's own record."):
+        _specialist(run_dir, result)
 
 
 def evidence_files(result: dict[str, Any]) -> dict[str, str]:
     files: dict[str, str] = (result.get("evidence") or {}).get("files", {})
     return files
+
+
+def specialist_rows(result: dict[str, Any]) -> list[dict[str, Any]]:
+    """The specialist's table from a delegation record, with its acceptance result."""
+    block = result.get("result") or {}
+    return [dict(row) for row in block.get("rows") or []]
+
+
+def _specialist(run_dir: Path, result: dict[str, Any]) -> None:
+    """Executed specialist work only: a run without a ticket shows no specialist row."""
+    ticket = result.get("ticket")
+    if ticket is None:
+        st.caption("This run has no specialist ticket.")
+        return
+    block = result.get("result") or {}
+    acceptance = block.get("acceptance") or {}
+    author = block.get("author") or {}
+    st.write(
+        f"Ticket {ticket['task_id']}, owner {ticket['owner']}, served by "
+        f"{author.get('provider')} / {author.get('model')}. Result: {result['status']}. "
+        f"Parent run {result.get('parent_run_id')}."
+    )
+    st.dataframe(specialist_rows(result), use_container_width=True, hide_index=True)
+    st.dataframe(acceptance.get("checks", []), use_container_width=True, hide_index=True)
+    st.caption(f"Artifact {ticket['artifact']}, sha256 {str(block.get('rows_sha256'))[:16]}...")
+    st.caption(f"Saved in {run_dir.name}. Code recomputed every row; no model decided a check.")
 
 
 def render() -> None:
