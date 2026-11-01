@@ -1,0 +1,6 @@
+# The isolated training environment for experiment E1. It stays outside the project
+# dependencies and CI. Create it with:
+#   uv venv --python 3.12 <folder>
+#   uv pip install --python <folder>/bin/python -r config/forecast/train-env.txt
+torch==2.14.1
+numpy==2.3.5

@@ -1,7 +1,8 @@
 """Geospatial Engineering Lab: method choice, data QA and benchmark status, read-only.
 
-Every number here comes from pinned data, committed config or a recorded development
-bench summary. No model has been trained, so no training curve or model score is shown.
+Every number here comes from pinned data, committed config, a recorded development bench
+summary or the independent evaluator of an experiment run. Only experiment E1 has trained a
+model, on validation only; its numbers appear only on an E1 run.
 The official held-out panel states its run status only, until the owner supplies results.
 """
 
@@ -17,7 +18,7 @@ import yaml
 from earthlab.events.bench import DEV_LABEL, DevBench, find_dev_benches
 from earthlab.science.burned_area import QaPolicy
 from earthlab.tools.burned_area_tools import month_report
-from earthlab.ui import board_view, common
+from earthlab.ui import board_view, common, experiments
 
 METHOD_FILE = Path("config/methods/mcd64a1_burned_area.yaml")
 PROTOCOL_FILE = Path("evals/heldout_v1.protocol.yaml")
@@ -30,9 +31,9 @@ MONTHS = ("2015-09", "2015-10")
 PIPELINE = [
     ("Question and target variable", "implemented", "Registered cases fix area, period, variable"),
     ("Data QA and time availability", "implemented", "Valid-land fraction and reporting gate"),
-    ("Train / validation / test split", "planned", "Chronological, gap-aware; no random split"),
+    ("Train / validation / test split", "experimental", "E1: chronological, per protocol"),
     ("Deterministic baseline", "implemented", "Pre-registered MCD64A1 method; bench arm A"),
-    ("Optional learned method", "planned", "Small regression or a compatible pretrained model"),
+    ("Optional learned method", "experimental", "E1: one small neural model, validation only"),
     ("Plan critique", "implemented", "Deterministic plan critic, code, not a model"),
     ("Independent score", "implemented", "Deterministic verifier recomputes every claim"),
     ("Implementation workers", "planned", "Typed contracts only; no worker runs code"),
@@ -54,8 +55,8 @@ def _cards() -> None:
     cols = common.columns(4)
     with cols[0], common.panel("Default method", "implemented"):
         st.write("Deterministic, pre-registered method per case.")
-    with cols[1], common.panel("Model training", "planned"):
-        st.write("Not run. No model has been trained.")
+    with cols[1], common.panel("Model training", "experimental"):
+        st.write("E1 only: small models, approved template, isolated. See the run panel.")
     with cols[2], common.panel("Segmentation (Prithvi)", "planned"):
         st.write("Candidate only. Inputs and labels not checked.")
     with cols[3], common.panel("Experiment tracker (MLflow)", "planned"):
@@ -104,7 +105,7 @@ def _method() -> None:
                 {"field": "Method", "value": f"{method['method_id']} v{method['version']}"},
                 {"field": "Product", "value": method["product"]},
                 {"field": "Reporting gate", "value": f"valid-land fraction >= {gate}"},
-                {"field": "Learned model", "value": "not trained"},
+                {"field": "Learned model", "value": "none for burned area"},
             ]
         )
         st.dataframe(qa_rows(), use_container_width=True, hide_index=True)
@@ -166,9 +167,7 @@ def _heldout() -> None:
 
 
 def _experiments() -> None:
-    with common.panel("Experiment comparison", "planned", "No experiment has run."):
-        st.write("No chart is shown, because no model comparison exists yet.")
-        st.button("Open MLflow tracking", disabled=True)
+    with common.panel("Experiment tracker", "planned", "MLflow is not installed."):
         st.caption(
             "Science metrics (for example area or PM2.5 error) and serving metrics (latency) "
             "will stay in separate views."
@@ -214,6 +213,7 @@ def _run_evidence() -> None:
             f"Status: {result['status']}. {len(evidence_files(result))} input hashes recorded."
         )
         st.dataframe(evidence_rows(result), use_container_width=True, hide_index=True)
+    experiments.experiment_panel(run_dir)
     with common.panel("Specialist tasks", "experimental", "From this run's own record."):
         _specialist(run_dir, result)
 

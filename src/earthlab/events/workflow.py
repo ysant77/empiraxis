@@ -33,6 +33,7 @@ _ROLES: dict[str, ActorRole] = {
     "orchestrator": "orchestrator",
     "geospatial_engineer": "geospatial_engineer",
     "data_specialist": "data_specialist",
+    "ml_engineer": "ml_engineer",
 }
 
 
@@ -222,7 +223,36 @@ def _lead_reviewed(state: State, entry: dict[str, Any]) -> None:
     )
 
 
+def _experiment_start(state: State, entry: dict[str, Any]) -> None:
+    data = entry["data"]
+    emit(
+        state,
+        entry,
+        "system",
+        "run_started",
+        "executed",
+        f"Historical evaluation E1, arm {data.get('arm')}. {data.get('evidence_label')}. "
+        "Not a forecast of any future date.",
+        task_id=data.get("task_id"),
+    )
+
+
+def _proposal_reviewed(state: State, entry: dict[str, Any]) -> None:
+    data = entry["data"]
+    valid = bool(data.get("valid"))
+    emit(
+        state,
+        entry,
+        "system",
+        "brief_validated",
+        "approved" if valid else "rejected",
+        f"Proposal {data.get('tool')} from {data.get('role')} checked by code: valid {valid}.",
+    )
+
+
 WORKFLOW_HANDLERS = {
+    ("experiment_start", "runtime"): _experiment_start,
+    ("proposal_reviewed", "runtime"): _proposal_reviewed,
     ("delegation_start", "runtime"): _delegation_start,
     ("ticket_reviewed", "runtime"): _ticket_reviewed,
     ("acceptance_checked", "verifier"): _acceptance,

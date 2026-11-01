@@ -12,6 +12,7 @@ roles:
   orchestrator:      {families: [meta-muse, meta-llama], status: implemented}
   geospatial_engineer: {families: [meta-muse], status: experimental}
   data_specialist:   {families: [meta-muse, meta-llama, qwen, gemma], status: experimental}
+  ml_engineer:       {families: [meta-muse, meta-llama, qwen, gemma], status: experimental}
   implementor:       {families: [meta-muse, meta-llama, qwen, gemma, mistral, deepseek], status: planned}
   qa_reviewer:       {families: [meta-muse, meta-llama], status: planned}
 
@@ -20,7 +21,7 @@ candidates:
     family: meta-muse
     model_id: muse-glimmer-30B
     provider_id: local-glimmer
-    roles: [orchestrator, product_manager, geospatial_engineer, data_specialist]
+    roles: [orchestrator, product_manager, geospatial_engineer, data_specialist, ml_engineer]
     planned_roles: [implementor, qa_reviewer]
     license: Apache-2.0
     license_checked: true

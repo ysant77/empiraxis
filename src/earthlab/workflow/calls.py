@@ -142,6 +142,15 @@ class RoleCalls:
             wall_seconds=round(resp.wall_seconds, 3),
         )
 
+    def identity_record(self) -> dict[str, Any]:
+        """Who served this role, for an experiment record: role, provider, model, calls."""
+        cfg = self.client.config
+        return {
+            "role": self.role, "provider": cfg.name, "model": cfg.model,
+            "served_model": self.served_model, "calls": self.calls,
+            "kind": client_kind(self.client),
+        }  # fmt: skip
+
     def identity(self) -> RoleCall:
         cfg = self.client.config
         return RoleCall.model_validate(

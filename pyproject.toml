@@ -61,7 +61,7 @@ strict = true
 plugins = ["pydantic.mypy"]
 
 [[tool.mypy.overrides]]
-module = ["streamlit", "streamlit.*", "matplotlib", "matplotlib.*", "ee", "ee.*", "cdsapi", "cdsapi.*", "eccodes", "eccodes.*"]
+module = ["torch", "torch.*", "streamlit", "streamlit.*", "matplotlib", "matplotlib.*", "ee", "ee.*", "cdsapi", "cdsapi.*", "eccodes", "eccodes.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
