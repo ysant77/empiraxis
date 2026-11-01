@@ -34,6 +34,7 @@ BindableRole = Literal[
     "orchestrator",
     "geospatial_engineer",
     "data_specialist",
+    "ml_engineer",
     "implementor",
     "qa_reviewer",
 ]

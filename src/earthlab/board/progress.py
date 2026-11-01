@@ -43,6 +43,7 @@ MOVES: dict[str, frozenset[str]] = {
 OUTCOME_STATUS: dict[str, TaskStatus] = {
     "verified": "verified",
     "needs_revision": "needs_revision",
+    "awaiting_human": "review",
     "partial": "review",
     "abstained": "review",
     "answer_unverified": "review",
@@ -60,6 +61,7 @@ _ROLE_WORK = {
     "orchestrator": "Orchestrator is deciding the next stage",
     "geospatial_engineer": "Geospatial Lead is working",
     "data_specialist": "Data specialist is working on its ticket",
+    "ml_engineer": "ML/DL engineer is running the approved template",
 }
 
 
@@ -134,6 +136,13 @@ def _start_delegation(view: Progress, data: dict[str, Any]) -> None:
         task_id, None, "geospatial_engineer", "running", input_sha256=data.get("parent_trace_head")
     )
     _note(view, f"Delegation under run {data.get('parent_run_id')}")
+
+
+def _start_experiment(view: Progress, data: dict[str, Any]) -> None:
+    task_id = str(data["task_id"])
+    view.kind, view.root = "workflow", task_id
+    view.tasks[task_id] = TaskRow(task_id, None, "product_manager", "running")
+    _note(view, f"Historical evaluation E1, arm {data.get('arm')}")
 
 
 def _start_direct(view: Progress) -> None:
@@ -226,6 +235,8 @@ def apply(view: Progress, entry: dict[str, Any]) -> None:
     view.head = str(entry["hash"])
     if event == "workflow_start":
         _start_workflow(view, data)
+    elif event == "experiment_start":
+        _start_experiment(view, data)
     elif event == "delegation_start":
         _start_delegation(view, data)
     elif view.root is None:

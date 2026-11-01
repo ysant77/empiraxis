@@ -1,0 +1,150 @@
+"""The approved training template. It runs alone, in the isolated environment.
+
+No generated code runs here. An agent chooses values from a fixed menu, and this file reads
+them from one JSON job. It imports only the standard library, numpy and torch, reads one
+NPZ, writes into one folder, and has no network. The file it reads ends before the test
+period, so no training or selection can touch that period.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import sys
+import time
+from pathlib import Path
+from typing import Any
+
+import numpy as np
+import torch
+from torch import nn
+
+
+class Gru(nn.Module):  # type: ignore[misc]
+    def __init__(self, inputs: int, hidden: int, layers: int, outputs: int):
+        super().__init__()
+        self.rnn = nn.GRU(inputs, hidden, layers, batch_first=True)
+        self.head = nn.Linear(hidden, outputs)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        out, _ = self.rnn(x)
+        return self.head(out[:, -1])
+
+
+class Block(nn.Module):  # type: ignore[misc]
+    def __init__(self, channels: int, dilation: int):
+        super().__init__()
+        self.pad = 2 * dilation
+        self.conv = nn.Conv1d(channels, channels, 3, dilation=dilation)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        out = torch.relu(self.conv(nn.functional.pad(x, (self.pad, 0))))
+        return x + out
+
+
+class TemporalCnn(nn.Module):  # type: ignore[misc]
+    def __init__(self, inputs: int, hidden: int, layers: int, outputs: int):
+        super().__init__()
+        self.enter = nn.Conv1d(inputs, hidden, 1)
+        self.blocks = nn.Sequential(*[Block(hidden, 2**i) for i in range(layers * 3)])
+        self.head = nn.Linear(hidden, outputs)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        out = self.blocks(self.enter(x.transpose(1, 2)))
+        return self.head(out[:, :, -1])
+
+
+def windows(data: dict[str, np.ndarray], issues: np.ndarray, width: int, offset: int) -> np.ndarray:
+    """(samples, width, channels). Each window ends at the newest usable label, T - offset."""
+    last = issues - offset
+    rows = last[:, None] + np.arange(-width + 1, 1)
+    return np.concatenate(
+        [data["series"][rows], data["mask"][rows], data["calendar"][rows]], axis=2
+    )
+
+
+def loss_of(pred: torch.Tensor, y: torch.Tensor, known: torch.Tensor, name: str) -> torch.Tensor:
+    if name == "huber":
+        error = nn.functional.huber_loss(pred, y, reduction="none")
+    else:
+        error = (pred - y).abs()
+    return (error * known).sum() / known.sum().clamp(min=1)
+
+
+def predict(
+    model: nn.Module, data: dict[str, np.ndarray], issues: np.ndarray, job: dict[str, Any]
+) -> np.ndarray:
+    outs = []
+    with torch.no_grad():
+        for start in range(0, len(issues), 1024):
+            batch = issues[start : start + 1024]
+            x = torch.from_numpy(windows(data, batch, job["window"], job["offset"])).float()
+            outs.append(model(x).numpy())
+    return np.concatenate(outs)
+
+
+def fit(data: dict[str, np.ndarray], job: dict[str, Any], out: Path) -> dict[str, Any]:
+    torch.manual_seed(job["seed"])
+    rng = np.random.default_rng(job["seed"])
+    train, valid = data["train_issues"], data["valid_issues"]
+    y_all, known_all = data["train_y"], data["train_known"]
+    inputs = data["series"].shape[1] * 2 + data["calendar"].shape[1]
+    make: Any = {"gru": Gru, "tcn": TemporalCnn}[job["architecture"]]
+    model: Any = make(inputs, job["hidden"], job["layers"], y_all.shape[1])
+    optimiser = torch.optim.Adam(model.parameters(), lr=job["learning_rate"])
+    best, stale, history = float("inf"), 0, []
+    started = time.perf_counter()
+    for epoch in range(job["max_epochs"]):
+        model.train()
+        order = rng.permutation(len(train))
+        total = 0.0
+        for start in range(0, len(order), job["batch"]):
+            take = order[start : start + job["batch"]]
+            x = torch.from_numpy(windows(data, train[take], job["window"], job["offset"])).float()
+            y = torch.from_numpy(y_all[take]).float()
+            known = torch.from_numpy(known_all[take]).float()
+            loss = loss_of(model(x), y, known, job["loss"])
+            optimiser.zero_grad()
+            loss.backward()
+            nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+            optimiser.step()
+            total += float(loss) * len(take)
+        model.eval()
+        pred = predict(model, data, valid, job)
+        known = data["valid_known"]
+        score = float((np.abs(pred - data["valid_y"]) * known).sum() / known.sum())
+        history.append({"epoch": epoch + 1, "train": total / len(order), "valid": score})
+        print(json.dumps(history[-1]), flush=True)
+        if score < best - 1e-5:
+            best, stale = score, 0
+            torch.save(model.state_dict(), out / "model.pt")
+        else:
+            stale += 1
+            if stale >= job["patience"]:
+                break
+    model.load_state_dict(torch.load(out / "model.pt", weights_only=True))
+    model.eval()
+    np.save(out / "valid_scaled.npy", predict(model, data, valid, job))
+    return {
+        "history": history,
+        "epochs_run": len(history),
+        "train_seconds": round(time.perf_counter() - started, 2),
+        "parameters": sum(p.numel() for p in model.parameters()),
+        "model_sha256": hashlib.sha256((out / "model.pt").read_bytes()).hexdigest(),
+        "torch": torch.__version__,
+    }
+
+
+def main() -> int:
+    out = Path(sys.argv[1])
+    job = json.loads((out / "job.json").read_text(encoding="utf-8"))
+    torch.set_num_threads(job["threads"])
+    with np.load(job["data"]) as loaded:
+        data = {k: loaded[k] for k in loaded.files}
+    report = fit(data, job, out)
+    (out / "training.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

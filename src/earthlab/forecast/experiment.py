@@ -1,0 +1,495 @@
+"""Experiment E1 through its roles, or through code alone, with the same workbench.
+
+PM -> Geospatial Lead -> Data Scientist and ML/DL Engineer -> independent evaluator ->
+Lead -> PM -> Human. A model acts only through typed tools. Each tool result is a short
+reference or summary, never the data. The Lead's values set the real training job, and it
+may ask for one refinement after reading the evaluator's table. Code decides what a
+recommendation may claim, and the run stops before the human decision. The test period is
+not in any file this run reads.
+"""
+
+from __future__ import annotations
+
+import json
+import time
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any, Literal
+
+from pydantic import BaseModel, ValidationError
+
+from earthlab.agent.budget import Budget, BudgetMeter, BudgetStop
+from earthlab.agent.messages import assistant_message
+from earthlab.digest import file_digest, payload_digest
+from earthlab.forecast.contracts import (
+    ARM_LABEL,
+    LIMITATIONS,
+    Assignment,
+    DataReport,
+    FeatureArgs,
+    NoArgs,
+    PmDecision,
+    Recommendation,
+    Requirements,
+    Review,
+    TrainArgs,
+    TrainingReport,
+)
+from earthlab.forecast.evaluator import compare
+from earthlab.forecast.gate import default_outcome, eligible, permitted, requirement_issues, verdict
+from earthlab.forecast.pipeline import FeatureSpec, TrainSpec, Workbench
+from earthlab.forecast.samples import HORIZONS, PRIMARY_HORIZON
+from earthlab.llm.client import ChatClient
+from earthlab.llm.types import ProviderError, ToolCall
+from earthlab.metrics import EarthlabMetrics
+from earthlab.team.delegate import tool_schema
+from earthlab.trace import RunTrace
+from earthlab.workflow.calls import RoleCalls, client_kind
+from earthlab.workflow.ledger import WorkflowLedger
+
+Arm = Literal["deterministic", "single_agent", "multi_agent"]
+PM, LEAD, DATA, ML = "product_manager", "geospatial_engineer", "data_specialist", "ml_engineer"
+FIXED = Assignment(
+    window_hours=48, log_transform=True, architecture="gru", hidden=32, layers=1, max_epochs=12,
+    loss="mae", reason="The preset for the arm with no model.",
+)  # fmt: skip
+OBJECTIVE = {
+    "objective": "Historical evaluation of regional hourly PM2.5 at issue time, arm A.",
+    "protocol": "docs/science-data-forecast-protocol.md, version 1",
+    "protocol_rules": {
+        "primary_horizon_hours": PRIMARY_HORIZON,
+        "horizons_hours": list(HORIZONS),
+        "reference": "B0 persistence",
+        "rule": "lower 95% limit of mean MAE skill above zero, and no region with a clear loss",
+    },
+    "not_in_scope": "operational forecasts, advice, AQI or PSI, any source or cause claim",
+}
+PM_SYSTEM = "You are the product manager. Turn the objective into typed requirements with the \
+submit_requirements tool. You can tighten the protocol rules. You cannot weaken them."
+LEAD_SYSTEM = "You are the Geospatial Lead. Read the data profile and choose one modest method \
+with assign_method. Explain why from this data. You do not compute results."
+DATA_SYSTEM = "You are the Data Scientist. Call profile_data, then build_features with the \
+ticket's values, then submit_data_report with the features_id from the tool."
+ML_SYSTEM = "You are the ML/DL Engineer. Call run_baselines first. Then call train_candidate \
+once. Then call submit_training_report with the model_id from the tool."
+REVIEW_SYSTEM = "You are the Geospatial Lead. Read the evaluator's table. Call review_results. \
+Choose refine, with a changed method, only if the table gives a reason. Otherwise finish."
+RECOMMEND_SYSTEM = "You are the Geospatial Lead. Call recommend. Use adopt_candidate only for a \
+model listed as eligible. Otherwise retain a baseline or abstain. A neural model that does \
+not beat the baselines is a valid result. State no cause, forecast or advice."
+REPORT_SYSTEM = "You are the product manager. Check the recommendation against the requirements \
+and call forward_decision. A person decides. You grant nothing."
+SINGLE_SYSTEM = "You run this whole experiment alone. Choose one modest method with assign_method."
+
+
+class Stopped(Exception):
+    """A role gave no usable proposal inside its calls. The run ends without a result."""
+
+
+@dataclass
+class ArmLog:
+    arm: Arm
+    started: float = field(default_factory=time.perf_counter)
+    training_seconds: float = 0.0
+    tools: int = 0
+    rejected: int = 0
+    peak_rss_mb: float = 0.0
+
+
+class Flow:
+    def __init__(self, arm: Arm, run_dir: Path, client: ChatClient | None, bench: Workbench):
+        self.log, self.run_dir, self.bench = ArmLog(arm), run_dir, bench
+        self.trace = RunTrace(run_dir / "trace.jsonl")
+        self.ledger = WorkflowLedger(Budget(max_turns=40, max_tool_calls=40, max_seconds=5400.0))
+        self.client = client
+        self.calls: dict[str, RoleCalls] = {}
+        self.root = f"{run_dir.name.lower()}.pm"
+        self.lead_task = f"{self.root}.lead"
+
+    def role(self, name: str) -> RoleCalls:
+        if self.client is None:
+            raise Stopped("the deterministic arm has no model")
+        if name not in self.calls:
+            metrics = EarthlabMetrics()
+            self.calls[name] = RoleCalls(name, self.client, self.trace, metrics, self.ledger)
+        return self.calls[name]
+
+    def _meter(self, turns: int) -> BudgetMeter:
+        stage = self.ledger.stage(turns)
+        if stage is None:
+            raise BudgetStop(self.ledger.why_stopped())
+        return BudgetMeter(stage)
+
+    def propose[T: BaseModel](
+        self, role: str, system: str, user: Any, name: str, model: type[T],
+        check: Callable[[T], list[str]] | None = None,
+    ) -> T:  # fmt: skip
+        """One schema-only call and one correction. Code checks the result."""
+        tool = tool_schema(name, f"Submit {name}.", model)
+        messages = [
+            {"role": "system", "content": system},
+            {"role": "user", "content": json.dumps(user, default=str)},
+        ]
+        issues = ["no proposal was submitted"]
+        meter = self._meter(2)
+        for _ in range(2):
+            resp = self.role(role).call(meter, messages, [tool], "auto")
+            messages.append(assistant_message(resp))
+            call = next((c for c in resp.tool_calls if c.name == name), None)
+            if call is None:
+                issues = [f"call {name}"]
+                messages.append({"role": "user", "content": issues[0]})
+                continue
+            try:
+                value = model.model_validate_json(call.arguments)
+                issues = check(value) if check else []
+            except ValidationError as exc:
+                issues = [f"{'.'.join(map(str, e['loc']))}: {e['msg']}" for e in exc.errors()][:5]
+                value = None
+            self.trace.append(
+                "proposal_reviewed", "runtime", role=role, tool=name, valid=not issues,
+                issues=issues, proposal=None if value is None else value.model_dump(mode="json"),
+            )  # fmt: skip
+            if value is not None and not issues:
+                return value
+            body = json.dumps({"issues": issues})
+            messages.extend(
+                {"role": "tool", "tool_call_id": c.id, "content": body} for c in resp.tool_calls
+            )
+        raise Stopped(f"{name}: {'; '.join(issues)}")
+
+    def tool(self, call: ToolCall, handler: Callable[[str], dict[str, Any]]) -> dict[str, Any]:
+        self.log.tools += 1
+        try:
+            body = handler(call.arguments)
+        except (ValidationError, ValueError) as exc:
+            self.log.rejected += 1
+            error = f"{type(exc).__name__}: {str(exc)[:200]}"
+            self.trace.append(
+                "tool_result", "runtime", name=call.name, outcome="rejected", error=error,
+                arguments=call.arguments, data={},
+            )  # fmt: skip
+            return {"error": error}
+        refs = {k: v for k, v in body.items() if k in ("sha256", "features_id", "model_id")}
+        self.trace.append(
+            "tool_result", "runtime", name=call.name, outcome="executed", error=None,
+            arguments=call.arguments, data=refs,
+        )  # fmt: skip
+        return body
+
+    def loop(
+        self, role: str, system: str, ticket: dict[str, Any], turns: int,
+        tools: dict[str, tuple[type[BaseModel], Callable[[str], dict[str, Any]]]],
+        finish: str, finish_model: type[BaseModel],
+    ) -> str:  # fmt: skip
+        """A bounded tool loop. It returns the arguments of the closing submission."""
+        schemas = [tool_schema(n, f"Call {n}.", m) for n, (m, _) in tools.items()]
+        schemas.append(tool_schema(finish, f"Call {finish}.", finish_model))
+        messages: list[dict[str, Any]] = [
+            {"role": "system", "content": system},
+            {"role": "user", "content": json.dumps(ticket, default=str)},
+        ]
+        meter = self._meter(turns)
+        for _ in range(turns):
+            resp = self.role(role).call(meter, messages, schemas, "auto")
+            messages.append(assistant_message(resp))
+            for call in resp.tool_calls:
+                if call.name == finish:
+                    return call.arguments
+                entry = tools.get(call.name)
+                if entry is None:
+                    body = self.tool(call, _not_on_ticket)
+                else:
+                    body = self.tool(call, entry[1])
+                messages.append(
+                    {"role": "tool", "tool_call_id": call.id, "content": json.dumps(body)}
+                )
+            if not resp.tool_calls:
+                raise Stopped(f"{role} stopped without {finish}")
+        raise Stopped(f"{role} used its turns without {finish}")
+
+    def invoke(self, phase: str, role: str, task: str, status: str | None = None) -> None:
+        data: dict[str, Any] = {"phase": phase, "role": role, "task_id": task}
+        if phase == "finished":
+            data |= {"status": status, "model_calls": 0}
+        self.trace.append("role_invocation", "runtime", **data)
+
+    def handoff(self, task: str, parent: str, receiver: str, ticket: dict[str, Any]) -> None:
+        self.trace.append(
+            "task_handoff", "runtime", task_id=task, parent_task_id=parent, receiver=receiver,
+            brief_sha256=payload_digest(OBJECTIVE), task_sha256=payload_digest(ticket), task=ticket,
+        )  # fmt: skip
+
+    def data_tools(self, spec: Assignment) -> dict[str, Any]:
+        def profile(_args: str) -> dict[str, Any]:
+            return self.bench.profile()
+
+        def build(args: str) -> dict[str, Any]:
+            asked = FeatureArgs.model_validate_json(args or "{}")
+            if (asked.window_hours, asked.log_transform) != (spec.window_hours, spec.log_transform):
+                raise ValueError("the values are not on the ticket")
+            ref = self.bench.build_features(FeatureSpec(asked.window_hours, asked.log_transform))
+            return {k: v for k, v in ref.items() if k not in ("path", "spec")}
+
+        return {"profile_data": (NoArgs, profile), "build_features": (FeatureArgs, build)}
+
+    def ml_tools(self, spec: Assignment, features_id: str, name: str) -> dict[str, Any]:
+        def baselines(_args: str) -> dict[str, Any]:
+            self.bench.baselines(spec.window_hours)
+            return {"baselines_frozen": sorted(self.bench.results), "table": self.bench.compare()}
+
+        def train(args: str) -> dict[str, Any]:
+            if "B0_persistence" not in self.bench.results:
+                raise ValueError("freeze the baselines first (protocol section 8)")
+            rate = TrainArgs.model_validate_json(args).learning_rate
+            return self.candidate(spec, features_id, name, rate)
+
+        return {"run_baselines": (NoArgs, baselines), "train_candidate": (TrainArgs, train)}
+
+    def candidate(
+        self, spec: Assignment, features_id: str, name: str, rate: float
+    ) -> dict[str, Any]:
+        train = TrainSpec(
+            spec.architecture, spec.hidden, spec.layers, spec.max_epochs, spec.loss, rate
+        )
+        record = self.bench.train(name, features_id, train)
+        if record.get("failed"):
+            raise ValueError(f"training failed: exit {record['exit_code']}")
+        self.log.training_seconds += float(record["wall_seconds"])
+        self.log.peak_rss_mb = max(self.log.peak_rss_mb, float(record["peak_rss_mb"]))
+        row = next(r for r in self.bench.compare() if r["model"] == name)
+        return {"model_id": name, **record["training"], "evaluator": row}
+
+    def table(self) -> dict[str, Any]:
+        rows = self.bench.compare()
+        return {
+            "table": rows,
+            "eligible": eligible(self.bench.results),
+            "rule_verdicts": {
+                n: verdict(n, r).reasons or "passes" for n, r in self.bench.results.items()
+            },
+            "label": ARM_LABEL,
+        }
+
+
+def _not_on_ticket(_args: str) -> dict[str, Any]:
+    raise ValueError("this tool is not on the ticket")
+
+
+def specialists(flow: Flow, spec: Assignment, name: str) -> str:
+    """The two specialist tickets. A refinement gets a new ML ticket on its own features."""
+    ticket = {"task": "profile and features", **spec.model_dump(exclude={"reason"})}
+    data_task, ml_task = f"{flow.lead_task}.data-{name}", f"{flow.lead_task}.ml-{name}"
+    flow.handoff(data_task, flow.lead_task, DATA, ticket)
+    flow.invoke("started", DATA, data_task)
+    raw = flow.loop(
+        DATA, DATA_SYSTEM, ticket, 5, flow.data_tools(spec), "submit_data_report", DataReport
+    )
+    features_id = DataReport.model_validate_json(raw).features_id
+    if features_id not in flow.bench.features:
+        raise Stopped("the report names a feature set that does not exist")
+    flow.invoke("finished", DATA, data_task, "verified")
+    job = {"task": "baselines, then one candidate", "model_id": name, "method": ticket}
+    flow.handoff(ml_task, flow.lead_task, ML, job)
+    flow.invoke("started", ML, ml_task)
+    raw = flow.loop(
+        ML, ML_SYSTEM, job, 5, flow.ml_tools(spec, features_id, name),
+        "submit_training_report", TrainingReport,
+    )  # fmt: skip
+    if name not in flow.bench.results:
+        raise Stopped("the engineer reported no trained candidate")
+    flow.invoke("finished", ML, ml_task, "verified")
+    return features_id
+
+
+def multi_agent(flow: Flow) -> Recommendation:
+    requirements = flow.propose(
+        PM, PM_SYSTEM, OBJECTIVE, "submit_requirements", Requirements, requirement_issues
+    )
+    flow.handoff(flow.lead_task, flow.root, LEAD, requirements.model_dump(mode="json"))
+    flow.invoke("started", LEAD, flow.lead_task)
+    profile = flow.bench.profile()
+    context = {
+        "requirements": requirements,
+        "data_profile": profile["summary"],
+        "ref": profile["sha256"],
+    }
+    spec = flow.propose(LEAD, LEAD_SYSTEM, context, "assign_method", Assignment)
+    specialists(flow, spec, "candidate-1")
+    review = flow.propose(LEAD, REVIEW_SYSTEM, flow.table(), "review_results", Review, _review)
+    if review.action == "refine" and review.change is not None:
+        specialists(flow, review.change, "candidate-2")
+    return flow.propose(
+        LEAD, RECOMMEND_SYSTEM, flow.table(), "recommend", Recommendation,
+        lambda r: permitted(r, flow.bench.results),
+    )  # fmt: skip
+
+
+def _review(value: Review) -> list[str]:
+    return ["a refinement needs a change"] if value.action == "refine" and not value.change else []
+
+
+def single_agent(flow: Flow) -> Recommendation:
+    profile = flow.bench.profile()
+    context = {**OBJECTIVE, "data_profile": profile["summary"]}
+    spec = flow.propose(LEAD, SINGLE_SYSTEM, context, "assign_method", Assignment)
+    run_fixed(flow, spec)
+    return flow.propose(
+        LEAD, RECOMMEND_SYSTEM, flow.table(), "recommend", Recommendation,
+        lambda r: permitted(r, flow.bench.results),
+    )  # fmt: skip
+
+
+def run_fixed(flow: Flow, spec: Assignment) -> None:
+    """Profile, features, baselines, one candidate, with no model call."""
+    flow.bench.profile()
+    built = flow.bench.build_features(FeatureSpec(spec.window_hours, spec.log_transform))
+    flow.bench.baselines(spec.window_hours)
+    flow.candidate(spec, built["features_id"], "candidate-1", 0.001)
+
+
+def deterministic(flow: Flow) -> Recommendation:
+    run_fixed(flow, FIXED)
+    outcome, model = default_outcome(flow.bench.results)
+    return Recommendation(outcome=outcome, model_id=model, reason="The rule applied by code.")
+
+
+def _sensitivity(flow: Flow, rec: Recommendation) -> dict[str, Any] | None:
+    """Section 7: one validation run without 2015-08 to 2015-11 in train, same settings."""
+    name = next((n for n in flow.bench.results if n.startswith("candidate")), None)
+    if name is None:
+        return None
+    feature = next(f for f in flow.bench.features.values())
+    spec = FeatureSpec(feature["spec"]["window"], feature["spec"]["log_transform"], True)
+    built = flow.bench.build_features(spec)
+    job = json.loads((flow.bench.folder / f"train-{name}" / "job.json").read_text("utf-8"))
+    train = TrainSpec(job["architecture"], job["hidden"], job["layers"], job["max_epochs"],
+                      job["loss"], job["learning_rate"])  # fmt: skip
+    record = flow.bench.train("sensitivity-no-2015-haze", built["features_id"], train)
+    if record.get("failed"):
+        return {"failed": True}
+    flow.log.training_seconds += float(record["wall_seconds"])
+    row = record["metrics"][str(PRIMARY_HORIZON)]
+    return {"skill": row["mean_skill"], "limits": row["limits"], "of": name, "after": rec.outcome}
+
+
+def acceptance(flow: Flow, rec: Recommendation) -> dict[str, bool]:
+    """Goal satisfaction, the same checks on every arm, from artifacts alone."""
+    folder, results = flow.bench.folder, flow.bench.results
+    trained = [n for n in results if n.startswith("candidate")]
+    return {
+        "data_profile_written": (folder / "data_profile.json").is_file(),
+        "five_baselines_evaluated": sum(n[0] == "B" for n in results) == 5,
+        "neural_model_trained": bool(trained),
+        "every_model_has_predictions_hash": all(
+            "predictions_sha256" in r for r in results.values()
+        ),
+        "no_feature_file_reaches_test": all(
+            f["last_visible_label"] < "2024" for f in flow.bench.features.values()
+        ),
+        "recommendation_allowed_by_rule": not permitted(rec, results),
+    }
+
+
+def usage(flow: Flow) -> dict[str, Any]:
+    total, entries = flow.ledger.total(), list(flow.trace.records())
+    turns = [e["data"] for e in entries if e["event"] == "model_turn"]
+    return {
+        "wall_seconds": round(time.perf_counter() - flow.log.started, 1),
+        "inference_seconds": round(sum(float(t["wall_seconds"]) for t in turns), 1),
+        "training_seconds": round(flow.log.training_seconds, 1),
+        "peak_training_rss_mb": flow.log.peak_rss_mb,
+        "model_calls": total.model_calls,
+        "prompt_tokens": total.prompt_tokens,
+        "completion_tokens": total.completion_tokens,
+        "cached_tokens": "not exposed by this provider",
+        "retries": sum(e["event"] == "model_retry_skipped" for e in entries),
+        "provider_faults": sum(e["event"] == "model_error" for e in entries),
+        "tool_calls": flow.log.tools,
+        "rejected_tool_calls": flow.log.rejected,
+        "human_interventions": 0,
+    }
+
+
+def digests(flow: Flow) -> dict[str, Any]:
+    results, folder = flow.bench.results, flow.bench.folder
+    return {
+        "source_sha256": flow.bench.truth_sha,
+        "data_profile_sha256": file_digest(folder / "data_profile.json"),
+        "feature_sha256": {k: v["sha256"] for k, v in flow.bench.features.items()},
+        "model_sha256": {
+            n: r["training"]["model_sha256"] for n, r in results.items() if "training" in r
+        },
+        "prediction_sha256": {n: r["predictions_sha256"] for n, r in results.items()},
+    }
+
+
+def finish(flow: Flow, rec: Recommendation | None, status: str, reason: str) -> dict[str, Any]:
+    results = flow.bench.results
+    outcome: dict[str, Any] = {
+        "status": status, "reason": reason, "arm": flow.log.arm, "evidence_label": ARM_LABEL,
+        "limitations": LIMITATIONS, "split_scored": "validation",
+        "test_period": "not evaluated; it needs a lock and a human decision",
+    }  # fmt: skip
+    if rec is not None:
+        outcome |= {
+            "recommendation": rec.model_dump(mode="json"),
+            "code_outcome": default_outcome(results),
+            "comparison": flow.bench.compare(),
+            "paired": paired(flow),
+            "sensitivity": _sensitivity(flow, rec),
+            "acceptance": acceptance(flow, rec),
+            "digests": digests(flow),
+            "roles": {n: c.identity_record() for n, c in flow.calls.items()},
+        }
+    outcome["usage"] = usage(flow)
+    flow.trace.append(
+        "finish", "runtime", status=status, reason=reason, workflow=True,
+        turns=outcome["usage"]["model_calls"],
+    )  # fmt: skip
+    text = json.dumps(outcome, indent=2, default=str)
+    (flow.run_dir / "result.json").write_text(text, encoding="utf-8")
+    return outcome
+
+
+def paired(flow: Flow) -> dict[str, Any]:
+    """Each trained candidate against the best statistical baseline, on the same samples."""
+    bench, out = flow.bench, {}
+    base = bench.prediction("B4_lagged_ridge")
+    for name in bench.results:
+        if name.startswith("candidate"):
+            out[name] = compare(bench.truth, *bench.aligned(name, base))
+    return out
+
+
+def run_experiment(
+    arm: Arm, run_dir: Path, client: ChatClient | None, source: Path | None = None
+) -> dict[str, Any]:
+    bench = Workbench(run_dir, source) if source else Workbench(run_dir)
+    flow = Flow(arm, run_dir, client, bench)
+    kinds = {"kind": "none"} if client is None else {"kind": client_kind(client)}
+    flow.trace.append(
+        "experiment_start", "runtime", task_id=flow.root, arm=arm, client=kinds,
+        objective_sha256=payload_digest(OBJECTIVE), source_sha256=bench.truth_sha,
+        evidence_label=ARM_LABEL,
+    )  # fmt: skip
+    steps = {
+        "deterministic": deterministic,
+        "single_agent": single_agent,
+        "multi_agent": multi_agent,
+    }
+    try:
+        rec = steps[arm](flow)
+        if arm == "multi_agent":
+            decision = flow.propose(
+                PM, REPORT_SYSTEM, rec.model_dump(mode="json"), "forward_decision", PmDecision
+            )
+            flow.invoke("finished", LEAD, flow.lead_task, "verified")
+            if not decision.forward_to_human:
+                return finish(flow, rec, "needs_revision", "the PM sent it back")
+        return finish(flow, rec, "awaiting_human", "evidence ready for a human decision")
+    except BudgetStop as stop:
+        return finish(flow, None, "budget_exhausted", str(stop))
+    except (Stopped, ProviderError, ValueError) as exc:
+        return finish(flow, None, "failed", f"{type(exc).__name__}: {str(exc)[:200]}")

@@ -26,6 +26,7 @@ from earthlab.demo import DEMO_IDS, run_demo
 from earthlab.evals.runner import ARMS, run_suite
 from earthlab.evals.safety import load_cases, run_case, summarize
 from earthlab.evals.tasks import load_tasks
+from earthlab.forecast.cli import add_forecast_parsers
 from earthlab.haze.cli import add_haze_parsers
 from earthlab.llm.client import build_client
 from earthlab.llm.providers import load_providers
@@ -481,6 +482,7 @@ def build_parser() -> argparse.ArgumentParser:
     replay.add_argument("run_dir", type=Path)
     replay.set_defaults(func=cmd_replay)
     add_team_parsers(sub)
+    add_forecast_parsers(sub)
     report = sub.add_parser("report", help="render report.md for a saved run, no model needed")
     report.add_argument("run_dir", type=Path)
     report.set_defaults(func=cmd_report)
