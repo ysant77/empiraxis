@@ -48,7 +48,7 @@ QA_TOOL = "qa_month_report"
 SUBMIT_TABLE = "submit_qa_table"
 PROPOSE_CHECK = "propose_qa_check"
 REVIEW = "review_qa_table"
-TURNS = 6
+SUBMIT_TURNS = 2  # the table, and one spare turn
 ARTIFACT_FILE = "qa_table.json"
 DEADLINE = timedelta(hours=1)
 LEAD_SYSTEM = """\
@@ -171,17 +171,20 @@ class _Flow:
         return proposal
 
     def ticket(self, proposal: CheckProposal) -> SpecialistTicketV1:
-        stage = self.ledger.stage(TURNS)
-        if stage is None:
-            raise BudgetStop(self.ledger.why_stopped())
+        months = tuple(sorted(set(proposal.months)))
+        policies = tuple(p.value for p in QaPolicy)
+        turns = len(months) * len(policies) + SUBMIT_TURNS  # one read per turn must fit
+        stage = self.ledger.stage(turns)
+        if stage is None or stage.max_turns < turns:
+            raise BudgetStop(f"the ticket needs {turns} model calls: {self.ledger.why_stopped()}")
         return SpecialistTicketV1(
             task_id=f"{self.task_id}.data",
             parent_task_id=self.task_id,
             objective="Report the valid-data fraction, gate and area for each month and policy.",
             case_id=self.case_file.case.case_id,
             input_sha256=self.head,
-            months=tuple(sorted(set(proposal.months))),
-            qa_policies=tuple(p.value for p in QaPolicy),
+            months=months,
+            qa_policies=policies,
             acceptance_checks=CHECKS,
             allowed_tools=(QA_TOOL, SUBMIT_TABLE),
             max_model_calls=stage.max_turns,
@@ -234,7 +237,7 @@ class _Flow:
             {"role": "system", "content": SPECIALIST_SYSTEM},
             {"role": "user", "content": json.dumps(brief)},
         ]
-        meter = self._stage(TURNS)
+        meter = self._stage(ticket.max_model_calls)
         for _ in range(ticket.max_model_calls):
             resp = self.worker.call(meter, messages, tools, "auto")
             messages.append(assistant_message(resp))
@@ -384,7 +387,7 @@ def run_delegation(
     run_dir: Path,
     budget: Budget | None = None,
 ) -> Delegation:
-    limits = budget or Budget(max_turns=8, max_tool_calls=16, max_seconds=1800.0)
+    limits = budget or Budget(max_turns=24, max_tool_calls=30, max_seconds=2400.0)
     flow = _Flow(parent, lead, specialist, workspace, run_dir, limits)
     flow.start()
     try:

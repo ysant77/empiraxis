@@ -94,7 +94,7 @@ def test_the_ticket_fixes_everything_before_work_starts(
     assert ticket.allowed_tools == (QA_TOOL, SUBMIT_TABLE)
     assert ticket.input_sha256 == parent_case(PARENT)[1]
     assert ticket.human_approval_required is False and ticket.acceptance_checks
-    assert ticket.deadline_utc and ticket.max_model_calls <= 6
+    assert ticket.deadline_utc and ticket.max_model_calls == len(POLICIES) + 2
 
 
 def test_a_changed_value_fails_even_when_the_lead_accepts(
@@ -226,3 +226,29 @@ def test_check_table_reports_each_rule() -> None:
     wrong = row.model_copy(update={"area_ha": 10.0})
     result = check_table("t", (wrong,), {("2015-10", "primary"): row})
     assert not result.passed and [c.passed for c in result.checks] == [True, False, False]
+
+
+def test_a_ticket_has_room_for_one_read_per_turn(workspace: Workspace, tmp_path: Path) -> None:
+    """A live run read one pair per turn and ran out of turns before it could submit."""
+    months = ["2015-09", "2015-10"]
+    reads = [call(QA_TOOL, month=m, qa_policy=p) for m in months for p in POLICIES]
+    rows = [*truth(workspace, "2015-09"), *truth(workspace, "2015-10")]
+    client = ScriptedClient(
+        [
+            propose(months),
+            *reads,
+            call(SUBMIT_TABLE, rows=rows),
+            call(REVIEW, accept=True, note="The table is complete."),
+        ]
+    )
+    done, _ = delegate(client, workspace, tmp_path)
+    assert done.status == "verified" and done.ticket.max_model_calls == len(reads) + 2
+
+
+def test_a_ticket_that_cannot_fit_the_budget_is_not_issued(
+    workspace: Workspace, tmp_path: Path
+) -> None:
+    client = ScriptedClient([propose(["2015-09", "2015-10"])])
+    done, run_dir = delegate(client, workspace, tmp_path, budget=Budget(max_turns=4))
+    assert done.status == "budget_exhausted" and done.ticket is None
+    assert "task_handoff" not in (run_dir / "trace.jsonl").read_text(encoding="utf-8")
