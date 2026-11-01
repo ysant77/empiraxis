@@ -15,7 +15,12 @@ from earthlab.events.adapter import load_run
 from earthlab.forecast import gate, pipeline
 from earthlab.forecast.contracts import Recommendation, Requirements
 from earthlab.forecast.experiment import run_experiment
-from earthlab.forecast.isolated import IsolatedRun, IsolationUnavailable, python_for_training
+from earthlab.forecast.isolated import (
+    IsolatedRun,
+    IsolationUnavailable,
+    python_for_training,
+    run_isolated,
+)
 from earthlab.safety.scope import question_out_of_scope
 from earthlab.trace import RunTrace
 
@@ -299,3 +304,12 @@ def test_a_reason_cannot_state_a_number_the_evaluator_did_not_produce() -> None:
     assert gate.unbacked_numbers("MAE of 3.99", results)
     rec = Recommendation(outcome="abstain", reason="The MAE was 3.99 here.")
     assert gate.permitted(rec, results)
+
+
+def test_training_is_refused_where_the_sandbox_does_not_exist(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """The isolated path is macOS only: no sandbox means no training, not unsandboxed training."""
+    monkeypatch.setattr("earthlab.forecast.isolated.shutil.which", lambda _name: None)
+    with pytest.raises(IsolationUnavailable, match="not available"):
+        run_isolated(Path("python"), Path("train.py"), tmp_path, [], 1.0, 1)
