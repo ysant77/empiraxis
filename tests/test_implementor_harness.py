@@ -15,7 +15,7 @@ from fake_client import FAKE_CONFIG, ScriptedClient, say
 from earthlab.implement.bindings import BindingRefused, Bindings
 from earthlab.implement.catalogue import TASKS, WORKSPACE
 from earthlab.implement.harness import extract_diff, run_trial
-from earthlab.llm.types import ProviderError, ProviderErrorKind
+from earthlab.llm.types import ChatResponse, ProviderError, ProviderErrorKind, Usage
 
 ROOT = Path(__file__).resolve().parents[1]
 SPEC = TASKS["dev-wind-vector"]
@@ -42,6 +42,10 @@ def diff(body: list[str], path: str = TARGET) -> str:
         f"diff --git a/{path} b/{path}\nnew file mode 100644\n--- /dev/null\n+++ b/{path}\n"
         f"@@ -0,0 +1,{len(body)} @@\n{added}\n"
     )
+
+
+def reply_text(body: list[str]) -> str:
+    return f"Here is the patch.\n```diff\n{diff(body)}```\n"
 
 
 def reply(patch: str) -> Any:
@@ -205,3 +209,93 @@ def test_an_unknown_line_inside_a_hunk_is_unreadable() -> None:
     patch = diff(GOOD_BODY) + "garbage outside the diff grammar\n"
     client._steps = [reply(patch), reply(patch)]
     assert [f.check_id for f in run_trial(SPEC, client, binding).findings] == ["unreadable_patch"]
+
+
+def response(
+    client: ScriptedClient,
+    text: str = "",
+    finish: str | None = "stop",
+    tokens: int | None = 100,
+    reasoning: str | None = None,
+) -> ChatResponse:
+    return ChatResponse(
+        provider=client.config.name, model=client.config.model, served_model=client.config.model,
+        request_id=None, content=text, reasoning=reasoning, tool_calls=(), finish_reason=finish,
+        usage=Usage(prompt_tokens=10, completion_tokens=tokens), wall_seconds=1.0,
+    )  # fmt: skip
+
+
+class Replies(ScriptedClient):
+    """Returns whole ChatResponse objects, to control how each reply ends."""
+
+    def __init__(self, config: Any, replies: list[ChatResponse | ProviderError]):
+        super().__init__([], config=config)
+        self.replies = replies
+
+    def chat(self, *args: Any, **kwargs: Any) -> ChatResponse:
+        reply = self.replies.pop(0)
+        if isinstance(reply, ProviderError):
+            raise reply
+        return reply
+
+
+def trial_of(*steps: Any) -> Any:
+    base, binding = worker("qwen", "qwen3-coder")
+    client = Replies(base.config, [])
+    client.replies = [s(client) if callable(s) else s for s in steps]
+    return run_trial(SPEC, client, binding)
+
+
+def test_a_token_stop_is_not_a_decline_and_reasoning_text_is_not_kept() -> None:
+    trial = trial_of(
+        lambda c: response(c, finish="length", tokens=4096, reasoning="private reasoning")
+    )
+    assert trial.status == "truncated" and trial.finish_reason == "length"
+    assert trial.reasoning_chars == len("private reasoning")
+    assert "private reasoning" not in trial.model_dump_json()
+
+
+def test_a_real_decline_stays_a_decline() -> None:
+    trial = trial_of(lambda c: response(c, "I cannot do this."))
+    assert trial.status == "declined" and trial.finish_reason == "stop" and trial.error is None
+
+
+@pytest.mark.parametrize("tokens", [0, None], ids=["zero", "not_reported"])
+def test_an_empty_reply_is_a_provider_error(tokens: int | None) -> None:
+    trial = trial_of(lambda c: response(c, tokens=tokens))
+    assert trial.status == "provider_error" and trial.error == "malformed"
+    assert trial.result is None and trial.proposals == () and trial.model_calls == 1
+
+
+def test_a_reply_with_text_and_no_usage_report_is_not_a_fault() -> None:
+    assert trial_of(lambda c: response(c, reply_text(GOOD_BODY), tokens=None)).status == "screened"
+
+
+def test_a_revision_keeps_the_first_proposal() -> None:
+    bad = reply_text(["import subprocess", *GOOD_BODY])
+    trial = trial_of(lambda c: response(c, bad), lambda c: response(c, reply_text(GOOD_BODY)))
+    assert trial.status == "screened" and len(trial.proposals) == 2
+    assert "subprocess" in trial.proposals[0].patch_diff and trial.result == trial.proposals[1]
+
+
+@pytest.mark.parametrize("finish", ["stop", "length"])
+def test_a_revision_without_a_patch_leaves_the_block_standing(finish: str) -> None:
+    bad = reply_text(["import subprocess", *GOOD_BODY])
+    trial = trial_of(lambda c: response(c, bad), lambda c: response(c, finish=finish))
+    assert trial.status == "blocked" and trial.findings and trial.revisions == 1
+    assert [p.status for p in trial.proposals] == ["proposed"]
+    assert trial.result == trial.proposals[0] and trial.acceptance is not None
+    assert trial.acceptance.stage == "review"
+
+
+@pytest.mark.parametrize(
+    "fault",
+    [ProviderError(ProviderErrorKind.SERVER, "HTTP 500"), None],
+    ids=["raised", "empty_reply"],
+)
+def test_a_fault_on_the_revision_keeps_the_blocked_proposal(fault: Any) -> None:
+    bad = reply_text(["import subprocess", *GOOD_BODY])
+    second = fault or (lambda c: response(c, tokens=0))
+    trial = trial_of(lambda c: response(c, bad), second)
+    assert trial.status == "provider_error" and trial.revisions == 1 and trial.model_calls == 2
+    assert len(trial.proposals) == 1 and trial.findings and trial.acceptance is None
