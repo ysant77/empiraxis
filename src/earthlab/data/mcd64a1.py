@@ -7,6 +7,7 @@ raw int16 arrays; classification and area live in science/burned_area.py.
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -18,6 +19,8 @@ from earthlab.data.snapshot import SourceMismatchError
 from earthlab.digest import file_digest
 
 NODATA = -32768
+# The files write this tag as a float, which tifffile rejects. No reader uses the tag.
+logging.getLogger("tifffile").addFilter(lambda r: "GDAL_NODATA" not in r.getMessage())
 BAND_ORDER = ("BurnDate", "Uncertainty", "QA", "FirstDay", "LastDay")
 
 

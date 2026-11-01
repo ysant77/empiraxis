@@ -357,3 +357,35 @@ def test_an_unverified_engineer_answer_is_never_reported(
     assert run.status == "answer_unverified"
     assert run.manager.report_text == "" and run.manager.report_source == "none"
     assert not any(r["event"] == "pm_report" for r in records(tmp_path))
+
+
+def test_the_verified_value_and_limits_reach_the_reader_outside_the_report_text(
+    workspace: Workspace, tmp_path: Path
+) -> None:
+    client = ScriptedClient(
+        [
+            call("submit_brief", **brief()),
+            *engineer_steps(),
+            say("Verified finding A1.1 for mapped burned area."),
+        ]
+    )
+    manager = flow(REQUEST, client, workspace, tmp_path).manager
+    assert manager.report_source == "pm_model" and "77" not in manager.report_text
+    assert "mapped burned area" in manager.findings_text
+    assert str(area_claim()["value"]) in manager.findings_text
+    assert "Method limits:" in manager.findings_text and "not forest loss" in manager.findings_text
+
+
+def test_a_pm_report_that_denies_limitations_falls_back_to_the_engineer_answer(
+    workspace: Workspace, tmp_path: Path
+) -> None:
+    client = ScriptedClient(
+        [
+            call("submit_brief", **brief()),
+            *engineer_steps(),
+            say("Verified finding A1.1. Limitations stated: none."),
+        ]
+    )
+    run = flow(REQUEST, client, workspace, tmp_path)
+    assert run.manager.report_source == "engineer"
+    assert "none" not in run.manager.report_text

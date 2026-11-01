@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import json
+from zoneinfo import ZoneInfo
 
+from earthlab.cases.models import ScientificCase
 from earthlab.cases.tools import CaseLibrary
 from earthlab.workflow.contracts import EngineeringTaskV1, ProductBriefV1
 
@@ -22,11 +24,15 @@ Call submit_brief exactly once:
 - route "needs_input": a required input is missing (for example a threshold, area or
   period the request does not give). List at most three short clarifications. Never
   choose a missing value yourself.
-- route "out_of_scope": no registered case fits.
+- route "out_of_scope": no registered case fits. A causal question about a registered
+  case does fit it: use route "engineer" and intent causal_inference, and the engineer
+  records the limit.
 - intent: observational_summary for what the data shows; association,
   transport_plausibility, retrospective_estimation, prospective_prediction or
   causal_inference only when the request asks for that.
 - Restate the request. Do not add any number, place or date it does not contain.
+- A period keeps the whole span the request names, in the case's UTC offset, with the end
+  excluded. Never shorten a period to fit a check.
 """
 
 ORCHESTRATOR_SYSTEM = """\
@@ -45,19 +51,25 @@ Give a short reason. Do not add any number the brief does not contain.
 PM_REPORT = """\
 You are the product manager of Axiom EarthLab. The engineer's verified result is below
 as JSON. Write a short report for the researcher (at most 100 words): what was verified,
-by finding ID (for example A1.1 or R1.2), and the stated limitations. Use only the
-finding IDs listed. Do not write digits, dates or month names: the system shows every
-value in a Findings table. Do not add causes, forecasts or advice.
+by finding ID (for example A1.1 or R1.2), and any declared_limitations. Use only the
+finding IDs listed. If declared_limitations is empty, do not mention limitations: the
+system adds the method limits. Do not write digits, dates or month names: the system
+shows every value below your report. Do not add causes, forecasts or advice.
 """
+
+
+def case_period(case: ScientificCase) -> str:
+    """The period in the case's own zone, as a brief must give it; the end is excluded."""
+    zone = ZoneInfo(case.period.local_zone)
+    start, end = case.period.start.astimezone(zone), case.period.end.astimezone(zone)
+    return f"{start.isoformat()} to {end.isoformat()}"
 
 
 def case_catalogue(cases: CaseLibrary) -> str:
     lines = []
     for case_id in cases.ids():
         case = cases.get(case_id).case
-        lines.append(
-            f"- {case_id}: {case.title} ({case.period.start.date()} to {case.period.end.date()})"
-        )
+        lines.append(f"- {case_id}: {case.title} ({case_period(case)}, end excluded)")
     return "\n".join(lines)
 
 

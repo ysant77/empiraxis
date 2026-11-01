@@ -37,10 +37,11 @@ _CAUSE = re.compile(
 # is not a claim about what caused an observation.
 _AVAILABILITY = re.compile(
     r"\b(unavailab\w*|not available|not implemented|not pinned|approval|missing|no data|"
-    r"insufficient|quality gate|valid-data gate)\b",
+    r"insufficient|quality gate|valid-data gate|causation is not identifiable)\b",
     _I,
 )
-_CLAUSE_CHARS = 80
+_CLAUSE_CHARS = 120
+_CLAUSE_END = re.compile(r"[.;,]|\band\b", _I)
 _FORECAST_CLAIM = re.compile(
     r"\b(will (rise|fall|increase|decrease|return|happen|be)|forecast)\b", _I
 )
@@ -58,7 +59,7 @@ def _asserted(pattern: re.Pattern[str], text: str) -> bool:
 def _asserted_cause(text: str) -> bool:
     for match in _CAUSE.finditer(text):
         before = text[max(0, match.start() - _NEGATION_WINDOW) : match.start()]
-        clause = text[match.end() : match.end() + _CLAUSE_CHARS].split(".")[0]
+        clause = _CLAUSE_END.split(text[match.end() : match.end() + _CLAUSE_CHARS])[0]
         if not _NEGATION.search(before) and not _AVAILABILITY.search(clause):
             return True
     return False

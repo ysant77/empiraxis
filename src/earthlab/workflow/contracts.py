@@ -131,6 +131,7 @@ class ManagerResultV1(Strict):
     verified_finding_refs: tuple[str, ...] = ()
     typed_limitations: tuple[str, ...] = ()
     report_text: str = ""
+    findings_text: str = ""  # rendered from the verifier, never model text
     report_source: Literal["pm_model", "engineer", "rendered", "none"] = "none"
     source_hashes: tuple[str, ...] = ()
     followup_questions: tuple[str, ...] = ()

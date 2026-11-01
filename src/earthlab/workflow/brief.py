@@ -13,15 +13,44 @@ from earthlab.agent.messages import assistant_message
 from earthlab.cases.tools import CaseLibrary
 from earthlab.digest import payload_digest
 from earthlab.llm.types import ChatResponse
+from earthlab.planning.intent import asked_window
+from earthlab.planning.vocab import ResearchIntent
+from earthlab.safety.gate import CAUSAL_ABSTENTION
 from earthlab.tools.registry import ToolSpec
 from earthlab.workflow.calls import RoleCalls
-from earthlab.workflow.contracts import BriefProposal, ProductBriefV1, Topology
-from earthlab.workflow.prompts import PM_SYSTEM, case_catalogue
+from earthlab.workflow.contracts import (
+    BriefProposal,
+    ManagerResultV1,
+    ProductBriefV1,
+    Topology,
+)
+from earthlab.workflow.prompts import PM_SYSTEM, case_catalogue, case_period
 
 SUBMIT_BRIEF = "submit_brief"
 PM_CALLS = 2  # the brief and one correction
 _NUMBER = re.compile(r"\d+(?:\.\d+)?")
 _UNIT_NAMES = re.compile(r"PM2\.5|PM10|ug/m3|µg/m³", re.IGNORECASE)  # names, not figures
+
+
+_NO_ANALYSIS = {
+    "out_of_scope": "No analysis ran: no registered case and method fit this request. "
+    "EarthLab makes no claim about it.",
+    "needs_input": "No analysis ran: a required input is missing.",
+}
+
+
+def fixed_report(manager: ManagerResultV1, brief: ProductBriefV1 | None) -> ManagerResultV1:
+    """Fixed text for a run that stopped before the engineer, so the reader is told why."""
+    text = _NO_ANALYSIS.get(manager.status)
+    if manager.report_text or text is None:
+        return manager
+    limits = manager.typed_limitations
+    causal = brief is not None and brief.brief.intent is ResearchIntent.CAUSAL_INFERENCE
+    if causal and manager.status == "out_of_scope":
+        text, limits = CAUSAL_ABSTENTION, ("causation_not_identifiable", *limits)
+    return manager.model_copy(
+        update={"report_text": text, "report_source": "rendered", "typed_limitations": limits}
+    )
 
 
 def brief_spec() -> ToolSpec:
@@ -72,10 +101,14 @@ def validate_brief(proposal: BriefProposal, request: str, cases: CaseLibrary) ->
             if start >= end:
                 issues.append("period_start must be before period_end")
             elif start < case.period.start or end > case.period.end:
-                issues.append(
-                    f"period is outside the case period {case.period.start.date()} to "
-                    f"{case.period.end.date()}"
-                )
+                issues.append(f"period is outside the case period {case_period(case)}")
+            elif case.variable == "air_pollution_observation":
+                asked = asked_window(request, case.period.local_zone)
+                if asked is not None and (start, end) != asked:
+                    issues.append(
+                        f"period must be the span the request names: {asked[0].isoformat()} "
+                        f"to {asked[1].isoformat()}"
+                    )
     # A product manager restates the request; it never adds a figure of its own.
     written = " ".join(
         [

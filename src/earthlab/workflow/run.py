@@ -26,6 +26,7 @@ from typing import Any
 
 from earthlab.agent.budget import Budget, BudgetMeter, BudgetStop
 from earthlab.agent.loop import Investigation, RunStatus
+from earthlab.agent.rendered import verified_block
 from earthlab.cases.tools import CaseLibrary
 from earthlab.digest import payload_digest
 from earthlab.llm.client import ChatClient
@@ -39,7 +40,7 @@ from earthlab.trace import RunTrace
 from earthlab.verify.answer_audit import audit_answer
 from earthlab.verify.claims import Verdict
 from earthlab.workflow.assign import WorkflowAssignment, task_scope
-from earthlab.workflow.brief import PM_CALLS, propose_brief, validate_brief
+from earthlab.workflow.brief import PM_CALLS, fixed_report, propose_brief, validate_brief
 from earthlab.workflow.calls import RoleCalls, client_kind
 from earthlab.workflow.contracts import (
     EngineeringReplyV1,
@@ -252,6 +253,7 @@ class _Flow:
             task_id=self.task_id,
             status=result.status.value,
             report_text=result.answer,
+            findings_text=verified_block(result.ledger, result.area_ledger, result.limitations),
             report_source="engineer" if result.answer else "none",
         )
         return self._finish(manager, result=result)
@@ -329,17 +331,20 @@ class _Flow:
             cost_usd=result.cost_usd or 0.0, seconds=result.seconds,
         )  # fmt: skip
         reply = self._deliver(task, result, round((time.perf_counter() - started) * 1000))
+        return self._finish(self._manager(reply, result), brief, task, reply, result)
+
+    def _manager(self, reply: EngineeringReplyV1, result: Investigation) -> ManagerResultV1:
         source, text = self._report(reply, result)
-        manager = ManagerResultV1(
+        return ManagerResultV1(
             task_id=self.task_id,
             status=reply.status,
             verified_finding_refs=reply.supported_finding_ids,
             typed_limitations=reply.limitation_reasons,
             report_text=text,
+            findings_text=verified_block(result.ledger, result.area_ledger, result.limitations),
             report_source=source,
-            source_hashes=(s.workspace.snapshot.sha256,),
+            source_hashes=(self.s.workspace.snapshot.sha256,),
         )
-        return self._finish(manager, brief, task, reply, result)
 
     def _deliver(
         self, task: EngineeringTaskV1, result: Investigation, ms: int
@@ -368,8 +373,7 @@ class _Flow:
     def _report(self, reply: EngineeringReplyV1, result: Investigation) -> tuple[str, str]:
         """The PM's report and its source, else the engineer's audited answer.
 
-        Only verified, partial and abstained runs have an answer that passed the audit and
-        the safety gate; any other outcome reports no text.
+        Only verified, partial and abstained runs have an audited answer; others report no text.
         """
         if result.status not in _REPORTABLE or not result.answer:
             return ("none", "")
@@ -377,7 +381,7 @@ class _Flow:
         envelope = {
             "status": reply.status,
             "verified_finding_ids": list(reply.supported_finding_ids),
-            "limitations": list(reply.limitation_reasons),
+            "declared_limitations": list(reply.limitation_reasons),
             "engineer_answer": result.answer,
         }
         messages = [
@@ -402,7 +406,8 @@ class _Flow:
         if not text:
             return ["the report is empty"]
         _, area = _supported(result)
-        issues = audit_answer(text, result.ledger.latest_by_id(), area).problems()
+        bound = result.area_ledger.covers_quality()
+        issues = audit_answer(text, result.ledger.latest_by_id(), area, bound).problems()
         if issues:
             return issues
         decision = self.gate.check_answer(self.s.question, text)
@@ -416,7 +421,7 @@ class _Flow:
         reply: EngineeringReplyV1 | None = None,
         result: Investigation | None = None,
     ) -> WorkflowRun:
-        s = self.s
+        s, manager = self.s, fixed_report(manager, brief)
         self.trace.append(
             "finish", "runtime", status=manager.status, reason=f"workflow {manager.status}",
             workflow=True, turns=self.pm.calls + (result.turns if result else 0),

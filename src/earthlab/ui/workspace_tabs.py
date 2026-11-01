@@ -61,6 +61,7 @@ def show_result(run_dir: Path) -> None:
     for issue in result.get("answer_issues", []):
         st.error(f"Not verified: {issue}")
     st.write(result["answer"] or "_No final answer._")
+    _show_recomputed(result)
     if result["rounds"]:
         st.dataframe(_verdict_rows(result["rounds"]), use_container_width=True)
     _show_area(result, run_dir)
@@ -74,6 +75,18 @@ def show_result(run_dir: Path) -> None:
         f"{result['prompt_tokens']} in / {result['completion_tokens']} out tokens. "
         f"Source sha256 {result['source']['sha256'][:16]}..."
     )
+
+
+def _show_recomputed(result: dict[str, Any]) -> None:
+    """The verifier's values and the manager's report. Older runs do not hold these fields."""
+    if result.get("findings_text"):
+        st.markdown("**Verified values and limits (from the verifier, not model text)**")
+        st.text(result["findings_text"])
+    workflow = result.get("workflow") or {}
+    manager = workflow.get("manager_result") or {}
+    if manager.get("report_text"):
+        st.markdown(f"**Product manager report ({manager.get('report_source', 'unknown')})**")
+        st.write(manager["report_text"])
 
 
 def _show_area(result: dict[str, Any], run_dir: Path) -> None:

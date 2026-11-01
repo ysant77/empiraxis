@@ -5,7 +5,8 @@ supported claims. The interpretation text may refer to a finding by its ID (R1.2
 not contain any digit, date or month name. Its remaining factual words are checked too:
 "highest" needs a supported peak_region claim for that region, and "higher than" needs two
 supported claims of the same kind and window, in the stated order. The text must also pass
-the answer scope rules.
+the answer scope rules. It may not deny that limitations exist, and it may call the data
+quality good only when a supported claim states that quality.
 """
 
 from __future__ import annotations
@@ -41,6 +42,17 @@ _NOT = re.compile(r"\b(not|no|never|neither|nor|isn't|wasn't|unsupported|contrad
 _HYPOTHESIS = re.compile(
     r"\b(claim\w*|hypothes\w*|colleague\w*|question|suggest\w*|said|says)\b", re.I
 )
+_NO_LIMITS = re.compile(
+    r"\b(?:no|without)\s+(?:\w+\s+){0,2}limitations?\b|\blimitations?\b[^.\n]{0,30}\bnone\b",
+    re.IGNORECASE,
+)
+_QUALITY_PASS = re.compile(
+    r"\b(?:valid[- ](?:data|land|fraction)|coverage|quality gate|qa gate)\b[^.\n]{0,60}"
+    r"\b(?:high|pass|passes|passed|sufficient|adequate|complete)\b"
+    r"|\b(?:high|sufficient|adequate|complete)\s+(?:coverage|valid)",
+    re.IGNORECASE,
+)
+_NO_GAPS = re.compile(r"\bno\s+(?:missing|gaps?)\b", re.IGNORECASE)
 _SENTENCE_END = re.compile(r"(?<=[.!?;])\s+|\n+")
 _COMPARABLE = (ClaimKind.REGION_MAX, ClaimKind.REGION_MEAN)
 
@@ -149,20 +161,37 @@ def _comparison(sentence: str, supported: list[VerificationResult]) -> list[str]
     return [f"{what} contradicts the supported claims"]
 
 
+def _reporting(sentence: str, quality_bound: bool) -> list[str]:
+    issues = []
+    if _NO_LIMITS.search(sentence):
+        issues.append("do not say that no limitations exist; the system adds the method limits")
+    match = _QUALITY_PASS.search(sentence)
+    vouched = match is not None and not _NOT.search(match.group(0))
+    if (vouched or _NO_GAPS.search(sentence)) and not quality_bound:
+        issues.append("data-quality wording needs a supported quality finding; remove it")
+    return issues
+
+
 def audit_answer(
-    answer: str, findings: Mapping[str, VerificationResult], other_supported: Collection[str] = ()
+    answer: str,
+    findings: Mapping[str, VerificationResult],
+    other_supported: Collection[str] = (),
+    quality_bound: bool = False,
 ) -> AnswerAudit:
     """Audit the text against the latest submission, keyed by finding ID (R<round>.<n>).
 
     other_supported lists supported finding IDs from other ledgers (A<round>.<n>).
+    quality_bound says a supported claim in another ledger states the data quality.
     """
     supported = [r for r in findings.values() if r.verdict is Verdict.SUPPORTED]
     cited = _CITATION.findall(answer)
     ok = {i for i, r in findings.items() if r.verdict is Verdict.SUPPORTED} | set(other_supported)
     unknown = [c for c in cited if c not in ok]
+    quality = quality_bound or any(r.claim.kind is ClaimKind.MISSING_HOURS for r in supported)
     misleading: list[str] = []
     for sentence in _SENTENCE_END.split(answer):
         misleading += _superlatives(sentence, supported) + _comparison(sentence, supported)
+        misleading += _reporting(sentence, quality)
     return AnswerAudit(
         numbers=tuple(text_numbers(answer)),
         dates=tuple(m.group(0) for m in _MONTH.finditer(answer)),

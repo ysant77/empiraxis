@@ -87,7 +87,7 @@ def event_rows(events: list[EventV1], topology: str | None = None) -> list[dict[
 def _cards(run: RunEvents | None, error: str | None) -> None:
     cols = common.columns(4)
     with cols[0], common.panel("Runtime", "implemented"):
-        st.write("Single model agent: the Muse investigator, with deterministic tools.")
+        st.write("The Muse investigator with deterministic tools. The PM path adds model roles.")
     with cols[1], common.panel("Plan critic", "implemented"):
         st.write("Deterministic plan rules, code, not a model. A model critic is not built.")
     with cols[2], common.panel("Trace integrity", "implemented" if run else "unavailable"):
@@ -107,7 +107,7 @@ def _topology() -> None:
             state = (
                 "current"
                 if role in IMPLEMENTED_ROLES
-                else "experimental, scripted-client tests only"
+                else "experimental, local live and scripted runs"
                 if role in EXPERIMENTAL_ROLES
                 else "planned"
             )
@@ -117,7 +117,8 @@ def _topology() -> None:
         st.caption(
             "The Muse investigator and the deterministic verification path are implemented. "
             "The product manager to engineer workflow, in its combined and separate "
-            "topologies, is experimental: only scripted-client runs are recorded. In the "
+            "topologies, is experimental: scripted runs and a small set of local live runs "
+            "are recorded. In the "
             "separate topology, a separately invoked model orchestrator proposes typed "
             "decisions; it is not the single Muse investigator. Implementation workers and "
             "model training are planned. Tools, the plan critic and the verifier are code, "
@@ -225,8 +226,7 @@ PROVENANCE_NOTES = {
 
 
 def _workflow(view: WorkflowView) -> None:
-    status: common.Status = "implemented" if view.provenance == "live" else "experimental"
-    with common.panel("Workflow run", status, f"{view.topology} topology"):
+    with common.panel("Workflow run", "experimental", f"{view.topology} topology"):
         note = PROVENANCE_NOTES[view.provenance]
         (st.info if view.provenance == "live" else st.warning)(note)
         st.caption(f"Run {view.run_id}: status {view.status}. Python validated every step.")

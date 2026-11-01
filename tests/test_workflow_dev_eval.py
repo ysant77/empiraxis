@@ -5,6 +5,7 @@ Every run here is scripted, so every score is a harness check, not a model resul
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import Any
 
@@ -19,6 +20,7 @@ from earthlab.evals.workflow_dev_run import arm_blockers, assignment_for, run_sc
 from earthlab.implement.bindings import load_bindings
 from earthlab.llm.providers import load_providers
 from earthlab.runtime import Workspace, open_workspace
+from earthlab.safety.llama_guard import LlamaGuard
 
 ROOT = Path(__file__).resolve().parents[1]
 SUITE, DIGEST = load_suite(ROOT / "evals" / "workflow_dev_v1.yaml")
@@ -183,3 +185,28 @@ def test_the_summary_never_calls_scripted_scores_model_results() -> None:
     assert summary["arms"]["combined-test"]["passed"] == 1
     assert summary["unavailable_arms"] == {"separate-llama-pm": "not approved"}
     assert summarize([], {})["evidence"].startswith("harness check")
+
+
+class SafeReplies:
+    def complete(self, prompt: str, max_tokens: int) -> str:
+        return "safe"
+
+
+def test_a_guard_reaches_the_run_and_the_score_says_so(
+    workspace: Workspace, tmp_path: Path
+) -> None:
+    client = ScriptedClient(steps_for("single", "WD-01"))
+    arm = ARMS["single"]
+    record = run_scenario(
+        arm, BY_ID["WD-01"], lambda _: client, workspace, tmp_path, None,
+        guard=LlamaGuard(SafeReplies(), "llama-guard-test"),
+    )  # fmt: skip
+    assert record.guarded is True
+    events = [
+        json.loads(line)["event"] for line in (tmp_path / "trace.jsonl").read_text().splitlines()
+    ]
+    assert "safety_check" in events
+
+
+def test_a_run_without_a_guard_says_so(workspace: Workspace, tmp_path: Path) -> None:
+    assert run("single", "WD-01", workspace, tmp_path).guarded is False

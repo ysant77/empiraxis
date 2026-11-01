@@ -113,6 +113,7 @@ class AreaLedger:
 
     rounds: list[list[AreaVerification]] = field(default_factory=list)
     consulted: list[tuple[str, str]] = field(default_factory=list)  # (case_id, month) read
+    gate_notes: list[str] = field(default_factory=list)  # plan-review coverage refusals
 
     @property
     def latest(self) -> list[AreaVerification]:
@@ -123,6 +124,10 @@ class AreaLedger:
 
     def supported(self) -> list[AreaVerification]:
         return [r for r in self.latest if r.verdict is Verdict.SUPPORTED]
+
+    def covers_quality(self) -> bool:
+        """True when a supported claim states the valid-data fraction."""
+        return any(r.claim.quantity.value == "valid_fraction" for r in self.supported())
 
     def rejected(self) -> list[AreaVerification]:
         return [r for rnd in self.rounds for r in rnd if r.verdict is not Verdict.SUPPORTED]

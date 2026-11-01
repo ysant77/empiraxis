@@ -135,6 +135,7 @@ class ScoreV1(Strict):
     category: str
     arm_id: str
     provenance: Literal["live", "synthetic"]
+    guarded: bool = False  # a run without the safety model is not equivalent to one with it
     passed: bool
     outcome_ok: bool
     false_verification: bool

@@ -256,7 +256,7 @@ All endpoints are in `config/providers.yaml`. API keys come from environment var
 | --- | --- | --- |
 | `local-glimmer` | Muse Glimmer 30B on llama.cpp | enabled |
 | `lan-windows-glimmer` | Muse Glimmer 30B on a Windows RTX 4060 laptop | set the LAN address, then enable |
-| `baseten-spark-open` | `meta-models/muse-spark-open-1026` | enable when credits arrive |
+| `baseten-spark-open` | `meta-models/muse-spark-open` | enable when credits arrive |
 | `fireworks-spark-open`, `modal-spark-open` | Muse Spark Open | fill model IDs from the dashboards |
 
 ### Windows node (RTX 4060 8 GB, 32 GB RAM)

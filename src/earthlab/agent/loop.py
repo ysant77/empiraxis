@@ -249,7 +249,9 @@ class Investigator:
         if not state.answer:
             return None
         area_ok = {i for i, r in self._area.latest_by_id().items() if r in self._area.supported()}
-        audit = audit_answer(state.answer, self._ledger.latest_by_id(), area_ok)
+        audit = audit_answer(
+            state.answer, self._ledger.latest_by_id(), area_ok, self._area.covers_quality()
+        )
         outcome = "supported" if audit.passed else "unsupported"
         self._metrics.record_verification(Check.ANSWER.value, outcome)
         self._trace.append("answer_audit", "verifier", **audit.model_dump(mode="json"))
@@ -428,7 +430,8 @@ class Investigator:
     def _all_supported(self) -> bool:
         """Every ledger with submissions is fully supported, and at least one has some."""
         used = [led for led in (self._ledger, self._area) if led.rounds]
-        return bool(used) and all(led.all_supported() for led in used)
+        spanned = self._plan is None or self._plan.spans_question(self._ledger)
+        return bool(used) and spanned and all(led.all_supported() for led in used)
 
     def _after_submission(self, state: RunState, tool: str) -> None:
         latest = self._ledger.latest if tool == SUBMIT_TOOL else self._area.latest
@@ -451,6 +454,8 @@ class Investigator:
             )
 
     def _status_after_stop(self, *, budget_hit: bool) -> RunStatus:
+        if self._plan is not None:
+            self._plan.enforce_abstention(self._limitations)
         if self._limitations.entries:
             return RunStatus.ABSTAINED
         if self._all_supported():

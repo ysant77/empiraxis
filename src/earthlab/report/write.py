@@ -18,11 +18,14 @@ DEFAULT_WINDOW = TimeWindow(start=datetime(2015, 9, 1), end=datetime(2015, 11, 1
 
 
 def write_report(run_dir: Path, workspace_dir: Path) -> Path:
-    """report.md for a saved run; the PM2.5 chart only for runs that are not burned-area only."""
+    """report.md for a saved run; the PM2.5 chart only for runs that looked at PM2.5.
+
+    A run that stopped at a declared limitation before any data read gets no chart.
+    """
     result = json.loads((run_dir / "result.json").read_text(encoding="utf-8"))
     workspace = open_workspace(workspace_dir)
     chart = None
-    if result["rounds"] or not result.get("evidence"):
+    if result["rounds"] or not (result.get("evidence") or result.get("limitations")):
         chart = "pm25_hourly.png"
         hourly_chart(workspace.dataset, DEFAULT_WINDOW, run_dir / chart)
     maps = _burn_maps(result.get("evidence"), workspace, run_dir)

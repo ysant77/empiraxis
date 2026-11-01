@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+from collections import defaultdict
+from collections.abc import Hashable
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Any
 
 from pydantic import Field
@@ -20,6 +23,15 @@ class SubmitArgs(Strict):
     claims: list[Claim] = Field(max_length=MAX_CLAIMS, description="Typed, checkable claims.")
 
 
+def _covers(claims: list[Claim], start: datetime, end: datetime) -> bool:
+    reached = start
+    for claim in sorted(claims, key=lambda c: c.start):
+        if claim.start > reached:
+            break
+        reached = max(reached, claim.end)
+    return reached >= end
+
+
 @dataclass
 class FindingsLedger:
     """Every verdict from every submission, in order. Nothing is ever removed."""
@@ -29,6 +41,18 @@ class FindingsLedger:
     @property
     def latest(self) -> list[VerificationResult]:
         return self.rounds[-1] if self.rounds else []
+
+    def spans(self, start: datetime, end: datetime) -> bool:
+        """True when one series of supported claims covers this window with no gap.
+
+        A series is one kind, region and threshold. Claims about different regions or
+        thresholds are different quantities, so together they cover nothing.
+        """
+        series: defaultdict[Hashable, list[Claim]] = defaultdict(list)
+        for result in self.supported():
+            claim = result.claim
+            series[claim.kind, claim.region, claim.threshold].append(claim)
+        return any(_covers(claims, start, end) for claims in series.values())
 
     def all_supported(self) -> bool:
         latest = self.latest

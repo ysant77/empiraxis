@@ -141,11 +141,36 @@ def repo_assignment(
     client: ChatClient,
     root: Path = Path(),
     topology: Topology = "combined",
+    pm_client: ChatClient | None = None,
+    orchestrator_client: ChatClient | None = None,
 ) -> WorkflowAssignment:
-    """Every role on one client, bound through the repository's bindings file."""
-    orchestrator = client if topology == "separate" else None
+    """Every role on one client unless a role names its own; each binds through the file.
+
+    A role with its own client binds the candidate of that provider, so a disabled or
+    unknown candidate is refused here, before any model call.
+    """
+    if orchestrator_client is not None and topology != "separate":
+        raise BindingRefused("an orchestrator provider needs --topology separate")
     bindings = load_bindings(root / BINDINGS_FILE)
-    return resolve_assignment(bindings, providers, client, client, orchestrator_client=orchestrator)
+    pm, orchestrator = pm_client or client, orchestrator_client or client
+    return resolve_assignment(
+        bindings,
+        providers,
+        pm,
+        client,
+        pm_candidate=_candidate(bindings, pm_client),
+        orchestrator_client=orchestrator if topology == "separate" else None,
+        orchestrator_candidate=_candidate(bindings, orchestrator_client),
+    )
+
+
+def _candidate(bindings: Bindings, client: ChatClient | None) -> str:
+    if client is None:
+        return "muse-glimmer"
+    found = [c for c in bindings.candidates if c.provider_id == client.config.name]
+    if not found:
+        raise BindingRefused(f"no candidate is bound to provider {client.config.name}")
+    return found[0].candidate_id
 
 
 def task_scope(case_file: CaseFile) -> TaskScope:

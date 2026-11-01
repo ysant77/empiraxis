@@ -11,6 +11,7 @@ from typing import Any
 from earthlab.acquire.gate import load_approvals
 from earthlab.acquire.run import acquire_era5, acquire_firms, acquire_mcd64a1, write_manifest
 from earthlab.agent.budget import Budget
+from earthlab.agent.rendered import verified_block
 from earthlab.bench.heldout import HeldoutError, load_lock, scenario_file_record
 from earthlab.bench.official import OfficialSetup, check_only, run_official
 from earthlab.bench.protocol import load_protocol
@@ -103,18 +104,25 @@ def cmd_investigate(args: argparse.Namespace) -> int:
         c = r.claim
         fact = f"{c.kind.value} {c.region.value} = {r.observed} {c.unit}"
         print(f"{finding_id} {r.verdict.value}: {fact}")
-    print(f"\n{result.answer}\n\nreport: {report}")
+    block = verified_block(result.ledger, result.area_ledger, result.limitations)
+    print(f"\n{result.answer}\n\n{block}\n\nreport: {report}")
     for issue in result.answer_issues:
         print(f"answer not verified: {issue}")
     return exit_code(result.status.value)
 
 
 def cmd_workflow(args: argparse.Namespace) -> int:
-    """Product manager -> Geospatial Engineer hand-off; one provider serves both roles."""
+    """Product manager -> Geospatial Engineer hand-off; --provider serves unnamed roles."""
     providers = load_providers(args.providers)
     client = build_client(providers[args.provider])
-    # Refuses an unbound or unready role. One client serves every role in both topologies.
-    assignment = repo_assignment(providers, client, topology=args.topology)
+    pm, orchestrator = (
+        build_client(providers[name]) if name else None
+        for name in (args.pm_provider, args.orchestrator_provider)
+    )
+    # Refuses an unbound or unready role before any model call.
+    assignment = repo_assignment(
+        providers, client, topology=args.topology, pm_client=pm, orchestrator_client=orchestrator
+    )
     run_dir = new_run_dir(args.runs_dir)
     print(f"run: {run_dir}\nroles: {assignment.summary()}")
     run = run_workflow(
@@ -123,7 +131,8 @@ def cmd_workflow(args: argparse.Namespace) -> int:
         open_workspace(args.data_dir),
         run_dir,
         assignment=assignment,
-        orchestrator_client=client if args.topology == "separate" else None,
+        pm_client=pm,
+        orchestrator_client=(orchestrator or client) if args.topology == "separate" else None,
         budget=Budget(max_turns=args.max_turns, max_seconds=args.max_seconds),
         reasoning=args.reasoning,
         listener=_print_event,
@@ -136,7 +145,8 @@ def cmd_workflow(args: argparse.Namespace) -> int:
         print(f"needs input: {question}")
     if run.engineer is not None:
         print(f"report: {write_report(run_dir, args.data_dir)}")
-    print(f"\n{run.manager.report_text}\n\nstatus: {run.status} ({run.manager.report_source})")
+    print(f"\n{run.manager.report_text}\n\n{run.manager.findings_text}")
+    print(f"\nstatus: {run.status} ({run.manager.report_source})")
     return exit_code(run.status)
 
 
@@ -144,6 +154,7 @@ def cmd_replay(args: argparse.Namespace) -> int:
     """Re-check a saved run without any model: trace chain, verdicts and input hashes."""
     out = replay_run(args.run_dir, open_workspace(args.data_dir))
     print(f"trace: {out.trace_records} records, hash chain intact")
+    print(f"PM2.5 source hash: {'match' if out.source_matches else 'CHANGED'}")
     print(f"verdicts reproduced: {out.pm25[0]}/{out.pm25[1]}")
     print(f"area verdicts reproduced: {out.area[0]}/{out.area[1]}")
     print(f"month checks reproduced: {out.months[0]}/{out.months[1]}")
@@ -447,6 +458,8 @@ def build_parser() -> argparse.ArgumentParser:
     flow = sub.add_parser("workflow", help="experimental: product manager -> engineer hand-off")
     _add_live_args(flow)
     flow.add_argument("--topology", choices=["combined", "separate"], default="combined")
+    flow.add_argument("--pm-provider", help="product manager provider (default: --provider)")
+    flow.add_argument("--orchestrator-provider", help="separate topology only")
     flow.set_defaults(func=cmd_workflow)
 
     _add_eval_parser(sub)
