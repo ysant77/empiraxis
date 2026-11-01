@@ -9,6 +9,7 @@ from typing import Any
 from earthlab.harness.classify import EXCEED_PROBLEM, ClassificationAdapter
 from earthlab.harness.contracts import ProblemSpecV1, ResearchRequestV1
 from earthlab.harness.engine import Adapter, Arm, run_harness
+from earthlab.harness.raster import BURN_PROBLEM, RasterAdapter, segmentation_request
 from earthlab.harness.regression import PM25_PROBLEM, RegressionAdapter
 from earthlab.llm.client import ChatClient
 
@@ -29,6 +30,17 @@ SCENARIOS: dict[str, Scenario] = {
         "threshold-exceedance classifier?",
         EXCEED_PROBLEM,
         ClassificationAdapter,
+    ),
+    "burned-area-method": (
+        "For this burned-area study window, should the system use a deterministic raster "
+        "method, a pretrained segmentation model, or abstain?",
+        BURN_PROBLEM,
+        RasterAdapter,
+    ),
+    "burned-area-segmentation": (
+        "Segment the burned area in this study window with a pretrained model.",
+        BURN_PROBLEM,
+        segmentation_request,
     ),
 }
 
