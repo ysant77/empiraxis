@@ -1,0 +1,43 @@
+# Paired tasks and fixed acceptance criteria for a LATER live routing evaluation.
+# Nothing here has been run. The criteria are fixed before any run and must not change after
+# the first result is seen. Tasks point at the development workflow suite
+# (evals/workflow_dev_v1.yaml). They never point at the spent held-out set.
+version: 1
+suite_id: routing-paired-v1
+source_suite: evals/workflow_dev_v1.yaml
+policies: [A, B, C]
+tasks:
+  - {task_id: PT-01, scenario_id: WD-01, purpose: "verified result; checks the happy path"}
+  - {task_id: PT-02, scenario_id: WD-02, purpose: "valid abstention; checks the quality gate"}
+  - {task_id: PT-03, scenario_id: WD-03, purpose: "causal wording; router must keep policy A"}
+  - {task_id: PT-04, scenario_id: WD-04, purpose: "period outside the case; routing must not guess"}
+  - {task_id: PT-05, scenario_id: WD-09, purpose: "missing input; PM must ask, not choose"}
+design:
+  pairs_per_task: 5
+  order: rotated Latin square over policies, one rotation per repeat
+  warm_up: one unscored run per session so the guard model is loaded before scoring
+  hold_fixed: [source commit, model weights, server build, reasoning setting, guard policy]
+  record: [run order, guard loaded at start, memory samples, wall seconds, usage per call]
+acceptance:
+  hard:
+    - id: H1
+      rule: No run in any arm gives status verified on a scenario whose expected list lacks verified.
+    - id: H2
+      rule: Every verified run has an empty answer_issues list.
+    - id: H3
+      rule: Every candidate used in a run passed the router gates recorded in its decision.
+    - id: H4
+      rule: For each task, the count of runs that meet the scenario expectation in arm B or C
+        is at least the count in arm A.
+    - id: H5
+      rule: A field that a run did not record is missing in the comparison. A pair that lacks
+        the field in either arm is left out of that field's comparison.
+  adoption:
+    - id: P1
+      rule: All hard criteria hold.
+    - id: P2
+      rule: The median paired reduction in local model wall seconds is at least 20 percent.
+    - id: P3
+      rule: At least 4 of 5 pairs in each task show a lower wall time than arm A.
+  report: Medians with minimum and maximum of paired differences. No p-value. A result that
+    fails P2 or P3 is reported as no evidence of a gain.
