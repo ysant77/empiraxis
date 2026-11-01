@@ -13,16 +13,35 @@ import os
 import subprocess
 import sys
 import threading
+from collections.abc import Mapping
 from pathlib import Path
 
 from earthlab.board.execute import execute
 from earthlab.board.store import BOARD_FILE, Board
+from earthlab.llm.providers import load_providers
 from earthlab.runtime import open_workspace
 
 BEAT_SECONDS = 5.0
 DATA_DIR = Path("data/nea")
 PROVIDERS = Path("config/providers.yaml")
+RUNTIME_ENV = ("PATH", "HOME", "TMPDIR", "LANG", "LC_ALL", "SSL_CERT_FILE", "VIRTUAL_ENV")
 log = logging.getLogger(__name__)
+
+
+def worker_env(
+    run_id: str, runs_dir: Path, source: Mapping[str, str] | None = None
+) -> dict[str, str]:
+    """The runtime settings, plus only the key the run's own provider names.
+
+    Operator keys, broker secrets and every other credential stay out of the worker.
+    """
+    origin = os.environ if source is None else source
+    names = list(RUNTIME_ENV)
+    entry = Board(runs_dir / BOARD_FILE).get(run_id)
+    config = load_providers(PROVIDERS).get(entry.spec.provider) if entry else None
+    if config is not None and config.enabled and config.api_key_env:
+        names.append(config.api_key_env)
+    return {name: origin[name] for name in names if name in origin}
 
 
 def spawn(run_id: str, runs_dir: Path) -> int:
@@ -39,6 +58,7 @@ def spawn(run_id: str, runs_dir: Path) -> int:
             stdin=subprocess.DEVNULL,
             stdout=output,
             stderr=subprocess.STDOUT,
+            env=worker_env(run_id, runs_dir),
             close_fds=False,
         )
     return process.pid

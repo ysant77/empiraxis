@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import http.server
 import json
+import socket
 import threading
 from collections.abc import Iterator
 from dataclasses import replace
@@ -14,6 +15,7 @@ from typing import Any
 import pytest
 from pydantic import ValidationError
 
+from earthlab.team import fetch_job
 from earthlab.team.broker import Broker, PreapprovedSource, covering, load_policy, read_secret
 from earthlab.team.resources import (
     APPROVAL_FILE,
@@ -372,3 +374,64 @@ def test_a_large_transfer_must_match_the_pinned_catalogue(
     ):
         with pytest.raises(ValidationError):
             ResourceRequestV1(**_large(**change))
+
+
+def test_a_pinned_digest_is_not_a_secret_but_a_token_in_text_still_is(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.chdir(Path(__file__).resolve().parents[1])
+    desk = ResourceDesk(tmp_path)
+    assert desk.open(ResourceRequestV1(**_large())).status == "proposed"
+    leaked = _large(request_id="leak", purpose="Use sk-abcdefgh12345678 for this.")
+    with pytest.raises(RequestRefused, match="shaped like a secret"):
+        desk.open(ResourceRequestV1(**leaked))
+
+
+@pytest.mark.parametrize(
+    "address",
+    ["127.0.0.1", "10.0.0.8", "172.16.0.1", "192.168.1.1", "169.254.169.254", "100.64.0.1",
+     "0.0.0.0", "224.0.0.1", "::1", "fe80::1%en0", "fc00::1", "::ffff:169.254.169.254"],
+)  # fmt: skip
+def test_an_internal_address_is_not_public(address: str) -> None:
+    assert not fetch_job.is_public(address)
+
+
+def test_a_public_address_is_public() -> None:
+    assert fetch_job.is_public("93.184.216.34") and fetch_job.is_public("2606:2800:220:1::1")
+
+
+def answer(*addresses: str) -> Any:
+    return lambda *_args, **_kwargs: [(2, 1, 6, "", (a, 443)) for a in addresses]
+
+
+def test_one_internal_answer_refuses_the_name() -> None:
+    with pytest.raises(ValueError, match="not public"):
+        fetch_job.public_only(answer("93.184.216.34", "10.0.0.8"))("x", 443)
+
+
+def test_a_rebound_name_is_refused_at_connection(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """The guard is on the resolver, so the connection's own lookup is the one checked."""
+    monkeypatch.setattr(socket, "getaddrinfo", answer("169.254.169.254"))
+    job = {
+        "url": "https://rebind.example/data", "domain": "rebind.example",
+        "target": str(tmp_path / "out"), "content_types": ["text/csv"],
+        "timeout_seconds": 2.0, "max_bytes": 64,
+    }  # fmt: skip
+    with pytest.raises(ValueError, match="not public"):
+        fetch_job.fetch(job, "secret")
+    assert not (tmp_path / "out").exists()
+
+
+def test_https_on_a_loopback_literal_is_refused(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setattr(socket, "getaddrinfo", socket.getaddrinfo)  # restored after the test
+    job = {
+        "url": "https://127.0.0.1/data", "domain": "127.0.0.1",
+        "target": str(tmp_path / "out"), "content_types": ["text/csv"],
+        "timeout_seconds": 2.0, "max_bytes": 64,
+    }  # fmt: skip
+    with pytest.raises(ValueError, match="not public"):
+        fetch_job.fetch(job, None)
