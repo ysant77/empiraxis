@@ -11,7 +11,7 @@ from collections.abc import Callable
 
 import streamlit as st
 
-from earthlab.ui import common, control_room, engineering_lab, research
+from earthlab.ui import board_view, common, control_room, engineering_lab, research
 
 ROUTES: dict[str, tuple[str, Callable[[], None]]] = {
     "workspace": ("EarthLab Research Workspace", research.render),
@@ -47,6 +47,7 @@ def main() -> None:
         st.sidebar.caption(
             f"Prometheus metrics: http://127.0.0.1:{common.METRICS_PORT}/metrics (local only)"
         )
+    board_view.banner()
     ROUTES[route][1]()
 
 

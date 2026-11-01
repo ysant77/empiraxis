@@ -1,107 +1,68 @@
-"""Live investigation controls for a local operator. Only operator mode calls run_live."""
+"""Live investigation controls for a local operator. A click queues a request; a worker runs it.
+
+The run does not live in this process, so a page refresh neither repeats nor stops it.
+"""
 
 from __future__ import annotations
 
-from pathlib import Path
-from typing import Any
+import secrets
 
 import streamlit as st
 
-from earthlab.agent.budget import Budget
-from earthlab.llm.client import ChatClient, build_client
-from earthlab.llm.providers import ProviderConfig, load_providers
-from earthlab.llm.raw import RawCompletionClient
-from earthlab.runtime import RunOptions, investigate, new_run_dir
-from earthlab.safety.llama_guard import LlamaGuard
+from earthlab.board.store import Board, RunBusy, RunEntry, RunSpec
+from earthlab.board.worker import spawn
+from earthlab.llm.providers import load_providers
 from earthlab.ui import common
-from earthlab.workflow.assign import repo_assignment
 from earthlab.workflow.contracts import Topology
-from earthlab.workflow.run import run_workflow
 
 ROUTES: dict[str, Topology | None] = {
     "Direct Muse investigator (baseline)": None,
     "Muse PM, deterministic orchestrator, Muse engineer": "combined",
     "Muse PM, separate LLM orchestrator, Muse engineer": "separate",
 }
+REQUEST_KEY = "run_request_key"
 
 
-def _listener(status: Any) -> Any:
-    def listener(record: dict[str, Any]) -> None:
-        data = record["data"]
-        if record["event"] == "model_turn":
-            names = ", ".join(c["name"] for c in data["tool_calls"]) or "final answer"
-            status.write(f"Turn {data['turn']}: model chose **{names}**")
-        elif record["event"] == "safety_check":
-            verdict = "allowed" if data["allowed"] else f"blocked ({data['reason']})"
-            status.write(f"Safety check on the {data['stage']}: {verdict}")
-        elif record["event"] == "tool_result":
-            status.write(f"`{data['name']}` -> {data['outcome']}")
-        elif record["event"] == "brief_reviewed":
-            status.write(f"Typed brief checked by Python: valid {data['valid']}, {data['route']}")
-        elif record["event"] == "decision_reviewed":
-            status.write(f"Orchestrator proposal checked by Python: valid {data['valid']}")
-        elif record["event"] == "task_handoff":
-            status.write(f"Task handed to the {data['receiver']}")
-        elif record["event"] == "plan_reviewed":
-            status.write(f"Plan critic (code): {data['verdict']}")
-
-    return listener
-
-
-def _guard(configs: dict[str, ProviderConfig], name: str) -> LlamaGuard | None:
-    if name == "none":
+def queue(board: Board, spec: RunSpec, request_key: str) -> RunEntry | None:
+    """Queue one run and start its worker. None when another run is active."""
+    try:
+        entry, created = board.submit(spec, request_key)
+    except RunBusy as busy:
+        st.warning(f"Run {busy.run_id} is active. One model serves one run at a time.")
         return None
-    return LlamaGuard(RawCompletionClient(configs[name]), configs[name].logical_model)
+    if created:
+        try:
+            spawn(entry.run_id, common.RUNS_DIR)
+        except OSError as exc:
+            board.end(entry.run_id, "failed", type(exc).__name__)
+            raise
+    return entry
 
 
-def _run(
-    question: str,
-    topology: Topology | None,
-    client: ChatClient,
-    configs: dict[str, ProviderConfig],
-    guard: LlamaGuard | None,
-    reasoning: str,
-    listener: Any,
-) -> Path:
-    """One bounded run on the same options as the command line. Python keeps all authority."""
-    run_dir = new_run_dir(common.RUNS_DIR)
-    settings: dict[str, Any] = {
-        "budget": Budget(),
-        "reasoning": reasoning,
-        "listener": listener,
-        "guard": guard,
-        "options": RunOptions(plan_review=True, render_fallback=True),
-    }
-    if topology is None:
-        investigate(
-            question, client, common.workspace(), run_dir, metrics=common.metrics(), **settings
-        )
-        return run_dir
-    assignment = repo_assignment(configs, client, topology=topology)
-    orchestrator = client if topology == "separate" else None
-    run_workflow(
-        question, client, common.workspace(), run_dir,
-        assignment=assignment, orchestrator_client=orchestrator, **settings,
-    )  # fmt: skip
-    return run_dir
-
-
-def run_live(question: str) -> Path | None:
-    """Show the endpoint controls; on the button, run one bounded investigation."""
+def submit_live(question: str) -> None:
+    """Show the endpoint controls; on the button, queue one bounded investigation."""
+    board = common.board()
+    if board is None:
+        return
     configs = {n: c for n, c in load_providers(common.PROVIDERS).items() if c.enabled}
     planners = [n for n, c in configs.items() if "guard" not in c.logical_model]
     provider = st.selectbox("Meta model endpoint", planners)
     route = st.selectbox("Execution route", list(ROUTES))
     reasoning = st.selectbox("Reasoning strength", ["low", "medium", "high"])
     guards = [n for n, c in configs.items() if "guard" in c.logical_model]
-    guard_name = st.selectbox("Safety model (Meta Llama Guard)", [*guards, "none"])
-    if not st.button("Run investigation", type="primary"):
-        return None
-    with st.status("Investigating with a Meta open-weight model...", expanded=True) as status:
-        client = build_client(configs[provider])
-        guard = _guard(configs, guard_name)
-        run_dir = _run(
-            question, ROUTES[route], client, configs, guard, reasoning, _listener(status)
-        )
-        status.update(label="Investigation finished", state="complete")
-    return run_dir
+    guard = st.selectbox("Safety model (Meta Llama Guard)", [*guards, "none"])
+    if not st.button("Run investigation", type="primary", disabled=board.active() is not None):
+        return
+    spec = RunSpec(
+        question=question,
+        topology=ROUTES[route],
+        provider=provider,
+        guard=guard,
+        reasoning=reasoning,
+    )
+    entry = queue(board, spec, st.session_state.setdefault(REQUEST_KEY, secrets.token_hex(8)))
+    if entry is not None:
+        del st.session_state[REQUEST_KEY]
+        st.session_state[common.SHARED_RUN] = entry.run_id
+        st.query_params["run"] = entry.run_id
+        st.rerun()

@@ -17,7 +17,7 @@ import yaml
 from earthlab.events.bench import DEV_LABEL, DevBench, find_dev_benches
 from earthlab.science.burned_area import QaPolicy
 from earthlab.tools.burned_area_tools import month_report
-from earthlab.ui import common
+from earthlab.ui import board_view, common
 
 METHOD_FILE = Path("config/methods/mcd64a1_burned_area.yaml")
 PROTOCOL_FILE = Path("evals/heldout_v1.protocol.yaml")
@@ -194,13 +194,22 @@ def evidence_rows(result: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def _run_evidence() -> None:
+    picked = common.pick_run()
+    if picked is not None:
+        board_view.run_panel(*picked)
     with common.panel("Recorded run evidence", "implemented", "The run chosen on any surface."):
-        picked = common.pick_run()
         run_dir = None if picked is None else common.open_run(*picked)[0]
+        if picked is not None and board_view.is_waiting(picked[0]) and run_dir is None:
+            st.write("This run has no trace yet.")
+            return
         if run_dir is None:
             st.write("No recorded run passed its integrity check.")
             return
-        result = json.loads((run_dir / "result.json").read_text(encoding="utf-8"))
+        path = run_dir / "result.json"
+        if not path.is_file():
+            st.write("This run has no result yet. Evidence appears when it ends.")
+            return
+        result = json.loads(path.read_text(encoding="utf-8"))
         st.write(
             f"Status: {result['status']}. {len(evidence_files(result))} input hashes recorded."
         )

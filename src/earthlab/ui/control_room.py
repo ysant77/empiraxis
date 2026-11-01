@@ -25,7 +25,7 @@ from earthlab.events.contract import (
 )
 from earthlab.events.redact import visible_events
 from earthlab.events.workflow_view import ROLE_NAMES, WorkflowView, load_workflow
-from earthlab.ui import common
+from earthlab.ui import board_view, common
 
 APPROVALS_DIR = Path("config/approvals")
 ROLE_ORDER = (
@@ -42,7 +42,11 @@ ROLE_ORDER = (
 )
 TELEMETRY = [
     ("Trace JSONL (hash-chained)", "implemented", "Every run; this view reads it."),
-    ("Prometheus metrics", "implemented", "Local operator mode only; never public."),
+    (
+        "Prometheus metrics",
+        "implemented",
+        "Local operator mode only; never public. Worker runs record model use in the trace.",
+    ),
     ("Grafana dashboard", "planned", "Template only; not deployed."),
     ("Langfuse agent traces", "planned", "Not integrated."),
     ("Agent graph (React Flow)", "planned", "Only after real role separation."),
@@ -265,8 +269,11 @@ def render() -> None:
     error: str | None = "No recorded run is available."
     if picked is not None:
         st.caption(f"Provenance: {common.run_provenance(picked[1])}")
+        board_view.run_panel(*picked)
         run_dir, run, error = common.open_run(*picked)
-        if run is None:
+        if run is None and board_view.is_waiting(picked[0]):
+            error = "The run has no trace yet."
+        elif run is None:
             st.error(f"Run not shown. Integrity check failed: {error}")
     view = load_workflow(run_dir) if run is not None and run_dir is not None else None
     _cards(run, error)

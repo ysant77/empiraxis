@@ -155,9 +155,13 @@ def plan_step_for(
     )
 
 
-def new_run_dir(root: Path) -> Path:
+def new_run_id() -> str:
     stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
-    path = root / f"{stamp}-{secrets.token_hex(3)}"
+    return f"{stamp}-{secrets.token_hex(3)}"
+
+
+def new_run_dir(root: Path) -> Path:
+    path = root / new_run_id()
     path.mkdir(parents=True, exist_ok=False)
     return path
 

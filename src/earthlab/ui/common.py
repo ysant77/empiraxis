@@ -15,6 +15,7 @@ from typing import Any, Literal
 
 import streamlit as st
 
+from earthlab.board.store import BOARD_FILE, Board
 from earthlab.events.adapter import RunEvents, load_run
 from earthlab.events.contract import Visibility
 from earthlab.events.manifest import ManifestError, listed_runs, read_manifest, verified_run
@@ -51,6 +52,11 @@ def audience() -> Visibility:
     if ui_mode() == "operator":
         return Visibility.AUTHENTICATED_REVIEWER
     return Visibility.PUBLIC_DEMO
+
+
+def board() -> Board | None:
+    """The shared run index. Replay mode never opens it: replay is strictly read-only."""
+    return Board(RUNS_DIR / BOARD_FILE) if ui_mode() == "operator" else None
 
 
 @st.cache_resource
@@ -120,24 +126,31 @@ def load_replay(name: str) -> tuple[Path | None, RunEvents | None, str | None]:
 
 
 def run_choices() -> list[tuple[str, Path | None]]:
-    """Replay runs by name; operator mode adds saved local runs."""
-    choices: list[tuple[str, Path | None]] = [(f"replay/{n}", None) for n in replay_names()]
+    """Operator runs first, newest first, then replay runs, then other saved local runs."""
+    shared = board()
+    choices: list[tuple[str, Path | None]] = []
+    if shared is not None:
+        choices += [(e.run_id, RUNS_DIR / e.run_id) for e in shared.recent()]
+    known = {label for label, _ in choices}
+    choices += [(f"replay/{n}", None) for n in replay_names()]
     if ui_mode() == "operator" and RUNS_DIR.is_dir():
         found = sorted(RUNS_DIR.rglob("result.json"), key=lambda p: p.stat().st_mtime, reverse=True)
-        choices += [(str(p.parent.relative_to(RUNS_DIR)), p.parent) for p in found[:200]]
+        saved = [(str(p.parent.relative_to(RUNS_DIR)), p.parent) for p in found[:200]]
+        choices += [item for item in saved if item[0] not in known]
     return choices
 
 
 def pick_run() -> tuple[str, Path | None] | None:
-    """The recorded run, shared by every surface, so each one shows the same execution."""
+    """The run named in the URL, shared by every surface and any browser session."""
     choices = run_choices()
     if not choices:
         return None
     labels = [label for label, _ in choices]
-    shared = st.session_state.get(SHARED_RUN)
+    shared = st.query_params.get("run") or st.session_state.get(SHARED_RUN)
     index = labels.index(shared) if shared in labels else 0
     picked: str = st.selectbox("Recorded run", labels, index=index)
     st.session_state[SHARED_RUN] = picked
+    st.query_params["run"] = picked
     return picked, dict(choices)[picked]
 
 
