@@ -16,6 +16,7 @@ from earthlab.board.store import BOARD_FILE, Board, RunSpec
 from earthlab.digest import file_digest
 from earthlab.forecast.contracts import ARM_LABEL, LIMITATIONS
 from earthlab.team.resources import OPERATOR_KEY_ENV, ResourceDesk, ResourceRequestV1
+from earthlab.trace import RunTrace
 from earthlab.ui import common, experiments, live
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -209,7 +210,9 @@ def experiment_run(runs: Path) -> tuple[str, Path]:
     board = Board(runs / BOARD_FILE)
     entry, _ = board.submit(SPEC, "e1")
     run_dir = runs / entry.run_id
-    shutil.copytree(REPLAY / "live-september-verified", run_dir)
+    trace = RunTrace(run_dir / "trace.jsonl")
+    trace.append("experiment_start", "runtime", task_id="e1.pm", arm="multi_agent")
+    trace.append("finish", "runtime", status="awaiting_human", reason="ready", workflow=True)
     board.claim(entry.run_id, 1)
     board.end(entry.run_id, "finished")
     record = {
