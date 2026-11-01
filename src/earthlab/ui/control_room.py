@@ -260,13 +260,12 @@ def render() -> None:
         "No hidden reasoning is shown.",
     )
     common.replay_notice()
-    names = common.replay_names()
+    picked = common.pick_run()
     run: RunEvents | None = None
     error: str | None = "No recorded run is available."
-    if names:
-        picked = st.selectbox("Recorded run", names, key="control_run")
-        st.caption(f"Provenance: {common.replay_provenance()}")
-        run_dir, run, error = common.load_replay(picked)
+    if picked is not None:
+        st.caption(f"Provenance: {common.run_provenance(picked[1])}")
+        run_dir, run, error = common.open_run(*picked)
         if run is None:
             st.error(f"Run not shown. Integrity check failed: {error}")
     view = load_workflow(run_dir) if run is not None and run_dir is not None else None

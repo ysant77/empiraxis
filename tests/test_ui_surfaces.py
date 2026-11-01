@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import shutil
 import socket
 from pathlib import Path
@@ -16,6 +17,7 @@ from earthlab.events.contract import IMPLEMENTED_ROLES, PLANNED_ROLES
 from earthlab.trace import RunTrace
 from earthlab.ui import common
 from earthlab.ui.control_room import recorded_approvals, role_kind
+from earthlab.ui.engineering_lab import evidence_rows
 
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "src" / "earthlab" / "ui" / "app.py"
@@ -210,3 +212,46 @@ def test_workspace_shows_verified_values_and_the_manager_report(offline: None) -
     assert "Verified." in [m.value for m in app.markdown]
     empty = AppTest.from_function(_shows_recomputed, args=({},)).run()
     assert not empty.exception and not empty.text
+
+
+def test_every_surface_shows_the_run_chosen_on_another(offline: None) -> None:
+    for view in ("workspace", "control", "lab"):
+        app = AppTest.from_file(str(APP), default_timeout=120)
+        app.query_params["view"] = view
+        app.session_state[common.SHARED_RUN] = "replay/sb05b-october"
+        done = app.run()
+        assert not done.exception
+        picker = next(s for s in done.selectbox if s.label == "Recorded run")
+        assert picker.value == "replay/sb05b-october"
+
+
+def test_a_tampered_local_run_is_not_shown(tmp_path: Path) -> None:
+    run_dir = tmp_path / "run"
+    shutil.copytree(REPLAY / "sb05-september", run_dir)
+    with (run_dir / "trace.jsonl").open("a", encoding="utf-8") as handle:
+        handle.write('{"tampered": true}\n')
+    assert common.open_run("local", run_dir)[1] is None
+
+
+def test_lab_rows_come_from_the_saved_record() -> None:
+    result = json.loads((REPLAY / "sb05-september" / "result.json").read_text(encoding="utf-8"))
+    rows = evidence_rows(result)
+    assert any(r["check"] == "area claim 2015-09" and r["source"] == "verifier" for r in rows)
+    assert all(r["source"] in ("code", "verifier") for r in rows)
+
+
+def _show_stopped_run(run_dir: str) -> None:
+    from pathlib import Path
+
+    from earthlab.ui.workspace_tabs import show_result
+
+    show_result(Path(run_dir))
+
+
+def test_a_workflow_that_stopped_early_still_renders(tmp_path: Path, offline: None) -> None:
+    report = {"report_text": "Fixed text.", "report_source": "rendered"}
+    result = {"status": "out_of_scope", "workflow": {"manager_result": report}}
+    (tmp_path / "result.json").write_text(json.dumps(result), encoding="utf-8")
+    app = AppTest.from_function(_show_stopped_run, args=(str(tmp_path),)).run()
+    assert not app.exception
+    assert "Fixed text." in [m.value for m in app.markdown]

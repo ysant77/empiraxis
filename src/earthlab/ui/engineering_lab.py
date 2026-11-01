@@ -175,6 +175,43 @@ def _experiments() -> None:
         )
 
 
+def evidence_rows(result: dict[str, Any]) -> list[dict[str, Any]]:
+    """One row per plan review and month check of a run, from its saved record."""
+    rows: list[dict[str, Any]] = [
+        {"check": f"plan critic r{r['plan_revision']}", "result": r["verdict"], "source": "code"}
+        for r in result.get("plan_reviews") or []
+    ]
+    for rnd in result.get("area_rounds") or []:
+        rows += [
+            {
+                "check": f"area claim {v['claim']['month']}",
+                "result": v["verdict"],
+                "source": "verifier",
+            }
+            for v in rnd
+        ]
+    return rows
+
+
+def _run_evidence() -> None:
+    with common.panel("Recorded run evidence", "implemented", "The run chosen on any surface."):
+        picked = common.pick_run()
+        run_dir = None if picked is None else common.open_run(*picked)[0]
+        if run_dir is None:
+            st.write("No recorded run passed its integrity check.")
+            return
+        result = json.loads((run_dir / "result.json").read_text(encoding="utf-8"))
+        st.write(
+            f"Status: {result['status']}. {len(evidence_files(result))} input hashes recorded."
+        )
+        st.dataframe(evidence_rows(result), use_container_width=True, hide_index=True)
+
+
+def evidence_files(result: dict[str, Any]) -> dict[str, str]:
+    files: dict[str, str] = (result.get("evidence") or {}).get("files", {})
+    return files
+
+
 def render() -> None:
     common.header(
         "Geospatial Engineering Lab",
@@ -188,5 +225,6 @@ def render() -> None:
         _dev_bench()
         _heldout()
     with right:
+        _run_evidence()
         _method()
         _experiments()
