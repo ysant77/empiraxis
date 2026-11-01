@@ -271,7 +271,9 @@ def render() -> None:
         st.caption(f"Provenance: {common.run_provenance(picked[1])}")
         board_view.run_panel(*picked)
         run_dir, run, error = common.open_run(*picked)
-        if run is None and not board_view.is_waiting(picked[0]):
+        if run is None and board_view.is_waiting(picked[0]):
+            error = "The run has no trace yet."
+        elif run is None:
             st.error(f"Run not shown. Integrity check failed: {error}")
     view = load_workflow(run_dir) if run is not None and run_dir is not None else None
     _cards(run, error)

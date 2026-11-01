@@ -78,7 +78,25 @@ def test_the_heartbeat_moves_while_a_run_is_busy(
     assert beats[1] is not None and beats[0] is not None and beats[1] > beats[0]
 
 
-def test_a_real_detached_worker_outlives_nothing_and_records_its_failure(tmp_path: Path) -> None:
+def test_the_worker_is_started_without_a_fork(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """A fork from the threaded server crashes before exec on macOS; pytest has no such server."""
+    seen: dict[str, Any] = {}
+
+    class Started:
+        pid = 7
+
+    def popen(*_args: Any, **kwargs: Any) -> Started:
+        seen.update(kwargs)
+        return Started()
+
+    monkeypatch.setattr(worker.subprocess, "Popen", popen)
+    assert worker.spawn("r", tmp_path) == 7
+    assert seen["close_fds"] is False and "start_new_session" not in seen
+
+
+def test_a_real_detached_worker_records_its_failure(tmp_path: Path) -> None:
     """The unknown provider fails inside a real process, without any model call."""
     board, run_id = queued(tmp_path)
     worker.spawn(run_id, tmp_path)

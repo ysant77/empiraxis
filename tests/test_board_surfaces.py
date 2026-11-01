@@ -100,8 +100,10 @@ def test_a_queued_run_with_no_trace_is_not_called_a_failure(operator: Path) -> N
     for view in SURFACES:
         app = open_view(view, entry.run_id)
         assert not app.exception
-        assert "Integrity check failed" not in shown(app)
-        assert f"Run {entry.run_id} is queued" in shown(app)
+        text = shown(app)
+        assert "Integrity check failed" not in text and "TraceMissingError" not in text
+        assert "No recorded run passed" not in text
+        assert f"Run {entry.run_id} is queued" in text
 
 
 def test_refresh_never_repeats_a_run(operator: Path, monkeypatch: pytest.MonkeyPatch) -> None:

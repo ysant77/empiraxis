@@ -199,6 +199,9 @@ def _run_evidence() -> None:
         board_view.run_panel(*picked)
     with common.panel("Recorded run evidence", "implemented", "The run chosen on any surface."):
         run_dir = None if picked is None else common.open_run(*picked)[0]
+        if picked is not None and board_view.is_waiting(picked[0]) and run_dir is None:
+            st.write("This run has no trace yet.")
+            return
         if run_dir is None:
             st.write("No recorded run passed its integrity check.")
             return

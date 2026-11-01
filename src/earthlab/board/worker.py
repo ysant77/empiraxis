@@ -7,6 +7,7 @@ trace, so a worker that exits cleanly never turns into a success on any view.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import logging
 import os
 import subprocess
@@ -25,7 +26,12 @@ log = logging.getLogger(__name__)
 
 
 def spawn(run_id: str, runs_dir: Path) -> int:
-    """Start the worker in its own session. The request stays in the board, not in argv."""
+    """Start the worker. The request stays in the board, not in argv.
+
+    close_fds=False selects posix_spawn: on macOS a fork from the threaded Streamlit server
+    crashes the child before exec (exit -11). Python opens files as non-inheritable, so no
+    server socket reaches the worker. The worker leaves this session itself, in main().
+    """
     runs_dir.mkdir(parents=True, exist_ok=True)
     with open(runs_dir / f"{run_id}.worker.log", "ab") as output:
         process = subprocess.Popen(  # noqa: S603 - fixed module; run_id comes from the board
@@ -33,7 +39,7 @@ def spawn(run_id: str, runs_dir: Path) -> int:
             stdin=subprocess.DEVNULL,
             stdout=output,
             stderr=subprocess.STDOUT,
-            start_new_session=True,
+            close_fds=False,
         )
     return process.pid
 
@@ -71,6 +77,8 @@ def main() -> int:
     parser.add_argument("run_id")
     parser.add_argument("--runs-dir", type=Path, default=Path("runs"))
     args = parser.parse_args()
+    with contextlib.suppress(PermissionError):  # already a group leader when run by hand
+        os.setsid()
     logging.basicConfig(level=logging.WARNING)
     return work(args.run_id, args.runs_dir)
 
