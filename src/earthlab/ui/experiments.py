@@ -13,9 +13,10 @@ from typing import Any
 
 import streamlit as st
 
+from earthlab.board.progress import fold
 from earthlab.digest import file_digest
 from earthlab.team.resources import ResourceApprovalV1, key_matches, operator_key, sign
-from earthlab.ui import common
+from earthlab.ui import board_view, common
 
 DECISION_FILE = "decision.json"
 APPROVER = "local operator (holder of the operator key)"
@@ -36,6 +37,12 @@ def _usage_rows(record: dict[str, Any]) -> list[dict[str, Any]]:
 
 def _roles(record: dict[str, Any]) -> list[dict[str, Any]]:
     return list((record.get("roles") or {}).values())
+
+
+def _tasks(run_dir: Path) -> list[dict[str, Any]]:
+    """The experiment's task tree, from its trace, as every other surface shows it."""
+    entries = board_view.read_trace(run_dir)
+    return board_view.task_rows(fold(entries).tasks)
 
 
 def experiment_panel(run_dir: Path) -> None:
@@ -63,6 +70,7 @@ def experiment_panel(run_dir: Path) -> None:
             )
         checks = record.get("acceptance") or {}
         st.table([{"check": k, "passed": v} for k, v in checks.items()])
+        st.dataframe(_tasks(run_dir), use_container_width=True, hide_index=True)
         st.dataframe(_roles(record), use_container_width=True, hide_index=True)
         st.dataframe(_usage_rows(record), use_container_width=True, hide_index=True)
 
