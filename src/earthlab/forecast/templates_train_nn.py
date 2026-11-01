@@ -19,6 +19,8 @@ import numpy as np
 import torch
 from torch import nn
 
+CHECKPOINT = "checkpoint.pt"
+
 
 class Gru(nn.Module):  # type: ignore[misc]
     def __init__(self, inputs: int, hidden: int, layers: int, outputs: int):
@@ -108,6 +110,32 @@ def one_epoch(
     return total
 
 
+def restore(model: Any, optimiser: Any, rng: Any, out: Path) -> tuple[float, int, list[Any], int]:
+    """The last finished epoch of an interrupted job, or a clean start."""
+    path = out / CHECKPOINT
+    if not path.is_file():
+        return float("inf"), 0, [], 0
+    saved = torch.load(path, weights_only=False)
+    model.load_state_dict(saved["model"])
+    optimiser.load_state_dict(saved["optimiser"])
+    rng.bit_generator.state = saved["rng"]
+    print(json.dumps({"resumed_after_epoch": saved["progress"][3]}), flush=True)
+    best, stale, history, first = saved["progress"]
+    return best, stale, history, first
+
+
+def save_point(
+    model: Any, optimiser: Any, rng: Any, out: Path, progress: tuple[float, int, list[Any], int]
+) -> None:
+    partial = out / f"{CHECKPOINT}.part"
+    torch.save(
+        {"model": model.state_dict(), "optimiser": optimiser.state_dict(),
+         "rng": rng.bit_generator.state, "progress": progress},
+        partial,
+    )  # fmt: skip
+    partial.replace(out / CHECKPOINT)
+
+
 def fit(data: dict[str, np.ndarray], job: dict[str, Any], out: Path) -> dict[str, Any]:
     torch.manual_seed(job["seed"])
     rng = np.random.default_rng(job["seed"])
@@ -118,9 +146,9 @@ def fit(data: dict[str, np.ndarray], job: dict[str, Any], out: Path) -> dict[str
     model: Any = make(inputs, job["hidden"], job["layers"], y_all.shape[1])
     optimiser = torch.optim.Adam(model.parameters(), lr=job["learning_rate"])
     soft = np.load(job["soft"]) if job.get("soft") else None
-    best, stale, history = float("inf"), 0, []
+    best, stale, history, first = restore(model, optimiser, rng, out)
     started = time.perf_counter()
-    for epoch in range(job["max_epochs"]):
+    for epoch in range(first, job["max_epochs"]):
         model.train()
         order = rng.permutation(len(train))
         total = one_epoch(model, optimiser, data, job, order, soft)
@@ -137,6 +165,7 @@ def fit(data: dict[str, np.ndarray], job: dict[str, Any], out: Path) -> dict[str
             stale += 1
             if stale >= job["patience"]:
                 break
+        save_point(model, optimiser, rng, out, (best, stale, history, epoch + 1))
     model.load_state_dict(torch.load(out / "model.pt", weights_only=True))
     model.eval()
     timed = time.perf_counter()
