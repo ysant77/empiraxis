@@ -1,0 +1,68 @@
+# Pre-registered benchmark matrix. Written and committed before any result exists. Do not
+# edit a stage after its first run. Rationale and rules: docs/benchmark-matrix-protocol.md.
+# "@winner" in an arm is replaced by the screening winner (see the naming rule in the protocol).
+version: 1
+matrix_id: decisions-v1
+decisions:
+  D1-train-when-justified: [pm25-regression]
+  D2-reuse-or-simplify: [pm25-exceedance, burned-area-method]
+  D3-request-or-abstain: [burned-area-segmentation]
+
+arms:
+  - {arm_id: F, arm: fixed, note: "No model. The code preset and the code rules."}
+  - {arm_id: S-M, arm: single, lead: local-glimmer, muse_roles: [lead],
+     note: "One Muse Lead. The single-agent baseline."}
+  - {arm_id: T-M-base, arm: team, pm: local-glimmer, lead: local-glimmer, specialist: local-glimmer,
+     prompt_variant: baseline, muse_roles: [pm, lead, specialist],
+     note: "Team, all Muse, default prompts. The paired control."}
+  - {arm_id: T-M-v1, arm: team, pm: local-glimmer, lead: local-glimmer, specialist: local-glimmer,
+     prompt_variant: note-close-v1, muse_roles: [pm, lead, specialist]}
+  - {arm_id: T-M-v2, arm: team, pm: local-glimmer, lead: local-glimmer, specialist: local-glimmer,
+     prompt_variant: note-close-reminder-v1, muse_roles: [pm, lead, specialist]}
+  - {arm_id: T-M-win, arm: team, pm: local-glimmer, lead: local-glimmer, specialist: local-glimmer,
+     prompt_variant: "@winner", muse_roles: [pm, lead, specialist],
+     note: "The Muse screening winner, for the paired confirm pass."}
+  - {arm_id: T-pm3, arm: team, pm: local-llama-3-2-3b, lead: local-glimmer,
+     specialist: local-glimmer, prompt_variant: "@winner", muse_roles: [lead, specialist],
+     note: "Small Meta PM. Needs two servers. Lead and specialists stay Muse."}
+  - {arm_id: T-sp4, arm: team, pm: local-glimmer, lead: local-glimmer,
+     specialist: local-qwen3-4b-2507, prompt_variant: "@winner", muse_roles: [pm, lead],
+     note: "Small non-Meta specialists. Needs two servers. PM and Lead stay Muse."}
+  - {arm_id: T-sp8, arm: team, pm: local-glimmer, lead: local-glimmer,
+     specialist: local-llama-3-1-8b, prompt_variant: "@winner", muse_roles: [pm, lead],
+     note: "Small Meta specialists. Reserve arm: runs only if time is left."}
+
+stages:
+  - stage_id: screen-muse
+    purpose: "Repeat 1. Find a working prompt variant with Muse only, one server."
+    cells:
+      - {scenario: pm25-regression, arm_ids: [F, S-M]}
+      - {scenario: pm25-exceedance, arm_ids: [F, S-M, T-M-v1, T-M-v2]}
+      - {scenario: burned-area-method, arm_ids: [F, S-M, T-M-v1, T-M-v2]}
+      - {scenario: burned-area-segmentation, arm_ids: [F, S-M, T-M-v1, T-M-v2]}
+  - stage_id: screen-mixed
+    purpose: "Repeat 1. Small models in the PM and specialist roles, after their gates pass."
+    cells:
+      - {scenario: pm25-exceedance, arm_ids: [T-pm3, T-sp4]}
+      - {scenario: burned-area-method, arm_ids: [T-pm3, T-sp4]}
+      - {scenario: burned-area-segmentation, arm_ids: [T-pm3, T-sp4]}
+  - stage_id: confirm
+    purpose: "Paired confirm. The winner against the control and the single agent."
+    cells:
+      - {scenario: pm25-exceedance, arm_ids: [S-M, T-M-base, T-M-win]}
+      - {scenario: burned-area-method, arm_ids: [T-M-base, T-M-win], repeats: 2}
+
+budget:
+  total_hours: 8.0
+  preflight_minutes: 25
+  switch_minutes: 4
+  # Minutes per run. Muse values are round 1 wall times in minutes, rounded up. The segmentation
+  # single-agent value is a guess: no such run exists. The small model arms use the Muse team
+  # value, which is a ceiling guess: no such run exists.
+  minutes:
+    fixed: {pm25-regression: 0.5, pm25-exceedance: 0.5, burned-area-method: 0.5,
+            burned-area-segmentation: 0.5}
+    single: {pm25-regression: 11, pm25-exceedance: 17, burned-area-method: 11,
+             burned-area-segmentation: 5}
+    team: {pm25-regression: 32, pm25-exceedance: 22, burned-area-method: 22,
+           burned-area-segmentation: 3}
