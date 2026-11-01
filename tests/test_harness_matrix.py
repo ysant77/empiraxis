@@ -51,12 +51,14 @@ def test_an_arm_must_name_the_roles_of_its_kind() -> None:
 
 
 def test_the_plan_stays_inside_the_hour_budget_and_names_known_arms(plan: MatrixPlan) -> None:
-    hours = estimate_hours(plan, [s.stage_id for s in plan.stages])
-    assert hours <= plan.budget.total_hours
+    assert estimate_hours(plan, list(plan.default_path)) <= plan.budget.total_hours
+    fallback = [s for s in plan.default_path if s != "screen-mixed"] + ["fallback-single"]
+    assert estimate_hours(plan, fallback) <= plan.budget.total_hours
     assert {a.block for a in plan.arms} == {
         "none", "muse", "muse+local-llama-3-2-3b", "muse+local-qwen3-4b-2507",
-        "muse+local-llama-3-1-8b",
+        "muse+local-llama-3-1-8b", "local-qwen3-4b-2507", "local-llama-3-2-3b",
     }  # fmt: skip
+    assert plan.stage("fallback-single").alternative_to == "screen-mixed"
 
 
 def test_the_order_rotates_each_repeat_and_lists_each_pair_once(plan: MatrixPlan) -> None:
@@ -66,6 +68,7 @@ def test_the_order_rotates_each_repeat_and_lists_each_pair_once(plan: MatrixPlan
     assert sorted(one) == sorted(two) == ["T-M-base", "T-M-win"] and one != two
     assert [r.order for r in runs] == list(range(1, len(runs) + 1))
     assert not any(r.scenario == "pm25-regression" for r in runs)
+    assert sum(r.arm_id == "T-M-base" for r in runs) == 3  # the same-session control
 
 
 def test_muse_arms_pass_the_gates_and_a_disabled_small_model_does_not(
@@ -194,3 +197,29 @@ def test_the_runner_refuses_before_any_run(plan: MatrixPlan, tmp_path: Path) -> 
             pin=PIN, repo=ROOT, out_dir=tmp_path / "w", head_of=lambda _r: (PIN, False),
         )  # fmt: skip
     assert calls == []
+
+
+def test_a_waived_lead_gate_needs_a_single_unranked_arm_and_still_checks_the_model(
+    plan: MatrixPlan, providers: dict[str, ProviderConfig], bindings: Bindings
+) -> None:
+    with pytest.raises(ValueError, match="single, unranked"):
+        ArmSpec(arm_id="x", arm="single", lead="local-qwen3-4b-2507", lead_gate_waived=True)
+    fallback = plan.arm("S-q4")
+    assert not fallback.ranked and fallback.block == "local-qwen3-4b-2507"
+    found = gate_blockers(fallback, bindings, providers)
+    assert any("data_specialist" in f for f in found)  # judged in the specialist seat
+
+
+def test_the_tuned_arm_is_refused_until_a_person_adds_the_reviewed_variant(
+    plan: MatrixPlan, tmp_path: Path
+) -> None:
+    with pytest.raises(Refused, match="qwen-tuned-v1"):
+        run_stage(
+            plan, "screen-tuned", "muse+local-qwen3-4b-2507",
+            variants=load_variants(CONFIG / "benchmark" / "prompt_variants.yaml"),
+            providers=load_providers(CONFIG / "providers.yaml"),
+            bindings=Bindings.model_validate(
+                yaml.safe_load((CONFIG / "roles" / "bindings.yaml").read_text(encoding="utf-8"))
+            ),
+            pin=PIN, repo=ROOT, out_dir=tmp_path, head_of=lambda _r: (PIN, False),
+        )  # fmt: skip

@@ -28,6 +28,15 @@ arms:
   - {arm_id: T-sp4, arm: team, pm: local-glimmer, lead: local-glimmer,
      specialist: local-qwen3-4b-2507, prompt_variant: "@winner", muse_roles: [pm, lead],
      note: "Small non-Meta specialists. Needs two servers. PM and Lead stay Muse."}
+  - {arm_id: T-sp4-tuned, arm: team, pm: local-glimmer, lead: local-glimmer,
+     specialist: local-qwen3-4b-2507, prompt_variant: qwen-tuned-v1, muse_roles: [pm, lead],
+     note: "T-sp4 with the specialist prompt tuned offline on Qwen3 4B. The variant qwen-tuned-v1
+            does not exist until a person reviews the candidate text and adds it."}
+  - {arm_id: S-q4, arm: single, lead: local-qwen3-4b-2507, ranked: false, lead_gate_waived: true,
+     note: "Fallback if two servers fail the memory probe. Qwen3 4B in the Lead seat with no
+            Muse server up. It does not meet the Lead gate and is never ranked."}
+  - {arm_id: S-l3, arm: single, lead: local-llama-3-2-3b, ranked: false, lead_gate_waived: true,
+     note: "Fallback, same terms as S-q4. Needs the owner to accept the Llama licence."}
   - {arm_id: T-sp8, arm: team, pm: local-glimmer, lead: local-glimmer,
      specialist: local-llama-3-1-8b, prompt_variant: "@winner", muse_roles: [pm, lead],
      note: "Small Meta specialists. Reserve arm: runs only if time is left."}
@@ -43,14 +52,35 @@ stages:
   - stage_id: screen-mixed
     purpose: "Repeat 1. Small models in the PM and specialist roles, after their gates pass."
     cells:
-      - {scenario: pm25-exceedance, arm_ids: [T-pm3, T-sp4]}
+      - {scenario: pm25-exceedance, arm_ids: [T-sp4]}
       - {scenario: burned-area-method, arm_ids: [T-pm3, T-sp4]}
       - {scenario: burned-area-segmentation, arm_ids: [T-pm3, T-sp4]}
-  - stage_id: confirm
-    purpose: "Paired confirm. The winner against the control and the single agent."
+  - stage_id: screen-tuned
+    purpose: "Repeat 1. The tuned specialist prompt against T-sp4 on the same scenarios."
     cells:
-      - {scenario: pm25-exceedance, arm_ids: [S-M, T-M-base, T-M-win]}
+      - {scenario: burned-area-method, arm_ids: [T-sp4-tuned]}
+      - {scenario: burned-area-segmentation, arm_ids: [T-sp4-tuned]}
+  - stage_id: confirm
+    purpose: "Paired confirm. The winner against the control, and the single agent once."
+    cells:
+      - {scenario: pm25-exceedance, arm_ids: [T-M-base, T-M-win]}
       - {scenario: burned-area-method, arm_ids: [T-M-base, T-M-win], repeats: 2}
+  - stage_id: fallback-single
+    alternative_to: screen-mixed
+    purpose: "Only if two servers fail the memory probe. Small models alone in the Lead seat."
+    cells:
+      - {scenario: pm25-exceedance, arm_ids: [S-q4, S-l3]}
+      - {scenario: burned-area-method, arm_ids: [S-q4, S-l3]}
+      - {scenario: burned-area-segmentation, arm_ids: [S-q4, S-l3]}
+
+side_stages:
+  tune-prompt:
+    purpose: "Offline prompt tuning of the specialist closing prompt on Qwen3 4B. 12 synthetic tickets."
+    minutes: 50
+    block: "small:local-qwen3-4b-2507"
+
+# The order of work if the memory probe passes.
+default_path: [screen-muse, tune-prompt, screen-mixed, screen-tuned, confirm]
 
 budget:
   total_hours: 8.0

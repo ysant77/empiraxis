@@ -90,6 +90,7 @@ def cell(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "runs": len(rows),
         "prompt_variant": _variants(rows),
         "models": _models(rows),
+        "ranked": "yes" if all(r.get("ranked", True) for r in rows) else "no: Lead gate waived",
         "reached_decision_gate": sum(r.get("state") == "forwarded" for r in records),
         "ended_in_refusal_or_abstention": sum(
             r.get("state") in ("refused", "abstained") for r in records
@@ -132,7 +133,7 @@ def build(runs: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 SECTIONS = (
-    ("Arm", ("prompt_variant", "models")),
+    ("Arm", ("prompt_variant", "models", "ranked")),
     ("Scientific result", ("runs", "reached_decision_gate", "ended_in_refusal_or_abstention",
                            "failed", "acceptance_passed", "outcomes", "strategies",
                            "agrees_with_code_rule")),

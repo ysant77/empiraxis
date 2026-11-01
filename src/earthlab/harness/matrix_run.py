@@ -108,7 +108,8 @@ def one_run(
     row: dict[str, Any] = {
         "stage": run.stage, "repeat": run.repeat, "order": run.order, "scenario": run.scenario,
         "arm": spec.arm, "arm_id": spec.arm_id, "prompt_variant": variant.id,
-        "block": run.block, "models": spec.providers(), "run": str(run_dir),
+        "block": run.block, "models": spec.providers(), "ranked": spec.ranked,
+        "run": str(run_dir),
     }  # fmt: skip
     try:
         client, per_role = build_role_clients(spec, providers, build)

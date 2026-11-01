@@ -32,6 +32,8 @@ class ArmSpec(Strict):
     lead: str | None = None
     specialist: str | None = None
     muse_roles: tuple[Literal["pm", "lead", "specialist"], ...] = ()
+    ranked: bool = True
+    lead_gate_waived: bool = False
     note: str = ""
 
     @model_validator(mode="after")
@@ -40,6 +42,8 @@ class ArmSpec(Strict):
         need = {"fixed": set(), "single": {"lead"}, "team": {"pm", "lead", "specialist"}}[self.arm]
         if named != need:
             raise ValueError(f"{self.arm_id}: the {self.arm} arm names roles {sorted(need)}")
+        if self.lead_gate_waived and (self.ranked or self.arm != "single"):
+            raise ValueError(f"{self.arm_id}: a waived Lead gate needs a single, unranked arm")
         if not set(self.muse_roles) <= named:
             raise ValueError(f"{self.arm_id}: a Muse role must be a named role")
         return self
@@ -60,7 +64,9 @@ class ArmSpec(Strict):
         small = sorted(n for n in names if n != MUSE_PROVIDER)
         if not names:
             return "none"
-        return "+".join(["muse", *small]) if small else "muse"
+        if MUSE_PROVIDER not in names:
+            return "+".join(small)
+        return "+".join(["muse", *small])
 
 
 def gate_blockers(
@@ -78,7 +84,9 @@ def gate_blockers(
         if cfg is None or owner is None:
             found.append(f"{spec.arm_id}/{role}: provider {name} has no candidate")
             continue
-        status = bindings.status(role_for(role), owner.candidate_id, providers)
+        # A waived Lead gate tests the model in the specialist seat's gate. The arm is unranked.
+        seat = "data_specialist" if spec.lead_gate_waived and role == LEAD else role_for(role)
+        status = bindings.status(seat, owner.candidate_id, providers)
         found += [f"{spec.arm_id}/{role}/{owner.candidate_id}: {b}" for b in
                   status.blockers(allow_experimental=True)]  # fmt: skip
     return found

@@ -32,6 +32,15 @@ class Stage(Strict):
     stage_id: str
     purpose: str
     cells: tuple[Cell, ...] = Field(min_length=1)
+    alternative_to: str | None = None
+
+
+class SideStage(Strict):
+    """Work that is not a scenario run, such as offline prompt tuning. It has a time estimate."""
+
+    purpose: str
+    minutes: float = Field(gt=0)
+    block: str
 
 
 class Budget(Strict):
@@ -47,6 +56,8 @@ class MatrixPlan(Strict):
     decisions: dict[str, tuple[str, ...]]
     arms: tuple[ArmSpec, ...] = Field(min_length=1)
     stages: tuple[Stage, ...] = Field(min_length=1)
+    side_stages: dict[str, SideStage] = Field(default_factory=dict)
+    default_path: tuple[str, ...] = Field(min_length=1)
     budget: Budget
 
     @model_validator(mode="after")
@@ -62,6 +73,9 @@ class MatrixPlan(Strict):
                 missing = set(cell.arm_ids) - set(ids)
                 if missing:
                     raise ValueError(f"{stage.stage_id}: unknown arms {sorted(missing)}")
+        known = {s.stage_id for s in self.stages} | set(self.side_stages)
+        if not set(self.default_path) <= known:
+            raise ValueError("the default path names an unknown stage")
         return self
 
     def arm(self, arm_id: str) -> ArmSpec:
@@ -127,6 +141,9 @@ def estimate_hours(plan: MatrixPlan, stage_ids: list[str]) -> float:
     """Planned model time, preflight and server switches, in hours."""
     minutes = plan.budget.preflight_minutes
     for stage_id in stage_ids:
+        if stage_id in plan.side_stages:
+            minutes += plan.side_stages[stage_id].minutes
+            continue
         runs = expand(plan, stage_id)
         minutes += sum(run_minutes(plan, r) for r in runs)
         served = [r.block for r in runs if r.block != "none"]
