@@ -19,6 +19,7 @@ from earthlab.data.snapshot import open_snapshot
 from earthlab.digest import file_digest
 from earthlab.haze import fires as fires_mod
 from earthlab.haze import met as met_mod
+from earthlab.haze.base_rate import run_base_rate
 from earthlab.haze.evidence import SourceRef, output_digest
 from earthlab.haze.fallback import fallback_report
 from earthlab.haze.geometry import H1_SOURCE_BOXES, corridor
@@ -70,9 +71,10 @@ def read_fires(
     """Detections per box id; a manifest belongs to the box its asset id ends with."""
     by_box: dict[str, list[fires_mod.FireDetection]] = {}
     refs: list[SourceRef] = []
-    for manifest in manifests:
+    # Box order, so the output digest does not depend on the order of the --firms options.
+    assets = {m: json.loads(m.read_text(encoding="utf-8"))["asset_id"] for m in manifests}
+    for manifest, asset in sorted(assets.items(), key=lambda item: item[1]):
         detections, file_refs = fires_mod.read_manifest(manifest)
-        asset = json.loads(manifest.read_text(encoding="utf-8"))["asset_id"]
         box = next((s.box_id for s in H1_SOURCE_BOXES if asset.endswith(s.box_id)), None)
         if box is None:
             raise ValueError(f"{asset} matches no H1 source box")
@@ -146,6 +148,21 @@ def cmd_h1(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_base_rate(args: argparse.Namespace) -> int:
+    snapshot, path = open_snapshot(args.nea)
+    dataset = load_pm25(path, snapshot)
+    h0 = describe(dataset, H1_WINDOW)
+    levels = {
+        level: run_base_rate(h0, dataset, met).model_dump(mode="json")
+        for level, met in sorted(met_by_level(args.met).items())
+    }
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    document = {"h0_digest": output_digest(h0), "levels": levels}
+    args.out.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
+    print(f"H1 base rate ({', '.join(levels)}) -> {args.out}")
+    return 0
+
+
 def verify_manifest(manifest: Path, approvals_dir: Path) -> list[str]:
     """Problems with a download: hash or size against its manifest, total against its cap."""
     raw = json.loads(manifest.read_text(encoding="utf-8"))
@@ -195,6 +212,12 @@ def add_haze_parsers(sub: Any) -> None:
     h1.add_argument("--firms", type=Path, action="append", default=[])
     h1.add_argument("--out", type=Path, required=True)
     h1.set_defaults(func=cmd_h1)
+
+    rate = sub.add_parser("haze-base-rate", help="how often the H1 check passes in all hours")
+    rate.add_argument("--nea", type=Path, default=Path("data/nea"))
+    rate.add_argument("--met", type=Path, action="append", required=True)
+    rate.add_argument("--out", type=Path, required=True)
+    rate.set_defaults(func=cmd_base_rate)
 
     ver = sub.add_parser("haze-verify", help="check a download against its manifest and cap")
     ver.add_argument("--manifest", type=Path, required=True)

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -11,14 +12,24 @@ import yaml
 from haze_synthetic import SYNTHETIC_REF, met_series, steady, write_nea
 
 from earthlab.contracts import SGT
-from earthlab.haze.cli import load_h0
+from earthlab.data.nea_pm25 import load_pm25
+from earthlab.data.snapshot import open_snapshot
+from earthlab.haze import fires as fires_mod
+from earthlab.haze.base_rate import _rate, run_base_rate
+from earthlab.haze.cli import load_h0, read_fires
 from earthlab.haze.contracts import EvidenceClass
-from earthlab.haze.evidence import output_digest
+from earthlab.haze.evidence import SourceRef, output_digest
 from earthlab.haze.fires import FireDetection
 from earthlab.haze.geometry import H1_SOURCE_BOXES
 from earthlab.haze.h0 import H0Report
 from earthlab.haze.h1 import control_labels, run_h1, time_sensitive_boxes
-from earthlab.haze.sector import H1Params, MetHour, TransportStatus, combine, lag_check
+from earthlab.haze.sector import (
+    H1Params,
+    MetHour,
+    TransportStatus,
+    combine,
+    lag_check,
+)
 from earthlab.haze.timebase import HourConvention
 from earthlab.haze.wind import uv_from_wind
 
@@ -173,3 +184,35 @@ def test_control_labels_skip_hours_near_events(tmp_path: Path) -> None:
     assert len(labels) == 61 - 3  # Sep 14, 15 and 16 lie within 24 h of the event
     assert all(label.hour == 14 for label in labels)
     assert datetime(2015, 9, 15, 14, tzinfo=SGT) not in labels
+
+
+def test_a_constant_wind_shows_that_a_pass_says_nothing_about_haze(tmp_path: Path) -> None:
+    h0 = _h0(tmp_path, EVENTS)
+    snapshot, path = open_snapshot(tmp_path / "nea")
+    report = run_base_rate(h0, load_pm25(path, snapshot), met_series(steady(8.0)))
+    box = next(b for b in report.boxes if b.box_id == BOX_B.box_id)
+    groups = {g.group: g for g in box.groups}
+    assert groups["all_hours"].rate == 1.0 and groups["clean_at_or_below_55"].rate == 1.0
+    assert groups["above_150"].hours == 0 and groups["above_150"].rate is None
+    assert report.hours_checked == groups["all_hours"].hours > 0
+
+
+def test_undecided_hours_leave_no_rate() -> None:
+    assert _rate("x", [TransportStatus.INCONCLUSIVE]).rate is None
+
+
+def test_firms_option_order_does_not_change_the_sources(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    paths = []
+    for box in ("box-b", "box-a"):
+        path = tmp_path / f"{box}.json"
+        path.write_text(json.dumps({"asset_id": f"firms-{box}"}), encoding="utf-8")
+        paths.append(path)
+    monkeypatch.setattr(
+        fires_mod,
+        "read_manifest",
+        lambda p: ([], (SourceRef(dataset_id=p.stem, file="f", sha256="0" * 64),)),
+    )
+    assert read_fires(paths) == read_fires(paths[::-1])
+    assert [r.dataset_id for r in read_fires(paths)[1]] == ["box-a", "box-b"]
