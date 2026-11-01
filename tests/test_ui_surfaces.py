@@ -74,10 +74,14 @@ def test_each_route_renders_with_status_text(offline: None, view: str) -> None:
     assert any("read-only replay" in c for c in captions)
 
 
+def timeline_of(app: AppTest) -> Any:
+    return next(d.value for d in app.dataframe if "actor kind" in d.value.columns)
+
+
 def test_sample_recorded_run_loads_offline(offline: None) -> None:
     app = open_view("control")
     assert not app.exception and not app.error
-    timeline = app.dataframe[0].value
+    timeline = timeline_of(app)
     assert len(timeline) == 15
     assert "Round 1: A1.1 supported" in timeline.to_string()
     assert any("real Muse Glimmer run; redacted copy" in c.value for c in app.caption)
@@ -122,11 +126,10 @@ def test_no_sealed_content_or_keys_in_public_views(offline: None) -> None:
 
 def test_control_room_shows_no_planned_role_as_an_actor(offline: None) -> None:
     app = open_view("control")
-    actors = set(app.dataframe[0].value["actor"])
+    timeline = timeline_of(app)
+    actors = set(timeline["actor"])
     assert actors <= IMPLEMENTED_ROLES and not actors & PLANNED_ROLES
-    kinds = dict(
-        zip(app.dataframe[0].value["actor"], app.dataframe[0].value["actor kind"], strict=True)
-    )
+    kinds = dict(zip(timeline["actor"], timeline["actor kind"], strict=True))
     assert kinds["tool"] == "code" and kinds["verifier"] == "code"
     assert kinds["orchestrator"] == "model agent"
     consoles = [b for b in app.button if b.label.startswith("Open ")]

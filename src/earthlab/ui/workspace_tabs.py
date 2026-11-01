@@ -19,11 +19,11 @@ from earthlab.data.mcd64a1 import read_manifest
 from earthlab.data.quality import coverage_report
 from earthlab.report.area_sections import AREA_LIMITATIONS
 from earthlab.report.burn_map import burn_map
-from earthlab.report.write import DEFAULT_WINDOW, write_report
+from earthlab.report.write import DEFAULT_WINDOW
 from earthlab.science.burned_area import QaPolicy
 from earthlab.tools.burned_area_tools import mcd64a1_asset_id, month_report
-from earthlab.ui import common
-from earthlab.ui.live import run_live
+from earthlab.ui import board_view, common
+from earthlab.ui.live import submit_live
 from earthlab.verify.claims import Claim, ClaimKind
 
 DEFAULT_QUESTION = (
@@ -159,10 +159,14 @@ def tab_investigate() -> None:
         )
         return
     question = st.text_area("Research question", DEFAULT_QUESTION, height=110)
-    run_dir = run_live(question)
-    if run_dir is not None:
-        if "rounds" in json.loads((run_dir / "result.json").read_text(encoding="utf-8")):
-            write_report(run_dir, common.DATA_DIR)
+    submit_live(question)
+    label = st.query_params.get("run", "")
+    entry = board_view.entry_for(label)
+    if entry is None:
+        return
+    run_dir = common.RUNS_DIR / entry.run_id
+    board_view.run_panel(label, run_dir)
+    if not entry.active and (run_dir / "result.json").is_file():
         show_result(run_dir)
 
 
@@ -171,9 +175,13 @@ def tab_runs() -> None:
     if picked is None:
         st.info("No recorded runs are available.")
         return
+    board_view.run_panel(*picked)
     run_dir, events, error = common.open_run(*picked)
     if run_dir is None or events is None:
-        st.error(f"Run not shown. Integrity check failed: {error}")
+        if not board_view.is_waiting(picked[0]):
+            st.error(f"Run not shown. Integrity check failed: {error}")
+        return
+    if board_view.is_waiting(picked[0]):
         return
     if picked[1] is None:
         split = common.replay_entry(events.run_id).get("split", "unknown")
