@@ -35,6 +35,7 @@ _MONTH_NAMES = [
     "february",
     "march",
     "april",
+    "may",
     "june",
     "july",
     "august",
@@ -44,11 +45,25 @@ _MONTH_NAMES = [
     "december",
 ]
 _MONTH_NUMBER = {name: i for i, name in enumerate(_MONTH_NAMES, start=1)}
-_MONTH_NUMBER |= {name: number + (number > 4) for name, number in _MONTH_NUMBER.items()}
-_MONTH_WORD = "|".join(_MONTH_NAMES)
+_MONTH_WORD = "|".join(name for name in _MONTH_NAMES if name != "may")
+_JOIN = r"\s*(?:and|or|to|through|until|,|-|\u2013)\s*"
 _NAMED = re.compile(rf"\b({_MONTH_WORD})\b", re.IGNORECASE)
+# "may" is usually the modal verb, so it counts as the month only where its context fixes it.
+_MAY_MONTH = re.compile(
+    r"\bmay,?\s+(?:19|20)\d{2}\b"
+    r"|\b(?:in|during|of|from|between|since|until|throughout|early|mid|late)[\s-]+may\b"
+    r"(?!\s+(?:be|have|not)\b)"
+    rf"|\b(?:{_MONTH_WORD}){_JOIN}may\b(?!\s+(?:be|have|not)\b)"
+    rf"|\bmay{_JOIN}(?:{_MONTH_WORD})\b",
+    re.IGNORECASE,
+)
 _NAMED_DAY = re.compile(
-    rf"\b\d{{1,2}}(?:st|nd|rd|th)?\s+(?:of\s+)?(?:{_MONTH_WORD})\b|\b(?:{_MONTH_WORD})\s+\d{{1,2}}\b",
+    rf"\b\d{{1,2}}(?:st|nd|rd|th)?\s+(?:of\s+)?(?:{_MONTH_WORD})\b"
+    rf"|\b(?:{_MONTH_WORD})\s+\d{{1,2}}\b"
+    r"|\b\d{1,2}(?:(?:st|nd|rd|th)\s+|\s+of\s+)(?:of\s+)?may\b"
+    r"|\b\d{1,2}\s+(?-i:May)\b"
+    r"|\b\d{1,2}\s+may\s+(?:19|20)\d{2}\b"
+    r"|\bmay\s+\d{1,2}(?:st|nd|rd|th)?\b",
     re.IGNORECASE,
 )
 _YEAR = re.compile(r"\b(?:19|20)\d{2}\b")
@@ -61,6 +76,7 @@ def asked_window(question: str, zone: str = NEA_ZONE) -> tuple[datetime, datetim
     """
     years = set(_YEAR.findall(question))
     months = [_MONTH_NUMBER[m.lower()] for m in _NAMED.findall(question)]
+    months += [_MONTH_NUMBER["may"]] if _MAY_MONTH.search(question) else []
     if len(years) != 1 or not months or _NAMED_DAY.search(question):
         return None
     year, tz = int(years.pop()), ZoneInfo(zone)
