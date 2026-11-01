@@ -44,7 +44,7 @@ None occurred before execution. The Lead reviewed its own results, and the PM ch
 
 ### 5. When each acceptance rule was set
 
-The first E1 result is from 14:34 SGT on 1 November. A rule set after that time is exploratory until a frozen protocol validates it.
+The first E1 evaluation file is from 14:30 SGT on 1 November. A rule set after that time is exploratory until a frozen protocol validates it.
 
 | Rule | Set | Status |
 |---|---|---|
