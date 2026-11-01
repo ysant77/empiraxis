@@ -12,6 +12,7 @@ from fake_client import ScriptedClient, call
 
 from earthlab.board.progress import fold
 from earthlab.digest import file_digest
+from earthlab.events.adapter import load_run
 from earthlab.forecast import pipeline
 from earthlab.forecast.isolated import IsolatedRun
 from earthlab.harness.artifacts import MissingArtifact
@@ -22,7 +23,9 @@ from earthlab.harness.regression import PM25_PROBLEM, RegressionAdapter
 from earthlab.harness.replay import replay_run
 from earthlab.harness.scenarios import run_scenario
 from earthlab.llm.types import ProviderError, ProviderErrorKind
+from earthlab.team.resources import OPERATOR_KEY_ENV
 from earthlab.trace import RunTrace
+from earthlab.ui.experiments import decide
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "data" / "nea" / "Historical1hrPM2.5.csv"
@@ -248,3 +251,20 @@ def test_a_blocked_strategy_is_refused_and_abstention_is_a_result(
     assert done["status"] == "abstained" and not trainer.jobs
     checks = {c["strategy"]: c for c in done["suitability"]["checks"]}
     assert not checks["pretrained_transfer"]["eligible"]
+
+
+def test_a_signed_ui_decision_reaches_the_lifecycle_and_stands(
+    trainer: Trainer, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv(OPERATOR_KEY_ENV, "unit-test-operator-key")
+    run_dir = tmp_path / "run"
+    run_scenario("pm25-regression", "fixed", run_dir, None)
+    with pytest.raises(PermissionError):
+        decide(run_dir, True, "wrong-key")
+    assert Lifecycle(run_dir).state == "forwarded"
+    decide(run_dir, False, "unit-test-operator-key")
+    assert Lifecycle(run_dir).state == "denied"
+    with pytest.raises(FileExistsError):
+        decide(run_dir, True, "unit-test-operator-key")
+    assert replay_run(run_dir)["mismatches"] == []
+    assert load_run(run_dir).closed

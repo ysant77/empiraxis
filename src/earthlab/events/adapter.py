@@ -415,5 +415,5 @@ def load_run(run_dir: Path, *, heldout: bool | None = None) -> RunEvents:
             )
         handler(state, entry)
     status = _check_result(run_dir, records)
-    closed = records[-1]["event"] == "finish"
+    closed = any(r["event"] == "finish" for r in records)  # a human decision can follow it
     return RunEvents(run_dir.name, count, head, closed, held, status, state.events)
