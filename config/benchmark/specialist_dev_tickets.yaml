@@ -1,0 +1,197 @@
+# Twelve synthetic specialist tickets for offline prompt tuning. Built from the tool schemas only:
+# no PM2.5 data, no held-out item, no test-period value.
+version: 1
+purpose: Synthetic dev tickets for the specialist closing prompt. No real data.
+tickets:
+- ticket_id: data-01
+  prompt_key: data
+  owner: data_specialist
+  tool: prepare_data
+  ticket:
+    task_id: dev01.pm.lead.data-plan-2
+    parent_task_id: dev01.pm.lead
+    owner: data_specialist
+    objective: Run prepare_data for plan-2.
+    allowed_tools:
+    - prepare_data
+    input_artifacts:
+    - 0000000000000000000000000000000000000000000000000000000000001eef
+    - 0000000000000000000000000000000000000000000000000000000000001ef0
+    acceptance_checks:
+    - the tool result names its artifacts
+- ticket_id: ml-01
+  prompt_key: ml
+  owner: ml_engineer
+  tool: train_models
+  ticket:
+    task_id: dev01.pm.lead.ml-plan-2
+    parent_task_id: dev01.pm.lead
+    owner: ml_engineer
+    objective: Run train_models for plan-2.
+    allowed_tools:
+    - train_models
+    input_artifacts:
+    - 0000000000000000000000000000000000000000000000000000000000001eef
+    - 0000000000000000000000000000000000000000000000000000000000001ef0
+    acceptance_checks:
+    - the tool result names its artifacts
+- ticket_id: data-02
+  prompt_key: data
+  owner: data_specialist
+  tool: prepare_data
+  ticket:
+    task_id: dev02.pm.lead.data-plan-1
+    parent_task_id: dev02.pm.lead
+    owner: data_specialist
+    objective: Run prepare_data for plan-1.
+    allowed_tools:
+    - prepare_data
+    input_artifacts:
+    - 0000000000000000000000000000000000000000000000000000000000003dde
+    - 0000000000000000000000000000000000000000000000000000000000003ddf
+    - 0000000000000000000000000000000000000000000000000000000000003de0
+    acceptance_checks:
+    - the tool result names its artifacts
+- ticket_id: ml-02
+  prompt_key: ml
+  owner: ml_engineer
+  tool: train_models
+  ticket:
+    task_id: dev02.pm.lead.ml-plan-1
+    parent_task_id: dev02.pm.lead
+    owner: ml_engineer
+    objective: Run train_models for plan-1.
+    allowed_tools:
+    - train_models
+    input_artifacts:
+    - 0000000000000000000000000000000000000000000000000000000000003dde
+    - 0000000000000000000000000000000000000000000000000000000000003ddf
+    - 0000000000000000000000000000000000000000000000000000000000003de0
+    acceptance_checks:
+    - the tool result names its artifacts
+- ticket_id: data-03
+  prompt_key: data
+  owner: data_specialist
+  tool: prepare_data
+  ticket:
+    task_id: dev03.pm.lead.data-plan-2
+    parent_task_id: dev03.pm.lead
+    owner: data_specialist
+    objective: Run prepare_data for plan-2.
+    allowed_tools:
+    - prepare_data
+    input_artifacts:
+    - 0000000000000000000000000000000000000000000000000000000000005ccd
+    acceptance_checks:
+    - the tool result names its artifacts
+- ticket_id: ml-03
+  prompt_key: ml
+  owner: ml_engineer
+  tool: train_models
+  ticket:
+    task_id: dev03.pm.lead.ml-plan-2
+    parent_task_id: dev03.pm.lead
+    owner: ml_engineer
+    objective: Run train_models for plan-2.
+    allowed_tools:
+    - train_models
+    input_artifacts:
+    - 0000000000000000000000000000000000000000000000000000000000005ccd
+    acceptance_checks:
+    - the tool result names its artifacts
+- ticket_id: data-04
+  prompt_key: data
+  owner: data_specialist
+  tool: prepare_data
+  ticket:
+    task_id: dev04.pm.lead.data-plan-1
+    parent_task_id: dev04.pm.lead
+    owner: data_specialist
+    objective: Run prepare_data for plan-1.
+    allowed_tools:
+    - prepare_data
+    input_artifacts:
+    - 0000000000000000000000000000000000000000000000000000000000007bbc
+    - 0000000000000000000000000000000000000000000000000000000000007bbd
+    acceptance_checks:
+    - the tool result names its artifacts
+- ticket_id: ml-04
+  prompt_key: ml
+  owner: ml_engineer
+  tool: train_models
+  ticket:
+    task_id: dev04.pm.lead.ml-plan-1
+    parent_task_id: dev04.pm.lead
+    owner: ml_engineer
+    objective: Run train_models for plan-1.
+    allowed_tools:
+    - train_models
+    input_artifacts:
+    - 0000000000000000000000000000000000000000000000000000000000007bbc
+    - 0000000000000000000000000000000000000000000000000000000000007bbd
+    acceptance_checks:
+    - the tool result names its artifacts
+- ticket_id: data-05
+  prompt_key: data
+  owner: data_specialist
+  tool: prepare_data
+  ticket:
+    task_id: dev05.pm.lead.data-plan-2
+    parent_task_id: dev05.pm.lead
+    owner: data_specialist
+    objective: Run prepare_data for plan-2.
+    allowed_tools:
+    - prepare_data
+    input_artifacts:
+    - 0000000000000000000000000000000000000000000000000000000000009aab
+    - 0000000000000000000000000000000000000000000000000000000000009aac
+    - 0000000000000000000000000000000000000000000000000000000000009aad
+    acceptance_checks:
+    - the tool result names its artifacts
+- ticket_id: ml-05
+  prompt_key: ml
+  owner: ml_engineer
+  tool: train_models
+  ticket:
+    task_id: dev05.pm.lead.ml-plan-2
+    parent_task_id: dev05.pm.lead
+    owner: ml_engineer
+    objective: Run train_models for plan-2.
+    allowed_tools:
+    - train_models
+    input_artifacts:
+    - 0000000000000000000000000000000000000000000000000000000000009aab
+    - 0000000000000000000000000000000000000000000000000000000000009aac
+    - 0000000000000000000000000000000000000000000000000000000000009aad
+    acceptance_checks:
+    - the tool result names its artifacts
+- ticket_id: data-06
+  prompt_key: data
+  owner: data_specialist
+  tool: prepare_data
+  ticket:
+    task_id: dev06.pm.lead.data-plan-1
+    parent_task_id: dev06.pm.lead
+    owner: data_specialist
+    objective: Run prepare_data for plan-1.
+    allowed_tools:
+    - prepare_data
+    input_artifacts:
+    - 000000000000000000000000000000000000000000000000000000000000b99a
+    acceptance_checks:
+    - the tool result names its artifacts
+- ticket_id: ml-06
+  prompt_key: ml
+  owner: ml_engineer
+  tool: train_models
+  ticket:
+    task_id: dev06.pm.lead.ml-plan-1
+    parent_task_id: dev06.pm.lead
+    owner: ml_engineer
+    objective: Run train_models for plan-1.
+    allowed_tools:
+    - train_models
+    input_artifacts:
+    - 000000000000000000000000000000000000000000000000000000000000b99a
+    acceptance_checks:
+    - the tool result names its artifacts
