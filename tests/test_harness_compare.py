@@ -6,7 +6,14 @@ import json
 from pathlib import Path
 from typing import Any
 
-from earthlab.harness.compare import NOT_MEASURED, agrees_with_code, build, load_runs, markdown
+from earthlab.harness.compare import (
+    NOT_MEASURED,
+    agrees_with_code,
+    build,
+    cell,
+    load_runs,
+    markdown,
+)
 
 
 def _run(folder: Path, name: str, record: dict[str, Any]) -> str:
