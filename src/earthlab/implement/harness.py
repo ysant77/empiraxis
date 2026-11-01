@@ -5,6 +5,10 @@ budget. The worker answers in text with one unified diff; it has no tools. A pat
 screen blocks gets one revision with the findings. The trial then waits for the trusted
 runner and a human: acceptance() reports `execution` until a runner record exists.
 
+A trial keeps every proposal and how each reply ended, so a token stop or a provider fault
+is not read as a worker that declined. It records the length of any reasoning, never its
+text.
+
 This module never imports, applies or executes the proposed code.
 """
 
@@ -13,6 +17,7 @@ from __future__ import annotations
 import json
 import re
 import time
+from dataclasses import dataclass, field
 from typing import Literal
 
 from pydantic import Field
@@ -31,7 +36,7 @@ from earthlab.implement.contracts import (
 )
 from earthlab.implement.screen import screen_patch
 from earthlab.llm.client import ChatClient
-from earthlab.llm.types import ProviderError
+from earthlab.llm.types import ChatResponse, ProviderError, ProviderErrorKind
 
 _DIFF = re.compile(r"```(?:diff|patch)?\n(.*?)```", re.DOTALL)
 WORKER_SYSTEM = """\
@@ -43,14 +48,20 @@ frozen tests, and reviewed by a human. You cannot run anything yourself.
 """
 
 
+Status = Literal["screened", "blocked", "declined", "truncated", "provider_error"]
+
+
 class ImplementorTrialV1(Strict):
     """One worker's attempt at one task, as the harness saw it."""
 
     schema_version: Literal["1"] = "1"
     task_id: str
     worker: WorkerIdentity
-    status: Literal["screened", "blocked", "declined", "provider_error"]
+    status: Status
     result: ImplementationResultV1 | None
+    proposals: tuple[ImplementationResultV1, ...] = ()  # every attempt, oldest first
+    finish_reason: str | None = None  # of the last reply
+    reasoning_chars: int = Field(default=0, ge=0)  # over all replies
     findings: tuple[ReviewFindingV1, ...] = ()
     acceptance: Acceptance | None = None
     model_calls: int = Field(ge=0)
@@ -111,47 +122,81 @@ def _blocked_note(findings: tuple[ReviewFindingV1, ...]) -> str:
     return f"The screen blocked the patch:\n{lines}"
 
 
+def _empty_reply(resp: ChatResponse) -> bool:
+    """A reply with no text and no generated tokens is a provider fault, not a decision."""
+    generated = resp.usage.completion_tokens
+    return generated == 0 or (generated is None and not resp.content.strip())
+
+
+@dataclass
+class _Attempts:
+    """What one trial has seen so far."""
+
+    spec: TaskSpec
+    worker: WorkerIdentity
+    started: float = field(default_factory=time.perf_counter)
+    calls: int = 0
+    tokens: list[int] = field(default_factory=lambda: [0, 0])
+    reasoning_chars: int = 0
+    finish_reason: str | None = None
+    proposals: list[ImplementationResultV1] = field(default_factory=list)
+    findings: tuple[ReviewFindingV1, ...] = ()
+
+    def saw(self, resp: ChatResponse) -> None:
+        self.finish_reason = resp.finish_reason
+        self.reasoning_chars += len(resp.reasoning or "")
+
+    def counted(self, resp: ChatResponse) -> None:
+        self.tokens[0] += resp.usage.prompt_tokens or 0
+        self.tokens[1] += resp.usage.completion_tokens or 0
+
+    def trial(self, status: Status, error: str | None = None) -> ImplementorTrialV1:
+        last = self.proposals[-1] if self.proposals else None
+        return ImplementorTrialV1(
+            task_id=self.spec.task.task_id, worker=self.worker, status=status, result=last,
+            proposals=tuple(self.proposals), findings=self.findings,
+            finish_reason=self.finish_reason, reasoning_chars=self.reasoning_chars,
+            acceptance=None if error or last is None
+            else acceptance(self.spec.task, last, self.findings),
+            model_calls=self.calls, revisions=max(0, self.calls - 1), error=error,
+        )  # fmt: skip
+
+
 def run_trial(
     spec: TaskSpec, client: ChatClient, binding: RoleBinding, *, max_tokens: int = 4096
 ) -> ImplementorTrialV1:
     """One proposal and at most one revision, within the task's model-call budget."""
-    identity = _identity(binding, client, None)
+    log = _Attempts(spec, _identity(binding, client, None))
     messages = [
         {"role": "system", "content": WORKER_SYSTEM},
         {"role": "user", "content": task_prompt(spec)},
     ]
-    calls, started, tokens = 0, time.perf_counter(), [0, 0]
-    result: ImplementationResultV1 | None = None
-    findings: tuple[ReviewFindingV1, ...] = ()
-    for revision in range(min(2, spec.task.budget.max_model_calls)):
+    for _ in range(min(2, spec.task.budget.max_model_calls)):
+        log.calls += 1
         try:
             resp = client.chat(
                 messages, [], max_tokens=max_tokens, temperature=0.2, tool_choice="none"
             )
         except ProviderError as exc:
-            return ImplementorTrialV1(
-                task_id=spec.task.task_id, worker=identity, status="provider_error",
-                result=result, findings=findings, model_calls=calls + 1,
-                revisions=revision, error=exc.kind.value,
-            )  # fmt: skip
-        calls += 1
-        tokens[0] += resp.usage.prompt_tokens or 0
-        tokens[1] += resp.usage.completion_tokens or 0
-        identity = _identity(binding, client, resp.served_model)
-        result = _proposal(spec, identity, resp.content, calls, tokens, started)
-        findings = screen_patch(spec.task, result)
-        if result.status == "declined" or not findings:
-            break
+            return log.trial("provider_error", exc.kind.value)
+        log.saw(resp)
+        if _empty_reply(resp):
+            return log.trial("provider_error", ProviderErrorKind.MALFORMED.value)
+        log.counted(resp)
+        log.worker = _identity(binding, client, resp.served_model)
+        result = _proposal(spec, log.worker, resp.content, log.calls, log.tokens, log.started)
+        if result.status == "declined":
+            # A revision with no patch leaves the blocked proposal and its findings standing.
+            if log.proposals:
+                return log.trial("blocked")
+            log.proposals.append(result)
+            return log.trial("truncated" if resp.finish_reason == "length" else "declined")
+        log.proposals.append(result)
+        log.findings = screen_patch(spec.task, result)
+        if not log.findings:
+            return log.trial("screened")
         messages += [
             {"role": "assistant", "content": resp.content},
-            {"role": "user", "content": _blocked_note(findings)},
+            {"role": "user", "content": _blocked_note(log.findings)},
         ]
-    status: Literal["screened", "blocked", "declined"] = (
-        "declined" if result is None or result.status == "declined"
-        else "blocked" if findings else "screened"
-    )  # fmt: skip
-    return ImplementorTrialV1(
-        task_id=spec.task.task_id, worker=identity, status=status, result=result,
-        findings=findings, model_calls=calls, revisions=max(0, calls - 1),
-        acceptance=None if result is None else acceptance(spec.task, result, findings),
-    )  # fmt: skip
+    return log.trial("blocked")
