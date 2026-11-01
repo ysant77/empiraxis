@@ -13,8 +13,10 @@ pytest.importorskip("streamlit")
 from streamlit.testing.v1 import AppTest
 
 from earthlab.board.store import BOARD_FILE, Board, RunSpec
+from earthlab.digest import file_digest
+from earthlab.forecast.contracts import ARM_LABEL, LIMITATIONS
 from earthlab.team.resources import OPERATOR_KEY_ENV, ResourceDesk, ResourceRequestV1
-from earthlab.ui import common, live
+from earthlab.ui import common, experiments, live
 
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "src" / "earthlab" / "ui" / "app.py"
@@ -201,3 +203,53 @@ def test_without_an_operator_key_no_decision_control_is_shown(
     app = open_view("control", "replay/live-october-abstained")
     assert "No operator key is set" in shown(app)
     assert not [b for b in app.button if b.label in ("Approve", "Deny")]
+
+
+def experiment_run(runs: Path) -> tuple[str, Path]:
+    board = Board(runs / BOARD_FILE)
+    entry, _ = board.submit(SPEC, "e1")
+    run_dir = runs / entry.run_id
+    shutil.copytree(REPLAY / "live-september-verified", run_dir)
+    board.claim(entry.run_id, 1)
+    board.end(entry.run_id, "finished")
+    record = {
+        "status": "awaiting_human",
+        "reason": "ready",
+        "arm": "multi_agent",
+        "evidence_label": ARM_LABEL,
+        "limitations": LIMITATIONS,
+        "recommendation": {"outcome": "adopt_candidate", "model_id": "candidate-1"},
+        "comparison": [{"model": "candidate-1", "mae": 4.5, "skill": 0.15}],
+        "acceptance": {"neural_model_trained": True},
+        "roles": {},
+        "usage": {"model_calls": 1},
+    }
+    (run_dir / "result.json").write_text(json.dumps(record), encoding="utf-8")
+    return entry.run_id, run_dir
+
+
+def test_the_lab_labels_an_experiment_as_a_historical_evaluation(operator: Path) -> None:
+    run_id, _ = experiment_run(operator)
+    text = shown(open_view("lab", run_id))
+    assert "Issue-time replay with modelled availability" in text
+    assert "Not a forecast of any future date" in text and "not PSI or AQI" in text
+    assert "The test period is not evaluated" in text
+
+
+def test_a_human_decision_needs_the_key_and_binds_the_record(
+    operator: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv(OPERATOR_KEY_ENV, "test-operator-key")
+    _, run_dir = experiment_run(operator)
+    with pytest.raises(PermissionError):
+        experiments.decide(run_dir, True, "wrong")
+    assert not (run_dir / experiments.DECISION_FILE).exists()
+    signed = experiments.decide(run_dir, True, "test-operator-key")
+    assert signed.request_sha256 == file_digest(run_dir / "result.json")
+    with pytest.raises(FileExistsError):
+        experiments.decide(run_dir, False, "test-operator-key")
+
+
+def test_a_plain_run_shows_no_experiment_panel(operator: Path) -> None:
+    _, run_id = saved_run(operator, "live-september-verified")
+    assert "Experiment E1" not in shown(open_view("lab", run_id))

@@ -25,7 +25,7 @@ from earthlab.events.contract import (
 )
 from earthlab.events.redact import visible_events
 from earthlab.events.workflow_view import ROLE_NAMES, WorkflowView, load_workflow
-from earthlab.ui import approvals, board_view, common
+from earthlab.ui import approvals, board_view, common, experiments
 
 APPROVALS_DIR = Path("config/approvals")
 ROLE_ORDER = (
@@ -33,6 +33,8 @@ ROLE_ORDER = (
     "orchestrator",
     "product_manager",
     "geospatial_engineer",
+    "data_specialist",
+    "ml_engineer",
     "implementor",
     "qa_reviewer",
     "scientific_critic",
@@ -284,4 +286,6 @@ def render() -> None:
         _telemetry()
     with right:
         approvals.queue_panel()
+        if picked is not None:
+            experiments.decision_panel(run_dir if picked[1] is not None else None)
         _human_control(run)
