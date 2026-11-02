@@ -1,0 +1,227 @@
+{
+  "status": "awaiting_human",
+  "reason": "evidence ready for a human decision",
+  "arm": "team",
+  "kind": "classification",
+  "problem_id": "pm25-exceedance-6h",
+  "evidence_label": "Historical classification with modelled availability",
+  "limitations": [
+    "Non-operational research result.",
+    "Historical evaluation. Not a forecast of any future date.",
+    "35 ug/m3 is an experimental threshold, not an AQI or PSI category.",
+    "PM2.5 concentration alone does not identify wildfire haze or its cause.",
+    "Not for health, safety or travel decisions."
+  ],
+  "refusal_codes": [],
+  "state": "forwarded",
+  "model_changed_the_plan": true,
+  "workflow_class": "autonomous multi-agent",
+  "split_scored": "validation years 2022 to 2023",
+  "test_period": "not evaluated; it needs a lock and a human decision",
+  "artifacts": {
+    "request": "106be4bd865719dff94b1af154a36771019e0d79185b585fd9299bf24d4ff231",
+    "problem": "ff7390a20951f4822b0d9de1972e3bd62aa230b79ca001de09d018d1ac343b39",
+    "profile": "9ca852a504d712d2fd692c0ecbe0211e8bf328c581989a7d151ffdd280971bf6",
+    "suitability": "9ee0987973256a9b4319ab41cf2f2a402d66a56dce162db05de237fa8a9cab3f",
+    "plan-1": "fe0759b4963b4d37b356f6a69f9bae46b4b3bf788e9227ce9c0935bff6496f78",
+    "task-data-plan-1": "0e72b921f1acd8dbea1ce4a0239b6b2c847ca383d8d225cf23efdac89523b02d",
+    "task-ml-plan-1": "3ce9bdf5097c59d7cb9960cd7f63d39c5b9917f3cd29822f5db9417635ad5a7c",
+    "evaluation-plan-1": "486fc5ceb24a6989ec03b3a1deb640d0ede715b516219e3048bb4efd1839deea",
+    "plan-2": "f4b4c5c261415289274d63d27f372df79220ade9af21f52b21cf40bf86bd1d7d",
+    "task-data-plan-2": "4530d2c790d17905d47a556699f0c9b98b76666b434d078e062df2a72467743a",
+    "task-ml-plan-2": "43eb7bb090b4bbb0c3d134ca3296e21167d9dc99d678e19668c3021270552ad6",
+    "evaluation-plan-2": "58dfd806185f41dfc68304acc3e7bb158a1d3dbc7b393c00c0ebd8d7ee1925f8",
+    "decision": "624ff78c53435f1e7fd7321d08c976733d2aae90177c9fe8990bd3e68fdff38a"
+  },
+  "strategy": "statistical",
+  "suitability": {
+    "schema_version": "1",
+    "facts": {
+      "kind": "classification",
+      "rows": 109584,
+      "labels_with_provenance": true,
+      "positive_rate": 0.059920777817788984,
+      "availability_latency_hours": 2,
+      "training_budget_seconds": 1200.0,
+      "repeated_inference_per_day": 0,
+      "pretrained_assets_approved": [],
+      "evaluable": true
+    },
+    "checks": [
+      {
+        "strategy": "deterministic",
+        "eligible": true,
+        "reasons": []
+      },
+      {
+        "strategy": "statistical",
+        "eligible": true,
+        "reasons": []
+      },
+      {
+        "strategy": "small_neural",
+        "eligible": false,
+        "reasons": [
+          "the classical model must fail first"
+        ]
+      },
+      {
+        "strategy": "pretrained_transfer",
+        "eligible": false,
+        "reasons": [
+          "no approved weights",
+          "no approved pretrained model fits a tabular series"
+        ]
+      },
+      {
+        "strategy": "fine_tuning",
+        "eligible": false,
+        "reasons": [
+          "no approved weights",
+          "no approved pretrained model fits a tabular series"
+        ]
+      },
+      {
+        "strategy": "distillation",
+        "eligible": false,
+        "reasons": [
+          "no repeated inference workload declared"
+        ]
+      },
+      {
+        "strategy": "abstain_or_request",
+        "eligible": true,
+        "reasons": []
+      }
+    ]
+  },
+  "recommendation": {
+    "outcome": "retain_baseline",
+    "model_id": "persistence_alarm",
+    "reason": "No challenger beats persistence on F1 gain with lower confidence bound above zero. Train_rate finds no exceedance and has PR AUC below base rate, logistic has F1 gain lower limit negative versus persistence. Retaining persistence_alarm is the supported baseline under allowed actions."
+  },
+  "comparison": [
+    {
+      "model": "train_rate",
+      "scored": 87570.0,
+      "positives": 828.0,
+      "base_rate": 0.00945529290853032,
+      "accuracy": 0.9905447070914697,
+      "accuracy_of_always_no": 0.9905447070914697,
+      "precision": null,
+      "recall": 0.0,
+      "f1": 0.0,
+      "false_alarm_rate": 0.0,
+      "pr_auc": 0.006062806794199274,
+      "brier": 0.012062532009615651,
+      "ece": 0.05049760982118902,
+      "low": -0.43670345076205164,
+      "high": -0.11524565837371611,
+      "passes": false
+    },
+    {
+      "model": "persistence_alarm",
+      "scored": 87570.0,
+      "positives": 828.0,
+      "base_rate": 0.00945529290853032,
+      "accuracy": 0.9868676487381524,
+      "accuracy_of_always_no": 0.9905447070914697,
+      "precision": 0.3055555555555556,
+      "recall": 0.3055555555555556,
+      "f1": 0.3055555555555556,
+      "false_alarm_rate": 0.006628853381291646,
+      "pr_auc": 0.07875788384294687,
+      "brier": 0.013132351261847666,
+      "ece": 0.013132351261847666,
+      "low": 0.0,
+      "high": 0.0,
+      "passes": false
+    },
+    {
+      "model": "logistic",
+      "scored": 87570.0,
+      "positives": 828.0,
+      "base_rate": 0.00945529290853032,
+      "accuracy": 0.9905789653991093,
+      "accuracy_of_always_no": 0.9905447070914697,
+      "precision": 0.5096774193548387,
+      "recall": 0.09541062801932366,
+      "f1": 0.1607324516785351,
+      "false_alarm_rate": 0.000876161490396809,
+      "pr_auc": 0.20374541707806554,
+      "brier": 0.02604096486401971,
+      "ece": 0.08101178892363739,
+      "low": -0.23118280486414142,
+      "high": -0.0721475475866092,
+      "passes": false
+    }
+  ],
+  "acceptance": {
+    "class_balance_reported": true,
+    "majority_class_rejected": true,
+    "same_hours_for_every_model": true,
+    "no_scored_issue_reaches_test": true,
+    "calibration_reported": true
+  },
+  "code_outcome": "retain_baseline",
+  "prompt_variant": "note-close-v1",
+  "prompt_digests": {
+    "scope": "deb591a50ba4bcaf200768b7357105d0eff87f4e3b915c7201339de6a21854d1",
+    "strategy": "8791d37347f9bd681f0de37c55233ffd8dc22f07cdfac9c16aaa58cdbceafef2",
+    "plan": "74b0548d49044ce59f1f820eee94ff864b44db2bd159db841d12892eb47cdd16",
+    "data": "f5a5b9014b0ac1fc757ef573faa98463cb24e0ff5ca35ff30c0c7f7cf9902d08",
+    "ml": "c7b1d356a50b3f6df0f9171e5318de07a06cbed1bbc3fa29287724a33427e1df",
+    "review": "fe133f5f47f48dcf2ca312a9b99ef0c40998fea3af0d81583e4ed43be9b863c0",
+    "decide": "870361b04cf398c4e1ecae2941566e40fcb0ebbaf6fb098757d913538bf088a0",
+    "forward": "d29d528e0d591813fc092a6807cde82a8d75ace165cfb973a6be853cee49208e"
+  },
+  "usage": {
+    "wall_seconds": 2157.5,
+    "inference_seconds": 2154.7,
+    "training_seconds": 0.0,
+    "peak_training_rss_mb": 0.0,
+    "model_calls": 17,
+    "prompt_tokens": 18478,
+    "completion_tokens": 9046,
+    "cached_tokens": "not exposed by this provider",
+    "retries": 0,
+    "provider_faults": 0,
+    "tool_calls": 4,
+    "rejected_tool_calls": 0,
+    "human_interventions": 0
+  },
+  "roles": {
+    "product_manager": {
+      "role": "product_manager",
+      "provider": "local-glimmer",
+      "model": "muse-glimmer-30B",
+      "served_model": "muse-glimmer-30B",
+      "calls": 3,
+      "kind": "live_http"
+    },
+    "geospatial_engineer": {
+      "role": "geospatial_engineer",
+      "provider": "local-glimmer",
+      "model": "muse-glimmer-30B",
+      "served_model": "muse-glimmer-30B",
+      "calls": 6,
+      "kind": "live_http"
+    },
+    "data_specialist": {
+      "role": "data_specialist",
+      "provider": "local-glimmer",
+      "model": "muse-glimmer-30B",
+      "served_model": "muse-glimmer-30B",
+      "calls": 4,
+      "kind": "live_http"
+    },
+    "ml_engineer": {
+      "role": "ml_engineer",
+      "provider": "local-glimmer",
+      "model": "muse-glimmer-30B",
+      "served_model": "muse-glimmer-30B",
+      "calls": 4,
+      "kind": "live_http"
+    }
+  }
+}

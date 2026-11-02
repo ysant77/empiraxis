@@ -148,7 +148,7 @@
         "families-classification-evaluation.json": "8bcdf31fb525e782fdcdc63b84d813f57094cbf399380373bb626c7586f29fbb",
         "readiness-e53f6e427df8.json": "af045db95e12724189062bd0cd22a33c5ff03a77c34398c5006c50cc9b2d64dc",
         "result.json": "2ab4d069e50b75c52e2dac7767d2be17f87780c621f82d6194642ffcf54b603b",
-        "trace.jsonl": "86d4604989a9652afe855394b713c50fcffc09dc568759ef10656d45add7bba6"
+        "trace.jsonl": "4de8feeb1d77e6be2e7b2653573e5c6d2aa2ee9e21f057ca15d710dee5e904f4"
       }
     },
     {
@@ -157,16 +157,16 @@
       "sources": {
         "s3-wind-consistency-2015.json": "fbdcc091b5ac8867443a84b64912a03f40f791bd4ac2d4642fac27d65c3688b0"
       },
+      "split": "2015 hindsight diagnostic; no model was scored",
       "evidence_mode": "Retrospective reanalysis, recorded results. The trace records packaging only.",
       "science_label": "hindsight_diagnostic",
       "planned": "None. This is not an attribution.",
-      "split": "validation only; the sealed test period was not read",
       "label": "recorded scenario evidence; no model turn in this folder",
       "result_sha256": "8095e5d5f104a7ce2837f967c9482f669f989be194f7f3d1593ca66107adecf6",
       "files": {
         "result.json": "8095e5d5f104a7ce2837f967c9482f669f989be194f7f3d1593ca66107adecf6",
         "s3-wind-consistency-2015.json": "fbdcc091b5ac8867443a84b64912a03f40f791bd4ac2d4642fac27d65c3688b0",
-        "trace.jsonl": "229444b0fbdfe9efbbc39892c81bfa81b3cfe9fc9f3148f9e8c98cd7b2276eaf"
+        "trace.jsonl": "626efd6000ad379229e26decbf1dafd6bddba5f3a59a8c89708d630148069be8"
       }
     },
     {
@@ -184,10 +184,10 @@
         "suitability.json": "776131a3e824d6e210570aab9de6111466d699f1ab95ea0cf85099f54fecec8e",
         "s4-measured-chips.json": "9fcd39ab56ffefba9b209b445c78286b2083b107e72ef5dcff658a08167a53e8"
       },
+      "split": "fixed months of a pinned product; no model was scored",
       "evidence_mode": "Real execution, recorded replay. No segmentation model ran.",
       "science_label": "historical_raster_analysis",
       "planned": "Planned work: the human decision on the request. No signed approval exists.",
-      "split": "validation only; the sealed test period was not read",
       "label": "recorded scenario evidence; no model turn in this folder",
       "result_sha256": "ef4fc084b6305b1a0fafbcf02a6369936824e9bcfe3abada9ccb9bea7745ea27",
       "files": {
@@ -201,6 +201,39 @@
         "s4-measured-chips.json": "9fcd39ab56ffefba9b209b445c78286b2083b107e72ef5dcff658a08167a53e8",
         "suitability.json": "776131a3e824d6e210570aab9de6111466d699f1ab95ea0cf85099f54fecec8e",
         "trace.jsonl": "f40fb215bdb712d6f9d7a23901f56c59c72047498b42e57867ac5460fed2a1fc"
+      }
+    },
+    {
+      "run": "scenario-muse-team-exceedance",
+      "scenario_id": "M1",
+      "removed_fields": [
+        "model_turn.content",
+        "model_turn.reasoning",
+        "model_turn.request_id",
+        "model_turn.tool_calls.arguments (choose_method)",
+        "model_turn.tool_calls.arguments (choose_strategy)",
+        "model_turn.tool_calls.arguments (forward_decision)",
+        "model_turn.tool_calls.arguments (prepare_data)",
+        "model_turn.tool_calls.arguments (recommend)",
+        "model_turn.tool_calls.arguments (review_results)",
+        "model_turn.tool_calls.arguments (review_scope)",
+        "model_turn.tool_calls.arguments (submit_note)",
+        "model_turn.tool_calls.arguments (train_models)",
+        "tool_result.arguments and data (prepare_data)",
+        "tool_result.arguments and data (train_models)"
+      ],
+      "label": "real Muse Glimmer team run; redacted copy",
+      "source_trace_sha256": "ebe1fcd3f6dabc0db49c23238fe413df6c8f48bdeb1139d5881ee1bfa4c2152e",
+      "evidence_mode": "Real Muse Glimmer team run, recorded replay, redacted copy.",
+      "science_label": "simulated_availability_hindcast",
+      "planned": "A human decision on the outcome is still open.",
+      "split": "validation only; the sealed test period was not read",
+      "result_sha256": "2a5e7cce9d7b6e037cf92f5213a1ff9ea76c52f241cebcc42b264c29b3848fc3",
+      "files": {
+        "evaluation-plan-1.json": "486fc5ceb24a6989ec03b3a1deb640d0ede715b516219e3048bb4efd1839deea",
+        "evaluation-plan-2.json": "58dfd806185f41dfc68304acc3e7bb158a1d3dbc7b393c00c0ebd8d7ee1925f8",
+        "result.json": "2a5e7cce9d7b6e037cf92f5213a1ff9ea76c52f241cebcc42b264c29b3848fc3",
+        "trace.jsonl": "958d1ab63370a8533d912481392b9445e23ac1bcede1a16b8f03e53fb3927ea1"
       }
     }
   ]

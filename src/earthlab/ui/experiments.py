@@ -22,6 +22,7 @@ from earthlab.ui import board_view, common
 DECISION_FILE = "decision.json"
 APPROVER = "local operator (holder of the operator key)"
 UNLOCKED = "Scored on validation only. The test period is not evaluated."
+SCORED_KINDS = ("regression", "classification")
 
 
 def record_of(run_dir: Path) -> dict[str, Any] | None:
@@ -54,15 +55,18 @@ def experiment_panel(run_dir: Path) -> None:
     with common.panel(title, "experimental", record["evidence_label"]):
         st.warning(" ".join(record["limitations"]))
         rec = record.get("recommendation") or {}
+        scored = record.get("kind") in SCORED_KINDS
+        note = UNLOCKED if scored else ""
         st.write(
             f"Arm {record['arm']}. Status {record['status']}. Recommendation: "
-            f"{rec.get('outcome', 'none')} {rec.get('model_id') or ''}. {UNLOCKED}"
+            f"{rec.get('outcome', 'none')} {rec.get('model_id') or ''}. {note}"
         )
         st.dataframe(record.get("comparison", []), use_container_width=True, hide_index=True)
-        st.caption(
-            "Skill is against persistence at +6 h, with 95% block-bootstrap limits. "
-            "Evaluator: separate code that reads the published file and stored predictions."
-        )
+        if scored:
+            st.caption(
+                "Skill is against persistence at +6 h, with 95% block-bootstrap limits. "
+                "Evaluator: separate code that reads the published file and stored predictions."
+            )
         if record.get("tiers"):
             st.dataframe(record["tiers"], use_container_width=True, hide_index=True)
             pair = record.get("distillation") or {}
