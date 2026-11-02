@@ -330,7 +330,9 @@ def s4(run_dir: Path) -> Story:
             f"{chip['band_count']} bands at {chip['pixel_size'][0]:.0f} m, but they cover Texas "
             f"(lon {box['min_lon']:.2f} to {box['max_lon']:.2f}, lat {box['min_lat']:.2f} to "
             f"{box['max_lat']:.2f}), not the Kalimantan box.",
-            f"Weights: {chips['weights_authority']}.",
+            "The segmentation weights have a verified file digest, but no signed approval "
+            "exists for them." if "no signed" in chips["weights_authority"]
+            else "A signed approval for the weights is on file.",
         ],
         tiles=[
             Tile("Segmentation score", "None", "nothing ran, so no score exists"),

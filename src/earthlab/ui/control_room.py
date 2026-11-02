@@ -289,10 +289,11 @@ def _integrity(opened: Opened) -> None:
 
 
 def _muse_steps(opened: Opened) -> None:
-    rows = [
-        {"Done by": who, "Step": what, "Recorded": said}
-        for who, what, said in steps(opened.run_dir)
-    ]
+    rows = []
+    for who, what, said in steps(opened.run_dir):
+        for role, seat in provenance.MODEL_SEATS.items():
+            who = who.replace(f"({role})", f"({seat})")
+        rows.append({"Done by": who, "Step": what, "Recorded": said})
     section("What each step really was")
     story_view.table(rows)
 
@@ -308,7 +309,6 @@ def _stages(opened: Opened) -> None:
 
 def _decisions(opened: Opened) -> None:
     record = scenarios.record_of(opened.run_dir)
-    rec = record["recommendation"]
     section("Decision and refusals")
     st.write(
         f"{opened.story.decision}. Code rule outcome: {record.get('code_outcome', 'not recorded')}."
@@ -317,7 +317,6 @@ def _decisions(opened: Opened) -> None:
     if opened.story.key == "S4":
         refusals = [r["code"] for r in scenarios.s4_verdict(opened.run_dir)["refusals"]]
     st.write(f"Refusals: {', '.join(refusals) or 'none recorded'}.")
-    st.caption(f"Recommendation source: {rec.get('reason', '')}")
 
 
 def _story(opened: Opened) -> None:

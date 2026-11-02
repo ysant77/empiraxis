@@ -12,11 +12,13 @@ from typing import Any
 from earthlab.trace import RunTrace
 
 TEXT_KEYS = ("note", "reason", "action", "strategy", "outcome")
+SAID_LIMIT = 200
 
 
 def said(proposal: dict[str, Any]) -> str:
     parts = [str(proposal[k]) for k in TEXT_KEYS if proposal.get(k)]
-    return " | ".join(parts)[:150]
+    text = " | ".join(parts)
+    return text if len(text) <= SAID_LIMIT else text[: SAID_LIMIT - 1] + "…"
 
 
 def steps(run: Path) -> list[tuple[str, str, str]]:
