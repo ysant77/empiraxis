@@ -1,0 +1,2847 @@
+{
+ "version": 1,
+ "runs": 48,
+ "not_measured": "not measured",
+ "arms": [
+  {
+   "source": "benchmark screen",
+   "workflow": "deterministic",
+   "group": "F",
+   "runs": 4,
+   "vgc": 4,
+   "safe_stops": 0,
+   "failed": 0,
+   "replays_clean": 4,
+   "median_wall_s_reached_gate": 1.1,
+   "total_wall_s": 24.4,
+   "median_model_calls": 0.0,
+   "median_tokens": 0.0,
+   "largest_training_rss_mb": 363.9
+  },
+  {
+   "source": "benchmark screen",
+   "workflow": "single agent",
+   "group": "S-M",
+   "runs": 4,
+   "vgc": 3,
+   "safe_stops": 0,
+   "failed": 0,
+   "replays_clean": 4,
+   "median_wall_s_reached_gate": 682.9,
+   "total_wall_s": 3135.3,
+   "median_model_calls": 4.0,
+   "median_tokens": 7013.5,
+   "largest_training_rss_mb": "not measured"
+  },
+  {
+   "source": "benchmark screen",
+   "workflow": "multi-agent",
+   "group": "T-M-v1",
+   "runs": 3,
+   "vgc": 2,
+   "safe_stops": 1,
+   "failed": 0,
+   "replays_clean": 3,
+   "median_wall_s_reached_gate": 1573.1,
+   "total_wall_s": 3327.5,
+   "median_model_calls": 11.0,
+   "median_tokens": 16765.0,
+   "largest_training_rss_mb": "not measured"
+  },
+  {
+   "source": "benchmark screen",
+   "workflow": "multi-agent",
+   "group": "T-M-v2",
+   "runs": 3,
+   "vgc": 2,
+   "safe_stops": 1,
+   "failed": 0,
+   "replays_clean": 3,
+   "median_wall_s_reached_gate": 1715.8,
+   "total_wall_s": 3666.6,
+   "median_model_calls": 15.0,
+   "median_tokens": 21315.0,
+   "largest_training_rss_mb": "not measured"
+  },
+  {
+   "source": "benchmark confirm",
+   "workflow": "multi-agent",
+   "group": "T-M-base",
+   "runs": 3,
+   "vgc": 0,
+   "safe_stops": 0,
+   "failed": 3,
+   "replays_clean": 3,
+   "median_wall_s_reached_gate": "not measured",
+   "total_wall_s": 2569.4,
+   "median_model_calls": 5.0,
+   "median_tokens": 7547.0,
+   "largest_training_rss_mb": "not measured"
+  },
+  {
+   "source": "benchmark confirm",
+   "workflow": "multi-agent",
+   "group": "T-M-win",
+   "runs": 3,
+   "vgc": 3,
+   "safe_stops": 0,
+   "failed": 0,
+   "replays_clean": 3,
+   "median_wall_s_reached_gate": 1297.7,
+   "total_wall_s": 4614.4,
+   "median_model_calls": 10.0,
+   "median_tokens": 14664.0,
+   "largest_training_rss_mb": "not measured"
+  },
+  {
+   "source": "benchmark fallback",
+   "workflow": "small-model fallback",
+   "group": "S-q4",
+   "runs": 3,
+   "vgc": 0,
+   "safe_stops": 0,
+   "failed": 0,
+   "replays_clean": 3,
+   "median_wall_s_reached_gate": 28.9,
+   "total_wall_s": 81.9,
+   "median_model_calls": 3.0,
+   "median_tokens": 3203.0,
+   "largest_training_rss_mb": "not measured"
+  },
+  {
+   "source": "benchmark fallback",
+   "workflow": "small-model fallback",
+   "group": "S-l3",
+   "runs": 3,
+   "vgc": 0,
+   "safe_stops": 1,
+   "failed": 0,
+   "replays_clean": 3,
+   "median_wall_s_reached_gate": 6.5,
+   "total_wall_s": 14.8,
+   "median_model_calls": 3.0,
+   "median_tokens": 1934.0,
+   "largest_training_rss_mb": "not measured"
+  },
+  {
+   "source": "harness-v1",
+   "workflow": "multi-agent",
+   "group": "team",
+   "runs": 8,
+   "vgc": 3,
+   "safe_stops": 2,
+   "failed": 3,
+   "replays_clean": 8,
+   "median_wall_s_reached_gate": 2281.9,
+   "total_wall_s": 9434.6,
+   "median_model_calls": 6.5,
+   "median_tokens": 8921.0,
+   "largest_training_rss_mb": "not measured"
+  },
+  {
+   "source": "harness-v1",
+   "workflow": "single agent",
+   "group": "single",
+   "runs": 6,
+   "vgc": 6,
+   "safe_stops": 0,
+   "failed": 0,
+   "replays_clean": 6,
+   "median_wall_s_reached_gate": 653.2,
+   "total_wall_s": 4481.1,
+   "median_model_calls": 4.0,
+   "median_tokens": 7670.5,
+   "largest_training_rss_mb": "not measured"
+  },
+  {
+   "source": "harness-v1",
+   "workflow": "deterministic",
+   "group": "fixed",
+   "runs": 8,
+   "vgc": 8,
+   "safe_stops": 0,
+   "failed": 0,
+   "replays_clean": 8,
+   "median_wall_s_reached_gate": 0.7,
+   "total_wall_s": 46.0,
+   "median_model_calls": 0.0,
+   "median_tokens": 0.0,
+   "largest_training_rss_mb": 342.4
+  }
+ ],
+ "coverage": [
+  {
+   "source": "benchmark confirm",
+   "scenario": "burned-area-method",
+   "multi-agent": 4,
+   "all_three": false
+  },
+  {
+   "source": "benchmark confirm",
+   "scenario": "pm25-exceedance",
+   "multi-agent": 2,
+   "all_three": false
+  },
+  {
+   "source": "benchmark fallback",
+   "scenario": "burned-area-method",
+   "small-model fallback": 2,
+   "all_three": false
+  },
+  {
+   "source": "benchmark fallback",
+   "scenario": "burned-area-segmentation",
+   "small-model fallback": 2,
+   "all_three": false
+  },
+  {
+   "source": "benchmark fallback",
+   "scenario": "pm25-exceedance",
+   "small-model fallback": 2,
+   "all_three": false
+  },
+  {
+   "source": "benchmark screen",
+   "scenario": "burned-area-method",
+   "deterministic": 1,
+   "single agent": 1,
+   "multi-agent": 2,
+   "all_three": true
+  },
+  {
+   "source": "benchmark screen",
+   "scenario": "burned-area-segmentation",
+   "deterministic": 1,
+   "multi-agent": 2,
+   "single agent": 1,
+   "all_three": true
+  },
+  {
+   "source": "benchmark screen",
+   "scenario": "pm25-exceedance",
+   "deterministic": 1,
+   "multi-agent": 2,
+   "single agent": 1,
+   "all_three": true
+  },
+  {
+   "source": "benchmark screen",
+   "scenario": "pm25-regression",
+   "deterministic": 1,
+   "single agent": 1,
+   "all_three": false
+  },
+  {
+   "source": "harness-v1",
+   "scenario": "burned-area-method",
+   "multi-agent": 2,
+   "single agent": 2,
+   "deterministic": 2,
+   "all_three": true
+  },
+  {
+   "source": "harness-v1",
+   "scenario": "burned-area-segmentation",
+   "multi-agent": 2,
+   "deterministic": 2,
+   "all_three": false
+  },
+  {
+   "source": "harness-v1",
+   "scenario": "pm25-exceedance",
+   "multi-agent": 2,
+   "single agent": 2,
+   "deterministic": 2,
+   "all_three": true
+  },
+  {
+   "source": "harness-v1",
+   "scenario": "pm25-regression",
+   "multi-agent": 2,
+   "single agent": 2,
+   "deterministic": 2,
+   "all_three": true
+  }
+ ],
+ "matched_screen": [
+  {
+   "scenario": "burned-area-method",
+   "F": {
+    "outcome": {
+     "adopt_limited": 1
+    },
+    "vgc": 1,
+    "runs": 1,
+    "median_wall_s": 0.2,
+    "median_model_calls": 0.0,
+    "median_tokens": 0.0
+   },
+   "S-M": {
+    "outcome": {
+     "adopt_limited": 1
+    },
+    "vgc": 1,
+    "runs": 1,
+    "median_wall_s": 576.2,
+    "median_model_calls": 3.0,
+    "median_tokens": 4579.0
+   },
+   "T-M-v1": {
+    "outcome": {
+     "adopt_limited": 1
+    },
+    "vgc": 1,
+    "runs": 1,
+    "median_wall_s": 1582.4,
+    "median_model_calls": 11.0,
+    "median_tokens": 16765.0
+   }
+  },
+  {
+   "scenario": "burned-area-segmentation",
+   "F": {
+    "outcome": {
+     "request_resource": 1
+    },
+    "vgc": 1,
+    "runs": 1,
+    "median_wall_s": 0.1,
+    "median_model_calls": 0.0,
+    "median_tokens": 0.0
+   },
+   "S-M": {
+    "outcome": {
+     "adopt_limited": 1
+    },
+    "vgc": 0,
+    "runs": 1,
+    "median_wall_s": 650.7,
+    "median_model_calls": 4.0,
+    "median_tokens": 6285.0
+   },
+   "T-M-v1": {
+    "outcome": {
+     "abstained": 1
+    },
+    "vgc": 0,
+    "runs": 1,
+    "median_wall_s": 181.3,
+    "median_model_calls": 1.0,
+    "median_tokens": 1298.0
+   }
+  },
+  {
+   "scenario": "pm25-exceedance",
+   "F": {
+    "outcome": {
+     "retain_baseline": 1
+    },
+    "vgc": 1,
+    "runs": 1,
+    "median_wall_s": 1.9,
+    "median_model_calls": 0.0,
+    "median_tokens": 0.0
+   },
+   "S-M": {
+    "outcome": {
+     "retain_baseline": 1
+    },
+    "vgc": 1,
+    "runs": 1,
+    "median_wall_s": 1193.4,
+    "median_model_calls": 6.0,
+    "median_tokens": 11060.0
+   },
+   "T-M-v1": {
+    "outcome": {
+     "retain_baseline": 1
+    },
+    "vgc": 1,
+    "runs": 1,
+    "median_wall_s": 1563.8,
+    "median_model_calls": 12.0,
+    "median_tokens": 20105.0
+   }
+  }
+ ],
+ "matched_confirm": [
+  {
+   "scenario": "burned-area-method",
+   "T-M-base": {
+    "outcome": {
+     "failed": 2
+    },
+    "vgc": 0,
+    "runs": 2,
+    "median_wall_s": 769.7,
+    "median_model_calls": 5.0,
+    "median_tokens": 7347.0
+   },
+   "T-M-win": {
+    "outcome": {
+     "adopt_limited": 2
+    },
+    "vgc": 2,
+    "runs": 2,
+    "median_wall_s": 1228.5,
+    "median_model_calls": 10.0,
+    "median_tokens": 14097.5
+   }
+  },
+  {
+   "scenario": "pm25-exceedance",
+   "T-M-base": {
+    "outcome": {
+     "failed": 1
+    },
+    "vgc": 0,
+    "runs": 1,
+    "median_wall_s": 1030.0,
+    "median_model_calls": 7.0,
+    "median_tokens": 10181.0
+   },
+   "T-M-win": {
+    "outcome": {
+     "retain_baseline": 1
+    },
+    "vgc": 1,
+    "runs": 1,
+    "median_wall_s": 2157.5,
+    "median_model_calls": 17.0,
+    "median_tokens": 27524.0
+   }
+  }
+ ],
+ "selection": [
+  {
+   "source": "benchmark screen",
+   "scenario": "burned-area-method",
+   "arm": "S-M",
+   "outcome": "adopt_limited",
+   "code_outcome": "adopt_limited",
+   "matches_code": true,
+   "more_permissive_than_code": false,
+   "changed_plan": false,
+   "stop_reason": ""
+  },
+  {
+   "source": "benchmark screen",
+   "scenario": "burned-area-method",
+   "arm": "T-M-v1",
+   "outcome": "adopt_limited",
+   "code_outcome": "adopt_limited",
+   "matches_code": true,
+   "more_permissive_than_code": false,
+   "changed_plan": false,
+   "stop_reason": ""
+  },
+  {
+   "source": "benchmark screen",
+   "scenario": "burned-area-method",
+   "arm": "T-M-v2",
+   "outcome": "adopt_limited",
+   "code_outcome": "adopt_limited",
+   "matches_code": true,
+   "more_permissive_than_code": false,
+   "changed_plan": false,
+   "stop_reason": ""
+  },
+  {
+   "source": "benchmark screen",
+   "scenario": "burned-area-segmentation",
+   "arm": "T-M-v1",
+   "outcome": "abstained",
+   "code_outcome": "not measured",
+   "matches_code": false,
+   "more_permissive_than_code": false,
+   "changed_plan": false,
+   "stop_reason": "the PM found it out of scope"
+  },
+  {
+   "source": "benchmark screen",
+   "scenario": "burned-area-segmentation",
+   "arm": "T-M-v2",
+   "outcome": "abstained",
+   "code_outcome": "not measured",
+   "matches_code": false,
+   "more_permissive_than_code": false,
+   "changed_plan": false,
+   "stop_reason": "the PM found it out of scope"
+  },
+  {
+   "source": "benchmark screen",
+   "scenario": "burned-area-segmentation",
+   "arm": "S-M",
+   "outcome": "adopt_limited",
+   "code_outcome": "adopt_limited",
+   "matches_code": true,
+   "more_permissive_than_code": false,
+   "changed_plan": true,
+   "stop_reason": ""
+  },
+  {
+   "source": "benchmark screen",
+   "scenario": "pm25-exceedance",
+   "arm": "T-M-v2",
+   "outcome": "retain_baseline",
+   "code_outcome": "retain_baseline",
+   "matches_code": true,
+   "more_permissive_than_code": false,
+   "changed_plan": true,
+   "stop_reason": ""
+  },
+  {
+   "source": "benchmark screen",
+   "scenario": "pm25-exceedance",
+   "arm": "S-M",
+   "outcome": "retain_baseline",
+   "code_outcome": "retain_baseline",
+   "matches_code": true,
+   "more_permissive_than_code": false,
+   "changed_plan": true,
+   "stop_reason": ""
+  },
+  {
+   "source": "benchmark screen",
+   "scenario": "pm25-exceedance",
+   "arm": "T-M-v1",
+   "outcome": "retain_baseline",
+   "code_outcome": "retain_baseline",
+   "matches_code": true,
+   "more_permissive_than_code": false,
+   "changed_plan": false,
+   "stop_reason": ""
+  },
+  {
+   "source": "benchmark screen",
+   "scenario": "pm25-regression",
+   "arm": "S-M",
+   "outcome": "retain_baseline",
+   "code_outcome": "retain_baseline",
+   "matches_code": true,
+   "more_permissive_than_code": false,
+   "changed_plan": true,
+   "stop_reason": ""
+  },
+  {
+   "source": "benchmark confirm",
+   "scenario": "burned-area-method",
+   "arm": "T-M-base",
+   "outcome": "failed",
+   "code_outcome": "not measured",
+   "matches_code": false,
+   "more_permissive_than_code": false,
+   "changed_plan": false,
+   "stop_reason": "Stopped: data_specialist used its turns without submit_note"
+  },
+  {
+   "source": "benchmark confirm",
+   "scenario": "burned-area-method",
+   "arm": "T-M-win",
+   "outcome": "adopt_limited",
+   "code_outcome": "adopt_limited",
+   "matches_code": true,
+   "more_permissive_than_code": false,
+   "changed_plan": false,
+   "stop_reason": ""
+  },
+  {
+   "source": "benchmark confirm",
+   "scenario": "pm25-exceedance",
+   "arm": "T-M-win",
+   "outcome": "retain_baseline",
+   "code_outcome": "retain_baseline",
+   "matches_code": true,
+   "more_permissive_than_code": false,
+   "changed_plan": true,
+   "stop_reason": ""
+  },
+  {
+   "source": "benchmark confirm",
+   "scenario": "pm25-exceedance",
+   "arm": "T-M-base",
+   "outcome": "failed",
+   "code_outcome": "not measured",
+   "matches_code": false,
+   "more_permissive_than_code": false,
+   "changed_plan": true,
+   "stop_reason": "Stopped: ml_engineer used its turns without submit_note"
+  },
+  {
+   "source": "benchmark confirm",
+   "scenario": "burned-area-method",
+   "arm": "T-M-win",
+   "outcome": "adopt_limited",
+   "code_outcome": "adopt_limited",
+   "matches_code": true,
+   "more_permissive_than_code": false,
+   "changed_plan": false,
+   "stop_reason": ""
+  },
+  {
+   "source": "benchmark confirm",
+   "scenario": "burned-area-method",
+   "arm": "T-M-base",
+   "outcome": "failed",
+   "code_outcome": "not measured",
+   "matches_code": false,
+   "more_permissive_than_code": false,
+   "changed_plan": false,
+   "stop_reason": "Stopped: data_specialist used its turns without submit_note"
+  },
+  {
+   "source": "benchmark fallback",
+   "scenario": "burned-area-method",
+   "arm": "S-q4",
+   "outcome": "abstain",
+   "code_outcome": "adopt_limited",
+   "matches_code": false,
+   "more_permissive_than_code": false,
+   "changed_plan": false,
+   "stop_reason": ""
+  },
+  {
+   "source": "benchmark fallback",
+   "scenario": "burned-area-segmentation",
+   "arm": "S-q4",
+   "outcome": "abstain",
+   "code_outcome": "adopt_limited",
+   "matches_code": false,
+   "more_permissive_than_code": false,
+   "changed_plan": true,
+   "stop_reason": ""
+  },
+  {
+   "source": "benchmark fallback",
+   "scenario": "pm25-exceedance",
+   "arm": "S-q4",
+   "outcome": "abstain",
+   "code_outcome": "retain_baseline",
+   "matches_code": false,
+   "more_permissive_than_code": false,
+   "changed_plan": true,
+   "stop_reason": ""
+  },
+  {
+   "source": "benchmark fallback",
+   "scenario": "burned-area-method",
+   "arm": "S-l3",
+   "outcome": "abstain",
+   "code_outcome": "request_resource",
+   "matches_code": false,
+   "more_permissive_than_code": true,
+   "changed_plan": true,
+   "stop_reason": ""
+  },
+  {
+   "source": "benchmark fallback",
+   "scenario": "burned-area-segmentation",
+   "arm": "S-l3",
+   "outcome": "abstain",
+   "code_outcome": "request_resource",
+   "matches_code": false,
+   "more_permissive_than_code": true,
+   "changed_plan": false,
+   "stop_reason": ""
+  },
+  {
+   "source": "benchmark fallback",
+   "scenario": "pm25-exceedance",
+   "arm": "S-l3",
+   "outcome": "abstained",
+   "code_outcome": "not measured",
+   "matches_code": false,
+   "more_permissive_than_code": false,
+   "changed_plan": false,
+   "stop_reason": "the Lead chose to run no experiment"
+  },
+  {
+   "source": "harness-v1",
+   "scenario": "pm25-regression",
+   "arm": "team",
+   "outcome": "retain_baseline",
+   "code_outcome": "retain_baseline",
+   "matches_code": true,
+   "more_permissive_than_code": false,
+   "changed_plan": true,
+   "stop_reason": ""
+  },
+  {
+   "source": "harness-v1",
+   "scenario": "pm25-regression",
+   "arm": "single",
+   "outcome": "retain_baseline",
+   "code_outcome": "retain_baseline",
+   "matches_code": true,
+   "more_permissive_than_code": false,
+   "changed_plan": true,
+   "stop_reason": ""
+  },
+  {
+   "source": "harness-v1",
+   "scenario": "pm25-exceedance",
+   "arm": "team",
+   "outcome": "failed",
+   "code_outcome": "not measured",
+   "matches_code": false,
+   "more_permissive_than_code": false,
+   "changed_plan": false,
+   "stop_reason": "Stopped: ml_engineer stopped without submit_note"
+  },
+  {
+   "source": "harness-v1",
+   "scenario": "pm25-exceedance",
+   "arm": "single",
+   "outcome": "retain_baseline",
+   "code_outcome": "retain_baseline",
+   "matches_code": true,
+   "more_permissive_than_code": false,
+   "changed_plan": true,
+   "stop_reason": ""
+  },
+  {
+   "source": "harness-v1",
+   "scenario": "burned-area-method",
+   "arm": "team",
+   "outcome": "failed",
+   "code_outcome": "not measured",
+   "matches_code": false,
+   "more_permissive_than_code": false,
+   "changed_plan": false,
+   "stop_reason": "Stopped: data_specialist used its turns without submit_note"
+  },
+  {
+   "source": "harness-v1",
+   "scenario": "burned-area-method",
+   "arm": "single",
+   "outcome": "adopt_limited",
+   "code_outcome": "adopt_limited",
+   "matches_code": true,
+   "more_permissive_than_code": false,
+   "changed_plan": false,
+   "stop_reason": ""
+  },
+  {
+   "source": "harness-v1",
+   "scenario": "burned-area-segmentation",
+   "arm": "team",
+   "outcome": "abstained",
+   "code_outcome": "not measured",
+   "matches_code": false,
+   "more_permissive_than_code": false,
+   "changed_plan": false,
+   "stop_reason": "the PM found it out of scope"
+  },
+  {
+   "source": "harness-v1",
+   "scenario": "pm25-regression",
+   "arm": "single",
+   "outcome": "retain_baseline",
+   "code_outcome": "retain_baseline",
+   "matches_code": true,
+   "more_permissive_than_code": false,
+   "changed_plan": true,
+   "stop_reason": ""
+  },
+  {
+   "source": "harness-v1",
+   "scenario": "pm25-regression",
+   "arm": "team",
+   "outcome": "retain_baseline",
+   "code_outcome": "retain_baseline",
+   "matches_code": true,
+   "more_permissive_than_code": false,
+   "changed_plan": true,
+   "stop_reason": ""
+  },
+  {
+   "source": "harness-v1",
+   "scenario": "pm25-exceedance",
+   "arm": "single",
+   "outcome": "retain_baseline",
+   "code_outcome": "retain_baseline",
+   "matches_code": true,
+   "more_permissive_than_code": false,
+   "changed_plan": true,
+   "stop_reason": ""
+  },
+  {
+   "source": "harness-v1",
+   "scenario": "pm25-exceedance",
+   "arm": "team",
+   "outcome": "retain_baseline",
+   "code_outcome": "retain_baseline",
+   "matches_code": true,
+   "more_permissive_than_code": false,
+   "changed_plan": false,
+   "stop_reason": ""
+  },
+  {
+   "source": "harness-v1",
+   "scenario": "burned-area-method",
+   "arm": "single",
+   "outcome": "adopt_limited",
+   "code_outcome": "adopt_limited",
+   "matches_code": true,
+   "more_permissive_than_code": false,
+   "changed_plan": false,
+   "stop_reason": ""
+  },
+  {
+   "source": "harness-v1",
+   "scenario": "burned-area-method",
+   "arm": "team",
+   "outcome": "failed",
+   "code_outcome": "not measured",
+   "matches_code": false,
+   "more_permissive_than_code": false,
+   "changed_plan": false,
+   "stop_reason": "Stopped: data_specialist used its turns without submit_note"
+  },
+  {
+   "source": "harness-v1",
+   "scenario": "burned-area-segmentation",
+   "arm": "team",
+   "outcome": "abstained",
+   "code_outcome": "not measured",
+   "matches_code": false,
+   "more_permissive_than_code": false,
+   "changed_plan": false,
+   "stop_reason": "the PM found it out of scope"
+  }
+ ],
+ "review": {
+  "v1/cases": [
+   {
+    "case": "gru-no-comparison",
+    "stage": "pre_execution",
+    "off": [],
+    "review_label": "seeded case, live critic",
+    "codes": [
+     "no_simple_comparison"
+    ],
+    "verdict": "proceed",
+    "record": {
+     "schema_version": "1",
+     "proposal": {
+      "schema_version": "1",
+      "hypothesis": "A GRU lowers the T+6 h MAE against persistence in all five regions.",
+      "proposed_method": "gru",
+      "simplest_baseline": "persistence",
+      "candidates": [
+       {
+        "method": "gru",
+        "suitability": "Fits hourly regional sequences."
+       },
+       {
+        "method": "tcn",
+        "suitability": "Fits hourly regional sequences."
+       }
+      ],
+      "data_sufficiency": "The train years hold enough hourly rows for a small network.",
+      "expected_benefit": {
+       "metric": "mae",
+       "minimum_gain": 0.2,
+       "reason": "A smaller gain does not repay training."
+      },
+      "leakage_risks": [
+       "The two hour availability latency must hold for every input."
+      ],
+      "compute_seconds": 120.0,
+      "failure_conditions": [
+       "The lower limit of MAE skill is at or below zero.",
+       "MAE above 55 ug/m3 is worse than persistence."
+      ]
+     },
+     "findings": [
+      {
+       "code": "no_simple_comparison",
+       "method": "gru",
+       "detail": "gru has no simple method in both candidates and plan",
+       "blocking": false
+      }
+     ],
+     "verdict": "proceed",
+     "critic_calls": 1,
+     "critique": null,
+     "critique_state": "unusable",
+     "critic_source": "same_model_second_pass",
+     "lead_responses": 0,
+     "disposition": null
+    },
+    "model_calls": 2,
+    "prompt_tokens": 2920,
+    "completion_tokens": 3433,
+    "wall_seconds": 871.0,
+    "truth": "fault",
+    "expected": [
+     "no_simple_comparison"
+    ],
+    "detected": true,
+    "caught_without_review": false,
+    "false_objection": false,
+    "repeat": 1
+   },
+   {
+    "case": "gru-no-comparison",
+    "stage": "pre_execution",
+    "off": [],
+    "review_label": "seeded case, live critic",
+    "codes": [
+     "no_simple_comparison"
+    ],
+    "verdict": "proceed",
+    "record": {
+     "schema_version": "1",
+     "proposal": {
+      "schema_version": "1",
+      "hypothesis": "A GRU lowers the T+6 h MAE against persistence in all five regions.",
+      "proposed_method": "gru",
+      "simplest_baseline": "persistence",
+      "candidates": [
+       {
+        "method": "gru",
+        "suitability": "Fits hourly regional sequences."
+       },
+       {
+        "method": "tcn",
+        "suitability": "Fits hourly regional sequences."
+       }
+      ],
+      "data_sufficiency": "The train years hold enough hourly rows for a small network.",
+      "expected_benefit": {
+       "metric": "mae",
+       "minimum_gain": 0.2,
+       "reason": "A smaller gain does not repay training."
+      },
+      "leakage_risks": [
+       "The two hour availability latency must hold for every input."
+      ],
+      "compute_seconds": 120.0,
+      "failure_conditions": [
+       "The lower limit of MAE skill is at or below zero.",
+       "MAE above 55 ug/m3 is worse than persistence."
+      ]
+     },
+     "findings": [
+      {
+       "code": "no_simple_comparison",
+       "method": "gru",
+       "detail": "gru has no simple method in both candidates and plan",
+       "blocking": false
+      }
+     ],
+     "verdict": "proceed",
+     "critic_calls": 1,
+     "critique": {
+      "schema_version": "1",
+      "kind": "falsifiable_concern",
+      "finding": "no_simple_comparison",
+      "claim": "The plan proposes GRU versus persistence only with TCN as the only alternative, so there is no simple statistical baseline to contextualize T+6h MAE gains for five regions.",
+      "test": {
+       "metric": "skill_against_persistence",
+       "direction": "below",
+       "threshold": 0.0,
+       "samples": "Historical1hrPM2.5.csv test split 2024-01-01 to 2026-10-01 five regions T+6h with two hour availability latency"
+      },
+      "competing_method": null
+     },
+     "critique_state": "usable",
+     "critic_source": "same_model_second_pass",
+     "lead_responses": 1,
+     "disposition": {
+      "schema_version": "1",
+      "disposition": "accepted",
+      "response": "The case lacked a simple statistical baseline to contextualize T+6h MAE gains. Adding a simple linear statistical comparator lets skill against persistence be interpreted against a conventional baseline.",
+      "revised_case": {
+       "schema_version": "1",
+       "hypothesis": "A GRU lowers the T+6 h MAE against persistence in all five regions.",
+       "proposed_method": "gru",
+       "simplest_baseline": "persistence",
+       "candidates": [
+        {
+         "method": "gru",
+         "suitability": "Fits hourly regional sequences."
+        },
+        {
+         "method": "ridge",
+         "suitability": "Simple linear statistical baseline for contextualizing MAE gains."
+        }
+       ],
+       "data_sufficiency": "The train years hold enough hourly rows for a small network.",
+       "expected_benefit": {
+        "metric": "mae",
+        "minimum_gain": 0.2,
+        "reason": "A smaller gain does not repay training."
+       },
+       "leakage_risks": [
+        "The two hour availability latency must hold for every input."
+       ],
+       "compute_seconds": 120.0,
+       "failure_conditions": [
+        "The lower limit of MAE skill is at or below zero.",
+        "MAE above 55 ug/m3 is worse than persistence."
+       ]
+      },
+      "evidence_fields": []
+     }
+    },
+    "model_calls": 3,
+    "prompt_tokens": 5035,
+    "completion_tokens": 5415,
+    "wall_seconds": 1392.8,
+    "truth": "fault",
+    "expected": [
+     "no_simple_comparison"
+    ],
+    "detected": true,
+    "caught_without_review": false,
+    "false_objection": false,
+    "repeat": 2
+   },
+   {
+    "case": "gru-no-comparison",
+    "stage": "pre_execution",
+    "off": [],
+    "review_label": "seeded case, live critic",
+    "codes": [
+     "no_simple_comparison"
+    ],
+    "verdict": "proceed",
+    "record": {
+     "schema_version": "1",
+     "proposal": {
+      "schema_version": "1",
+      "hypothesis": "A GRU lowers the T+6 h MAE against persistence in all five regions.",
+      "proposed_method": "gru",
+      "simplest_baseline": "persistence",
+      "candidates": [
+       {
+        "method": "gru",
+        "suitability": "Fits hourly regional sequences."
+       },
+       {
+        "method": "tcn",
+        "suitability": "Fits hourly regional sequences."
+       }
+      ],
+      "data_sufficiency": "The train years hold enough hourly rows for a small network.",
+      "expected_benefit": {
+       "metric": "mae",
+       "minimum_gain": 0.2,
+       "reason": "A smaller gain does not repay training."
+      },
+      "leakage_risks": [
+       "The two hour availability latency must hold for every input."
+      ],
+      "compute_seconds": 120.0,
+      "failure_conditions": [
+       "The lower limit of MAE skill is at or below zero.",
+       "MAE above 55 ug/m3 is worse than persistence."
+      ]
+     },
+     "findings": [
+      {
+       "code": "no_simple_comparison",
+       "method": "gru",
+       "detail": "gru has no simple method in both candidates and plan",
+       "blocking": false
+      }
+     ],
+     "verdict": "proceed",
+     "critic_calls": 1,
+     "critique": {
+      "schema_version": "1",
+      "kind": "falsifiable_concern",
+      "finding": "no_simple_comparison",
+      "claim": "GRU is proposed without a simple statistical baseline in candidates, so the claimed T+6 h MAE improvement over persistence cannot be attributed to recurrent capacity versus basic hourly persistence effects",
+      "test": {
+       "metric": "skill_against_persistence",
+       "direction": "below",
+       "threshold": 0.2,
+       "samples": "five regions T+6h MAE versus persistence on held-out test years"
+      },
+      "competing_method": null
+     },
+     "critique_state": "usable",
+     "critic_source": "same_model_second_pass",
+     "lead_responses": 1,
+     "disposition": {
+      "schema_version": "1",
+      "disposition": "accepted",
+      "response": "The critique is valid. Candidates lacked a simple statistical baseline, so recurrent gain could not be isolated from basic linear effects. I add a linear ridge baseline to candidates to enable a direct simple-vs-recurrent comparison while keeping persistence as simplest baseline.",
+      "revised_case": {
+       "schema_version": "1",
+       "hypothesis": "A GRU lowers the T+6 h MAE against persistence in all five regions.",
+       "proposed_method": "gru",
+       "simplest_baseline": "persistence",
+       "candidates": [
+        {
+         "method": "gru",
+         "suitability": "Fits hourly regional sequences."
+        },
+        {
+         "method": "tcn",
+         "suitability": "Fits hourly regional sequences."
+        },
+        {
+         "method": "ridge",
+         "suitability": "Simple linear baseline for hourly regional sequences."
+        }
+       ],
+       "data_sufficiency": "The train years hold enough hourly rows for a small network.",
+       "expected_benefit": {
+        "metric": "mae",
+        "minimum_gain": 0.2,
+        "reason": "A smaller gain does not repay training."
+       },
+       "leakage_risks": [
+        "The two hour availability latency must hold for every input."
+       ],
+       "compute_seconds": 120.0,
+       "failure_conditions": [
+        "The lower limit of MAE skill is at or below zero.",
+        "MAE above 55 ug/m3 is worse than persistence."
+       ]
+      },
+      "evidence_fields": []
+     }
+    },
+    "model_calls": 3,
+    "prompt_tokens": 4975,
+    "completion_tokens": 4373,
+    "wall_seconds": 1109.4,
+    "truth": "fault",
+    "expected": [
+     "no_simple_comparison"
+    ],
+    "detected": true,
+    "caught_without_review": false,
+    "false_objection": false,
+    "repeat": 3
+   },
+   {
+    "case": "elevated-ignored",
+    "stage": "pre_execution",
+    "off": [],
+    "review_label": "seeded case, live critic",
+    "codes": [
+     "elevated_not_tested"
+    ],
+    "verdict": "proceed",
+    "record": {
+     "schema_version": "1",
+     "proposal": {
+      "schema_version": "1",
+      "hypothesis": "A GRU lowers the T+6 h MAE against persistence and the lagged ridge.",
+      "proposed_method": "gru",
+      "simplest_baseline": "persistence",
+      "candidates": [
+       {
+        "method": "gru",
+        "suitability": "Fits hourly regional sequences."
+       },
+       {
+        "method": "ridge",
+        "suitability": "Fits lagged tabular rows."
+       }
+      ],
+      "data_sufficiency": "The train years hold enough hourly rows for a small network.",
+      "expected_benefit": {
+       "metric": "mae",
+       "minimum_gain": 0.2,
+       "reason": "A smaller gain does not repay training."
+      },
+      "leakage_risks": [
+       "The two hour availability latency must hold for every input."
+      ],
+      "compute_seconds": 120.0,
+      "failure_conditions": [
+       "The lower limit of MAE skill is at or below zero."
+      ]
+     },
+     "findings": [
+      {
+       "code": "elevated_not_tested",
+       "method": "gru",
+       "detail": "no failure condition covers elevated hours",
+       "blocking": false
+      }
+     ],
+     "verdict": "proceed",
+     "critic_calls": 1,
+     "critique": {
+      "schema_version": "1",
+      "kind": "falsifiable_concern",
+      "finding": "elevated_not_tested",
+      "claim": "The GRU proposal lacks a failure condition for high pollution hours, so it may appear to beat persistence on average MAE while remaining unsafe when PM2.5 exceeds 55 \u00b5g/m\u00b3.",
+      "test": {
+       "metric": "above_55_mae",
+       "direction": "below",
+       "threshold": 10.0,
+       "samples": "Test period hours with pm25 >55 \u00b5g/m\u00b3 across five regions"
+      },
+      "competing_method": null
+     },
+     "critique_state": "usable",
+     "critic_source": "same_model_second_pass",
+     "lead_responses": 1,
+     "disposition": {
+      "schema_version": "1",
+      "disposition": "accepted",
+      "response": "The original case had no safety check for high pollution hours. Adding an explicit failure condition for above_55_mae ensures the GRU is not accepted if it is unsafe when PM2.5 exceeds 55 \u00b5g/m\u00b3, addressing the elevated not tested concern.",
+      "revised_case": {
+       "schema_version": "1",
+       "hypothesis": "A GRU lowers the T+6 h MAE against persistence and the lagged ridge.",
+       "proposed_method": "gru",
+       "simplest_baseline": "persistence",
+       "candidates": [
+        {
+         "method": "gru",
+         "suitability": "Fits hourly regional sequences."
+        },
+        {
+         "method": "ridge",
+         "suitability": "Fits lagged tabular rows."
+        }
+       ],
+       "data_sufficiency": "The train years hold enough hourly rows for a small network.",
+       "expected_benefit": {
+        "metric": "mae",
+        "minimum_gain": 0.2,
+        "reason": "A smaller gain does not repay training."
+       },
+       "leakage_risks": [
+        "The two hour availability latency must hold for every input."
+       ],
+       "compute_seconds": 120.0,
+       "failure_conditions": [
+        "The lower limit of MAE skill is at or below zero.",
+        "above_55_mae is not below 10.0 \u00b5g/m\u00b3 on test hours with pm25 >55 \u00b5g/m\u00b3"
+       ]
+      },
+      "evidence_fields": []
+     }
+    },
+    "model_calls": 3,
+    "prompt_tokens": 4942,
+    "completion_tokens": 3350,
+    "wall_seconds": 775.4,
+    "truth": "fault",
+    "expected": [
+     "elevated_not_tested"
+    ],
+    "detected": true,
+    "caught_without_review": false,
+    "false_objection": false,
+    "repeat": 1
+   },
+   {
+    "case": "elevated-ignored",
+    "stage": "pre_execution",
+    "off": [],
+    "review_label": "seeded case, live critic",
+    "codes": [
+     "elevated_not_tested"
+    ],
+    "verdict": "needs_revision",
+    "record": {
+     "schema_version": "1",
+     "proposal": {
+      "schema_version": "1",
+      "hypothesis": "A GRU lowers the T+6 h MAE against persistence and the lagged ridge.",
+      "proposed_method": "gru",
+      "simplest_baseline": "persistence",
+      "candidates": [
+       {
+        "method": "gru",
+        "suitability": "Fits hourly regional sequences."
+       },
+       {
+        "method": "ridge",
+        "suitability": "Fits lagged tabular rows."
+       }
+      ],
+      "data_sufficiency": "The train years hold enough hourly rows for a small network.",
+      "expected_benefit": {
+       "metric": "mae",
+       "minimum_gain": 0.2,
+       "reason": "A smaller gain does not repay training."
+      },
+      "leakage_risks": [
+       "The two hour availability latency must hold for every input."
+      ],
+      "compute_seconds": 120.0,
+      "failure_conditions": [
+       "The lower limit of MAE skill is at or below zero."
+      ]
+     },
+     "findings": [
+      {
+       "code": "elevated_not_tested",
+       "method": "gru",
+       "detail": "no failure condition covers elevated hours",
+       "blocking": false
+      }
+     ],
+     "verdict": "needs_revision",
+     "critic_calls": 1,
+     "critique": {
+      "schema_version": "1",
+      "kind": "competing_experiment",
+      "finding": "elevated_not_tested",
+      "claim": "GRU may lower overall T+6h MAE but fails to keep positive skill on elevated PM2.5 hours above 55 \u00b5g/m3, so high-pollution episodes remain underpredicted",
+      "test": {
+       "metric": "skill_against_persistence",
+       "direction": "below",
+       "threshold": 0.0,
+       "samples": "Historical1hrPM2.5.csv T+6h test split rows for five regions where true pm25 >55 ug/m3 with 2h availability latency"
+      },
+      "competing_method": "ridge"
+     },
+     "critique_state": "usable",
+     "critic_source": "same_model_second_pass",
+     "lead_responses": 1,
+     "disposition": null
+    },
+    "model_calls": 4,
+    "prompt_tokens": 7477,
+    "completion_tokens": 5083,
+    "wall_seconds": 1284.4,
+    "truth": "fault",
+    "expected": [
+     "elevated_not_tested"
+    ],
+    "detected": true,
+    "caught_without_review": false,
+    "false_objection": false,
+    "repeat": 2
+   },
+   {
+    "case": "elevated-ignored",
+    "stage": "pre_execution",
+    "off": [],
+    "review_label": "seeded case, live critic",
+    "codes": [
+     "elevated_not_tested"
+    ],
+    "verdict": "proceed",
+    "record": {
+     "schema_version": "1",
+     "proposal": {
+      "schema_version": "1",
+      "hypothesis": "A GRU lowers the T+6 h MAE against persistence and the lagged ridge.",
+      "proposed_method": "gru",
+      "simplest_baseline": "persistence",
+      "candidates": [
+       {
+        "method": "gru",
+        "suitability": "Fits hourly regional sequences."
+       },
+       {
+        "method": "ridge",
+        "suitability": "Fits lagged tabular rows."
+       }
+      ],
+      "data_sufficiency": "The train years hold enough hourly rows for a small network.",
+      "expected_benefit": {
+       "metric": "mae",
+       "minimum_gain": 0.2,
+       "reason": "A smaller gain does not repay training."
+      },
+      "leakage_risks": [
+       "The two hour availability latency must hold for every input."
+      ],
+      "compute_seconds": 120.0,
+      "failure_conditions": [
+       "The lower limit of MAE skill is at or below zero."
+      ]
+     },
+     "findings": [
+      {
+       "code": "elevated_not_tested",
+       "method": "gru",
+       "detail": "no failure condition covers elevated hours",
+       "blocking": false
+      }
+     ],
+     "verdict": "proceed",
+     "critic_calls": 1,
+     "critique": {
+      "schema_version": "1",
+      "kind": "competing_experiment",
+      "finding": "elevated_not_tested",
+      "claim": "GRU may lower average T+6h MAE versus persistence and ridge but fails to improve error on elevated PM2.5 hours above 55 \u00b5g/m3, leaving health-relevant episodes underpredicted.",
+      "test": {
+       "metric": "above_55_mae",
+       "direction": "below",
+       "threshold": 18.0,
+       "samples": "T+6h test forecasts where true PM2.5 >55 \u00b5g/m3"
+      },
+      "competing_method": "ridge"
+     },
+     "critique_state": "usable",
+     "critic_source": "same_model_second_pass",
+     "lead_responses": 1,
+     "disposition": {
+      "schema_version": "1",
+      "disposition": "accepted",
+      "response": "Accepted. The original case only targeted average T+6h MAE and ignored health-relevant elevated PM2.5 >55 \u00b5g/m3. Revised hypothesis and failure conditions now require improvement on elevated episodes alongside overall MAE gain.",
+      "revised_case": {
+       "schema_version": "1",
+       "hypothesis": "A GRU lowers T+6 h MAE against persistence and lagged ridge overall and reduces error on PM2.5 >55 \u00b5g/m3 episodes relevant for health.",
+       "proposed_method": "gru",
+       "simplest_baseline": "persistence",
+       "candidates": [
+        {
+         "method": "gru",
+         "suitability": "Fits hourly regional sequences."
+        },
+        {
+         "method": "ridge",
+         "suitability": "Fits lagged tabular rows."
+        }
+       ],
+       "data_sufficiency": "The train years hold enough hourly rows for a small network.",
+       "expected_benefit": {
+        "metric": "mae",
+        "minimum_gain": 0.2,
+        "reason": "Overall T+6h MAE gain must repay training and elevated >55 \u00b5g/m3 episodes must improve for health relevance."
+       },
+       "leakage_risks": [
+        "The two hour availability latency must hold for every input."
+       ],
+       "compute_seconds": 120.0,
+       "failure_conditions": [
+        "The lower limit of MAE skill is at or below zero.",
+        "above_55_mae vs ridge is not improved for elevated episodes"
+       ]
+      },
+      "evidence_fields": []
+     }
+    },
+    "model_calls": 4,
+    "prompt_tokens": 7462,
+    "completion_tokens": 6231,
+    "wall_seconds": 1390.4,
+    "truth": "fault",
+    "expected": [
+     "elevated_not_tested"
+    ],
+    "detected": true,
+    "caught_without_review": false,
+    "false_objection": false,
+    "repeat": 3
+   },
+   {
+    "case": "elevated-hidden-result",
+    "stage": "recommendation",
+    "off": [
+     "adopt_limited_only"
+    ],
+    "review_label": "code only",
+    "codes": [
+     "subgroup_failure"
+    ],
+    "verdict": "proceed",
+    "limitations": [
+     "subgroup_failure: MAE above 55 ug/m3 is 28.772, reference 26.324"
+    ],
+    "report_sha256": "32563eb9e1b4a2b2e953de64c256f11683dbd286942e2654932f8eccacb52e94",
+    "truth": "fault",
+    "expected": [
+     "subgroup_failure"
+    ],
+    "detected": true,
+    "caught_without_review": true,
+    "false_objection": false,
+    "repeat": 1
+   },
+   {
+    "case": "repeated-refinement",
+    "stage": "refinement",
+    "off": [],
+    "review_label": "code only",
+    "codes": [
+     "repeated_plan"
+    ],
+    "verdict": "refused",
+    "truth": "fault",
+    "expected": [
+     "repeated_plan"
+    ],
+    "detected": true,
+    "caught_without_review": false,
+    "false_objection": false,
+    "repeat": 1
+   },
+   {
+    "case": "era5-as-forecast",
+    "stage": "pre_execution",
+    "off": [],
+    "review_label": "code only",
+    "codes": [
+     "hindsight_as_forecast"
+    ],
+    "verdict": "refused",
+    "record": {
+     "schema_version": "1",
+     "proposal": {
+      "schema_version": "1",
+      "hypothesis": "Wind at the valid hour lowers the T+6 h MAE against persistence in all regions.",
+      "proposed_method": "ridge",
+      "simplest_baseline": "persistence",
+      "candidates": [
+       {
+        "method": "ridge",
+        "suitability": "Fits lagged rows with ERA5 wind at the valid hour."
+       },
+       {
+        "method": "climatology",
+        "suitability": "Fits calendar means alone."
+       }
+      ],
+      "data_sufficiency": "ERA5 reanalysis supplies wind at the valid hour for each issue time.",
+      "expected_benefit": {
+       "metric": "mae",
+       "minimum_gain": 0.2,
+       "reason": "A smaller gain does not repay the join."
+      },
+      "leakage_risks": [
+       "The two hour availability latency must hold for every label."
+      ],
+      "compute_seconds": 30.0,
+      "failure_conditions": [
+       "The lower limit of MAE skill is at or below zero."
+      ]
+     },
+     "findings": [
+      {
+       "code": "hindsight_as_forecast",
+       "method": null,
+       "detail": "reanalysis fields are not known at issue time for T+6 h",
+       "blocking": true
+      }
+     ],
+     "verdict": "refused",
+     "critic_calls": 0,
+     "critique": null,
+     "critique_state": "not_triggered",
+     "critic_source": "not_used",
+     "lead_responses": 0,
+     "disposition": null
+    },
+    "model_calls": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "wall_seconds": 0.0,
+    "truth": "fault",
+    "expected": [
+     "hindsight_as_forecast"
+    ],
+    "detected": true,
+    "caught_without_review": false,
+    "false_objection": false,
+    "repeat": 1
+   },
+   {
+    "case": "prithvi-incompatible",
+    "stage": "pre_execution",
+    "off": [
+     "strategy_blocked"
+    ],
+    "review_label": "code only",
+    "codes": [
+     "method_blocked",
+     "no_simple_comparison"
+    ],
+    "verdict": "refused",
+    "record": {
+     "schema_version": "1",
+     "proposal": {
+      "schema_version": "1",
+      "hypothesis": "A pretrained segmentation model maps the burned area better than MCD64A1.",
+      "proposed_method": "segmentation_pretrained",
+      "simplest_baseline": "raster_deterministic",
+      "candidates": [
+       {
+        "method": "segmentation_pretrained",
+        "suitability": "A pretrained model segments burn scars."
+       },
+       {
+        "method": "raster_deterministic",
+        "suitability": "A pinned product gives the area."
+       }
+      ],
+      "data_sufficiency": "The pinned MCD64A1 months cover the study window at 500 m resolution.",
+      "expected_benefit": {
+       "metric": "f1",
+       "minimum_gain": 0.05,
+       "reason": "A smaller gain does not repay inference."
+      },
+      "leakage_risks": [
+       "The product is a monthly map, so no issue time applies."
+      ],
+      "compute_seconds": 0.0,
+      "failure_conditions": [
+       "F1 against reference masks is below the deterministic product."
+      ]
+     },
+     "findings": [
+      {
+       "code": "method_blocked",
+       "method": "segmentation_pretrained",
+       "detail": "pretrained_transfer: no approved weights; the inputs and reference masks do not fit",
+       "blocking": true
+      },
+      {
+       "code": "no_simple_comparison",
+       "method": "segmentation_pretrained",
+       "detail": "segmentation_pretrained has no simple method in both candidates and plan",
+       "blocking": false
+      }
+     ],
+     "verdict": "refused",
+     "critic_calls": 0,
+     "critique": null,
+     "critique_state": "not_triggered",
+     "critic_source": "not_used",
+     "lead_responses": 0,
+     "disposition": null
+    },
+    "model_calls": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "wall_seconds": 0.0,
+    "truth": "fault",
+    "expected": [
+     "method_blocked"
+    ],
+    "detected": true,
+    "caught_without_review": true,
+    "false_objection": false,
+    "repeat": 1
+   },
+   {
+    "case": "hybrid-adopt",
+    "stage": "recommendation",
+    "off": [
+     "evaluator_verdict"
+    ],
+    "review_label": "code only",
+    "codes": [
+     "adopt_without_gain",
+     "subgroup_failure"
+    ],
+    "verdict": "needs_revision",
+    "limitations": [
+     "adopt_without_gain: lower limit of F1 gain against persistence_alarm is -0.1647",
+     "subgroup_failure: 2 of 5 regions fall below the reference F1"
+    ],
+    "report_sha256": "8bcdf31fb525e782fdcdc63b84d813f57094cbf399380373bb626c7586f29fbb",
+    "truth": "fault",
+    "expected": [
+     "adopt_without_gain"
+    ],
+    "detected": true,
+    "caught_without_review": true,
+    "false_objection": false,
+    "repeat": 1
+   },
+   {
+    "case": "ridge-supported",
+    "stage": "pre_execution",
+    "off": [],
+    "review_label": "code only",
+    "codes": [],
+    "verdict": "proceed",
+    "record": {
+     "schema_version": "1",
+     "proposal": {
+      "schema_version": "1",
+      "hypothesis": "A lagged ridge lowers the T+6 h MAE against persistence in all regions.",
+      "proposed_method": "ridge",
+      "simplest_baseline": "persistence",
+      "candidates": [
+       {
+        "method": "ridge",
+        "suitability": "Fits lagged tabular rows."
+       },
+       {
+        "method": "climatology",
+        "suitability": "Fits calendar means alone."
+       }
+      ],
+      "data_sufficiency": "The train years hold enough hourly rows for a linear fit.",
+      "expected_benefit": {
+       "metric": "mae",
+       "minimum_gain": 0.2,
+       "reason": "A smaller gain does not repay the pipeline."
+      },
+      "leakage_risks": [
+       "The two hour availability latency must hold for every lag."
+      ],
+      "compute_seconds": 30.0,
+      "failure_conditions": [
+       "The lower limit of MAE skill is at or below zero."
+      ]
+     },
+     "findings": [],
+     "verdict": "proceed",
+     "critic_calls": 0,
+     "critique": null,
+     "critique_state": "not_triggered",
+     "critic_source": "not_used",
+     "lead_responses": 0,
+     "disposition": null
+    },
+    "model_calls": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "wall_seconds": 0.0,
+    "truth": "sound",
+    "expected": [],
+    "detected": false,
+    "caught_without_review": false,
+    "false_objection": false,
+    "repeat": 1
+   },
+   {
+    "case": "ridge-minor-finding",
+    "stage": "pre_execution",
+    "off": [],
+    "review_label": "seeded case, live critic",
+    "codes": [
+     "latency_not_named"
+    ],
+    "verdict": "proceed",
+    "record": {
+     "schema_version": "1",
+     "proposal": {
+      "schema_version": "1",
+      "hypothesis": "A lagged ridge lowers the T+6 h MAE against persistence in all regions.",
+      "proposed_method": "ridge",
+      "simplest_baseline": "persistence",
+      "candidates": [
+       {
+        "method": "ridge",
+        "suitability": "Fits lagged tabular rows."
+       },
+       {
+        "method": "climatology",
+        "suitability": "Fits calendar means alone."
+       }
+      ],
+      "data_sufficiency": "The train years hold enough hourly rows for a linear fit.",
+      "expected_benefit": {
+       "metric": "mae",
+       "minimum_gain": 0.2,
+       "reason": "A smaller gain does not repay the pipeline."
+      },
+      "leakage_risks": [
+       "Scalers are fitted on the train split alone."
+      ],
+      "compute_seconds": 30.0,
+      "failure_conditions": [
+       "The lower limit of MAE skill is at or below zero."
+      ]
+     },
+     "findings": [
+      {
+       "code": "latency_not_named",
+       "method": null,
+       "detail": "the data have 2 h latency",
+       "blocking": false
+      }
+     ],
+     "verdict": "proceed",
+     "critic_calls": 1,
+     "critique": {
+      "schema_version": "1",
+      "kind": "falsifiable_concern",
+      "finding": "latency_not_named",
+      "claim": "Lagged ridge assumes lagged PM2.5 values up to T-1h are available at forecast time, but the series has 2 h availability latency, so the T+6h features used for training are not realizable in operation and skill against persistence will not materialize.",
+      "test": {
+       "metric": "skill_against_persistence",
+       "direction": "above",
+       "threshold": 0.0,
+       "samples": "T+6h PM2.5 forecasts for five regions from Historical1hrPM2.5.csv with 2h latency lag features"
+      },
+      "competing_method": null
+     },
+     "critique_state": "usable",
+     "critic_source": "same_model_second_pass",
+     "lead_responses": 1,
+     "disposition": {
+      "schema_version": "1",
+      "disposition": "accepted",
+      "response": "The critique is valid: the original case did not name the 2 h availability latency. I revise the hypothesis and leakage controls to enforce realizable lags \u22652 h so T+6 h features are operationally available and skill against persistence can be tested.",
+      "revised_case": {
+       "schema_version": "1",
+       "hypothesis": "A lagged ridge using only PM2.5 lags \u22652h lowers T+6 h MAE against persistence in all regions.",
+       "proposed_method": "ridge",
+       "simplest_baseline": "persistence",
+       "candidates": [
+        {
+         "method": "ridge",
+         "suitability": "Fits lagged tabular rows with 2h offset."
+        },
+        {
+         "method": "climatology",
+         "suitability": "Fits calendar means alone."
+        }
+       ],
+       "data_sufficiency": "Train years hold enough hourly rows with 2h latency offset for a linear fit.",
+       "expected_benefit": {
+        "metric": "mae",
+        "minimum_gain": 0.2,
+        "reason": "A smaller gain does not repay the pipeline."
+       },
+       "leakage_risks": [
+        "Scalers are fitted on the train split alone.",
+        "Features use lags \u2265 availability_latency_hours=2h"
+       ],
+       "compute_seconds": 30.0,
+       "failure_conditions": [
+        "The lower limit of MAE skill is at or below zero."
+       ]
+      },
+      "evidence_fields": []
+     }
+    },
+    "model_calls": 3,
+    "prompt_tokens": 4995,
+    "completion_tokens": 3213,
+    "wall_seconds": 817.0,
+    "truth": "sound",
+    "expected": [
+     "latency_not_named"
+    ],
+    "detected": false,
+    "caught_without_review": false,
+    "false_objection": false,
+    "repeat": 1
+   },
+   {
+    "case": "ridge-minor-finding",
+    "stage": "pre_execution",
+    "off": [],
+    "review_label": "seeded case, live critic",
+    "codes": [
+     "latency_not_named"
+    ],
+    "verdict": "proceed",
+    "record": {
+     "schema_version": "1",
+     "proposal": {
+      "schema_version": "1",
+      "hypothesis": "A lagged ridge lowers the T+6 h MAE against persistence in all regions.",
+      "proposed_method": "ridge",
+      "simplest_baseline": "persistence",
+      "candidates": [
+       {
+        "method": "ridge",
+        "suitability": "Fits lagged tabular rows."
+       },
+       {
+        "method": "climatology",
+        "suitability": "Fits calendar means alone."
+       }
+      ],
+      "data_sufficiency": "The train years hold enough hourly rows for a linear fit.",
+      "expected_benefit": {
+       "metric": "mae",
+       "minimum_gain": 0.2,
+       "reason": "A smaller gain does not repay the pipeline."
+      },
+      "leakage_risks": [
+       "Scalers are fitted on the train split alone."
+      ],
+      "compute_seconds": 30.0,
+      "failure_conditions": [
+       "The lower limit of MAE skill is at or below zero."
+      ]
+     },
+     "findings": [
+      {
+       "code": "latency_not_named",
+       "method": null,
+       "detail": "the data have 2 h latency",
+       "blocking": false
+      }
+     ],
+     "verdict": "proceed",
+     "critic_calls": 1,
+     "critique": null,
+     "critique_state": "unusable",
+     "critic_source": "same_model_second_pass",
+     "lead_responses": 0,
+     "disposition": null
+    },
+    "model_calls": 2,
+    "prompt_tokens": 2906,
+    "completion_tokens": 2978,
+    "wall_seconds": 751.9,
+    "truth": "sound",
+    "expected": [
+     "latency_not_named"
+    ],
+    "detected": false,
+    "caught_without_review": false,
+    "false_objection": false,
+    "repeat": 2
+   },
+   {
+    "case": "ridge-minor-finding",
+    "stage": "pre_execution",
+    "off": [],
+    "review_label": "seeded case, live critic",
+    "codes": [
+     "latency_not_named"
+    ],
+    "verdict": "proceed",
+    "record": {
+     "schema_version": "1",
+     "proposal": {
+      "schema_version": "1",
+      "hypothesis": "A lagged ridge lowers the T+6 h MAE against persistence in all regions.",
+      "proposed_method": "ridge",
+      "simplest_baseline": "persistence",
+      "candidates": [
+       {
+        "method": "ridge",
+        "suitability": "Fits lagged tabular rows."
+       },
+       {
+        "method": "climatology",
+        "suitability": "Fits calendar means alone."
+       }
+      ],
+      "data_sufficiency": "The train years hold enough hourly rows for a linear fit.",
+      "expected_benefit": {
+       "metric": "mae",
+       "minimum_gain": 0.2,
+       "reason": "A smaller gain does not repay the pipeline."
+      },
+      "leakage_risks": [
+       "Scalers are fitted on the train split alone."
+      ],
+      "compute_seconds": 30.0,
+      "failure_conditions": [
+       "The lower limit of MAE skill is at or below zero."
+      ]
+     },
+     "findings": [
+      {
+       "code": "latency_not_named",
+       "method": null,
+       "detail": "the data have 2 h latency",
+       "blocking": false
+      }
+     ],
+     "verdict": "proceed",
+     "critic_calls": 1,
+     "critique": null,
+     "critique_state": "unusable",
+     "critic_source": "same_model_second_pass",
+     "lead_responses": 0,
+     "disposition": null
+    },
+    "model_calls": 2,
+    "prompt_tokens": 2898,
+    "completion_tokens": 3155,
+    "wall_seconds": 815.3,
+    "truth": "sound",
+    "expected": [
+     "latency_not_named"
+    ],
+    "detected": false,
+    "caught_without_review": false,
+    "false_objection": false,
+    "repeat": 3
+   }
+  ],
+  "v2/cases": [
+   {
+    "case": "gru-no-comparison",
+    "stage": "pre_execution",
+    "off": [],
+    "review_label": "seeded case, live critic",
+    "codes": [
+     "no_simple_comparison"
+    ],
+    "verdict": "proceed",
+    "record": {
+     "schema_version": "1",
+     "proposal": {
+      "schema_version": "1",
+      "hypothesis": "A GRU lowers the T+6 h MAE against persistence in all five regions.",
+      "proposed_method": "gru",
+      "simplest_baseline": "persistence",
+      "candidates": [
+       {
+        "method": "gru",
+        "suitability": "Fits hourly regional sequences."
+       },
+       {
+        "method": "tcn",
+        "suitability": "Fits hourly regional sequences."
+       }
+      ],
+      "data_sufficiency": "The train years hold enough hourly rows for a small network.",
+      "expected_benefit": {
+       "metric": "mae",
+       "minimum_gain": 0.2,
+       "reason": "A smaller gain does not repay training."
+      },
+      "leakage_risks": [
+       "The two hour availability latency must hold for every input."
+      ],
+      "compute_seconds": 120.0,
+      "failure_conditions": [
+       "The lower limit of MAE skill is at or below zero.",
+       "MAE above 55 ug/m3 is worse than persistence."
+      ]
+     },
+     "findings": [
+      {
+       "code": "no_simple_comparison",
+       "method": "gru",
+       "detail": "gru has no simple method in both candidates and plan",
+       "blocking": false
+      }
+     ],
+     "verdict": "proceed",
+     "critic_calls": 1,
+     "critique": {
+      "schema_version": "1",
+      "kind": "competing_experiment",
+      "finding": "no_simple_comparison",
+      "claim": "GRU is only compared to persistence and TCN, so the plan cannot show that sequence modelling adds value beyond a simple linear baseline for T+6h PM2.5.",
+      "test": {
+       "metric": "skill_against_persistence",
+       "direction": "above",
+       "threshold": 0.2,
+       "samples": "five regions T+6h ridge baseline"
+      },
+      "competing_method": "ridge"
+     },
+     "critique_state": "usable",
+     "critic_source": "same_model_second_pass",
+     "lead_responses": 1,
+     "disposition": {
+      "schema_version": "1",
+      "disposition": "accepted",
+      "response": "The original case only contrasted GRU with persistence and TCN, so it could not demonstrate that sequence modelling adds value beyond a simple linear baseline. Adding ridge as an explicit candidate lets the T+6h experiment test GRU skill against persistence relative to ridge, as required by the critique.",
+      "revised_case": {
+       "schema_version": "1",
+       "hypothesis": "A GRU achieves skill against persistence above 0.2 over a ridge linear baseline at T+6h in all five regions.",
+       "proposed_method": "gru",
+       "simplest_baseline": "persistence",
+       "candidates": [
+        {
+         "method": "gru",
+         "suitability": "Fits hourly regional sequences with recurrent state."
+        },
+        {
+         "method": "tcn",
+         "suitability": "Fits hourly regional sequences with dilated convolutions."
+        },
+        {
+         "method": "ridge",
+         "suitability": "Simple linear baseline for T+6h PM2.5 with lag features."
+        }
+       ],
+       "data_sufficiency": "The train years hold enough hourly rows for a small network.",
+       "expected_benefit": {
+        "metric": "skill",
+        "minimum_gain": 0.2,
+        "reason": "Skill above 0.2 over ridge shows sequence modelling repays training."
+       },
+       "leakage_risks": [
+        "The two hour availability latency must hold for every input."
+       ],
+       "compute_seconds": 120.0,
+       "failure_conditions": [
+        "The lower limit of MAE skill is at or below zero.",
+        "MAE above 55 ug/m3 is worse than persistence."
+       ]
+      },
+      "evidence_fields": []
+     }
+    },
+    "model_calls": 2,
+    "prompt_tokens": 3424,
+    "completion_tokens": 3516,
+    "wall_seconds": 895.3,
+    "truth": "fault",
+    "expected": [
+     "no_simple_comparison"
+    ],
+    "detected": true,
+    "caught_without_review": false,
+    "false_objection": false,
+    "repeat": 1
+   },
+   {
+    "case": "gru-no-comparison",
+    "stage": "pre_execution",
+    "off": [],
+    "review_label": "seeded case, live critic",
+    "codes": [
+     "no_simple_comparison"
+    ],
+    "verdict": "proceed",
+    "record": {
+     "schema_version": "1",
+     "proposal": {
+      "schema_version": "1",
+      "hypothesis": "A GRU lowers the T+6 h MAE against persistence in all five regions.",
+      "proposed_method": "gru",
+      "simplest_baseline": "persistence",
+      "candidates": [
+       {
+        "method": "gru",
+        "suitability": "Fits hourly regional sequences."
+       },
+       {
+        "method": "tcn",
+        "suitability": "Fits hourly regional sequences."
+       }
+      ],
+      "data_sufficiency": "The train years hold enough hourly rows for a small network.",
+      "expected_benefit": {
+       "metric": "mae",
+       "minimum_gain": 0.2,
+       "reason": "A smaller gain does not repay training."
+      },
+      "leakage_risks": [
+       "The two hour availability latency must hold for every input."
+      ],
+      "compute_seconds": 120.0,
+      "failure_conditions": [
+       "The lower limit of MAE skill is at or below zero.",
+       "MAE above 55 ug/m3 is worse than persistence."
+      ]
+     },
+     "findings": [
+      {
+       "code": "no_simple_comparison",
+       "method": "gru",
+       "detail": "gru has no simple method in both candidates and plan",
+       "blocking": false
+      }
+     ],
+     "verdict": "proceed",
+     "critic_calls": 1,
+     "critique": {
+      "schema_version": "1",
+      "kind": "competing_experiment",
+      "finding": "no_simple_comparison",
+      "claim": "The candidate set contains only GRU and TCN with persistence as baseline, so the claimed T+6 h MAE gain over persistence is not isolated from a simple linear baseline that could explain the improvement.",
+      "test": {
+       "metric": "skill_against_persistence",
+       "direction": "above",
+       "threshold": 0.2,
+       "samples": "T+6 h skill against persistence for GRU averaged over five regions on 2026-01-01 to 2026-10-01 holdout"
+      },
+      "competing_method": "ridge"
+     },
+     "critique_state": "usable",
+     "critic_source": "same_model_second_pass",
+     "lead_responses": 1,
+     "disposition": {
+      "schema_version": "1",
+      "disposition": "accepted",
+      "response": "The candidate set lacked a simple linear baseline, so the GRU improvement over persistence could be explained by ridge. Adding ridge isolates the non-linear gain and matches the plan which already includes ridge.",
+      "revised_case": {
+       "schema_version": "1",
+       "hypothesis": "A GRU lowers the T+6 h MAE against persistence in all five regions.",
+       "proposed_method": "gru",
+       "simplest_baseline": "persistence",
+       "candidates": [
+        {
+         "method": "gru",
+         "suitability": "Fits hourly regional sequences."
+        },
+        {
+         "method": "tcn",
+         "suitability": "Fits hourly regional sequences."
+        },
+        {
+         "method": "ridge",
+         "suitability": "Simple linear baseline for hourly regional sequences."
+        }
+       ],
+       "data_sufficiency": "The train years hold enough hourly rows for a small network and a linear baseline.",
+       "expected_benefit": {
+        "metric": "mae",
+        "minimum_gain": 0.2,
+        "reason": "A smaller gain does not repay training."
+       },
+       "leakage_risks": [
+        "The two hour availability latency must hold for every input.",
+        "test period sealed from every feature file",
+        "scalers fitted on the train split only"
+       ],
+       "compute_seconds": 120.0,
+       "failure_conditions": [
+        "The lower limit of MAE skill is at or below zero.",
+        "MAE above 55 ug/m3 is worse than persistence."
+       ]
+      },
+      "evidence_fields": []
+     }
+    },
+    "model_calls": 2,
+    "prompt_tokens": 3453,
+    "completion_tokens": 4000,
+    "wall_seconds": 918.4,
+    "truth": "fault",
+    "expected": [
+     "no_simple_comparison"
+    ],
+    "detected": true,
+    "caught_without_review": false,
+    "false_objection": false,
+    "repeat": 2
+   },
+   {
+    "case": "gru-no-comparison",
+    "stage": "pre_execution",
+    "off": [],
+    "review_label": "seeded case, live critic",
+    "codes": [
+     "no_simple_comparison"
+    ],
+    "verdict": "proceed",
+    "record": {
+     "schema_version": "1",
+     "proposal": {
+      "schema_version": "1",
+      "hypothesis": "A GRU lowers the T+6 h MAE against persistence in all five regions.",
+      "proposed_method": "gru",
+      "simplest_baseline": "persistence",
+      "candidates": [
+       {
+        "method": "gru",
+        "suitability": "Fits hourly regional sequences."
+       },
+       {
+        "method": "tcn",
+        "suitability": "Fits hourly regional sequences."
+       }
+      ],
+      "data_sufficiency": "The train years hold enough hourly rows for a small network.",
+      "expected_benefit": {
+       "metric": "mae",
+       "minimum_gain": 0.2,
+       "reason": "A smaller gain does not repay training."
+      },
+      "leakage_risks": [
+       "The two hour availability latency must hold for every input."
+      ],
+      "compute_seconds": 120.0,
+      "failure_conditions": [
+       "The lower limit of MAE skill is at or below zero.",
+       "MAE above 55 ug/m3 is worse than persistence."
+      ]
+     },
+     "findings": [
+      {
+       "code": "no_simple_comparison",
+       "method": "gru",
+       "detail": "gru has no simple method in both candidates and plan",
+       "blocking": false
+      }
+     ],
+     "verdict": "proceed",
+     "critic_calls": 1,
+     "critique": {
+      "schema_version": "1",
+      "kind": "competing_experiment",
+      "finding": "no_simple_comparison",
+      "claim": "GRU is evaluated only against persistence and TCN with no simple linear baseline in the candidates, so a claimed T+6h MAE reduction cannot be shown to require recurrence.",
+      "test": {
+       "metric": "skill_against_persistence",
+       "direction": "above",
+       "threshold": 0.2,
+       "samples": "mean T+6h skill for ridge vs persistence across five regions 2023-2025"
+      },
+      "competing_method": "ridge"
+     },
+     "critique_state": "usable",
+     "critic_source": "same_model_second_pass",
+     "lead_responses": 1,
+     "disposition": {
+      "schema_version": "1",
+      "disposition": "accepted",
+      "response": "The critique is correct. The original case only compared GRU to persistence and TCN, so a T+6h MAE reduction could not be shown to require recurrence. Adding a simple linear baseline enables a direct falsifiable comparison for skill against persistence and justifies the recurrent choice.",
+      "revised_case": {
+       "schema_version": "1",
+       "hypothesis": "A GRU lowers the T+6 h MAE against persistence in all five regions.",
+       "proposed_method": "gru",
+       "simplest_baseline": "persistence",
+       "candidates": [
+        {
+         "method": "gru",
+         "suitability": "Fits hourly regional sequences."
+        },
+        {
+         "method": "tcn",
+         "suitability": "Fits hourly regional sequences."
+        },
+        {
+         "method": "ridge",
+         "suitability": "Linear baseline for hourly regional sequences with lag features."
+        }
+       ],
+       "data_sufficiency": "The train years hold enough hourly rows for a small network. Usable rows 109584 with 1 h granularity across five regions and 2 h availability latency.",
+       "expected_benefit": {
+        "metric": "mae",
+        "minimum_gain": 0.2,
+        "reason": "A smaller gain does not repay training."
+       },
+       "leakage_risks": [
+        "The two hour availability latency must hold for every input.",
+        "test period sealed from every feature file",
+        "scalers fitted on the train split only"
+       ],
+       "compute_seconds": 120.0,
+       "failure_conditions": [
+        "The lower limit of MAE skill is at or below zero.",
+        "MAE above 55 ug/m3 is worse than persistence."
+       ]
+      },
+      "evidence_fields": []
+     }
+    },
+    "model_calls": 3,
+    "prompt_tokens": 5063,
+    "completion_tokens": 5171,
+    "wall_seconds": 1297.0,
+    "truth": "fault",
+    "expected": [
+     "no_simple_comparison"
+    ],
+    "detected": true,
+    "caught_without_review": false,
+    "false_objection": false,
+    "repeat": 3
+   }
+  ],
+  "v2/matched": [
+   {
+    "scenario": "pm25-regression",
+    "gate": "gate",
+    "run": "earthlab-review-validation/v2/matched/20261102T061439Z-2c28c9",
+    "status": "awaiting_human",
+    "reason": "evidence ready for a human decision",
+    "recommendation": {
+     "outcome": "retain_baseline",
+     "model_id": "B0_persistence",
+     "reason": "B4_lagged_ridge passes mean skill test but has worse MAE than persistence above 55 ug/m3, 30.254 vs 26.324, with explicit limitation not to rely on it in elevated hours. Evaluation notes test period was not read and result is non-operational historical research not for health/safety decisions. Retaining baseline is safer given these limitations."
+    },
+    "code_outcome": "retain_baseline",
+    "acceptance": {
+     "profile_written": true,
+     "baselines_evaluated": true,
+     "neural_model_when_chosen": true,
+     "every_model_has_predictions_hash": true,
+     "no_feature_file_reaches_test": true,
+     "elevated_hours_reported": true
+    },
+    "usage": {
+     "wall_seconds": 2037.7,
+     "inference_seconds": 2033.9,
+     "training_seconds": 0.0,
+     "peak_training_rss_mb": 0.0,
+     "model_calls": 7,
+     "prompt_tokens": 11272,
+     "completion_tokens": 8509,
+     "cached_tokens": "not exposed by this provider",
+     "retries": 0,
+     "provider_faults": 0,
+     "tool_calls": 0,
+     "rejected_tool_calls": 0,
+     "human_interventions": 0
+    },
+    "method_review": {
+     "schema_version": "1",
+     "proposal": {
+      "schema_version": "1",
+      "hypothesis": "Recent 48h lagged PM2.5 per region with cyclical time features captures autocorrelation, diurnal and weekly seasonality for Singapore NEA regions. Log-transformed values with ridge regularisation will learn a smooth linear mapping to T+6h and improve MAE over persistence while staying within 2h availability latency and the 1200s training budget.",
+      "proposed_method": "ridge",
+      "simplest_baseline": "persistence",
+      "candidates": [
+       {
+        "method": "ridge",
+        "suitability": "Linear regularised model on 48h lags + cyclical time features, fast training, low variance, fits statistical strategy and budget"
+       },
+       {
+        "method": "gru",
+        "suitability": "Small 1-layer GRU with 32 hidden units may capture non-linear temporal dynamics beyond linear lags"
+       },
+       {
+        "method": "climatology",
+        "suitability": "Hour-of-year mean baseline provides seasonal reference and checks diurnal bias"
+       },
+       {
+        "method": "persistence",
+        "suitability": "T-6h naive forecast is the required skill baseline for success criteria"
+       }
+      ],
+      "data_sufficiency": "109584 hourly rows, 5 NEA regions, 2014-2026, <0.01% missing, labels with provenance, 2h latency. Enough for train/val/test split with 48h lag features and regional stratification.",
+      "expected_benefit": {
+       "metric": "mae",
+       "minimum_gain": 0.5,
+       "reason": "Persistence is strong for 6h PM2.5; a 0.5 ug/m3 mean MAE reduction is the smallest gain that yields positive mean MAE skill vs persistence with lower 95% limit above zero and avoids a clear loss in any region."
+      },
+      "leakage_risks": [
+       "future information leakage via lags beyond T+6h horizon",
+       "scalers or encoders fitted on test period",
+       "time leakage across regions via joint normalization",
+       "use of labels after 2026-10-01",
+       "input offset <2h violating availability latency"
+      ],
+      "compute_seconds": 600.0,
+      "failure_conditions": [
+       "mean MAE skill against persistence lower 95% CI <= 0",
+       "any region MAE worse than persistence by >0.3 ug/m3",
+       "training time exceeds 1200 s budget",
+       "elevated-hour MAE vs persistence not reported"
+      ]
+     },
+     "findings": [
+      {
+       "code": "unbacked_data_claim",
+       "method": null,
+       "detail": "0.01 is not in the evaluator's results",
+       "blocking": false
+      }
+     ],
+     "verdict": "proceed",
+     "critic_calls": 1,
+     "critique": null,
+     "critique_state": "unusable",
+     "critic_source": "same_model_second_pass",
+     "lead_responses": 0,
+     "disposition": null
+    },
+    "claims": {
+     "schema_version": "1",
+     "model": "B0_persistence",
+     "split_scored": "validation",
+     "technically_feasible": {
+      "state": "passed",
+      "basis": "measured",
+      "evidence": "the method produced predictions"
+     },
+     "experimentally_tested": {
+      "state": "passed",
+      "basis": "measured",
+      "evidence": "scored by earthlab.forecast.evaluator"
+     },
+     "better_than_baseline": {
+      "state": "failed",
+      "basis": "frozen_protocol",
+      "evidence": "lower limit of mean MAE skill against B0_persistence is 0.0000"
+     },
+     "robust_across_subgroups": {
+      "state": "passed",
+      "basis": "exploratory",
+      "evidence": "MAE above 55 ug/m3 is 26.324, reference 26.324"
+     },
+     "justified_by_incremental_cost": {
+      "state": "failed",
+      "basis": "measured",
+      "evidence": "no shown gain to pay for"
+     },
+     "approved_for_intended_use": {
+      "state": "pending_human",
+      "basis": "registry",
+      "evidence": "no human decision"
+     }
+    },
+    "refusal_codes": [],
+    "wall_seconds": 2038.7
+   },
+   {
+    "scenario": "pm25-regression",
+    "gate": "plain",
+    "run": "earthlab-review-validation/v2/matched/20261102T064837Z-bcfac9",
+    "status": "awaiting_human",
+    "reason": "evidence ready for a human decision",
+    "recommendation": {
+     "outcome": "retain_baseline",
+     "model_id": "B0_persistence",
+     "reason": "B4_lagged_ridge shows positive overall skill and lower MAE/ RMSE on average, but elevated >55 \u00b5g/m3 MAE is 30.254 versus 26.324 for persistence with recall 0.247, and limitations explicitly state do not rely on it in elevated hours. Retaining baseline persistence avoids degraded performance in high-concentration conditions."
+    },
+    "code_outcome": "retain_baseline",
+    "acceptance": {
+     "profile_written": true,
+     "baselines_evaluated": true,
+     "neural_model_when_chosen": true,
+     "every_model_has_predictions_hash": true,
+     "no_feature_file_reaches_test": true,
+     "elevated_hours_reported": true
+    },
+    "usage": {
+     "wall_seconds": 568.5,
+     "inference_seconds": 566.8,
+     "training_seconds": 0.0,
+     "peak_training_rss_mb": 0.0,
+     "model_calls": 4,
+     "prompt_tokens": 5142,
+     "completion_tokens": 2486,
+     "cached_tokens": "not exposed by this provider",
+     "retries": 0,
+     "provider_faults": 0,
+     "tool_calls": 0,
+     "rejected_tool_calls": 0,
+     "human_interventions": 0
+    },
+    "method_review": null,
+    "claims": null,
+    "refusal_codes": [],
+    "wall_seconds": 569.7
+   },
+   {
+    "scenario": "pm25-exceedance",
+    "gate": "plain",
+    "run": "earthlab-review-validation/v2/matched/20261102T065807Z-b39001",
+    "status": "awaiting_human",
+    "reason": "evidence ready for a human decision",
+    "recommendation": {
+     "outcome": "retain_baseline",
+     "model_id": "persistence_alarm",
+     "reason": "Evaluation on validation years 2022 to 2023 shows no model passes criteria. Train_rate and logistic have lower limit of F1 gain over persistence not above zero, and train_rate finds no exceedance. Persistence alarm remains the reference with allowed retain_baseline."
+    },
+    "code_outcome": "retain_baseline",
+    "acceptance": {
+     "class_balance_reported": true,
+     "majority_class_rejected": true,
+     "same_hours_for_every_model": true,
+     "no_scored_issue_reaches_test": true,
+     "calibration_reported": true
+    },
+    "usage": {
+     "wall_seconds": 1318.4,
+     "inference_seconds": 1316.5,
+     "training_seconds": 0.0,
+     "peak_training_rss_mb": 0.0,
+     "model_calls": 8,
+     "prompt_tokens": 9342,
+     "completion_tokens": 5411,
+     "cached_tokens": "not exposed by this provider",
+     "retries": 0,
+     "provider_faults": 0,
+     "tool_calls": 0,
+     "rejected_tool_calls": 0,
+     "human_interventions": 0
+    },
+    "method_review": null,
+    "claims": null,
+    "refusal_codes": [],
+    "wall_seconds": 1319.5
+   },
+   {
+    "scenario": "pm25-exceedance",
+    "gate": "gate",
+    "run": "earthlab-review-validation/v2/matched/20261102T072007Z-89baae",
+    "status": "refused",
+    "reason": "method_review: unknown_method: not a registered method; method_review: unknown_method: not a registered method; method_review: not_in_plan: the plan runs ['persistence', 'climatology', 'logistic']",
+    "recommendation": null,
+    "code_outcome": null,
+    "acceptance": null,
+    "usage": {
+     "wall_seconds": 958.5,
+     "inference_seconds": 958.4,
+     "training_seconds": 0.0,
+     "peak_training_rss_mb": 0.0,
+     "model_calls": 4,
+     "prompt_tokens": 4462,
+     "completion_tokens": 4018,
+     "cached_tokens": "not exposed by this provider",
+     "retries": 0,
+     "provider_faults": 0,
+     "tool_calls": 0,
+     "rejected_tool_calls": 0,
+     "human_interventions": 0
+    },
+    "method_review": {
+     "schema_version": "1",
+     "proposal": {
+      "schema_version": "1",
+      "hypothesis": "Recent 24-hour PM2.5 dynamics per region contain diurnal, accumulation and dissipation signals that precede a 6-hour exceedance of 35 ug/m3. A regularized logistic model on lagged hourly concentrations and simple rolling statistics will capture these precursors better than a persistence alarm, improving detection of rare exceedance events.",
+      "proposed_method": "logistic regression with 24h lags",
+      "simplest_baseline": "persistence alarm",
+      "candidates": [
+       {
+        "method": "persistence alarm",
+        "suitability": "Zero training baseline that repeats current exceedance state; provides reference F1 and PR AUC for rare 6% positive rate."
+       },
+       {
+        "method": "climatology",
+        "suitability": "Hour-of-day and day-of-week exceedance frequency per region; captures seasonality with no temporal leakage."
+       },
+       {
+        "method": "logistic regression with 24h lags",
+        "suitability": "Linear statistical model with lag features fits within 2h latency, training budget and tabular series constraints."
+       }
+      ],
+      "data_sufficiency": "109,584 hourly rows across five regions with 0.019% missing, labels derived from published NEA series. Positive rate ~6% gives ~6.5k positives, sufficient for 24 lag features with regularized logistic regression and a 2014-2018 fit, 2019-2021 tune, 2022-2023 score split.",
+      "expected_benefit": {
+       "metric": "f1",
+       "minimum_gain": 0.015,
+       "reason": "Persistence alarm is weak for 6h ahead rare events; modest improvement in F1 with lower 95% limit >0 is required to justify model complexity and operational cost."
+      },
+      "leakage_risks": [
+       "features must use only t-2h and earlier due to 2h availability latency",
+       "no T+6 label leakage into lag construction",
+       "cut threshold tuned only on 2019-2021, not score years",
+       "region leakage avoided by per-region modeling or region as covariate"
+      ],
+      "compute_seconds": 120.0,
+      "failure_conditions": [
+       "F1 gain over persistence 95% CI includes zero",
+       "precision <= base rate 0.0599",
+       "PR AUC <= base rate",
+       "model predicts majority class for >95% of hours",
+       "training exceeds 300s or total exceeds 5400s"
+      ]
+     },
+     "findings": [
+      {
+       "code": "unknown_method",
+       "method": "logistic regression with 24h lags",
+       "detail": "not a registered method",
+       "blocking": true
+      },
+      {
+       "code": "unknown_method",
+       "method": "persistence alarm",
+       "detail": "not a registered method",
+       "blocking": true
+      },
+      {
+       "code": "not_in_plan",
+       "method": "logistic regression with 24h lags",
+       "detail": "the plan runs ['persistence', 'climatology', 'logistic']",
+       "blocking": true
+      },
+      {
+       "code": "unbacked_data_claim",
+       "method": null,
+       "detail": "0.019 is not in the evaluator's results",
+       "blocking": false
+      },
+      {
+       "code": "unbacked_data_claim",
+       "method": null,
+       "detail": "6.5 is not in the evaluator's results",
+       "blocking": false
+      }
+     ],
+     "verdict": "refused",
+     "critic_calls": 0,
+     "critique": null,
+     "critique_state": "not_triggered",
+     "critic_source": "not_used",
+     "lead_responses": 0,
+     "disposition": null
+    },
+    "claims": null,
+    "refusal_codes": [
+     "method_review",
+     "method_review",
+     "method_review"
+    ],
+    "wall_seconds": 959.5
+   },
+   {
+    "scenario": "burned-area-method",
+    "gate": "gate",
+    "run": "earthlab-review-validation/v2/matched/20261102T073606Z-a049a1",
+    "status": "refused",
+    "reason": "method_review: unknown_method: not a registered method; method_review: unknown_method: not a registered method; method_review: over_budget: 60 s over 0 s",
+    "recommendation": null,
+    "code_outcome": null,
+    "acceptance": null,
+    "usage": {
+     "wall_seconds": 482.2,
+     "inference_seconds": 482.0,
+     "training_seconds": 0.0,
+     "peak_training_rss_mb": 0.0,
+     "model_calls": 2,
+     "prompt_tokens": 2597,
+     "completion_tokens": 2108,
+     "cached_tokens": "not exposed by this provider",
+     "retries": 0,
+     "provider_faults": 0,
+     "tool_calls": 0,
+     "rejected_tool_calls": 0,
+     "human_interventions": 0
+    },
+    "method_review": {
+     "schema_version": "1",
+     "proposal": {
+      "schema_version": "1",
+      "hypothesis": "Pinned MCD64A1 Collection 6.1 provides burn_date and QA per pixel for Sep and Oct 2015 over Kalimantan. A deterministic QA-filtered pixel sum to hectares yields a reproducible monthly burned area without fitting, meeting the quality gate on valid fraction and using only permitted evidence.",
+      "proposed_method": "raster_deterministic",
+      "simplest_baseline": "pixel_sum_no_qa",
+      "candidates": [
+       {
+        "method": "raster_deterministic",
+        "suitability": "QA-filtered burn_date sum to ha fits pinned product, no training needed, deterministic and auditable"
+       },
+       {
+        "method": "report_no_data",
+        "suitability": "Abstain always passes leakage checks but provides zero information"
+       },
+       {
+        "method": "pixel_sum_no_qa",
+        "suitability": "Simple pixel count ignores QA flags, fast but risks overcounting unreliable burns"
+       }
+      ],
+      "data_sufficiency": "Two pinned MCD64A1 tiles for 2015-09 and 2015-10 with burn_date and qa bands, 1000 usable rows sampled, missing fraction 0.54, labels from QA flags. Sufficient for deterministic area aggregation per month; no model fitting required.",
+      "expected_benefit": {
+       "metric": "mae",
+       "minimum_gain": 0.1,
+       "reason": "QA-filtered deterministic sum is expected to reduce area error versus unfiltered baseline and zero baseline, while remaining reproducible on pinned product"
+      },
+      "leakage_risks": [
+       "MCD64A1 is a product not independent ground truth",
+       "QA flags derived from same product as burn_date",
+       "1000 row sample may not represent full study box",
+       "missing data 0.54 may bias area if non-random"
+      ],
+      "compute_seconds": 60.0,
+      "failure_conditions": [
+       "valid_fraction below quality gate for a month",
+       "QA-filtered burned pixel count is zero for a month",
+       "missing_fraction exceeds 0.7",
+       "area_ha estimate from sample deviates >10% from full raster",
+       "month passes gate but is not reported"
+      ]
+     },
+     "findings": [
+      {
+       "code": "unknown_method",
+       "method": "pixel_sum_no_qa",
+       "detail": "not a registered method",
+       "blocking": true
+      },
+      {
+       "code": "unknown_method",
+       "method": "report_no_data",
+       "detail": "not a registered method",
+       "blocking": true
+      },
+      {
+       "code": "over_budget",
+       "method": null,
+       "detail": "60 s over 0 s",
+       "blocking": true
+      }
+     ],
+     "verdict": "refused",
+     "critic_calls": 0,
+     "critique": null,
+     "critique_state": "not_triggered",
+     "critic_source": "not_used",
+     "lead_responses": 0,
+     "disposition": null
+    },
+    "claims": null,
+    "refusal_codes": [
+     "method_review",
+     "method_review",
+     "method_review"
+    ],
+    "wall_seconds": 482.2
+   },
+   {
+    "scenario": "burned-area-method",
+    "gate": "plain",
+    "run": "earthlab-review-validation/v2/matched/20261102T074408Z-fe20ea",
+    "status": "awaiting_human",
+    "reason": "evidence ready for a human decision",
+    "recommendation": {
+     "outcome": "adopt_limited",
+     "model_id": "raster_deterministic",
+     "reason": "raster_deterministic:2015-09 passes quality gate with valid_fraction 0.970144 and reported area_ha 77426.0. raster_deterministic:2015-10 is below the pre-registered valid-land gate and is not reported per limitations, so adoption is limited to the passing month."
+    },
+    "code_outcome": "adopt_limited",
+    "acceptance": {
+     "failed_month_has_no_area": true,
+     "no_segmentation_score": true,
+     "every_source_pinned": true
+    },
+    "usage": {
+     "wall_seconds": 702.4,
+     "inference_seconds": 702.2,
+     "training_seconds": 0.0,
+     "peak_training_rss_mb": 0.0,
+     "model_calls": 4,
+     "prompt_tokens": 3441,
+     "completion_tokens": 3059,
+     "cached_tokens": "not exposed by this provider",
+     "retries": 0,
+     "provider_faults": 0,
+     "tool_calls": 0,
+     "rejected_tool_calls": 0,
+     "human_interventions": 0
+    },
+    "method_review": null,
+    "claims": null,
+    "refusal_codes": [],
+    "wall_seconds": 702.5
+   }
+  ]
+ },
+ "sources": [
+  {
+   "name": "benchmark screen",
+   "path": "earthlab-matrix-runs/decisions-v1/screen-muse/manifest.jsonl",
+   "rows": 15,
+   "sha256": "4fd87e7e06f37efc39ccacb4a0c5a1952e85df34b3a8571b5ae95ce1fc8de3bd"
+  },
+  {
+   "name": "benchmark confirm",
+   "path": "earthlab-matrix-runs/decisions-v1/confirm/manifest.jsonl",
+   "rows": 7,
+   "sha256": "8a6263ecddd59044a408bbd546db131837cfcfc9abdee9d1ae7b3276277bd336"
+  },
+  {
+   "name": "benchmark fallback",
+   "path": "earthlab-matrix-runs/decisions-v1/fallback-single/manifest.jsonl",
+   "rows": 7,
+   "sha256": "0f6ac050e824b81bac8c68acca2e1afc2bff528aec7628b4948f0e10f905de3d"
+  },
+  {
+   "name": "harness-v1",
+   "path": "earthlab-e1-runs/harness-v1/manifest.jsonl",
+   "rows": 24,
+   "sha256": "a8a0d5f869532ac16b0f0b3fa648706115ddf952e1ca55933474b17baa1522fb"
+  },
+  {
+   "name": "v1/cases",
+   "path": "earthlab-review-validation/v1/cases.jsonl",
+   "rows": 15,
+   "sha256": "8e1d6f792a42e4d5dc557866a4fda4b192f9fde4b00f194709ca238aa7a277e7"
+  },
+  {
+   "name": "v2/cases",
+   "path": "earthlab-review-validation/v2/cases.jsonl",
+   "rows": 3,
+   "sha256": "c648c48bf9fe5161713b1f3e296ea3dc0d2a7f6c90706b8b73932284ddad3d80"
+  },
+  {
+   "name": "v2/matched",
+   "path": "earthlab-review-validation/v2/matched.jsonl",
+   "rows": 6,
+   "sha256": "28ccaec2195268550473824f1b919709e441fdfdb4a03f7d8c0df33cfbc08d54"
+  }
+ ]
+}

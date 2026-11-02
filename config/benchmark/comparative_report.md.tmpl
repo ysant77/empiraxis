@@ -1,0 +1,78 @@
+# Comparative evidence report
+
+Built by `scripts/build_comparative_report.py` from $runs saved runs. No run was made for this report, and no model ran. The machine record is `docs/evidence/comparative-v1.json`. The #75 results in `docs/benchmark-matrix-results-2026-11-02.md` are unchanged.
+
+## 1. Answer
+
+Prefer the simplest execution that meets the goal. On the tested tasks, no agent workflow showed a benefit over the deterministic pipeline.
+
+- **Multi-agent execution:** it did not improve verified goal completion on any task that all three workflows ran, and it cost more. In the benchmark screen, median wall time to the decision gate was $fixed s deterministic, $single s single agent and $team s team. The overhead is not justified on this evidence.
+- **The deterministic pipeline** cannot choose a new method, so this result covers these four tasks only. No run measured a gain in outcome from a model.
+- **What a team needs:** the closing fix. Without it, the team failed 3 of 3 confirm runs.
+
+## 2. How to read this
+
+- Sources ran at different commits. Do not add or compare across sources.
+- VGC is verified goal completion, the five rules in benchmark protocol section 4.1, recomputed here from each saved record. Replay ran again at this commit on every run.
+- VGC compares a run with its own plan. It does not say that one plan is scientifically better.
+- Each cell has 1 to 3 runs. There are no intervals and no significance claims.
+- Wall time here is the time inside the run. The #75 report used the outer manifest time, so its medians differ by up to about a second for F. Both are correct for their own measure.
+- Wall times are from one shared Mac under swap pressure. They are not a hardware benchmark.
+- Model tokens are for the local model, and billed cost is zero. Energy: $not_measured. System memory by run: $not_measured. Largest training memory is recorded only where training ran.
+
+## 3. Task coverage
+
+Numbers are runs. A comparison is matched only where one source ran the same scenario in each arm.
+
+$coverage
+Not matched, and not compared here: a team on `pm25-regression` in the benchmark, a single agent on `burned-area-segmentation` in harness-v1, and F at the `confirm` commit. Team arms with mixed models did not run.
+
+## 4. Results by arm
+
+$arms
+Failures and stops are real results. They stay in the counts.
+
+## 5. Matched tasks, benchmark screen
+
+$matched_screen
+One run per arm on each scenario. The team's safe stop on segmentation is a stop and not a goal met. `S-M` chose `adopt_limited` there, which is not the required `request_resource`.
+
+## 6. Matched pairs, benchmark confirm
+
+$matched_confirm
+Baseline wall time is not a cost control, because those runs stopped early.
+
+## 7. Model selection and abstention
+
+$selection
+Scientific correctness: rule 5 of VGC checks the one scenario with a required outcome. On the others, VGC checks agreement with the code rule. On `pm25-regression`, F chose `adopt_limited` and `S-M` chose `retain_baseline`. Both are consistent with their own plans, and this record does not say which plan is right. The GRU is worse than persistence above 55 µg/m³, and the code limit says so.
+
+## 8. Independent critique
+
+No critique in this report is independent: the critic ran as a second pass on the same model as the Lead. The protocol is `docs/method-review-validation-protocol.md`. Revision `review-gate-v1` ran at commit `c5a2835b14f8`, and `review-gate-v2` at `06c090d43e57`. The v1 rows stay as recorded. The person's scoring of the critique text is in `docs/method-review-validation-results.md`.
+
+$review
+In the matched runs the gate did not change a decision, found no scientific fault and stopped two plans whose runs without the gate reached the code-rule outcome. The gate stays off by default.
+
+## 9. Missing measurements
+
+| Measure | State |
+|---|---|
+| Critic on another model | $not_measured |
+| Team with small specialists | $not_measured |
+| Team on `pm25-regression` with the closing fix | $not_measured |
+| Sealed test period | $not_measured: it was not read |
+| Energy and system memory by run | $not_measured |
+
+## 10. Inputs and reproduction
+
+The raw run folders are local to the development Mac, under one run root. They are not in the repository, because they hold model weights, feature files and predictions. The repository holds the derived record, `docs/evidence/comparative-v1.json`, this report and the four scenario replays in `examples/replay/`. A test renders this report again from the committed record and requires the same text.
+
+$sources
+To build again from the raw runs, on a machine that holds the run root:
+
+```bash
+uv run python scripts/build_comparative_report.py <run root>
+```
+
+The build replays every run at the current commit and takes about 75 s. Without the run root, a clean clone can read the record and the report, but it cannot rebuild them.
