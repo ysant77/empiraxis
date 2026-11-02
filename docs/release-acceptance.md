@@ -22,17 +22,28 @@ A scripted test is not a live model evaluation. A replay is not a new training r
 | 7 | Secure real tools | Models call fixed, allowlisted tools. Code checks each proposal. | `test_agent.py`, `test_harness_lifecycle.py` | bounded | no | No general code, shell, MCP or computer-use execution, by design | medium |
 | 8 | Independent scientific design critique | review-gate-v1 and v2, all planned runs | Seeded faults: 7 of 7 found, all by code rules. The later contract rules, applied offline to every saved critique, refuse 8 of 8 sealed tests and 6 of 6 untyped thresholds (`docs/method-review-gate-v1.md`). | partial | no | The same-model critic added no detection. The gate stopped 2 of 3 correct live plans. It stays off. | medium |
 | 9 | Scientific provenance and data quality | NEA, ERA5, FIRMS and MCD64A1 hashes; claim verifier | `python -m earthlab.harness.audit`; verifier tests | bounded | no | ERA5, FIRMS and MCD64A1 approvals expired on 2026-10-31 and were not signed records | high |
-| 10 | Heterogeneous environmental modeling | S3: ERA5 wind at two levels, rain, FIRMS boxes, 54 settings | S3 replay | bounded | no | Retrospective only; no aligned predictive features | high |
+| 10 | Heterogeneous environmental modeling | S3: ERA5 wind at two levels, rain, FIRMS boxes, 54 settings. NEA live wind, rain, humidity and PM2.5 catalogue, with one capture of 141 values (`docs/live-data-and-forecast-inputs.md`) | S3 replay | bounded | no | Retrospective only; no aligned predictive features | high |
 | 11 | Data suitability, abstention, approved acquisition | S4 names the missing imagery, masks and weights approval, and stops. | `test_segmentation_gate.py`, S4 replay | bounded | no | No acquisition ran | high |
 | 12 | Data engineering: train-only transforms, feature artifacts | `docs/mlops-results-v1.md` | `docs/model-acceptance-v1.md` | bounded | no | One tabular source | medium |
 | 13 | Method selection: deterministic, statistical, ML, DL or abstention | Five cases below | Scenario replays, seeded review cases | bounded | no | Selection thresholds such as the elevated-hour rule are exploratory | high |
 | 14 | Classical, hybrid and neural experiments | Ridge, trees, GRU, frozen-GRU hybrid | `docs/mlops-results-v1.md`, S1, S2 | bounded | no | Few families; no controlled comparison across many seeds | high |
 | 15 | Reuse, transfer, distillation, pretrained satellite models | S2: a separate frozen GRU encoder with a fitted logistic head. Distillation: 3 seeds, local records. | S2 replay; `docs/distillation-results-v1.md`, recomputed from saved predictions | partial | no | Exact S1 checkpoint reuse is blocked (below). Prithvi did not run (below). Distillation passed its rule for 2 of 3 seeds, with a gain of at most 0.05 µg/m³ MAE, so it is not adopted. | medium |
-| 16 | Reproducible experiments: tracking, tuning, registry | Registry, bundles, bundle verification | `docs/model-registry.md` | bounded | no | Tuning code has tests, but no real search ran | medium |
-| 17 | Independent evaluation: baselines, leakage, subgroups | Persistence baselines, elevated-hour subgroup, sealed test period | S1 elevated-hour failure; leakage tests | bounded | no | No prospective validation | high |
+| 16 | Reproducible experiments: tracking, tuning, registry | Registry, bundles, bundle verification. A rolling-origin ridge search ran on the train years: 5 candidates, 3 folds. | `docs/model-registry.md`, `docs/rolling-origin-ridge-v1.md` | bounded | no | One small search; the selected penalty is at the edge of the grid | medium |
+| 17 | Independent evaluation: baselines, leakage, subgroups | Persistence baselines, elevated-hour subgroup, sealed test period | S1 elevated-hour failure; leakage tests; adversarial suite, 35 of 35 attacks refused and 20 of 20 controls allowed (`docs/adversarial-qa-v1.md`) | bounded | no | No prospective validation | high |
 | 18 | Routing, prompt and orchestration cost optimization | 48 saved runs compared by workflow; profiler; static prompt rules; router function | `docs/comparative-evidence-report.md`, `docs/efficiency-evaluation.md` | partial | no | Cost is measured, but no change showed a repeated gain, and none was promoted | low |
 | 19 | Responsive UI: Workspace, Lab, Control Room | Three surfaces, four scenarios and the team run | 27 browser pages; `test_ui_surfaces.py`; hosted replay tests | bounded | no | No usability or accessibility study | high |
-| 20 | Deployment readiness | Ridge and trees bundles: saved-bundle inference on 43,818 issues, largest difference 0.0. Hosted replay entry (`docs/hosted-replay.md`). | `docs/model-acceptance-v1.md` | bounded | no | No prospective run, monitoring or operator. The hosted replay is not published. | medium |
+| 20 | Deployment readiness | Ridge and trees bundles: saved-bundle inference on 43,818 issues, largest difference 0.0. Hosted replay entry (`docs/hosted-replay.md`). Prospective prediction ledger, off by default (`docs/prediction-ledger.md`). | `docs/model-acceptance-v1.md` | bounded | no | No prospective run, monitoring or operator. The hosted replay is not published. | medium |
+
+## Status of the November 3 work
+
+| Item | Implemented | Demonstrated with real records | Scientifically validated | Refused or blocked |
+|---|---|---|---|---|
+| Adversarial QA suite, 55 cases | yes | yes: 35 of 35 attacks refused, 20 of 20 controls allowed | no: one input per case | Humidity fraction, soil-moisture units and a hyperspectral label have no check |
+| Four difficulty tiers (`docs/four-tiers.md`) | evidence map only | yes, from existing runs | no | S2, S3 and `sb05-september` do not use the harness lifecycle |
+| Rolling-origin ridge search | yes | yes: train years only | no: no unused period for an independent score | none |
+| NEA live capture | yes | yes: one capture, 141 values | no | Station-to-region join: no rule written |
+| Prospective prediction ledger | yes | no: off, no prediction issued | no | Needs the owner's signed activation |
+| Prithvi Level A | no | no | no | Blocked: the requests are not signed |
 
 Counts: 16 `bounded`, 3 `partial` (8, 15, 18), 1 `future` (1). The earlier count of 17 bounded listed milestone 18 as bounded. That row shows measurement, not an optimization gain, so it is `partial` here.
 
