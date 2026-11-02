@@ -36,6 +36,7 @@ def load_runs(manifest: Path) -> list[dict[str, Any]]:
                 "variant": row.get("prompt_variant"),
                 "models": row.get("models"),
                 "ranked": row.get("ranked", True),
+                "run": row.get("run"),
                 "record": record,
             }
         )

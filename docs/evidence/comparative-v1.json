@@ -1,0 +1,887 @@
+{
+ "version": 1,
+ "runs": 48,
+ "not_measured": "not measured",
+ "arms": [
+  {
+   "source": "benchmark screen",
+   "workflow": "deterministic",
+   "group": "F",
+   "runs": 4,
+   "vgc": 4,
+   "safe_stops": 0,
+   "failed": 0,
+   "replays_clean": 4,
+   "median_wall_s_reached_gate": 1.1,
+   "total_wall_s": 24.4,
+   "median_model_calls": 0.0,
+   "median_tokens": 0.0,
+   "largest_training_rss_mb": 363.9
+  },
+  {
+   "source": "benchmark screen",
+   "workflow": "single agent",
+   "group": "S-M",
+   "runs": 4,
+   "vgc": 3,
+   "safe_stops": 0,
+   "failed": 0,
+   "replays_clean": 4,
+   "median_wall_s_reached_gate": 682.9,
+   "total_wall_s": 3135.3,
+   "median_model_calls": 4.0,
+   "median_tokens": 7013.5,
+   "largest_training_rss_mb": "not measured"
+  },
+  {
+   "source": "benchmark screen",
+   "workflow": "multi-agent",
+   "group": "T-M-v1",
+   "runs": 3,
+   "vgc": 2,
+   "safe_stops": 1,
+   "failed": 0,
+   "replays_clean": 3,
+   "median_wall_s_reached_gate": 1573.1,
+   "total_wall_s": 3327.5,
+   "median_model_calls": 11.0,
+   "median_tokens": 16765.0,
+   "largest_training_rss_mb": "not measured"
+  },
+  {
+   "source": "benchmark screen",
+   "workflow": "multi-agent",
+   "group": "T-M-v2",
+   "runs": 3,
+   "vgc": 2,
+   "safe_stops": 1,
+   "failed": 0,
+   "replays_clean": 3,
+   "median_wall_s_reached_gate": 1715.8,
+   "total_wall_s": 3666.6,
+   "median_model_calls": 15.0,
+   "median_tokens": 21315.0,
+   "largest_training_rss_mb": "not measured"
+  },
+  {
+   "source": "benchmark confirm",
+   "workflow": "multi-agent",
+   "group": "T-M-base",
+   "runs": 3,
+   "vgc": 0,
+   "safe_stops": 0,
+   "failed": 3,
+   "replays_clean": 3,
+   "median_wall_s_reached_gate": "not measured",
+   "total_wall_s": 2569.4,
+   "median_model_calls": 5.0,
+   "median_tokens": 7547.0,
+   "largest_training_rss_mb": "not measured"
+  },
+  {
+   "source": "benchmark confirm",
+   "workflow": "multi-agent",
+   "group": "T-M-win",
+   "runs": 3,
+   "vgc": 3,
+   "safe_stops": 0,
+   "failed": 0,
+   "replays_clean": 3,
+   "median_wall_s_reached_gate": 1297.7,
+   "total_wall_s": 4614.4,
+   "median_model_calls": 10.0,
+   "median_tokens": 14664.0,
+   "largest_training_rss_mb": "not measured"
+  },
+  {
+   "source": "benchmark fallback",
+   "workflow": "small-model fallback",
+   "group": "S-q4",
+   "runs": 3,
+   "vgc": 0,
+   "safe_stops": 0,
+   "failed": 0,
+   "replays_clean": 3,
+   "median_wall_s_reached_gate": 28.9,
+   "total_wall_s": 81.9,
+   "median_model_calls": 3.0,
+   "median_tokens": 3203.0,
+   "largest_training_rss_mb": "not measured"
+  },
+  {
+   "source": "benchmark fallback",
+   "workflow": "small-model fallback",
+   "group": "S-l3",
+   "runs": 3,
+   "vgc": 0,
+   "safe_stops": 1,
+   "failed": 0,
+   "replays_clean": 3,
+   "median_wall_s_reached_gate": 6.5,
+   "total_wall_s": 14.8,
+   "median_model_calls": 3.0,
+   "median_tokens": 1934.0,
+   "largest_training_rss_mb": "not measured"
+  },
+  {
+   "source": "harness-v1",
+   "workflow": "multi-agent",
+   "group": "team",
+   "runs": 8,
+   "vgc": 3,
+   "safe_stops": 2,
+   "failed": 3,
+   "replays_clean": 8,
+   "median_wall_s_reached_gate": 2281.9,
+   "total_wall_s": 9434.6,
+   "median_model_calls": 6.5,
+   "median_tokens": 8921.0,
+   "largest_training_rss_mb": "not measured"
+  },
+  {
+   "source": "harness-v1",
+   "workflow": "single agent",
+   "group": "single",
+   "runs": 6,
+   "vgc": 6,
+   "safe_stops": 0,
+   "failed": 0,
+   "replays_clean": 6,
+   "median_wall_s_reached_gate": 653.2,
+   "total_wall_s": 4481.1,
+   "median_model_calls": 4.0,
+   "median_tokens": 7670.5,
+   "largest_training_rss_mb": "not measured"
+  },
+  {
+   "source": "harness-v1",
+   "workflow": "deterministic",
+   "group": "fixed",
+   "runs": 8,
+   "vgc": 8,
+   "safe_stops": 0,
+   "failed": 0,
+   "replays_clean": 8,
+   "median_wall_s_reached_gate": 0.7,
+   "total_wall_s": 46.0,
+   "median_model_calls": 0.0,
+   "median_tokens": 0.0,
+   "largest_training_rss_mb": 342.4
+  }
+ ],
+ "coverage": [
+  {
+   "source": "benchmark confirm",
+   "scenario": "burned-area-method",
+   "multi-agent": 4,
+   "all_three": false
+  },
+  {
+   "source": "benchmark confirm",
+   "scenario": "pm25-exceedance",
+   "multi-agent": 2,
+   "all_three": false
+  },
+  {
+   "source": "benchmark fallback",
+   "scenario": "burned-area-method",
+   "small-model fallback": 2,
+   "all_three": false
+  },
+  {
+   "source": "benchmark fallback",
+   "scenario": "burned-area-segmentation",
+   "small-model fallback": 2,
+   "all_three": false
+  },
+  {
+   "source": "benchmark fallback",
+   "scenario": "pm25-exceedance",
+   "small-model fallback": 2,
+   "all_three": false
+  },
+  {
+   "source": "benchmark screen",
+   "scenario": "burned-area-method",
+   "deterministic": 1,
+   "single agent": 1,
+   "multi-agent": 2,
+   "all_three": true
+  },
+  {
+   "source": "benchmark screen",
+   "scenario": "burned-area-segmentation",
+   "deterministic": 1,
+   "multi-agent": 2,
+   "single agent": 1,
+   "all_three": true
+  },
+  {
+   "source": "benchmark screen",
+   "scenario": "pm25-exceedance",
+   "deterministic": 1,
+   "multi-agent": 2,
+   "single agent": 1,
+   "all_three": true
+  },
+  {
+   "source": "benchmark screen",
+   "scenario": "pm25-regression",
+   "deterministic": 1,
+   "single agent": 1,
+   "all_three": false
+  },
+  {
+   "source": "harness-v1",
+   "scenario": "burned-area-method",
+   "multi-agent": 2,
+   "single agent": 2,
+   "deterministic": 2,
+   "all_three": true
+  },
+  {
+   "source": "harness-v1",
+   "scenario": "burned-area-segmentation",
+   "multi-agent": 2,
+   "deterministic": 2,
+   "all_three": false
+  },
+  {
+   "source": "harness-v1",
+   "scenario": "pm25-exceedance",
+   "multi-agent": 2,
+   "single agent": 2,
+   "deterministic": 2,
+   "all_three": true
+  },
+  {
+   "source": "harness-v1",
+   "scenario": "pm25-regression",
+   "multi-agent": 2,
+   "single agent": 2,
+   "deterministic": 2,
+   "all_three": true
+  }
+ ],
+ "matched_screen": [
+  {
+   "scenario": "burned-area-method",
+   "F": {
+    "outcome": {
+     "adopt_limited": 1
+    },
+    "vgc": 1,
+    "runs": 1,
+    "median_wall_s": 0.2,
+    "median_model_calls": 0.0,
+    "median_tokens": 0.0
+   },
+   "S-M": {
+    "outcome": {
+     "adopt_limited": 1
+    },
+    "vgc": 1,
+    "runs": 1,
+    "median_wall_s": 576.2,
+    "median_model_calls": 3.0,
+    "median_tokens": 4579.0
+   },
+   "T-M-v1": {
+    "outcome": {
+     "adopt_limited": 1
+    },
+    "vgc": 1,
+    "runs": 1,
+    "median_wall_s": 1582.4,
+    "median_model_calls": 11.0,
+    "median_tokens": 16765.0
+   }
+  },
+  {
+   "scenario": "burned-area-segmentation",
+   "F": {
+    "outcome": {
+     "request_resource": 1
+    },
+    "vgc": 1,
+    "runs": 1,
+    "median_wall_s": 0.1,
+    "median_model_calls": 0.0,
+    "median_tokens": 0.0
+   },
+   "S-M": {
+    "outcome": {
+     "adopt_limited": 1
+    },
+    "vgc": 0,
+    "runs": 1,
+    "median_wall_s": 650.7,
+    "median_model_calls": 4.0,
+    "median_tokens": 6285.0
+   },
+   "T-M-v1": {
+    "outcome": {
+     "abstained": 1
+    },
+    "vgc": 0,
+    "runs": 1,
+    "median_wall_s": 181.3,
+    "median_model_calls": 1.0,
+    "median_tokens": 1298.0
+   }
+  },
+  {
+   "scenario": "pm25-exceedance",
+   "F": {
+    "outcome": {
+     "retain_baseline": 1
+    },
+    "vgc": 1,
+    "runs": 1,
+    "median_wall_s": 1.9,
+    "median_model_calls": 0.0,
+    "median_tokens": 0.0
+   },
+   "S-M": {
+    "outcome": {
+     "retain_baseline": 1
+    },
+    "vgc": 1,
+    "runs": 1,
+    "median_wall_s": 1193.4,
+    "median_model_calls": 6.0,
+    "median_tokens": 11060.0
+   },
+   "T-M-v1": {
+    "outcome": {
+     "retain_baseline": 1
+    },
+    "vgc": 1,
+    "runs": 1,
+    "median_wall_s": 1563.8,
+    "median_model_calls": 12.0,
+    "median_tokens": 20105.0
+   }
+  }
+ ],
+ "matched_confirm": [
+  {
+   "scenario": "burned-area-method",
+   "T-M-base": {
+    "outcome": {
+     "failed": 2
+    },
+    "vgc": 0,
+    "runs": 2,
+    "median_wall_s": 769.7,
+    "median_model_calls": 5.0,
+    "median_tokens": 7347.0
+   },
+   "T-M-win": {
+    "outcome": {
+     "adopt_limited": 2
+    },
+    "vgc": 2,
+    "runs": 2,
+    "median_wall_s": 1228.5,
+    "median_model_calls": 10.0,
+    "median_tokens": 14097.5
+   }
+  },
+  {
+   "scenario": "pm25-exceedance",
+   "T-M-base": {
+    "outcome": {
+     "failed": 1
+    },
+    "vgc": 0,
+    "runs": 1,
+    "median_wall_s": 1030.0,
+    "median_model_calls": 7.0,
+    "median_tokens": 10181.0
+   },
+   "T-M-win": {
+    "outcome": {
+     "retain_baseline": 1
+    },
+    "vgc": 1,
+    "runs": 1,
+    "median_wall_s": 2157.5,
+    "median_model_calls": 17.0,
+    "median_tokens": 27524.0
+   }
+  }
+ ],
+ "selection": [
+  {
+   "source": "benchmark screen",
+   "scenario": "burned-area-method",
+   "arm": "S-M",
+   "outcome": "adopt_limited",
+   "code_outcome": "adopt_limited",
+   "matches_code": true,
+   "more_permissive_than_code": false,
+   "changed_plan": false,
+   "stop_reason": ""
+  },
+  {
+   "source": "benchmark screen",
+   "scenario": "burned-area-method",
+   "arm": "T-M-v1",
+   "outcome": "adopt_limited",
+   "code_outcome": "adopt_limited",
+   "matches_code": true,
+   "more_permissive_than_code": false,
+   "changed_plan": false,
+   "stop_reason": ""
+  },
+  {
+   "source": "benchmark screen",
+   "scenario": "burned-area-method",
+   "arm": "T-M-v2",
+   "outcome": "adopt_limited",
+   "code_outcome": "adopt_limited",
+   "matches_code": true,
+   "more_permissive_than_code": false,
+   "changed_plan": false,
+   "stop_reason": ""
+  },
+  {
+   "source": "benchmark screen",
+   "scenario": "burned-area-segmentation",
+   "arm": "T-M-v1",
+   "outcome": "abstained",
+   "code_outcome": "not measured",
+   "matches_code": false,
+   "more_permissive_than_code": false,
+   "changed_plan": false,
+   "stop_reason": "the PM found it out of scope"
+  },
+  {
+   "source": "benchmark screen",
+   "scenario": "burned-area-segmentation",
+   "arm": "T-M-v2",
+   "outcome": "abstained",
+   "code_outcome": "not measured",
+   "matches_code": false,
+   "more_permissive_than_code": false,
+   "changed_plan": false,
+   "stop_reason": "the PM found it out of scope"
+  },
+  {
+   "source": "benchmark screen",
+   "scenario": "burned-area-segmentation",
+   "arm": "S-M",
+   "outcome": "adopt_limited",
+   "code_outcome": "adopt_limited",
+   "matches_code": true,
+   "more_permissive_than_code": false,
+   "changed_plan": true,
+   "stop_reason": ""
+  },
+  {
+   "source": "benchmark screen",
+   "scenario": "pm25-exceedance",
+   "arm": "T-M-v2",
+   "outcome": "retain_baseline",
+   "code_outcome": "retain_baseline",
+   "matches_code": true,
+   "more_permissive_than_code": false,
+   "changed_plan": true,
+   "stop_reason": ""
+  },
+  {
+   "source": "benchmark screen",
+   "scenario": "pm25-exceedance",
+   "arm": "S-M",
+   "outcome": "retain_baseline",
+   "code_outcome": "retain_baseline",
+   "matches_code": true,
+   "more_permissive_than_code": false,
+   "changed_plan": true,
+   "stop_reason": ""
+  },
+  {
+   "source": "benchmark screen",
+   "scenario": "pm25-exceedance",
+   "arm": "T-M-v1",
+   "outcome": "retain_baseline",
+   "code_outcome": "retain_baseline",
+   "matches_code": true,
+   "more_permissive_than_code": false,
+   "changed_plan": false,
+   "stop_reason": ""
+  },
+  {
+   "source": "benchmark screen",
+   "scenario": "pm25-regression",
+   "arm": "S-M",
+   "outcome": "retain_baseline",
+   "code_outcome": "retain_baseline",
+   "matches_code": true,
+   "more_permissive_than_code": false,
+   "changed_plan": true,
+   "stop_reason": ""
+  },
+  {
+   "source": "benchmark confirm",
+   "scenario": "burned-area-method",
+   "arm": "T-M-base",
+   "outcome": "failed",
+   "code_outcome": "not measured",
+   "matches_code": false,
+   "more_permissive_than_code": false,
+   "changed_plan": false,
+   "stop_reason": "Stopped: data_specialist used its turns without submit_note"
+  },
+  {
+   "source": "benchmark confirm",
+   "scenario": "burned-area-method",
+   "arm": "T-M-win",
+   "outcome": "adopt_limited",
+   "code_outcome": "adopt_limited",
+   "matches_code": true,
+   "more_permissive_than_code": false,
+   "changed_plan": false,
+   "stop_reason": ""
+  },
+  {
+   "source": "benchmark confirm",
+   "scenario": "pm25-exceedance",
+   "arm": "T-M-win",
+   "outcome": "retain_baseline",
+   "code_outcome": "retain_baseline",
+   "matches_code": true,
+   "more_permissive_than_code": false,
+   "changed_plan": true,
+   "stop_reason": ""
+  },
+  {
+   "source": "benchmark confirm",
+   "scenario": "pm25-exceedance",
+   "arm": "T-M-base",
+   "outcome": "failed",
+   "code_outcome": "not measured",
+   "matches_code": false,
+   "more_permissive_than_code": false,
+   "changed_plan": true,
+   "stop_reason": "Stopped: ml_engineer used its turns without submit_note"
+  },
+  {
+   "source": "benchmark confirm",
+   "scenario": "burned-area-method",
+   "arm": "T-M-win",
+   "outcome": "adopt_limited",
+   "code_outcome": "adopt_limited",
+   "matches_code": true,
+   "more_permissive_than_code": false,
+   "changed_plan": false,
+   "stop_reason": ""
+  },
+  {
+   "source": "benchmark confirm",
+   "scenario": "burned-area-method",
+   "arm": "T-M-base",
+   "outcome": "failed",
+   "code_outcome": "not measured",
+   "matches_code": false,
+   "more_permissive_than_code": false,
+   "changed_plan": false,
+   "stop_reason": "Stopped: data_specialist used its turns without submit_note"
+  },
+  {
+   "source": "benchmark fallback",
+   "scenario": "burned-area-method",
+   "arm": "S-q4",
+   "outcome": "abstain",
+   "code_outcome": "adopt_limited",
+   "matches_code": false,
+   "more_permissive_than_code": false,
+   "changed_plan": false,
+   "stop_reason": ""
+  },
+  {
+   "source": "benchmark fallback",
+   "scenario": "burned-area-segmentation",
+   "arm": "S-q4",
+   "outcome": "abstain",
+   "code_outcome": "adopt_limited",
+   "matches_code": false,
+   "more_permissive_than_code": false,
+   "changed_plan": true,
+   "stop_reason": ""
+  },
+  {
+   "source": "benchmark fallback",
+   "scenario": "pm25-exceedance",
+   "arm": "S-q4",
+   "outcome": "abstain",
+   "code_outcome": "retain_baseline",
+   "matches_code": false,
+   "more_permissive_than_code": false,
+   "changed_plan": true,
+   "stop_reason": ""
+  },
+  {
+   "source": "benchmark fallback",
+   "scenario": "burned-area-method",
+   "arm": "S-l3",
+   "outcome": "abstain",
+   "code_outcome": "request_resource",
+   "matches_code": false,
+   "more_permissive_than_code": true,
+   "changed_plan": true,
+   "stop_reason": ""
+  },
+  {
+   "source": "benchmark fallback",
+   "scenario": "burned-area-segmentation",
+   "arm": "S-l3",
+   "outcome": "abstain",
+   "code_outcome": "request_resource",
+   "matches_code": false,
+   "more_permissive_than_code": true,
+   "changed_plan": false,
+   "stop_reason": ""
+  },
+  {
+   "source": "benchmark fallback",
+   "scenario": "pm25-exceedance",
+   "arm": "S-l3",
+   "outcome": "abstained",
+   "code_outcome": "not measured",
+   "matches_code": false,
+   "more_permissive_than_code": false,
+   "changed_plan": false,
+   "stop_reason": "the Lead chose to run no experiment"
+  },
+  {
+   "source": "harness-v1",
+   "scenario": "pm25-regression",
+   "arm": "team",
+   "outcome": "retain_baseline",
+   "code_outcome": "retain_baseline",
+   "matches_code": true,
+   "more_permissive_than_code": false,
+   "changed_plan": true,
+   "stop_reason": ""
+  },
+  {
+   "source": "harness-v1",
+   "scenario": "pm25-regression",
+   "arm": "single",
+   "outcome": "retain_baseline",
+   "code_outcome": "retain_baseline",
+   "matches_code": true,
+   "more_permissive_than_code": false,
+   "changed_plan": true,
+   "stop_reason": ""
+  },
+  {
+   "source": "harness-v1",
+   "scenario": "pm25-exceedance",
+   "arm": "team",
+   "outcome": "failed",
+   "code_outcome": "not measured",
+   "matches_code": false,
+   "more_permissive_than_code": false,
+   "changed_plan": false,
+   "stop_reason": "Stopped: ml_engineer stopped without submit_note"
+  },
+  {
+   "source": "harness-v1",
+   "scenario": "pm25-exceedance",
+   "arm": "single",
+   "outcome": "retain_baseline",
+   "code_outcome": "retain_baseline",
+   "matches_code": true,
+   "more_permissive_than_code": false,
+   "changed_plan": true,
+   "stop_reason": ""
+  },
+  {
+   "source": "harness-v1",
+   "scenario": "burned-area-method",
+   "arm": "team",
+   "outcome": "failed",
+   "code_outcome": "not measured",
+   "matches_code": false,
+   "more_permissive_than_code": false,
+   "changed_plan": false,
+   "stop_reason": "Stopped: data_specialist used its turns without submit_note"
+  },
+  {
+   "source": "harness-v1",
+   "scenario": "burned-area-method",
+   "arm": "single",
+   "outcome": "adopt_limited",
+   "code_outcome": "adopt_limited",
+   "matches_code": true,
+   "more_permissive_than_code": false,
+   "changed_plan": false,
+   "stop_reason": ""
+  },
+  {
+   "source": "harness-v1",
+   "scenario": "burned-area-segmentation",
+   "arm": "team",
+   "outcome": "abstained",
+   "code_outcome": "not measured",
+   "matches_code": false,
+   "more_permissive_than_code": false,
+   "changed_plan": false,
+   "stop_reason": "the PM found it out of scope"
+  },
+  {
+   "source": "harness-v1",
+   "scenario": "pm25-regression",
+   "arm": "single",
+   "outcome": "retain_baseline",
+   "code_outcome": "retain_baseline",
+   "matches_code": true,
+   "more_permissive_than_code": false,
+   "changed_plan": true,
+   "stop_reason": ""
+  },
+  {
+   "source": "harness-v1",
+   "scenario": "pm25-regression",
+   "arm": "team",
+   "outcome": "retain_baseline",
+   "code_outcome": "retain_baseline",
+   "matches_code": true,
+   "more_permissive_than_code": false,
+   "changed_plan": true,
+   "stop_reason": ""
+  },
+  {
+   "source": "harness-v1",
+   "scenario": "pm25-exceedance",
+   "arm": "single",
+   "outcome": "retain_baseline",
+   "code_outcome": "retain_baseline",
+   "matches_code": true,
+   "more_permissive_than_code": false,
+   "changed_plan": true,
+   "stop_reason": ""
+  },
+  {
+   "source": "harness-v1",
+   "scenario": "pm25-exceedance",
+   "arm": "team",
+   "outcome": "retain_baseline",
+   "code_outcome": "retain_baseline",
+   "matches_code": true,
+   "more_permissive_than_code": false,
+   "changed_plan": false,
+   "stop_reason": ""
+  },
+  {
+   "source": "harness-v1",
+   "scenario": "burned-area-method",
+   "arm": "single",
+   "outcome": "adopt_limited",
+   "code_outcome": "adopt_limited",
+   "matches_code": true,
+   "more_permissive_than_code": false,
+   "changed_plan": false,
+   "stop_reason": ""
+  },
+  {
+   "source": "harness-v1",
+   "scenario": "burned-area-method",
+   "arm": "team",
+   "outcome": "failed",
+   "code_outcome": "not measured",
+   "matches_code": false,
+   "more_permissive_than_code": false,
+   "changed_plan": false,
+   "stop_reason": "Stopped: data_specialist used its turns without submit_note"
+  },
+  {
+   "source": "harness-v1",
+   "scenario": "burned-area-segmentation",
+   "arm": "team",
+   "outcome": "abstained",
+   "code_outcome": "not measured",
+   "matches_code": false,
+   "more_permissive_than_code": false,
+   "changed_plan": false,
+   "stop_reason": "the PM found it out of scope"
+  }
+ ],
+ "review": {
+  "v1/cases": [
+   {
+    "case": "gru-no-comparison",
+    "stage": "pre_execution",
+    "off": [],
+    "review_label": "seeded case, live critic",
+    "codes": [
+     "no_simple_comparison"
+    ],
+    "verdict": "proceed",
+    "record": {
+     "schema_version": "1",
+     "proposal": {
+      "schema_version": "1",
+      "hypothesis": "A GRU lowers the T+6 h MAE against persistence in all five regions.",
+      "proposed_method": "gru",
+      "simplest_baseline": "persistence",
+      "candidates": [
+       {
+        "method": "gru",
+        "suitability": "Fits hourly regional sequences."
+       },
+       {
+        "method": "tcn",
+        "suitability": "Fits hourly regional sequences."
+       }
+      ],
+      "data_sufficiency": "The train years hold enough hourly rows for a small network.",
+      "expected_benefit": {
+       "metric": "mae",
+       "minimum_gain": 0.2,
+       "reason": "A smaller gain does not repay training."
+      },
+      "leakage_risks": [
+       "The two hour availability latency must hold for every input."
+      ],
+      "compute_seconds": 120.0,
+      "failure_conditions": [
+       "The lower limit of MAE skill is at or below zero.",
+       "MAE above 55 ug/m3 is worse than persistence."
+      ]
+     },
+     "findings": [
+      {
+       "code": "no_simple_comparison",
+       "method": "gru",
+       "detail": "gru has no simple method in both candidates and plan",
+       "blocking": false
+      }
+     ],
+     "verdict": "proceed",
+     "critic_calls": 1,
+     "critique": null,
+     "critique_state": "unusable",
+     "critic_source": "same_model_second_pass",
+     "lead_responses": 0,
+     "disposition": null
+    },
+    "model_calls": 2,
+    "prompt_tokens": 2920,
+    "completion_tokens": 3433,
+    "wall_seconds": 871.0,
+    "truth": "fault",
+    "expected": [
+     "no_simple_comparison"
+    ],
+    "detected": true,
+    "caught_without_review": false,
+    "false_objection": false,
+    "repeat": 1
+   }
+  ]
+ }
+}
