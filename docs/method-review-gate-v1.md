@@ -126,5 +126,27 @@ The v2 runs showed failures in the contract between model text and code. These r
 | A deterministic raster plan asked for 60 s, and code refused it against a 0 s training budget. | The training budget applies only to a method that trains. |
 | A critic turned a 0.2 µg/m³ MAE gain into a 0.2 skill threshold, and the Lead copied it into the revised case. | A revised case may not change `expected_benefit` or drop a failure condition. A critique threshold must equal a typed criterion for the same metric: the case's minimum gain (metric, unit, validation split), or skill 0, which the evaluator defines as equal to the baseline. Profile counts, years, the event limit, criterion prose and failure-condition prose are not criteria. Zero is not a criterion for MAE. |
 | Critics proposed tests on "2026-01-01 to 2026-10-01 holdout" and "2023-2025". | A critique that names the test split, a holdout or the sealed period is refused. The sealed span comes from the registered split of the experiment, by `problem_id`. For the PM2.5 studies it starts on 2024-01-01. The burned-area study has no time split, so a year is not refused there. For a study with no registered split, a critique that names a year is refused. |
+| A critic wrote "T+6h test forecasts where true PM2.5 >55 µg/m3". | In `test.samples`, the word "test" alone names the sealed split and is refused. In the claim, "test" can mean an experiment, so only the sealed-period wording is refused there. |
+
+### The rules on saved records
+
+The rules ran offline on every saved v1 and v2 record, with no model call. The records did not change.
+
+| Rule | Saved live text | Result |
+|---|---|---|
+| Sealed period | 8 critiques named the test period or a year from 2024 | 8 refused |
+| Threshold | 6 thresholds had no typed criterion: 0.2 moved from MAE to skill (4), 10 and 18 for MAE above 55 µg/m³ | 6 refused |
+| Threshold | 3 tests used skill 0 | 3 passed |
+| Fixed success measure | 2 accepted answers changed `expected_benefit` | 2 refused |
+| A valid critique | `ridge-minor-finding`, v1 run 1 | passed every rule |
+
+The rules do not remove the two false stops of the gated live runs:
+
+- In `pm25-exceedance`, "persistence alarm" now maps to `persistence`. But "logistic regression with 24h lags" is still refused.
+- In `burned-area-method`, the budget rule now passes. But `pixel_sum_no_qa` and `report_no_data` are not registered methods.
+
+A Lead that writes registered names is the missing part. So the gate stays off.
+
+Known gap: MAE above 55 µg/m³ has no typed criterion. Its failure condition compares against persistence, and that value is measured only after the run. So a correct elevated-hour test is refused too.
 
 The gate stays off by default. One critique and one Lead answer stay the limit. The signed decision and the human gate do not change.

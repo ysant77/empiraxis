@@ -37,6 +37,7 @@ AMBIGUOUS = frozenset({
 })  # fmt: skip
 _SETTING = re.compile(r"\b\d+\s*(?:h|hr|hours?|d|days?)\b|\blags?\b|\bwindow\b", re.I)
 _SEALED = re.compile(r"\b(?:test (?:split|period|set|years?)|held[- ]?out|holdout|sealed)\b", re.I)
+_TEST_WORD = re.compile(r"\btest(?:ing)?\b", re.I)
 _YEAR = re.compile(r"\b(20\d\d)\b")
 # The sealed span of each registered experiment. None: the experiment has no time split.
 SEALED_SPANS: dict[str, tuple[datetime, datetime] | None] = {
@@ -113,10 +114,14 @@ def normalize(
     return MethodProposalV1.model_validate(data), list(dict.fromkeys(notes))
 
 
-def sealed_issues(text: str, problem_id: str) -> list[str]:
-    """A critique may not test on the sealed span of the registered split."""
-    if _SEALED.search(text):
+def sealed_issues(text: str, problem_id: str, samples: str = "") -> list[str]:
+    """A critique may not test on the sealed span of the registered split.
+
+    In the samples field, the word "test" alone names the sealed split ("test forecasts").
+    """
+    if _SEALED.search(text) or _TEST_WORD.search(samples):
         return ["test.samples: the test period is sealed; use validation"]
+    text = f"{samples} {text}"
     years = [int(y) for y in _YEAR.findall(text)]
     if problem_id not in SEALED_SPANS:
         return [f"test.samples: no split is registered for {problem_id}; name no year"] * bool(
