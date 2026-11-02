@@ -34,36 +34,58 @@ def critique(**test: Any) -> CritiqueV1:
 
 
 @pytest.mark.parametrize(
-    ("name", "method"),
+    ("name", "kind", "method"),
     [
-        ("ridge", "ridge"), ("Persistence", "persistence"), ("persistence alarm", "persistence"),
-        ("Logistic Regression", "logistic"), ("trees-classifier", "trees_classifier"),
-        ("logistic regression with 24h lags", None), ("random forest", None),
-        ("neural network", None), ("pixel_sum_no_qa", None),
+        ("ridge", "regression", "ridge"), ("Persistence", "regression", "persistence"),
+        ("persistence alarm", "classification", "persistence"),
+        ("persistence alarm", "regression", None),
+        ("Logistic Regression", "classification", "logistic"),
+        ("logistic regression", "regression", None),
+        ("ridge regression", "classification", None),
+        ("trees-classifier", "classification", "trees_classifier"),
+        ("logistic regression with 24h lags", "classification", None),
+        ("random forest", "classification", None), ("neural network", "regression", None),
+        ("pixel_sum_no_qa", "raster_method", None),
     ],
 )  # fmt: skip
-def test_only_registered_names_and_listed_aliases_map(name: str, method: str | None) -> None:
-    assert rules.registered_name(name, STRATEGY_OF) == method
+def test_an_alias_maps_only_for_a_task_with_the_same_output(
+    name: str, kind: str, method: str | None
+) -> None:
+    assert rules.registered_name(name, STRATEGY_OF, kind) == method
 
 
 def test_every_alias_names_a_registered_method() -> None:
-    assert set(rules.ALIASES.values()) <= set(STRATEGY_OF)
+    assert {method for method, _ in rules.ALIASES.values()} <= set(STRATEGY_OF)
     assert not {rules._key(name) for name in STRATEGY_OF} & rules.AMBIGUOUS
 
 
+@pytest.mark.parametrize(
+    ("name", "start"),
+    [
+        ("logistic regression with 24h lags", "names a feature setting (24h)"),
+        ("ridge with 48 hour window", "names a feature setting (48 hour)"),
+        ("lstm", "ambiguous"), ("pixel_sum_no_qa", "not a registered method"),
+    ],
+)  # fmt: skip
+def test_a_refused_name_says_why(name: str, start: str) -> None:
+    assert rules.unknown_reason(name).startswith(start)
+
+
 def test_an_alias_is_mapped_and_recorded_and_free_text_is_still_refused(tmp_path: Path) -> None:
-    named = {**CASE, "simplest_baseline": "persistence alarm", "candidates": [
+    named = {**CASE, "simplest_baseline": "persistence baseline", "candidates": [
         {"method": "Ridge Regression", "suitability": "Fits lagged tabular rows."},
         {"method": "climatology", "suitability": "Fits calendar means alone."}]}  # fmt: skip
     held, _ = seats(tmp_path, [call("propose_method", **named)])
     done = run_review(held, FACTS)
     assert done.verdict == "proceed" and done.proposal.simplest_baseline == "persistence"
-    assert done.normalized == ("persistence alarm -> persistence", "Ridge Regression -> ridge")
+    assert done.normalized == ("persistence baseline -> persistence", "Ridge Regression -> ridge")
     free = {**named, "proposed_method": "logistic regression with 24h lags"}
     held, client = seats(tmp_path, [call("propose_method", **free)])
     refused = run_review(held, FACTS)
     assert refused.verdict == "refused" and len(client.requests) == 1
-    assert ReviewCode.UNKNOWN_METHOD in {f.code for f in refused.findings}
+    unknown = [f for f in refused.findings if f.code == ReviewCode.UNKNOWN_METHOD]
+    assert unknown and "feature setting" in unknown[0].detail
+    assert refused.proposal.proposed_method == "logistic regression with 24h lags"
 
 
 def test_an_ambiguous_name_is_refused_with_its_reason() -> None:
@@ -94,19 +116,45 @@ def test_a_critique_cannot_test_on_the_sealed_period(samples: str) -> None:
 
 
 def test_a_validation_test_is_open() -> None:
-    assert rules.sealed_issues("validation years 2019 to 2023, hours above 55 ug/m3") == []
+    text = "validation years 2019 to 2023, hours above 55 ug/m3"
+    assert rules.sealed_issues(text, "pm25-regression-6h") == []
+
+
+def test_the_sealed_span_comes_from_the_registered_split() -> None:
+    assert rules.sealed_issues("hours in 2024", "pm25-exceedance-6h")
+    assert rules.sealed_issues("the 2024 fire season", "burned-area-method") == []
+    assert rules.sealed_issues("the holdout months", "burned-area-method")
+    assert rules.sealed_issues("hours in 2019", "unregistered-study")
+    assert rules.sealed_issues("validation hours", "unregistered-study") == []
 
 
 @pytest.mark.parametrize(
     ("metric", "threshold", "backed"),
-    [("mae", 0.2, True), ("mae", 0.0, True), ("skill", 0.2, False), ("mae", 18.0, False)],
-)
-def test_a_critique_threshold_needs_a_measured_or_registered_source(
+    [
+        ("mae", 0.2, True),  # the case's own minimum gain, same metric and unit
+        ("skill", 0.0, True),  # skill 0 equals the baseline, by the evaluator's definition
+        ("mae", 0.0, False),  # zero is not a criterion for an error in ug/m3
+        ("skill", 0.2, False),  # the MAE gain moved to another metric
+        ("mae", 18.0, False), ("mae", 26.324, False),  # invented, or a score not in the facts
+        ("mae", 55.0, False),  # the event limit in ug/m3 is not an error threshold
+        ("mae", 2019.0, False), ("mae", 43818.0, False),  # a year, a row count
+        ("mae", 1.0, False),  # a number in the failure-condition prose
+    ],
+)  # fmt: skip
+def test_a_critique_threshold_needs_a_typed_criterion_for_its_metric(
     metric: str, threshold: float, backed: bool
 ) -> None:
+    case = proposal(failure_conditions=["MAE gets worse by 1.0 ug/m3 in 2019."])
+    profile = FACTS.profile.model_copy(update={"usable_rows": 43818, "missing_fraction": 0.2})
+    facts = replace(FACTS, profile=profile)
     value = critique(metric=metric, threshold=threshold)
-    issues = critique_issues(value, [], FACTS, proposal())
+    issues = critique_issues(value, [], facts, case)
     assert any("test.threshold" in issue for issue in issues) is not backed
+
+
+def test_a_refused_threshold_names_the_registered_criteria() -> None:
+    issues = critique_issues(critique(threshold=18.0), [], FACTS, proposal())
+    assert "registered: mae 0.2 ug/m3 on validation (proposal.expected_benefit" in issues[0]
 
 
 def _accept(**case: Any) -> DispositionV1:
