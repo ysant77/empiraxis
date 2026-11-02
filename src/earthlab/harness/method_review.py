@@ -368,9 +368,14 @@ def _critique(
         return None
 
 
-def _answer(seats: Seats, critique: CritiqueV1, facts: ReviewFacts) -> DispositionV1 | None:
+def _answer(
+    seats: Seats, proposal: MethodProposalV1, critique: CritiqueV1, facts: ReviewFacts
+) -> DispositionV1 | None:
     """One Lead response and its one correction. No answer leaves the concern open."""
-    sent = {"critique": critique, "facts": sorted(fact_names(facts)), "data": facts.profile}
+    sent = {
+        "case": proposal, "critique": critique, "measured_fields": sorted(fact_names(facts)),
+        "data": facts.profile, "plan": facts.plan,
+    }  # fmt: skip
     try:
         return seats.propose(
             LEAD, ANSWER_SYSTEM, sent, "answer_critique", DispositionV1,
@@ -395,7 +400,7 @@ def _source(seats: Seats) -> Literal["independent_model", "same_model_second_pas
 
 
 def run_review(seats: Seats, facts: ReviewFacts) -> MethodReviewRecordV1:
-    """The Lead's case, code's findings, at most one critic call and one Lead response."""
+    """The Lead's case, then the review of that case."""
     sent = {
         "problem": facts.problem, "data": facts.profile, "suitability": facts.suitability,
         "plan": facts.plan, "estimate_seconds": facts.estimate_seconds,
@@ -403,6 +408,13 @@ def run_review(seats: Seats, facts: ReviewFacts) -> MethodReviewRecordV1:
     proposal = seats.propose(
         LEAD, PROPOSE_SYSTEM, sent, "propose_method", MethodProposalV1, completeness
     )
+    return review_case(seats, proposal, facts)
+
+
+def review_case(
+    seats: Seats, proposal: MethodProposalV1, facts: ReviewFacts
+) -> MethodReviewRecordV1:
+    """Code's findings, at most one critic call and one Lead response."""
     findings = check_proposal(proposal, facts)
     if any(f.blocking for f in findings):
         return MethodReviewRecordV1(
@@ -415,7 +427,7 @@ def run_review(seats: Seats, facts: ReviewFacts) -> MethodReviewRecordV1:
             critique_state="not_triggered",
         )  # fmt: skip
     critique = _critique(seats, proposal, findings, facts)
-    answer = _answer(seats, critique, facts) if critique else None
+    answer = _answer(seats, proposal, critique, facts) if critique else None
     open_concern = critique is not None and (
         answer is None or answer.disposition == "needs_revision"
     )

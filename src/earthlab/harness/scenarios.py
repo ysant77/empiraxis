@@ -49,10 +49,11 @@ SCENARIOS: dict[str, Scenario] = {
 def run_scenario(
     name: str, arm: Arm, run_dir: Path, client: ChatClient | None, *,
     role_clients: Mapping[str, ChatClient] | None = None, variant: PromptVariant = BASELINE,
+    method_review: bool = False,
 ) -> dict[str, Any]:  # fmt: skip
     objective, problem, make = SCENARIOS[name]
     request = ResearchRequestV1(request_id=name, objective=objective)
     return run_harness(
         arm, request, problem, make(run_dir), run_dir, client,
-        role_clients=role_clients, variant=variant,
+        role_clients=role_clients, variant=variant, method_review=method_review,
     )  # fmt: skip
