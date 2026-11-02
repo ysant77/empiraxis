@@ -2,25 +2,64 @@
 
 This register records what each capability shows, from saved runs and tests. A status follows the evidence. No run was made for this register.
 
-Status values: `demonstrated_bounded` (shown on real evidence, inside stated limits), `partial`, `blocked`, `deferred`.
+This register uses the 20 milestone definitions of the original plan. Each row has two labels:
+
+- `hackathon_demonstrated`: `bounded` (shown on real evidence, inside the stated limits), `partial`, or `future`.
+- `original_scope_complete`: `no` for every row. No row reaches the full original scope.
+
+A scripted test is not a live model evaluation. A replay is not a new training run.
 
 ## Milestone register
 
-| # | Capability | What ran | Evidence | What is missing | Blocks submission | Status |
-|---|---|---|---|---|---|---|
-| 2 | Human supervision | S4 stops at a pending human decision. Replay has no approve control. | `test_team_resources.py`: denied, edited, forged, expired and wrong-key approvals are refused. `test_harness_lifecycle.py`: no model or controller path can approve. `test_ui_surfaces.py`: replay has no live or unapproved control. | No signed approval was made in a scenario run. | No | demonstrated_bounded |
-| 4 | Engineering Lead | Muse as Lead chose a statistical strategy, set parameters, asked for one refinement and recommended `retain_baseline` (team run). In Part B it wrote three full method cases live. | `examples/replay/scenario-muse-team-exceedance/trace.jsonl`, `docs/method-review-validation-results.md` | In 1 of 3 live cases the Lead wrote method names as free text, which the registry refused. | No | demonstrated_bounded |
-| 6 | Agent orchestration | One recorded multi-role run: PM, Lead, data specialist, ML specialist, evaluator, forward to a human. 17 model calls, 4 tool calls, hash-chained trace. | Team run trace; budget, interruption and handoff tests in `test_a2a_engineer.py`, `test_board_store.py`, `test_mlops_models.py`, `test_harness_engine.py` | One recorded team run is in the repository. Other team runs are local. | No | demonstrated_bounded |
-| 7 | Safe tool execution | Models call fixed, allowlisted tools. Code checks each proposal. | `test_agent.py` (turn budget, rejected tools), `test_harness_lifecycle.py` (no code or pass mark in a proposal) | No general shell or browser agent, by design. | No | demonstrated_bounded |
-| 8 | Scientific critic | review-gate-v1 and v2, all planned runs complete. | `docs/method-review-validation-results.md` | The same-model critic added no detection beyond code rules. In live runs the gate stopped 2 of 3 correct plans. No independent critic model ran. | No: the gate stays off | partial |
-| 10 | Heterogeneous data | S3: ERA5 wind at two levels, rain, FIRMS boxes, 54 variants of tolerance, rain limit, lag and clock convention, haze onsets against clean hours. | `examples/replay/scenario-s3-transport/` | No humidity or other products, by decision. | No | demonstrated_bounded |
-| 11 | Resource decisions | S4 names the missing imagery, masks and weights approval, with an estimated size, and stops. | `test_segmentation_gate.py`, S4 replay | No acquisition ran, by decision. | No | demonstrated_bounded |
-| 13 | Method selection | Five cases below: a justified simple method, a challenged neural plan, a hybrid that lost, a refused satellite method and an abstention. | Scenario replays, seeded review cases, `docs/comparative-evidence-report.md` | Selection thresholds such as the elevated-hour rule are exploratory. | No | demonstrated_bounded |
-| 15 | Transfer and distillation | S2: a frozen GRU encoder with a fitted logistic head. Distillation: 3 seeds, distilled against direct student. | S2 replay; distillation records are local in `earthlab-e1-runs/tiers-seeds/summary.json` | Distillation gain was small and not consistent: paired MAE skill 0.009, 0.002 and 0.011, and the lower limit of seed 11 is below zero. No report in the repository yet. Prithvi did not run. | No | partial |
-| 16 | MLOps lifecycle | Data checks, train-only transforms, feature artifacts, registry, ridge, trees, GRU, hybrid, bundle verification. | `docs/mlops-results-v1.md`, `docs/model-acceptance-v1.md` | Tuning code has tests, but no real search ran. | No | demonstrated_bounded |
-| 18 | Workflow comparison | 48 saved runs: deterministic, single agent, team. | `docs/comparative-evidence-report.md` | Team arms with mixed models did not run. Energy and system memory were not measured. | No | demonstrated_bounded |
-| 19 | Interface | Three surfaces, four scenarios and the team run, one run identity in the URL. | Browser check below; `tests/test_ui_surfaces.py`, `tests/test_scenario_demo.py` | None known at P0. | No | demonstrated_bounded |
-| 20 | Research deployment readiness | Ridge and trees bundles: saved-bundle inference on 43,818 issues, largest difference 0.0. The hybrid is refused. | `docs/model-acceptance-v1.md` | No prospective run, monitoring or operator. The schema cannot hold a production-ready claim. | No | demonstrated_bounded |
+| # | Milestone | Implementation and real run | Independent test | hackathon_demonstrated | original_scope_complete | Main blocker | Release relevance |
+|---|---|---|---|---|---|---|---|
+| 1 | Reusable engineering organization across projects | None in this repository | None | future | no | No core is extracted and no second domain ran | none |
+| 2 | Human Director: signed approvals, bounded autonomy | S4 stops at a pending human decision. Replay has no approve control. | `test_team_resources.py`: denied, edited, forged, expired and wrong-key approvals are refused. | bounded | no | No signed approval was made in a scenario run | high |
+| 3 | PM: typed requirements, constraints and acceptance tests | Muse as PM wrote the typed problem in the team run. | Contract tests; one recorded team run | bounded | no | One live task; no unseen requests | medium |
+| 4 | Engineering Lead: defensible method choices | Muse as Lead chose a strategy, asked for one refinement and recommended `retain_baseline` (team run). It wrote three method cases live in review-gate-v2. | `docs/method-review-validation-results.md` | bounded | no | In 1 of 3 live cases the Lead wrote free-text method names | high |
+| 5 | Compact specialist team | Muse data and ML specialist seats in the team run | Team run trace; delegation tests | bounded | no | No software or QA seat ran live | medium |
+| 6 | Durable run harness: state, trace, budgets, recovery | Team run: 17 model calls, 4 tool calls, hash-chained trace | Budget, interruption and handoff tests | bounded | no | One process at a time; no distributed recovery | high |
+| 7 | Secure real tools | Models call fixed, allowlisted tools. Code checks each proposal. | `test_agent.py`, `test_harness_lifecycle.py` | bounded | no | No general code, shell, MCP or computer-use execution, by design | medium |
+| 8 | Independent scientific design critique | review-gate-v1 and v2, all planned runs | Seeded faults: 7 of 7 found, all by code rules | partial | no | The same-model critic added no detection. The gate stopped 2 of 3 correct live plans. It stays off. | medium |
+| 9 | Scientific provenance and data quality | NEA, ERA5, FIRMS and MCD64A1 hashes; claim verifier | `python -m earthlab.harness.audit`; verifier tests | bounded | no | ERA5, FIRMS and MCD64A1 approvals expired on 2026-10-31 and were not signed records | high |
+| 10 | Heterogeneous environmental modeling | S3: ERA5 wind at two levels, rain, FIRMS boxes, 54 settings | S3 replay | bounded | no | Retrospective only; no aligned predictive features | high |
+| 11 | Data suitability, abstention, approved acquisition | S4 names the missing imagery, masks and weights approval, and stops. | `test_segmentation_gate.py`, S4 replay | bounded | no | No acquisition ran | high |
+| 12 | Data engineering: train-only transforms, feature artifacts | `docs/mlops-results-v1.md` | `docs/model-acceptance-v1.md` | bounded | no | One tabular source | medium |
+| 13 | Method selection: deterministic, statistical, ML, DL or abstention | Five cases below | Scenario replays, seeded review cases | bounded | no | Selection thresholds such as the elevated-hour rule are exploratory | high |
+| 14 | Classical, hybrid and neural experiments | Ridge, trees, GRU, frozen-GRU hybrid | `docs/mlops-results-v1.md`, S1, S2 | bounded | no | Few families; no controlled comparison across many seeds | high |
+| 15 | Reuse, transfer, distillation, pretrained satellite models | S2: a separate frozen GRU encoder with a fitted logistic head. Distillation: 3 seeds, local records. | S2 replay | partial | no | Exact S1 checkpoint reuse is blocked (below). Prithvi did not run (below). Distillation gain was small and not consistent: paired MAE skill 0.009, 0.002 and 0.011, and the seed-11 lower limit is below zero. | medium |
+| 16 | Reproducible experiments: tracking, tuning, registry | Registry, bundles, bundle verification | `docs/model-registry.md` | bounded | no | Tuning code has tests, but no real search ran | medium |
+| 17 | Independent evaluation: baselines, leakage, subgroups | Persistence baselines, elevated-hour subgroup, sealed test period | S1 elevated-hour failure; leakage tests | bounded | no | No prospective validation | high |
+| 18 | Routing, prompt and orchestration cost optimization | 48 saved runs compared by workflow; profiler; static prompt rules; router function | `docs/comparative-evidence-report.md`, `docs/efficiency-evaluation.md` | partial | no | Cost is measured, but no change showed a repeated gain, and none was promoted | low |
+| 19 | Responsive UI: Workspace, Lab, Control Room | Three surfaces, four scenarios and the team run | 27 browser pages; `test_ui_surfaces.py`; hosted replay tests | bounded | no | No usability or accessibility study | high |
+| 20 | Deployment readiness | Ridge and trees bundles: saved-bundle inference on 43,818 issues, largest difference 0.0. Hosted replay entry (`docs/hosted-replay.md`). | `docs/model-acceptance-v1.md` | bounded | no | No prospective run, monitoring or operator. The hosted replay is not published. | medium |
+
+Counts: 16 `bounded`, 3 `partial` (8, 15, 18), 1 `future` (1). The earlier count of 17 bounded listed milestone 18 as bounded. That row shows measurement, not an optimization gain, so it is `partial` here.
+
+## S1 checkpoint reuse: blocked
+
+The S1 GRU checkpoint is valid. Its export passed the hash check, on a scratch copy. The raw run did not change.
+
+S1 selected its best epoch (epoch 3 of 6) on validation rows 41,663 to 85,486, which is all of 2019 to 2023. The sealed period starts at row 85,487. No unsealed period is left that S1 did not use for selection. `earthlab.mlops.encoder.check_reuse` refuses each unsealed span for this encoder.
+
+So no independent reuse score exists, and none was made. The sealed period stays closed. S2 is a different experiment: a separate GRU with the S1 settings, selected on 2019 to 2021 and scored on 2022 to 2023. A valid S1 reuse score needs new data after the release, or a new protocol that is registered before the run.
+
+## Satellite feasibility
+
+Inventory, 2026-11-02. No model ran. Nothing was downloaded.
+
+| Asset | Local state | Hash | Licence | Approval |
+|---|---|---|---|---|
+| Prithvi-EO-2.0-300M-BurnScars weights, revision `a3f2c410` | 1,297,798,380 bytes | matches `provenance.json` | Apache-2.0, from the model card | `chat_only_unsigned` |
+| HLS burn scars chips, revision `1864285e` | 2,645,552,531 bytes; 540 training and 264 validation chip and mask pairs | matches `provenance.json` | CC-BY-4.0, from the dataset card | `chat_only_unsigned` |
+
+| Level | Status | Reason |
+|---|---|---|
+| A: one pretrained forward pass | blocked | The S4 gate needs a signed resource approval for the weights. None exists, and only the owner can sign. The local environment has no TerraTorch or raster reader. A pass on a chip would be a reproduction, not a transfer result. |
+| B: score against a baseline | blocked | The model was fine-tuned on these chips. The validation chips served the model card's own evaluation, so they are not independent. Each chip is one date, so dNBR cannot be computed. |
+| C: adaptation | not started | Levels A and B did not pass. No independent labels or compute budget are set. |
+
+The chips cover the United States. A result on them says nothing about the Kalimantan box. S4 stays `request_resources`.
 
 ## Method selection cases
 
