@@ -138,7 +138,11 @@ def _start_delegation(view: Progress, data: dict[str, Any]) -> None:
     _note(view, f"Delegation under run {data.get('parent_run_id')}")
 
 
-EXPERIMENT_OWNER = {"team": "product_manager", "single": "geospatial_engineer"}
+EXPERIMENT_OWNER = {
+    "team": "product_manager",
+    "multi_agent": "product_manager",
+    "single": "geospatial_engineer",
+}
 
 
 def _start_experiment(view: Progress, data: dict[str, Any]) -> None:

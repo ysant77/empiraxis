@@ -64,6 +64,7 @@ def test_the_control_room_shows_a_labelled_synthetic_workflow(
 def test_the_original_replays_still_load_and_name_the_investigator() -> None:
     app = AppTest.from_file(str(APP), default_timeout=120)
     app.query_params["view"] = "control"
+    app.query_params["run"] = "replay/sb05-september"
     text = page_text(app.run())
     assert "Muse investigator (single agent)" in text
     assert "Workflow run" not in text and not app.error
