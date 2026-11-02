@@ -72,6 +72,9 @@ The demonstration script is in [docs/demo-three-minute.md](docs/demo-three-minut
 | Muse single-agent and team workflows | Experimental | `docs/comparative-evidence-report.md` |
 | Method-review gate (critic) | Experimental, off by default | `docs/method-review-validation-results.md` |
 | Model bundles and inference verification | Experimental | S1 ridge bundle verified; hybrid refused |
+| Replay-only hosted entry | Implemented, not published | `deploy/streamlit_app.py`, `docs/hosted-replay.md` |
+| Teacher-to-student distillation | Experimental, not adopted | `docs/distillation-results-v1.md`: the rule passed for 2 of 3 seeds |
+| Prithvi burned-area inference | Not run: no signed approval | `docs/release-acceptance.md`, satellite feasibility |
 | Operational forecast or public service | Not built | None |
 
 ## Known limitations
