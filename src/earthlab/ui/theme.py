@@ -21,13 +21,13 @@ h5 {font-size: 0.95rem !important; color: #47535c; margin-top: 0.9rem;}
 [data-testid="stMetricDelta"] svg {display: none;}
 table[data-testid="stTableStyledTable"] {width: 100%;}
 table[data-testid="stTableStyledTable"] p {
-  overflow-wrap: anywhere !important; white-space: normal !important; margin: 0;
+  overflow-wrap: break-word !important; white-space: normal !important; margin: 0;
 }
 @media (max-width: 640px) {
   .block-container {padding: 1.5rem 1rem 3rem 1rem;}
-  table[data-testid="stTableStyledTable"] {table-layout: fixed; font-size: 0.75rem;}
+  table[data-testid="stTableStyledTable"] {font-size: 0.72rem;}
   table[data-testid="stTableStyledTable"] td, table[data-testid="stTableStyledTable"] th {
-    padding: 0.3rem 0.35rem; overflow: hidden;
+    padding: 0.3rem 0.3rem;
   }
 }
 </style>
