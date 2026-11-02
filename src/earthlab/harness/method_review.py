@@ -19,6 +19,7 @@ from pydantic import Field, model_validator
 
 from earthlab.contracts import Strict
 from earthlab.forecast.gate import unbacked_numbers
+from earthlab.harness import review_contracts as rules
 from earthlab.harness.claims import ClaimLadderV1
 from earthlab.harness.contracts import (
     DatasetProfileV1,
@@ -153,6 +154,7 @@ class MethodReviewRecordV1(Strict):
     critic_source: Literal["not_used", "independent_model", "same_model_second_pass"] = "not_used"
     lead_responses: int = Field(default=0, ge=0, le=1)
     disposition: DispositionV1 | None = None
+    normalized: tuple[str, ...] = ()  # alias -> registered name, mapped by code
 
 
 @dataclass(frozen=True)
@@ -188,7 +190,9 @@ def _each_method(proposal: MethodProposalV1, facts: ReviewFacts) -> list[ReviewF
     for method in dict.fromkeys(named):
         strategy = STRATEGY_OF.get(method)
         if strategy is None:
-            out.append(_finding(ReviewCode.UNKNOWN_METHOD, "not a registered method", method))
+            ambiguous = rules.is_ambiguous(method)
+            detail = "ambiguous: name one method" if ambiguous else "not a registered method"
+            out.append(_finding(ReviewCode.UNKNOWN_METHOD, detail, method))
         elif not checks[strategy].eligible:  # type: ignore[index]
             why = "; ".join(checks[strategy].reasons)  # type: ignore[index]
             out.append(_finding(ReviewCode.METHOD_BLOCKED, f"{strategy}: {why}", method))
@@ -200,7 +204,8 @@ def _plan_and_cost(proposal: MethodProposalV1, facts: ReviewFacts) -> list[Revie
     if proposal.proposed_method not in facts.plan.methods:
         detail = f"the plan runs {list(facts.plan.methods)}"
         out.append(_finding(ReviewCode.NOT_IN_PLAN, detail, proposal.proposed_method))
-    if proposal.compute_seconds > facts.budget_seconds:
+    trains = rules.trains(proposal.proposed_method, STRATEGY_OF)
+    if trains and proposal.compute_seconds > facts.budget_seconds:
         detail = f"{proposal.compute_seconds:.0f} s over {facts.budget_seconds:.0f} s"
         out.append(_finding(ReviewCode.OVER_BUDGET, detail))
     if facts.estimate_seconds > proposal.compute_seconds * ESTIMATE_MARGIN:
@@ -295,10 +300,18 @@ def repeats_plan(plan: ExperimentPlanV1, earlier: ExperimentPlanV1) -> bool:
 
 
 def critique_issues(
-    value: CritiqueV1, findings: list[ReviewFinding], facts: ReviewFacts
+    value: CritiqueV1,
+    findings: list[ReviewFinding],
+    facts: ReviewFacts,
+    proposal: MethodProposalV1 | None = None,
 ) -> list[str]:
-    """Why a critique is not a review. Praise and vague text do not count."""
-    issues = []
+    """Why a critique is not a review. Praise, vague text, sealed or invented tests fail."""
+    issues = rules.sealed_issues(f"{value.test.samples} {value.claim}")
+    if proposal is not None:
+        allowed = rules.allowed_thresholds(
+            facts.problem, facts.profile, proposal, value.test.metric
+        )
+        issues += rules.threshold_issues(value.test.threshold, allowed)
     if value.finding not in {f.code for f in findings}:
         issues.append("finding: name one code from the findings")
     if _PRAISE.search(value.claim):
@@ -339,10 +352,17 @@ def fact_names(facts: ReviewFacts) -> frozenset[str]:
     return frozenset(measured | {f.name for f in fields(facts) if f.name.endswith("_seconds")})
 
 
-def disposition_issues(value: DispositionV1, critique: CritiqueV1, facts: ReviewFacts) -> list[str]:
+def disposition_issues(
+    value: DispositionV1,
+    critique: CritiqueV1,
+    facts: ReviewFacts,
+    original: MethodProposalV1 | None = None,
+) -> list[str]:
     """Code decides whether an answer holds. Saying accepted or rebutted is not enough."""
     known = {"data": facts.profile.model_dump(mode="json"), "test": critique.test.threshold}
     issues = unbacked_numbers(value.response, known)
+    if value.revised_case is not None and original is not None:
+        issues += rules.drift_issues(value.revised_case, original)
     if value.revised_case is not None:
         found = check_proposal(value.revised_case, facts)
         issues += [f"revised_case: {f.code}" for f in found if f.blocking]
@@ -370,7 +390,7 @@ def _critique(
     try:
         return seats.propose(
             CRITIC, CRITIC_SYSTEM, sent, "submit_critique", CritiqueV1,
-            lambda value: critique_issues(value, findings, facts),
+            lambda value: critique_issues(value, findings, facts, proposal),
         )  # fmt: skip
     except Stopped:
         return None
@@ -387,7 +407,7 @@ def _answer(
     try:
         return seats.propose(
             LEAD, ANSWER_SYSTEM, sent, "answer_critique", DispositionV1,
-            lambda value: disposition_issues(value, critique, facts),
+            lambda value: disposition_issues(value, critique, facts, proposal),
         )  # fmt: skip
     except Stopped:
         return None
@@ -423,16 +443,13 @@ def review_case(
     seats: Seats, proposal: MethodProposalV1, facts: ReviewFacts
 ) -> MethodReviewRecordV1:
     """Code's findings, at most one critic call and one Lead response."""
+    proposal, notes = rules.normalize(proposal, STRATEGY_OF)
     findings = check_proposal(proposal, facts)
-    if any(f.blocking for f in findings):
+    if any(f.blocking for f in findings) or not findings:
         return MethodReviewRecordV1(
-            proposal=proposal, findings=tuple(findings), verdict="refused", critic_calls=0,
-            critique_state="not_triggered",
-        )  # fmt: skip
-    if not findings:
-        return MethodReviewRecordV1(
-            proposal=proposal, findings=(), verdict="proceed", critic_calls=0,
-            critique_state="not_triggered",
+            proposal=proposal, findings=tuple(findings), critic_calls=0,
+            verdict="refused" if findings else "proceed", critique_state="not_triggered",
+            normalized=tuple(notes),
         )  # fmt: skip
     critique = _critique(seats, proposal, findings, facts)
     answer = _answer(seats, proposal, critique, facts) if critique else None
@@ -444,4 +461,5 @@ def review_case(
         verdict="needs_revision" if open_concern else "proceed", critic_calls=1,
         critique=critique, critique_state="usable" if critique else "unusable",
         critic_source=_source(seats), lead_responses=1 if critique else 0, disposition=answer,
+        normalized=tuple(notes),
     )  # fmt: skip
