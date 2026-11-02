@@ -40,7 +40,7 @@ from earthlab.harness.gates import Refusal
 from earthlab.harness.lifecycle import Lifecycle
 from earthlab.harness.seats import Seats, Stopped, usage
 from earthlab.harness.strategy import Strategy, SuitabilityReportV1, assess
-from earthlab.harness.variants import BASELINE_ID, PromptSet, PromptVariant, resolve
+from earthlab.harness.variants import BASELINE_ID, PROMOTED, PromptSet, PromptVariant, resolve
 from earthlab.llm.client import ChatClient
 from earthlab.llm.types import ProviderError
 
@@ -131,7 +131,7 @@ class Engine:
     def __init__(
         self, arm: Arm, request: ResearchRequestV1, problem: ProblemSpecV1, adapter: Adapter,
         run_dir: Path, client: ChatClient | None, *,
-        role_clients: Mapping[str, ChatClient] | None = None, variant: PromptVariant = BASELINE,
+        role_clients: Mapping[str, ChatClient] | None = None, variant: PromptVariant = PROMOTED,
         method_review: bool = False,
     ):  # fmt: skip
         if (client is None) != (arm == "fixed"):
@@ -449,7 +449,7 @@ class Engine:
 def run_harness(
     arm: Arm, request: ResearchRequestV1, problem: ProblemSpecV1, adapter: Adapter,
     run_dir: Path, client: ChatClient | None = None, *,
-    role_clients: Mapping[str, ChatClient] | None = None, variant: PromptVariant = BASELINE,
+    role_clients: Mapping[str, ChatClient] | None = None, variant: PromptVariant = PROMOTED,
     method_review: bool = False,
 ) -> dict[str, Any]:  # fmt: skip
     """One run to a result, a refusal, or a clear failure state."""
