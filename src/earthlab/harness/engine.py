@@ -23,7 +23,9 @@ from earthlab.digest import payload_digest
 from earthlab.forecast.contracts import PmDecision
 from earthlab.forecast.gate import unbacked_numbers
 from earthlab.harness import gates
+from earthlab.harness import method_review as review
 from earthlab.harness.artifacts import ArtifactStore, MissingArtifact
+from earthlab.harness.claims import CostEvidence, ladder
 from earthlab.harness.contracts import (
     DatasetProfileV1,
     DecisionRecordV1,
@@ -130,6 +132,7 @@ class Engine:
         self, arm: Arm, request: ResearchRequestV1, problem: ProblemSpecV1, adapter: Adapter,
         run_dir: Path, client: ChatClient | None, *,
         role_clients: Mapping[str, ChatClient] | None = None, variant: PromptVariant = PROMOTED,
+        method_review: bool = False,
     ):  # fmt: skip
         if (client is None) != (arm == "fixed"):
             raise ValueError("the fixed arm has no model and the other arms have one")
@@ -143,6 +146,8 @@ class Engine:
         self.plan: ExperimentPlanV1 | None = None
         self.suits: SuitabilityReportV1 | None = None
         self.preset_config: dict[str, Any] = {}
+        self.method_review = method_review and arm != "fixed"
+        self.review: review.MethodReviewRecordV1 | None = None
 
     def keep(self, name: str, record: BaseModel, task: str) -> None:
         self.digests[name] = self.store.put(name, record, task)
@@ -228,6 +233,22 @@ class Engine:
             )  # fmt: skip
             seats.invoke("finished", owner, task, "verified")
 
+    def review_method(self, profile: DatasetProfileV1, plan: ExperimentPlanV1) -> list[Refusal]:
+        """The Lead's case and code's checks, before work runs. Refusal needs a blocking fault."""
+        if self.suits is None:
+            raise ValueError("the review needs the suitability checks")
+        facts = review.ReviewFacts(
+            self.problem, profile, self.suits, plan, self.adapter.estimate(plan),
+            plan.budget.max_training_seconds,
+        )  # fmt: skip
+        self.review = review.run_review(self.seats, facts)
+        self.keep("method-review", self.review, self.seats.root)
+        return [
+            Refusal(gates.Code.METHOD_REVIEW, f"{f.code}: {f.detail}")
+            for f in self.review.findings
+            if f.blocking
+        ]
+
     def report_for(self, plan: ExperimentPlanV1) -> EvaluationReportV1:
         self.life.move("executing", "controller", plan=plan.plan_id)
         self.tickets(plan)
@@ -308,6 +329,10 @@ class Engine:
         found = gates.check_plan(plan, profile, adapter.methods, adapter.estimate(plan))
         if found:
             return self.refuse(found)
+        if self.method_review:
+            found = self.review_method(profile, plan)
+            if found:
+                return self.refuse(found)
         self.keep("plan-1", plan, seats.root)
         self.life.move("planned", "controller", plan_sha256=self.digests["plan-1"])
         self.plan = plan
@@ -345,12 +370,31 @@ class Engine:
         )
         if seen.action != "refine":
             return report
-        self.life.move("reviewed", "controller", action="refine", reason=seen.reason)
         plan = self.choose(profile, 2, strategy)
+        if self.method_review and self.plan and review.repeats_plan(plan, self.plan):
+            self.seats.trace.append("refinement_refused", "controller", reason=seen.reason)
+            return report
+        self.life.move("reviewed", "controller", action="refine", reason=seen.reason)
         self.keep("plan-2", plan, self.seats.root)
         self.life.move("planned", "controller", plan_sha256=self.digests["plan-2"])
         self.plan = plan
         return self.report_for(plan)
+
+    def review_outcome(
+        self, report: EvaluationReportV1 | None, decision: DecisionRecordV1 | None,
+        used: dict[str, Any],
+    ) -> dict[str, Any]:  # fmt: skip
+        """The review record and the six claims. No role writes these."""
+        if self.review is None:
+            return {}
+        out: dict[str, Any] = {"method_review": self.review.model_dump(mode="json")}
+        if report is not None and decision is not None:
+            case, seconds = self.review.proposal, float(used["training_seconds"])
+            cost = CostEvidence(case.expected_benefit, case.compute_seconds, seconds)
+            out["claims"] = ladder(
+                report, decision.selected or report.reference, None, cost
+            ).model_dump()
+        return out
 
     def close(
         self, status: str, reason: str, decision: DecisionRecordV1 | None,
@@ -391,6 +435,7 @@ class Engine:
         outcome["prompt_variant"] = self.prompts.variant_id
         outcome["prompt_digests"] = self.prompts.digests()
         outcome["usage"] = usage(self.seats)
+        outcome |= self.review_outcome(report, decision, outcome["usage"])
         outcome["roles"] = {n: c.identity_record() for n, c in self.seats.calls.items()}
         self.seats.trace.append(
             "finish", "runtime", status=status, reason=reason, workflow=True,
@@ -405,11 +450,13 @@ def run_harness(
     arm: Arm, request: ResearchRequestV1, problem: ProblemSpecV1, adapter: Adapter,
     run_dir: Path, client: ChatClient | None = None, *,
     role_clients: Mapping[str, ChatClient] | None = None, variant: PromptVariant = PROMOTED,
+    method_review: bool = False,
 ) -> dict[str, Any]:  # fmt: skip
     """One run to a result, a refusal, or a clear failure state."""
     engine = Engine(
-        arm, request, problem, adapter, run_dir, client, role_clients=role_clients, variant=variant
-    )
+        arm, request, problem, adapter, run_dir, client, role_clients=role_clients,
+        variant=variant, method_review=method_review,
+    )  # fmt: skip
     try:
         return engine.run()
     except BudgetStop as stop:

@@ -78,11 +78,27 @@ class MethodOption(Strict):
     suitability: str = Field(min_length=5, max_length=200)
 
 
+class ExpectedBenefit(Strict):
+    """The gain the Lead must see, stated before any score exists."""
+
+    metric: Literal["mae", "skill", "f1", "pr_auc"]
+    minimum_gain: float = Field(gt=0)
+    reason: str = Field(min_length=10, max_length=300)
+
+
 class MethodProposalV1(Strict):
+    """The Lead's case for a method, before execution. It has no score or approval field."""
+
     schema_version: Literal["1"] = "1"
-    simplest_baseline: Method
+    hypothesis: str = Field(min_length=20, max_length=400)
+    proposed_method: str = Field(max_length=40)  # checked against the registry
+    simplest_baseline: str = Field(max_length=40)  # checked against the registry
     candidates: tuple[MethodOption, ...] = Field(min_length=1, max_length=4)
-    reason: str = Field(min_length=5, max_length=400)
+    data_sufficiency: str = Field(min_length=20, max_length=300)
+    expected_benefit: ExpectedBenefit
+    leakage_risks: tuple[str, ...] = Field(min_length=1, max_length=6)
+    compute_seconds: float = Field(ge=0)
+    failure_conditions: tuple[str, ...] = Field(min_length=1, max_length=6)
 
 
 class BudgetV1(Strict):

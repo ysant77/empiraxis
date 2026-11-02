@@ -100,6 +100,16 @@ def cmd_mlops_accept(args: argparse.Namespace) -> int:
     return 2 if done.verification_outcome == "refused" else 0
 
 
+def cmd_method_claims(args: argparse.Namespace) -> int:
+    """The six claims for one row of a saved evaluator report."""
+    from earthlab.harness.claims import ladder
+    from earthlab.harness.contracts import EvaluationReportV1
+
+    report = EvaluationReportV1.model_validate_json(args.report.read_bytes())
+    print(ladder(report, args.model, args.status).model_dump_json(indent=2))
+    return 0
+
+
 def _bundle_args(parser: Any) -> None:
     parser.add_argument("--registry", type=Path, required=True)
     parser.add_argument("--bundle", required=True, help="the bundle's SHA-256 digest")
@@ -129,6 +139,11 @@ def add_mlops_parsers(sub: Any) -> None:
     _bundle_args(check)
     check.add_argument("--output", type=Path, default=None, help="also write the JSON here")
     check.set_defaults(func=cmd_mlops_verify)
+    claims = sub.add_parser("method-claims", help="the six claims for one saved report row")
+    claims.add_argument("--report", type=Path, required=True, help="an evaluation report")
+    claims.add_argument("--model", required=True, help="the row name in the report")
+    claims.add_argument("--status", default=None, help="the registry status, if there is one")
+    claims.set_defaults(func=cmd_method_claims)
     done = sub.add_parser("mlops-accept", help="verify, run batch inference, report readiness")
     _bundle_args(done)
     done.add_argument("--out", type=Path, required=True, help="folder for the evidence")
