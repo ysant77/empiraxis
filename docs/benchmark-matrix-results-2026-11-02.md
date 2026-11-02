@@ -10,13 +10,17 @@ Timings are single runs on one shared Mac. They are not clean (see section 8).
 1. **Best system:** no model arm is best. The deterministic pipeline (arm F) had verified goal
    completion (VGC, protocol section 4.1) in 4 of 4 runs and took 0.1 to 23 s. No model arm had a
    higher share than F. The deterministic pipeline is enough for the tested scenarios.
-2. **Prompt fix:** the round-1 defect was real and the fix works. Baseline team arm `T-M-base`
-   failed 3 of 3 confirm runs ("used its turns without submit_note"). Variant `note-close-v1`
-   passed 3 of 3, in the same session.
+2. **Prompt fix:** the round-1 defect was real. Baseline team arm `T-M-base` failed 3 of 3 confirm
+   runs ("used its turns without submit_note"). Variant `note-close-v1` had VGC in 3 of 3, in the
+   same session. Three pairs are consistent with a fix. They do not give an effect size.
 3. **The team is slow.** `T-M-win` took 1159 to 2159 s per run. F took 0.2 and 3.1 s on the same
    two tickets, with the same outcomes. The baseline times are not a fair cost control: those runs
    stopped early. See section 4.
-4. **Small models** passed preflight except Llama 3.1 8B. They ran only in the unranked fallback.
+4. **Small models** passed preflight except Llama 3.1 8B. They ran only in the unranked fallback,
+   with VGC in 0 of 6 runs.
+5. **Limits on these results:** paired coverage is incomplete. Only two tickets ran in F, `S-M` and
+   the team, and `confirm` covers two tickets. Team arms with mixed models did not run. Wall times
+   are contaminated by swap pressure and, early on, a peer test run (section 8).
 
 ## 2. What ran
 
@@ -52,13 +56,13 @@ restarted once (before `confirm`). See section 8.
 
 | Scenario | T-M-base (baseline prompt) | T-M-win (`note-close-v1`) |
 |---|---|---|
-| burned-area-method, 2 pairs | failed, failed (746 s, 793 s) | accepted, accepted (1159 s, 1298 s) |
-| pm25-exceedance, 1 pair | failed (1031 s) | accepted (2159 s) |
+| burned-area-method, 2 pairs | failed, failed (746 s, 793 s) | VGC, VGC (1159 s, 1298 s) |
+| pm25-exceedance, 1 pair | failed (1031 s) | VGC (2159 s) |
 
 Failure text, baseline: `data_specialist used its turns without submit_note` (2 runs) and
 `ml_engineer used its turns without submit_note` (1 run). Exit code 2 for each. This is the round-1 failure.
 With the fix, `T-M-win` made 10 to 17 model calls and 8,263 to 18,478 prompt tokens per run.
-Three paired comparisons support "the prompt fix works". They do not support "a team beats F".
+The three pairs are consistent with the prompt fix. They do not support "a team beats F".
 
 Prompt digests of `T-M-win` equal those of `T-M-v1`, across pins 686d859 and 43123aa. So the prompt
 text did not change between screen and confirm. Those two commits changed provider and role
