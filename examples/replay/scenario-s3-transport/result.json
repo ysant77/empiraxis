@@ -1,6 +1,6 @@
 {
- "status": "awaiting_human",
- "reason": "evidence ready for a human decision",
+ "status": "recorded",
+ "reason": "recorded result; no human decision is open",
  "arm": "recorded",
  "kind": "transport_consistency",
  "problem_id": "s3-wind-rain-fire-2015",

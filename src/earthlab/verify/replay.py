@@ -32,6 +32,7 @@ class Replay:
     changed_files: list[str] = field(default_factory=list)
     problems: list[str] = field(default_factory=list)
     source_matches: bool = False
+    recorded: bool = False  # a saved evaluation: its files are checked, its scores are not rerun
 
     @property
     def ok(self) -> bool:
@@ -85,9 +86,48 @@ def _area(result: dict[str, Any], workspace: Workspace, out: Replay) -> None:
         out.months[0] += fresh_month == saved_month
 
 
+def _recorded(run_dir: Path, result: dict[str, Any], out: Replay) -> None:
+    """A recorded scenario has no claims to rerun, so every file it lists must keep its digest."""
+    listed = {f"{name}.json": sha for name, sha in result.get("artifacts", {}).items()}
+    listed |= (result.get("evidence") or {}).get("files", {})
+    if not listed:
+        out.problems.append("the recorded run lists no artifact")
+    for name, sha in listed.items():
+        out.files_checked += 1
+        path = run_dir / name
+        if not path.is_file() or file_digest(path) != sha:
+            out.changed_files.append(name)
+
+
 def replay_run(run_dir: Path, workspace: Workspace) -> Replay:
     out = Replay(trace_records=RunTrace(run_dir / "trace.jsonl").verify())
     result = json.loads((run_dir / "result.json").read_text(encoding="utf-8"))
+    if "source" not in result and "evidence_label" in result:
+        out.recorded = True
+        _recorded(run_dir, result, out)
+        return out
     _pm25(result, workspace, out)
     _area(result, workspace, out)
     return out
+
+
+def replay_lines(out: Replay) -> list[str]:
+    """The operator's summary of one replay."""
+    lines = [f"trace: {out.trace_records} records, hash chain intact"]
+    if out.recorded:
+        lines.append("recorded evaluation: artifact digests checked; no score was recomputed")
+    else:
+        lines += [
+            f"PM2.5 source hash: {'match' if out.source_matches else 'CHANGED'}",
+            f"verdicts reproduced: {out.pm25[0]}/{out.pm25[1]}",
+            f"area verdicts reproduced: {out.area[0]}/{out.area[1]}",
+            f"month checks reproduced: {out.months[0]}/{out.months[1]}",
+        ]
+    if not out.files_checked:
+        lines.append("input hashes: none recorded")
+    elif not out.changed_files:
+        lines.append(f"input hashes: all match ({out.files_checked} files)")
+    else:
+        lines.append(f"input hashes: {len(out.changed_files)} of {out.files_checked} files CHANGED")
+    lines += [f"changed: {rel}" for rel in out.changed_files]
+    return lines + [f"problem: {problem}" for problem in out.problems]

@@ -1,6 +1,6 @@
 {
- "status": "awaiting_human",
- "reason": "evidence ready for a human decision",
+ "status": "recorded",
+ "reason": "recorded result; no human decision is open",
  "arm": "recorded",
  "kind": "classification",
  "problem_id": "s2-frozen-encoder-reuse",

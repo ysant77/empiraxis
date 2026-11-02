@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 from pathlib import Path
 from typing import Any
 
@@ -11,7 +12,9 @@ from streamlit.testing.v1 import AppTest
 
 from earthlab.events.adapter import load_run
 from earthlab.events.manifest import listed_runs, verified_run
+from earthlab.runtime import open_workspace
 from earthlab.ui import common
+from earthlab.verify.replay import replay_run
 
 ROOT = Path(__file__).resolve().parents[1]
 REPLAY = ROOT / "examples" / "replay"
@@ -46,6 +49,29 @@ def test_each_surface_shows_the_same_run_and_artifact(
     entry = next(r for r in listed_runs(REPLAY) if r["run"] == run)
     assert head[:16] in text and str(entry["result_sha256"])[:16] in text
     assert f"Scenario {scenario}." in text and f"trace status {events.status}" in text
+
+
+@pytest.mark.parametrize("run", list(RUNS.values()))
+def test_replay_checks_a_recorded_scenario_and_finds_a_changed_file(
+    run: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.chdir(ROOT)
+    workspace = open_workspace(ROOT / "data" / "nea")
+    saved = replay_run(REPLAY / run, workspace)
+    assert saved.ok and saved.recorded and saved.files_checked >= 1
+    copy = tmp_path / run
+    shutil.copytree(REPLAY / run, copy)
+    target = next(p for p in sorted(copy.glob("*.json")) if p.name != "result.json")
+    target.write_text("{}", encoding="utf-8")
+    changed = replay_run(copy, workspace)
+    assert not changed.ok and target.name in changed.changed_files
+
+
+def test_a_packaged_scenario_opens_no_human_decision() -> None:
+    for run in (RUNS["S2"], RUNS["S3"]):
+        assert record(run)["status"] == "recorded"
+    for run in (RUNS["S1"], RUNS["S4"]):
+        assert record(run)["status"] == "awaiting_human"
 
 
 def test_every_scenario_says_what_really_ran(monkeypatch: pytest.MonkeyPatch) -> None:

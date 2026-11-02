@@ -83,7 +83,7 @@ def s2_record(report: dict[str, Any]) -> dict[str, Any]:
     ]  # fmt: skip
     winners = [r["model"] for r in rows if r["passes"] and r["model"] != report["reference"]]
     return {
-        "status": "awaiting_human", "reason": "evidence ready for a human decision",
+        "status": "recorded", "reason": "recorded result; no human decision is open",
         "arm": "recorded", "kind": "classification", "problem_id": "s2-frozen-encoder-reuse",
         "evidence_label": f"Recorded results of a real run. {HINDCAST}. Scored on validation.",
         "limitations": [
@@ -104,7 +104,7 @@ def s3_record(found: dict[str, Any]) -> dict[str, Any]:
     keep = ("box_id", "level", "verdict", "base_event_rate", "base_clean_rate", "stable_share")
     rows = [{k: b.get(k) for k in keep if k in b} for b in found["boxes"]]
     return {
-        "status": "awaiting_human", "reason": "evidence ready for a human decision",
+        "status": "recorded", "reason": "recorded result; no human decision is open",
         "arm": "recorded", "kind": "transport_consistency", "problem_id": "s3-wind-rain-fire-2015",
         "evidence_label": f"Retrospective reanalysis: {found['evidence_class']}",
         "limitations": [found["statement"], *found.get("notes", [])][:4],
