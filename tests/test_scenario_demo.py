@@ -281,3 +281,21 @@ def test_switching_scenario_keeps_the_surface_and_the_url(monkeypatch: pytest.Mo
     surface.set_value("control").run()
     assert app.subheader[0].value == scenarios.TITLES["S3"]
     assert "control" in str(app.query_params["view"])
+
+
+def test_the_demo_script_and_readme_quote_the_recorded_numbers() -> None:
+    s1 = {r["model"]: r for r in record(RUNS["S1"])["comparison"]}
+    s2 = {r["model"]: r for r in record(RUNS["S2"])["comparison"]}
+    team = record(scenarios.TEAM_RUN)["usage"]
+    numbers = [
+        f"{s1['candidate-1']['mae']:.3f}", f"{s1['B0_persistence']['mae']:.3f}",
+        f"{s1['candidate-1']['above_55_mae']:.3f}", f"{s1['B0_persistence']['above_55_mae']:.3f}",
+        f"{s2['frozen_gru_logistic']['f1']:.3f}", f"{s2['logistic']['f1']:.3f}",
+        f"{s2['persistence_alarm']['f1']:.3f}",
+    ]  # fmt: skip
+    for name in ("docs/demo-three-minute.md", "README.md"):
+        text = (ROOT / name).read_text("utf-8")
+        assert all(number in text for number in numbers), name
+    script = (ROOT / "docs/demo-three-minute.md").read_text("utf-8")
+    assert f"{team['model_calls']} model calls" in script
+    assert str(team["wall_seconds"]) in script
