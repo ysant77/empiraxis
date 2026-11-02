@@ -31,6 +31,7 @@ from earthlab.ui import (
     board_view,
     common,
     experiments,
+    lab_data,
     provenance,
     scenarios,
     story_view,
@@ -316,6 +317,9 @@ def _decisions(opened: Opened) -> None:
     refusals = record.get("refusal_codes") or []
     if opened.story.key == "S4":
         refusals = [r["code"] for r in scenarios.s4_verdict(opened.run_dir)["refusals"]]
+    ready = lab_data.readiness(opened.story.key, opened.run_dir)
+    if ready is not None and ready["verification_outcome"] == "refused":
+        refusals = [*refusals, f"inference refused: {ready['inference']['note']}"]
     st.write(f"Refusals: {', '.join(refusals) or 'none recorded'}.")
 
 
