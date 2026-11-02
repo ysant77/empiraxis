@@ -14,6 +14,7 @@ from earthlab.harness.replay import replay_run
 from earthlab.harness.scenarios import SCENARIOS, SUMMARY, run_scenario
 from earthlab.llm.client import build_client
 from earthlab.llm.providers import load_providers
+from earthlab.mlops.cli import add_mlops_parsers
 from earthlab.runtime import new_run_dir
 
 
@@ -62,6 +63,7 @@ def cmd_harness_compare(args: argparse.Namespace) -> int:
 
 
 def add_forecast_parsers(sub: Any) -> None:
+    add_mlops_parsers(sub)
     table = sub.add_parser("harness-compare", help="the three arms, from saved run records")
     table.add_argument("manifest", type=Path)
     table.set_defaults(func=cmd_harness_compare)
