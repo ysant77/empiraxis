@@ -202,10 +202,15 @@ def test_a_plan_cannot_leak_exceed_its_budget_or_name_an_unknown_method() -> Non
 
 def test_a_proposal_cannot_carry_code_or_a_pass_mark() -> None:
     good: dict[str, Any] = {
-        "simplest_baseline": "persistence",
+        "hypothesis": "A small GRU lowers the T+6 h MAE against persistence.",
+        "proposed_method": "gru", "simplest_baseline": "persistence",
         "candidates": [{"method": "gru", "suitability": "Hourly series."}],
-        "reason": "A small model is enough here.",
-    }
+        "data_sufficiency": "The train years hold enough hourly rows for a small model.",
+        "expected_benefit": {"metric": "mae", "minimum_gain": 0.2,
+                             "reason": "A smaller gain does not repay the training."},
+        "leakage_risks": ["Inputs must respect the availability latency."],
+        "compute_seconds": 60.0, "failure_conditions": ["The lower limit of skill is zero."],
+    }  # fmt: skip
     MethodProposalV1.model_validate(good)
     for extra in ({"code": "import os"}, {"passed": True}, {"approved": True}):
         with pytest.raises(ValidationError):

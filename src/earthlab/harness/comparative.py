@@ -7,7 +7,6 @@ missing value prints as not measured. Saved records are read and never changed.
 
 from __future__ import annotations
 
-import json
 from collections import Counter
 from collections.abc import Callable
 from pathlib import Path

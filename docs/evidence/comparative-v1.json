@@ -881,6 +881,123 @@
     "caught_without_review": false,
     "false_objection": false,
     "repeat": 1
+   },
+   {
+    "case": "gru-no-comparison",
+    "stage": "pre_execution",
+    "off": [],
+    "review_label": "seeded case, live critic",
+    "codes": [
+     "no_simple_comparison"
+    ],
+    "verdict": "proceed",
+    "record": {
+     "schema_version": "1",
+     "proposal": {
+      "schema_version": "1",
+      "hypothesis": "A GRU lowers the T+6 h MAE against persistence in all five regions.",
+      "proposed_method": "gru",
+      "simplest_baseline": "persistence",
+      "candidates": [
+       {
+        "method": "gru",
+        "suitability": "Fits hourly regional sequences."
+       },
+       {
+        "method": "tcn",
+        "suitability": "Fits hourly regional sequences."
+       }
+      ],
+      "data_sufficiency": "The train years hold enough hourly rows for a small network.",
+      "expected_benefit": {
+       "metric": "mae",
+       "minimum_gain": 0.2,
+       "reason": "A smaller gain does not repay training."
+      },
+      "leakage_risks": [
+       "The two hour availability latency must hold for every input."
+      ],
+      "compute_seconds": 120.0,
+      "failure_conditions": [
+       "The lower limit of MAE skill is at or below zero.",
+       "MAE above 55 ug/m3 is worse than persistence."
+      ]
+     },
+     "findings": [
+      {
+       "code": "no_simple_comparison",
+       "method": "gru",
+       "detail": "gru has no simple method in both candidates and plan",
+       "blocking": false
+      }
+     ],
+     "verdict": "proceed",
+     "critic_calls": 1,
+     "critique": {
+      "schema_version": "1",
+      "kind": "falsifiable_concern",
+      "finding": "no_simple_comparison",
+      "claim": "The plan proposes GRU versus persistence only with TCN as the only alternative, so there is no simple statistical baseline to contextualize T+6h MAE gains for five regions.",
+      "test": {
+       "metric": "skill_against_persistence",
+       "direction": "below",
+       "threshold": 0.0,
+       "samples": "Historical1hrPM2.5.csv test split 2024-01-01 to 2026-10-01 five regions T+6h with two hour availability latency"
+      },
+      "competing_method": null
+     },
+     "critique_state": "usable",
+     "critic_source": "same_model_second_pass",
+     "lead_responses": 1,
+     "disposition": {
+      "schema_version": "1",
+      "disposition": "accepted",
+      "response": "The case lacked a simple statistical baseline to contextualize T+6h MAE gains. Adding a simple linear statistical comparator lets skill against persistence be interpreted against a conventional baseline.",
+      "revised_case": {
+       "schema_version": "1",
+       "hypothesis": "A GRU lowers the T+6 h MAE against persistence in all five regions.",
+       "proposed_method": "gru",
+       "simplest_baseline": "persistence",
+       "candidates": [
+        {
+         "method": "gru",
+         "suitability": "Fits hourly regional sequences."
+        },
+        {
+         "method": "ridge",
+         "suitability": "Simple linear statistical baseline for contextualizing MAE gains."
+        }
+       ],
+       "data_sufficiency": "The train years hold enough hourly rows for a small network.",
+       "expected_benefit": {
+        "metric": "mae",
+        "minimum_gain": 0.2,
+        "reason": "A smaller gain does not repay training."
+       },
+       "leakage_risks": [
+        "The two hour availability latency must hold for every input."
+       ],
+       "compute_seconds": 120.0,
+       "failure_conditions": [
+        "The lower limit of MAE skill is at or below zero.",
+        "MAE above 55 ug/m3 is worse than persistence."
+       ]
+      },
+      "evidence_fields": []
+     }
+    },
+    "model_calls": 3,
+    "prompt_tokens": 5035,
+    "completion_tokens": 5415,
+    "wall_seconds": 1392.8,
+    "truth": "fault",
+    "expected": [
+     "no_simple_comparison"
+    ],
+    "detected": true,
+    "caught_without_review": false,
+    "false_objection": false,
+    "repeat": 2
    }
   ]
  }

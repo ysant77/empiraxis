@@ -10,13 +10,16 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from earthlab.harness.compare import NOT_MEASURED
 from earthlab.harness.comparative import by_arm, coverage, matched, scored, selection
+from earthlab.harness.comparative_report import render
+from earthlab.harness.compare import NOT_MEASURED
 from earthlab.harness.replay import MissingArtifact, replay_run
 from earthlab.trace import TraceIntegrityError
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "docs" / "evidence" / "comparative-v1.json"
+DOC = ROOT / "docs" / "comparative-evidence-report.md"
+TEMPLATE = ROOT / "config" / "benchmark" / "comparative_report.md.tmpl"
 MATRIX = "earthlab-matrix-runs/decisions-v1"
 SOURCES = {
     "benchmark screen": f"{MATRIX}/screen-muse/manifest.jsonl",
@@ -53,7 +56,8 @@ def main() -> int:
         "selection": selection(runs), "review": review_rows(root),
     }  # fmt: skip
     OUT.write_text(json.dumps(report, indent=1) + "\n", "utf-8")
-    print(f"{len(runs)} runs written to {OUT}")
+    DOC.write_text(render(report, TEMPLATE.read_text("utf-8")), "utf-8")
+    print(f"{len(runs)} runs written to {OUT} and {DOC}")
     return 0
 
 
