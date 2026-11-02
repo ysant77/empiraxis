@@ -96,7 +96,10 @@ def execution(key: str, run_dir: Path) -> str:
             f"{usage['wall_seconds']} s, peak memory {usage['peak_training_rss_mb']} MB."
         )
     if key == "S2":
-        return "The hybrid ran earlier and wrote the report shown here. Nothing was retrained."
+        return (
+            "Earlier jobs trained the GRU encoder, froze it and fitted the logistic head. They "
+            "wrote the report shown here. This replay trains nothing."
+        )
     if key == "S3":
         return "No model was trained. The diagnostic is a fixed rule over reanalysis hours."
     if key == "S4":

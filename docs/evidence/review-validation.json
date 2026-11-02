@@ -1,0 +1,13 @@
+{
+ "conclusion": "Validation complete: review-gate-v1 Part A and review-gate-v2 (one case again, then all 6 matched runs). Code rules found all 7 seeded faults; the critic added no detection of its own. With the gate on, 2 of 3 live runs stopped on method-name and budget rules, and their runs without the gate reached the correct outcome. The gate stays off. Details: docs/method-review-validation-results.md.",
+ "measures": [
+  {"Measure": "Seeded faults found", "Result": "7 of 7, all by code rules; 3 of 7 also with the gate off"},
+  {"Measure": "False objections, sound cases", "Result": "0 of 2"},
+  {"Measure": "Corrections accepted and passed by code", "Result": "8 (v1: 5, v2: 3); 0 rebutted; 1 left open"},
+  {"Measure": "Unusable critiques", "Result": "v1: 3 of 9; v2: 0 of 3"},
+  {"Measure": "Matched runs, gate on", "Result": "1 of 3 decided, same outcome as gate off; 2 stopped on format and budget rules"},
+  {"Measure": "Matched runs, gate off", "Result": "3 of 3 decided and matched the code rule"},
+  {"Measure": "Added cost, decided pair", "Result": "+1469.0 s, +3 calls, +12153 tokens"},
+  {"Measure": "Critic", "Result": "Same model, second pass. Not independent."}
+ ]
+}

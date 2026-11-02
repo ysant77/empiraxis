@@ -96,9 +96,9 @@ The command writes one JSON line per issue. Each line holds the bundle digest, t
 
 The bundle also holds the weights digest, the feature record, the seed, the environment pins and the training metrics.
 
-## S2 hybrid: frozen S1 encoder and a shallow head
+## S2 hybrid: frozen GRU encoder and a shallow head
 
-The hybrid method is `frozen_gru_logistic`. It feeds the last hidden state of a frozen S1 GRU to a logistic head. The comparison list is fixed: the persistence alarm, logistic, trees_classifier and the frozen hybrid. The train rate stays as a majority-class reference.
+The hybrid method is `frozen_gru_logistic`. It feeds the last hidden state of a frozen GRU, trained with the S1 settings, to a logistic head. The comparison list is fixed: the persistence alarm, logistic, trees_classifier and the frozen hybrid. The train rate stays as a majority-class reference.
 
 ### Chronology protocol
 

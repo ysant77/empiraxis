@@ -222,14 +222,20 @@ def s2(run_dir: Path) -> Story:
     failed = [c["name"] for c in ready["integrity_checks"] if not c["passed"]]
     return Story(
         key="S2", run=SCENARIO_RUNS["S2"], title=TITLES["S2"],
-        question="Can the GRU encoder, frozen after S1, be reused to warn when PM2.5 exceeds "
+        question="Can a frozen GRU encoder be reused to warn when PM2.5 exceeds "
         f"35 {UNIT} six hours ahead?",
-        method="Keep the GRU encoder fixed and fit a logistic head on its features. Compare with "
-        "the persistence alarm, logistic regression, trees and the training base rate.",
+        method="An earlier job trained a GRU with the S1 settings on 2014 to 2018 and selected it "
+        "on 2019 to 2021. Code kept that encoder fixed and fitted a logistic head on its "
+        "features. Compare with the persistence alarm, logistic regression, trees and the "
+        "training base rate.",
         evidence=[
             f"{metrics['scored']:,.0f} scored region-hours, {metrics['positives']:,.0f} "
             f"exceedances (base rate {metrics['base_rate']:.2%}), {report['split_scored']}.",
-            "No model was retrained for this result.",
+            "The encoder is not the S1 GRU: S1 selected its epoch on the scored years. The "
+            "encoder weights stayed frozen; only the logistic head was fitted. This replay "
+            "trains nothing.",
+            "The alarm cut and calibration were tuned on the encoder's selection years, so they "
+            "are optimistic.",
             f"Bundle check: {ready['verification_outcome']}. Failed checks: {', '.join(failed)}.",
         ],
         tiles=[
@@ -366,6 +372,10 @@ def m1(run_dir: Path) -> Story:
         evidence=[
             f"{usage['model_calls']} model calls and {usage['tool_calls']} tool calls, recorded "
             f"in a hash-chained trace. Prompt variant {record['prompt_variant']}.",
+            "Muse Glimmer in the data and ML specialist seats called the fixed data and "
+            "training tools and wrote notes. Code trained the models and checked each note.",
+            "One review step read the note 'the test period was not read' as a defect and "
+            "asked to refine. Code allowed one refinement, which changed only the penalty.",
             f"Scored on {record['split_scored']}.",
         ],
         tiles=[

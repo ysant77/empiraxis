@@ -49,9 +49,11 @@ Scientific correctness: rule 5 of VGC checks the one scenario with a required ou
 
 ## 8. Independent critique
 
-No critique in this report is independent: the critic ran as a second pass on the same model as the Lead.
+No critique in this report is independent: the critic ran as a second pass on the same model as the Lead. The protocol is `docs/method-review-validation-protocol.md`. Revision `review-gate-v1` ran at commit `c5a2835b14f8`, and `review-gate-v2` at `06c090d43e57`. The v1 rows stay as recorded. The person's scoring of the critique text is in `docs/method-review-validation-results.md`.
 
 $review
+In the matched runs the gate did not change a decision, found no scientific fault and stopped two plans whose runs without the gate reached the code-rule outcome. The gate stays off by default.
+
 ## 9. Missing measurements
 
 | Measure | State |
@@ -61,3 +63,16 @@ $review
 | Team on `pm25-regression` with the closing fix | $not_measured |
 | Sealed test period | $not_measured: it was not read |
 | Energy and system memory by run | $not_measured |
+
+## 10. Inputs and reproduction
+
+The raw run folders are local to the development Mac, under one run root. They are not in the repository, because they hold model weights, feature files and predictions. The repository holds the derived record, `docs/evidence/comparative-v1.json`, this report and the four scenario replays in `examples/replay/`. A test renders this report again from the committed record and requires the same text.
+
+$sources
+To build again from the raw runs, on a machine that holds the run root:
+
+```bash
+uv run python scripts/build_comparative_report.py <run root>
+```
+
+The build replays every run at the current commit and takes about 75 s. Without the run root, a clean clone can read the record and the report, but it cannot rebuild them.

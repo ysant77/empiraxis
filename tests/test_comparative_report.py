@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import Any
 
@@ -53,3 +54,11 @@ def test_the_report_names_missing_values_and_fills_every_field() -> None:
     text = render(report, template)
     assert "$" not in text and "Review-gate validation: not measured." in text
     assert "Energy: not measured" in text
+
+
+def test_the_committed_report_renders_again_from_the_committed_record() -> None:
+    template = (ROOT / "config" / "benchmark" / "comparative_report.md.tmpl").read_text("utf-8")
+    record = json.loads((ROOT / "docs" / "evidence" / "comparative-v1.json").read_text("utf-8"))
+    report = (ROOT / "docs" / "comparative-evidence-report.md").read_text("utf-8")
+    assert render(record, template) == report
+    assert "/Users/" not in json.dumps(record)

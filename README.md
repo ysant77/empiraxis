@@ -25,6 +25,7 @@ Muse Glimmer 30B ran locally through llama-server. The four scenario pages are e
 |---|---|
 | Scope check, forwarding note | Muse Glimmer, PM seat |
 | Strategy, method, review of results, recommendation | Muse Glimmer, Lead seat |
+| Calls to the fixed data and training tools, short notes | Muse Glimmer, data and ML specialist seats |
 | Data preparation, training, baselines | Deterministic code |
 | Scores and comparison tables | Independent evaluator code |
 | Safety screening of investigation answers | Llama Guard 3 8B, in the investigation path only |
@@ -80,6 +81,7 @@ The demonstration script is in [docs/demo-three-minute.md](docs/demo-three-minut
 - The GRU is worse than persistence in elevated hours, and the elevated-hour rule is exploratory.
 - S2 and S3 traces record packaging of saved results. They are not the traces of the original jobs.
 - The critic is a second pass by the same model. It is not an independent reviewer.
+- In live validation the review gate found no scientific fault and stopped 2 of 3 correct plans, so it stays off.
 - Benchmark cells hold 1 to 3 runs on one shared Mac under swap pressure. There are no significance claims. Team arms with mixed models did not run.
 
 ## Engineering disclosure

@@ -5,6 +5,7 @@ Run with:  uv run python scripts/build_comparative_report.py <folder that holds 
 
 from __future__ import annotations
 
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -41,7 +42,21 @@ def review_rows(root: Path) -> dict[str, list[dict[str, Any]]]:
     out: dict[str, list[dict[str, Any]]] = {}
     for path in sorted((root / REVIEW).glob("*/*.jsonl")):
         rows = [json.loads(line) for line in path.read_text("utf-8").splitlines()]
+        for row in rows:
+            if "run" in row:
+                row["run"] = str(Path(row["run"]).relative_to(root))
         out[f"{path.parent.name}/{path.stem}"] = rows
+    return out
+
+
+def sources(root: Path) -> list[dict[str, Any]]:
+    named = [*SOURCES.items(), *((p.parent.name + "/" + p.stem, str(p.relative_to(root)))
+             for p in sorted((root / REVIEW).glob("*/*.jsonl")))]  # fmt: skip
+    out = []
+    for name, rel in named:
+        data = (root / rel).read_bytes()
+        out.append({"name": name, "path": rel, "rows": data.count(b"\n"),
+                    "sha256": hashlib.sha256(data).hexdigest()})  # fmt: skip
     return out
 
 
@@ -53,7 +68,7 @@ def main() -> int:
         "arms": by_arm(runs), "coverage": coverage(runs),
         "matched_screen": matched(runs, ("F", "S-M", "T-M-v1"), "benchmark screen"),
         "matched_confirm": matched(runs, ("T-M-base", "T-M-win"), "benchmark confirm"),
-        "selection": selection(runs), "review": review_rows(root),
+        "selection": selection(runs), "review": review_rows(root), "sources": sources(root),
     }  # fmt: skip
     OUT.write_text(json.dumps(report, indent=1) + "\n", "utf-8")
     DOC.write_text(render(report, TEMPLATE.read_text("utf-8")), "utf-8")

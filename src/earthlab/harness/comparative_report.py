@@ -65,31 +65,44 @@ def _selection(report: dict[str, Any]) -> str:
     )
 
 
-def _review(report: dict[str, Any]) -> str:
-    rows = [r for name, found in report["review"].items() if "cases" in name for r in found]
-    pairs = [r for name, found in report["review"].items() if "matched" in name for r in found]
-    if not rows:
-        return f"Review-gate validation: {NOT_MEASURED}.\n"
+def _cases(name: str, rows: list[dict[str, Any]]) -> str:
     live = [r for r in rows if (r.get("record") or {}).get("critic_calls")]
     usable = [r for r in live if r["record"]["critique_state"] == "usable"]
     kinds = [(r["record"].get("disposition") or {}).get("disposition") for r in usable]
     accepted, opened = kinds.count("accepted"), kinds.count("needs_revision") + kinds.count(None)
-    parts = [
-        f"Seeded rows: {len(rows)}. Live critic rows: {len(live)}. Usable critiques: "
-        f"{len(usable)}. Accepted by the Lead and passed by code: {accepted}. Rebutted: "
-        f"{kinds.count('rebutted')}. Left open: {opened}."
-        " These are seeded cases, so a changed case here is not a changed real decision.\n",
-    ]
-    if not pairs:
-        parts.append(f"\nMatched live runs with and without the gate: {NOT_MEASURED}.\n")
-        return "".join(parts)
-    rows2 = [(r["scenario"], r.get("gate"), r.get("status"), (r.get("recommendation") or {}).get(
-        "outcome", "none"), r.get("code_outcome"), r.get("wall_seconds"),
-        (r.get("usage") or {}).get("model_calls")) for r in pairs]  # fmt: skip
-    parts.append("\n" + table(
-        ("Scenario", "Gate", "Status", "Outcome", "Code outcome", "Wall s", "Calls"), rows2
-    ))  # fmt: skip
+    return (
+        f"- `{name}`: seeded rows {len(rows)}, live critic rows {len(live)}, usable critiques "
+        f"{len(usable)}, accepted by the Lead and passed by code {accepted}, rebutted "
+        f"{kinds.count('rebutted')}, left open {opened}.\n"
+    )
+
+
+def _pairs(name: str, rows: list[dict[str, Any]]) -> str:
+    cells = [(r["scenario"], r.get("gate"), r.get("status"), (r.get("recommendation") or {}).get(
+        "outcome", "none"), r.get("code_outcome") or "none", r.get("wall_seconds"),
+        (r.get("usage") or {}).get("model_calls")) for r in rows]  # fmt: skip
+    head = ("Scenario", "Gate", "Status", "Outcome", "Code outcome", "Wall s", "Calls")
+    return f"\nMatched live runs, `{name}`: {len(rows)} of 6 planned.\n\n" + table(head, cells)
+
+
+def _review(report: dict[str, Any]) -> str:
+    found = report["review"]
+    if not any("cases" in name for name in found):
+        return f"Review-gate validation: {NOT_MEASURED}.\n"
+    parts = [_cases(name, rows) for name, rows in found.items() if "cases" in name]
+    parts.append(
+        "\nThese are seeded cases, so a changed case here is not a changed real decision. Each "
+        "revision keeps its own rows.\n"
+    )
+    pairs = [_pairs(name, rows) for name, rows in found.items() if "matched" in name]
+    parts.extend(pairs or [f"\nMatched live runs with and without the gate: {NOT_MEASURED}.\n"])
     return "".join(parts)
+
+
+def _sources(report: dict[str, Any]) -> str:
+    cells = [(s["name"], f"`{s['path']}`", s["rows"], f"`{s['sha256'][:16]}`")
+             for s in report.get("sources", [])]  # fmt: skip
+    return table(("Source", "File under the run root", "Rows", "SHA-256, first 16"), cells)
 
 
 def _totals(report: dict[str, Any]) -> tuple[Any, ...]:
@@ -114,4 +127,5 @@ def render(report: dict[str, Any], template: str) -> str:
         matched_confirm=_matched(report["matched_confirm"], ("T-M-base", "T-M-win")),
         selection=_selection(report),
         review=_review(report),
+        sources=_sources(report),
     )

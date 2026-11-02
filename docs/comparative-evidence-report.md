@@ -7,7 +7,7 @@ Built by `scripts/build_comparative_report.py` from 48 saved runs. No run was ma
 Prefer the simplest execution that meets the goal. On the tested tasks, no agent workflow showed a benefit over the deterministic pipeline.
 
 - **Multi-agent execution:** it did not improve verified goal completion on any task that all three workflows ran, and it cost more. In the benchmark screen, median wall time to the decision gate was 1.1 s deterministic, 682.9 s single agent and 1573.1 s team. The overhead is not justified on this evidence.
-- **The deterministic pipeline** cannot choose a new method, so this result covers these four tasks only. A model has shown value in writing a case or a review, and not in a measured gain in outcome.
+- **The deterministic pipeline** cannot choose a new method, so this result covers these four tasks only. No run measured a gain in outcome from a model.
 - **What a team needs:** the closing fix. Without it, the team failed 3 of 3 confirm runs.
 
 ## 2. How to read this
@@ -107,15 +107,29 @@ Runs that stopped with no decision:
 | harness-v1 | burned-area-method | team | Stopped: data_specialist used its turns without submit_note |
 | harness-v1 | burned-area-segmentation | team | the PM found it out of scope |
 
-Scientific correctness: rule 5 of VGC checks the one scenario with a required outcome. On the others, VGC checks agreement with the code rule. On `pm25-regression`, F chose `adopt_limited` and `S-M` chose `retain_baseline`. Both are consistent with their own plans, and this record does not say which plan is right. The GRU is worse than persistence above 55 µg/m³, so the simpler reading favours `retain_baseline` for elevated hours.
+Scientific correctness: rule 5 of VGC checks the one scenario with a required outcome. On the others, VGC checks agreement with the code rule. On `pm25-regression`, F chose `adopt_limited` and `S-M` chose `retain_baseline`. Both are consistent with their own plans, and this record does not say which plan is right. The GRU is worse than persistence above 55 µg/m³, and the code limit says so.
 
 ## 8. Independent critique
 
-No critique in this report is independent: the critic ran as a second pass on the same model as the Lead.
+No critique in this report is independent: the critic ran as a second pass on the same model as the Lead. The protocol is `docs/method-review-validation-protocol.md`. Revision `review-gate-v1` ran at commit `c5a2835b14f8`, and `review-gate-v2` at `06c090d43e57`. The v1 rows stay as recorded. The person's scoring of the critique text is in `docs/method-review-validation-results.md`.
 
-Seeded rows: 2. Live critic rows: 2. Usable critiques: 1. Accepted by the Lead and passed by code: 1. Rebutted: 0. Left open: 0. These are seeded cases, so a changed case here is not a changed real decision.
+- `v1/cases`: seeded rows 15, live critic rows 9, usable critiques 6, accepted by the Lead and passed by code 5, rebutted 0, left open 1.
+- `v2/cases`: seeded rows 3, live critic rows 3, usable critiques 3, accepted by the Lead and passed by code 3, rebutted 0, left open 0.
 
-Matched live runs with and without the gate: not measured.
+These are seeded cases, so a changed case here is not a changed real decision. Each revision keeps its own rows.
+
+Matched live runs, `v2/matched`: 6 of 6 planned.
+
+| Scenario | Gate | Status | Outcome | Code outcome | Wall s | Calls |
+|---|---|---|---|---|---|---|
+| pm25-regression | gate | awaiting_human | retain_baseline | retain_baseline | 2038.7 | 7 |
+| pm25-regression | plain | awaiting_human | retain_baseline | retain_baseline | 569.7 | 4 |
+| pm25-exceedance | plain | awaiting_human | retain_baseline | retain_baseline | 1319.5 | 8 |
+| pm25-exceedance | gate | refused | none | none | 959.5 | 4 |
+| burned-area-method | gate | refused | none | none | 482.2 | 2 |
+| burned-area-method | plain | awaiting_human | adopt_limited | adopt_limited | 702.5 | 4 |
+
+In the matched runs the gate did not change a decision, found no scientific fault and stopped two plans whose runs without the gate reached the code-rule outcome. The gate stays off by default.
 
 ## 9. Missing measurements
 
@@ -126,3 +140,25 @@ Matched live runs with and without the gate: not measured.
 | Team on `pm25-regression` with the closing fix | not measured |
 | Sealed test period | not measured: it was not read |
 | Energy and system memory by run | not measured |
+
+## 10. Inputs and reproduction
+
+The raw run folders are local to the development Mac, under one run root. They are not in the repository, because they hold model weights, feature files and predictions. The repository holds the derived record, `docs/evidence/comparative-v1.json`, this report and the four scenario replays in `examples/replay/`. A test renders this report again from the committed record and requires the same text.
+
+| Source | File under the run root | Rows | SHA-256, first 16 |
+|---|---|---|---|
+| benchmark screen | `earthlab-matrix-runs/decisions-v1/screen-muse/manifest.jsonl` | 15 | `4fd87e7e06f37efc` |
+| benchmark confirm | `earthlab-matrix-runs/decisions-v1/confirm/manifest.jsonl` | 7 | `8a6263ecddd59044` |
+| benchmark fallback | `earthlab-matrix-runs/decisions-v1/fallback-single/manifest.jsonl` | 7 | `0f6ac050e824b81b` |
+| harness-v1 | `earthlab-e1-runs/harness-v1/manifest.jsonl` | 24 | `a8a0d5f869532ac1` |
+| v1/cases | `earthlab-review-validation/v1/cases.jsonl` | 15 | `8e1d6f792a42e4d5` |
+| v2/cases | `earthlab-review-validation/v2/cases.jsonl` | 3 | `c648c48bf9fe5161` |
+| v2/matched | `earthlab-review-validation/v2/matched.jsonl` | 6 | `28ccaec219526855` |
+
+To build again from the raw runs, on a machine that holds the run root:
+
+```bash
+uv run python scripts/build_comparative_report.py <run root>
+```
+
+The build replays every run at the current commit and takes about 75 s. Without the run root, a clean clone can read the record and the report, but it cannot rebuild them.
