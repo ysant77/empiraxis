@@ -166,7 +166,9 @@ def test_committed_fixture_holds_redacted_real_runs() -> None:
     for entry in manifest["runs"]:
         if "evidence_mode" in entry:  # a scenario holds no model text at all, so nothing to redact
             trace = records(verified_run(REPLAY, entry["run"]) / "trace.jsonl")
-            assert not [r for r in trace if r["event"] == "model_turn"]
+            turns = [r for r in trace if r["event"] == "model_turn"]
+            assert all(not set(MODEL_TURN_DROPPED) & set(t["data"]) for t in turns)
+            assert bool(turns) == (entry["scenario_id"] == "M1")
             continue
         assert entry["label"] in (LABEL, WORKFLOW_LABEL) and entry["split"] == "development"
         assert len(entry["source_trace_sha256"]) == 64 and entry["redaction_version"] == "1"

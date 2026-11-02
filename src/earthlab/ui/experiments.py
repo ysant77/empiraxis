@@ -22,6 +22,7 @@ from earthlab.ui import board_view, common
 DECISION_FILE = "decision.json"
 APPROVER = "local operator (holder of the operator key)"
 UNLOCKED = "Scored on validation only. The test period is not evaluated."
+SCORED_KINDS = ("regression", "classification")
 
 
 def record_of(run_dir: Path) -> dict[str, Any] | None:
@@ -54,17 +55,20 @@ def experiment_panel(run_dir: Path) -> None:
     with common.panel(title, "experimental", record["evidence_label"]):
         st.warning(" ".join(record["limitations"]))
         rec = record.get("recommendation") or {}
+        scored = record.get("kind", "regression") in SCORED_KINDS
+        note = UNLOCKED if scored else ""
         st.write(
             f"Arm {record['arm']}. Status {record['status']}. Recommendation: "
-            f"{rec.get('outcome', 'none')} {rec.get('model_id') or ''}. {UNLOCKED}"
+            f"{rec.get('outcome', 'none')} {rec.get('model_id') or ''}. {note}"
         )
-        st.dataframe(record.get("comparison", []), use_container_width=True, hide_index=True)
-        st.caption(
-            "Skill is against persistence at +6 h, with 95% block-bootstrap limits. "
-            "Evaluator: separate code that reads the published file and stored predictions."
-        )
+        st.dataframe(record.get("comparison", []), width="stretch", hide_index=True)
+        if scored:
+            st.caption(
+                "Skill is against persistence at +6 h, with 95% block-bootstrap limits. "
+                "Evaluator: separate code that reads the published file and stored predictions."
+            )
         if record.get("tiers"):
-            st.dataframe(record["tiers"], use_container_width=True, hide_index=True)
+            st.dataframe(record["tiers"], width="stretch", hide_index=True)
             pair = record.get("distillation") or {}
             st.write(
                 f"Distillation helped against the direct student: {pair.get('helped')}. "
@@ -72,9 +76,9 @@ def experiment_panel(run_dir: Path) -> None:
             )
         checks = record.get("acceptance") or {}
         st.table([{"check": k, "passed": v} for k, v in checks.items()])
-        st.dataframe(_tasks(run_dir), use_container_width=True, hide_index=True)
-        st.dataframe(_roles(record), use_container_width=True, hide_index=True)
-        st.dataframe(_usage_rows(record), use_container_width=True, hide_index=True)
+        st.dataframe(_tasks(run_dir), width="stretch", hide_index=True)
+        st.dataframe(_roles(record), width="stretch", hide_index=True)
+        st.dataframe(_usage_rows(record), width="stretch", hide_index=True)
 
 
 def request_panel() -> None:
@@ -132,7 +136,7 @@ def decision_panel(run_dir: Path | None) -> None:
             st.warning("No operator key is set, so this cannot be decided here.")
             return
         key = st.text_input("Operator key", type="password", key=f"key-{run_dir.name}")
-        accept, reject = common.columns(2)
+        accept, reject = st.columns(2)
         for column, label, value in ((accept, "Accept", True), (reject, "Reject", False)):
             if column.button(label, key=f"{label}-{run_dir.name}", disabled=not key):
                 try:

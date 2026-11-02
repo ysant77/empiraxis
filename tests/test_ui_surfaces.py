@@ -22,12 +22,8 @@ from earthlab.ui.engineering_lab import evidence_rows
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "src" / "earthlab" / "ui" / "app.py"
 REPLAY = ROOT / "examples" / "replay"
-HEADERS = {
-    "workspace": "EarthLab Research Workspace",
-    "control": "Axiom Control Room",
-    "lab": "Geospatial Engineering Lab",
-}
-STATUS_WORDS = ("Status: implemented", "Status: planned", "Status: experimental")
+VIEWS = ("workspace", "control", "lab")
+SAMPLE = "replay/sb05-september"
 
 
 @pytest.fixture
@@ -44,11 +40,11 @@ def offline(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(socket, "create_connection", refuse)
 
 
-def open_view(view: str, **state: Any) -> AppTest:
+def open_view(view: str, run: str | None = None) -> AppTest:
     app = AppTest.from_file(str(APP), default_timeout=120)
     app.query_params["view"] = view
-    for key, value in state.items():
-        app.session_state[key] = value
+    if run is not None:
+        app.query_params["run"] = run
     return app.run()
 
 
@@ -63,15 +59,13 @@ def page_text(app: AppTest) -> str:
     return "\n".join(parts)
 
 
-@pytest.mark.parametrize("view", list(HEADERS))
-def test_each_route_renders_with_status_text(offline: None, view: str) -> None:
+@pytest.mark.parametrize("view", VIEWS)
+def test_each_route_opens_on_the_first_scenario_in_replay_mode(offline: None, view: str) -> None:
     app = open_view(view)
-    assert not app.exception
+    assert not app.exception and not app.error
     assert app.title[0].value == "Axiom EarthLab"
-    assert app.header[0].value == HEADERS[view]
-    captions = [c.value for c in app.caption]
-    assert any(word in c for c in captions for word in STATUS_WORDS)
-    assert any("read-only replay" in c for c in captions)
+    assert app.subheader[0].value == "PM2.5 regression"
+    assert any("Replay mode" in c.value for c in app.caption)
 
 
 def timeline_of(app: AppTest) -> Any:
@@ -79,7 +73,7 @@ def timeline_of(app: AppTest) -> Any:
 
 
 def test_sample_recorded_run_loads_offline(offline: None) -> None:
-    app = open_view("control")
+    app = open_view("control", SAMPLE)
     assert not app.exception and not app.error
     timeline = timeline_of(app)
     assert len(timeline) == 15
@@ -95,7 +89,7 @@ def test_tampered_trace_is_not_displayed(
     trace = root / "sb05-september" / "trace.jsonl"
     trace.write_text(trace.read_text().replace("2015-09", "2015-08", 1))
     monkeypatch.setattr(common, "REPLAY_DIR", root)
-    app = open_view("control")
+    app = open_view("control", SAMPLE)
     assert not app.exception
     assert "Integrity check failed" in app.error[0].value
     assert "Round 1" not in page_text(app)
@@ -108,16 +102,16 @@ def test_unknown_role_in_a_listed_run_is_not_displayed(
     shutil.copytree(REPLAY, root)
     RunTrace(root / "sb05-september" / "trace.jsonl").append("message", "product_manager")
     monkeypatch.setattr(common, "REPLAY_DIR", root)
-    app = open_view("control")
+    app = open_view("control", SAMPLE)
     assert "Integrity check failed" in app.error[0].value  # the manifest digest no longer matches
 
 
 def test_no_sealed_content_or_keys_in_public_views(offline: None) -> None:
-    for view in HEADERS:
+    for view in VIEWS:
         text = page_text(open_view(view))
         for marker in ("HO-", "sk-", "api_key", "<think>"):
             assert marker not in text, (view, marker)
-    lab = page_text(open_view("lab"))
+    lab = page_text(open_view("lab", SAMPLE))
     assert "running, results not yet archived" not in lab
     assert "archived; measured at an older code revision" in lab
     assert "Typed plan critic is in a separate branch" not in lab
@@ -125,15 +119,14 @@ def test_no_sealed_content_or_keys_in_public_views(offline: None) -> None:
 
 
 def test_control_room_shows_no_planned_role_as_an_actor(offline: None) -> None:
-    app = open_view("control")
+    app = open_view("control", SAMPLE)
     timeline = timeline_of(app)
     actors = set(timeline["actor"])
     assert actors <= IMPLEMENTED_ROLES and not actors & PLANNED_ROLES
     kinds = dict(zip(timeline["actor"], timeline["actor kind"], strict=True))
     assert kinds["tool"] == "code" and kinds["verifier"] == "code"
     assert kinds["orchestrator"] == "model agent"
-    consoles = [b for b in app.button if b.label.startswith("Open ")]
-    assert len(consoles) == len(PLANNED_ROLES) and all(b.disabled for b in consoles)
+    assert not [b for b in app.button if b.disabled]
 
 
 def test_role_kind_never_calls_code_an_agent() -> None:
@@ -147,32 +140,31 @@ def test_role_kind_never_calls_code_an_agent() -> None:
 def test_replay_has_no_live_or_unapproved_interactive_controls(offline: None) -> None:
     app = open_view("workspace")
     assert not any(s.label == "Meta model endpoint" for s in app.selectbox)
-    run = next(b for b in app.button if b.label == "Run investigation")
-    assert run.disabled
-    for label in ("Send to assistant", "Submit challenge"):
-        assert next(b for b in app.button if b.label == label).disabled
+    assert not any(b.label == "Run investigation" for b in app.button)
     control = open_view("control")
     assert not [b for b in control.button if "Approve" in b.label or "Deny" in b.label]
     assert not [t for t in control.text_input if t.label == "Operator key"]
 
 
-def test_phone_layout_stacks_every_panel(offline: None) -> None:
-    for view in HEADERS:
-        wide = open_view(view)
-        narrow = open_view(view, compact=True)
-        assert len(wide.columns) > 0 and len(narrow.columns) == 0
-        assert not narrow.exception
+@pytest.mark.parametrize("view", VIEWS)
+def test_the_default_demo_has_no_disabled_control_and_no_phone_switch(
+    offline: None, view: str
+) -> None:
+    app = open_view(view)
+    assert not [b for b in app.button if b.disabled]
+    assert not [w for w in app.text_area if w.disabled]
+    assert not app.toggle
 
 
 def test_maps_carry_source_and_unit_labels(offline: None) -> None:
-    app = open_view("workspace")
+    app = open_view("workspace", SAMPLE)
     captions = [c.value for c in app.caption]
     assert any("MCD64A1" in c and "hectares (ha)" in c and "longitude" in c for c in captions)
     assert any("ug/m3" in c and "reporting regions" in c for c in captions)
 
 
 def test_recorded_run_tab_replays_both_months(offline: None) -> None:
-    app = open_view("workspace")
+    app = open_view("workspace", SAMPLE)
     picker = next(s for s in app.selectbox if s.label == "Recorded run")
     assert picker.options[:2] == ["replay/sb05-september", "replay/sb05b-october"]
     assert picker.options[2:4] == [
@@ -181,6 +173,7 @@ def test_recorded_run_tab_replays_both_months(offline: None) -> None:
     assert picker.options[4:] == [
         "replay/scenario-s1-regression", "replay/scenario-s2-encoder-reuse",
         "replay/scenario-s3-transport", "replay/scenario-s4-resource-request",
+        "replay/scenario-muse-team-exceedance",
     ]  # fmt: skip
     assert any(s.value == "Trace hash chain intact (13 records)." for s in app.success)
     picker.set_value("replay/sb05b-october").run()

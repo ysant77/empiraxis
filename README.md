@@ -1,12 +1,96 @@
 # Axiom EarthLab
 
-Axiom EarthLab is a scientific investigation agent. A Meta open-weight model plans the work and calls read-only scientific tools. A deterministic verifier checks every claim against the pinned source data before the claim reaches the report.
+Axiom EarthLab is a human-supervised geospatial engineering system. A local Meta open-weight model can plan a study and propose a method. Deterministic code runs the work, independent code scores it, and a person holds the final decision. A run succeeds when it reaches a defensible engineering decision and verifies it. That decision can be to train a model, keep a baseline, reject a neural model or ask for evidence.
 
-The first case study is the September–October 2015 haze in Singapore. The data is the official NEA hourly regional PM2.5 record.
+> Research prototype. Not health advice, not a forecast and not a hazard warning. No model here is production-ready.
 
-> Research prototype. Not health advice, not a forecast and not a hazard warning.
+## Four recorded decisions
 
-## How it works
+The demonstration has four scenarios on the 2015 haze and the Kalimantan fires, in `examples/replay/`. Every number below comes from a saved file.
+
+| Scenario | Question | Decision | Why |
+|---|---|---|---|
+| S1, PM2.5 regression | Can NEA PM2.5 predict 6 h ahead better than persistence? | Adopt with limits: GRU | Validation MAE 4.588 against 5.465 µg/m³ for persistence. Above 55 µg/m³ the GRU is worse: 28.772 against 26.324. |
+| S2, model reuse | Can the frozen GRU encoder support an exceedance alarm? | Keep the baseline | The hybrid beat logistic regression, F1 0.255 against 0.162, and lost to the persistence alarm, 0.306. |
+| S3, transport diagnostic | Do wind and rain support transport from one fire box? | Abstain: inconclusive | No box and level reached consistent, 0 of 6. ERA5 is hindsight data. No source can be named. |
+| S4, satellite method | Can a pretrained model segment the burned area? | Request resources | The imagery and masks do not fit the study box. No segmentation ran, so no score exists. |
+
+S1 and S2 are simulated-availability hindcasts on validation years. The sealed test period was not read. S3 is a hindsight diagnostic. S4 waits for a human decision, and no signed approval exists.
+
+## What the Meta model did
+
+Muse Glimmer 30B ran locally through llama-server. The four scenario pages are engineering evidence, and no LLM ran in those runs. The recorded Muse team run, `examples/replay/scenario-muse-team-exceedance`, shows the model's part:
+
+| Step | Done by |
+|---|---|
+| Scope check, forwarding note | Muse Glimmer, PM seat |
+| Strategy, method, review of results, recommendation | Muse Glimmer, Lead seat |
+| Data preparation, training, baselines | Deterministic code |
+| Scores and comparison tables | Independent evaluator code |
+| Safety screening of investigation answers | Llama Guard 3 8B, in the investigation path only |
+| Final decision | A person. No decision is recorded in these runs. |
+
+The team reached the same outcome as the deterministic pipeline and cost more. See `docs/comparative-evidence-report.md`: no agent workflow showed a benefit on the tested tasks, so the simpler strategy stays preferred.
+
+## Run the demonstration
+
+Replay needs no model, no key and no network after installation.
+
+```bash
+git clone https://github.com/ysant77/axiom-earthlab.git
+```
+
+```bash
+cd axiom-earthlab
+```
+
+```bash
+uv sync --all-extras
+```
+
+```bash
+uv run --extra ui streamlit run src/earthlab/ui/app.py --server.address 127.0.0.1
+```
+
+The app has three surfaces: Research Workspace, Engineering Lab and Control Room. The scenario and surface are in the URL, for example `?view=control&run=replay/scenario-s4-resource-request`. To check a recorded run offline:
+
+```bash
+uv run earthlab --data-dir data/nea replay examples/replay/scenario-s1-regression
+```
+
+The demonstration script is in [docs/demo-three-minute.md](docs/demo-three-minute.md).
+
+## Implemented and experimental
+
+| Capability | State | Evidence |
+|---|---|---|
+| Hash-chained traces, replay, artifact digests | Implemented | `earthlab replay`, CI |
+| Independent verifier and evaluator | Implemented | Tests, recorded runs |
+| Four scenario replays on three surfaces | Implemented | `tests/test_scenario_demo.py` |
+| Human gate with signed decisions | Implemented, not exercised in the scenarios | Operator mode only |
+| Muse single-agent and team workflows | Experimental | `docs/comparative-evidence-report.md` |
+| Method-review gate (critic) | Experimental, off by default | `docs/method-review-validation-results.md` |
+| Model bundles and inference verification | Experimental | S1 ridge bundle verified; hybrid refused |
+| Operational forecast or public service | Not built | None |
+
+## Known limitations
+
+- Nothing was evaluated on the sealed test period, and no prospective run exists.
+- The NEA file has no available-at time, so availability is modelled.
+- The GRU is worse than persistence in elevated hours, and the elevated-hour rule is exploratory.
+- S2 and S3 traces record packaging of saved results. They are not the traces of the original jobs.
+- The critic is a second pass by the same model. It is not an independent reviewer.
+- Benchmark cells hold 1 to 3 runs on one shared Mac under swap pressure. There are no significance claims. Team arms with mixed models did not run.
+
+## Engineering disclosure
+
+This project was built by one developer with AI-assisted engineering: coding agents helped to write code, tests and documents, under the developer's review. All scientific runs and numbers come from saved artifacts in this repository or from the evidence they cite.
+
+## Investigation design
+
+The sections below describe the investigation path, the first case in the project: the September–October 2015 haze in Singapore, from the official NEA hourly regional PM2.5 record.
+
+### How an investigation works
 
 ```mermaid
 flowchart LR
@@ -101,12 +185,12 @@ Or open the demo UI. It starts in replay mode: it reads the recorded runs in
 uv run --extra ui streamlit run src/earthlab/ui/app.py --server.address 127.0.0.1
 ```
 
-The UI has three routes: `?view=workspace` (Research Workspace), `?view=control`
-(Control Room, recorded events from the hash-chained trace) and `?view=lab`
-(Engineering Lab, method, data QA and benchmark status). Each panel states its status:
-implemented, experimental, planned or unavailable. Planned roles and controls are disabled.
-The replay runs in `examples/replay/` are redacted copies of two real Muse Glimmer runs
-from a development bench (SB-05 September, verified; SB-05b October, abstained). Model
+The UI has three surfaces: `?view=workspace` (Research Workspace), `?view=lab`
+(Engineering Lab) and `?view=control` (Control Room). Each scenario opens on all three
+with one run identity. Other recorded runs and the checking tools are in the advanced
+section of each surface.
+The `sb05-*` and `live-*` replay runs are redacted copies of real Muse Glimmer runs from
+development work (September verified, October abstained). Model
 reasoning, raw model message text and provider request IDs are removed, and the trace is
 re-chained. `MANIFEST.json` records each source run, its trace SHA-256 and the removed
 fields. Rebuild with `uv run python scripts/make_replay_fixture.py runs/bench/<bench id>`.
@@ -120,7 +204,7 @@ model, and every failed or retried model call. A value the record does not hold 
 "unknown". A run whose clients were not real HTTP model endpoints is labelled a synthetic
 test run, never live collaboration. In a separate-topology run the `orchestrator` role is
 the separately invoked model orchestrator; everywhere else it is the single Muse
-investigator. No workflow run is in `examples/replay/`: none has been recorded live.
+investigator.
 
 ### Measured on the development Mac (MacBook Air M5, 32 GB)
 

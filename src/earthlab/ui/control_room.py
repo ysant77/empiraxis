@@ -25,7 +25,19 @@ from earthlab.events.contract import (
 )
 from earthlab.events.redact import visible_events
 from earthlab.events.workflow_view import ROLE_NAMES, WorkflowView, load_workflow
-from earthlab.ui import approvals, board_view, common, experiments
+from earthlab.harness.credit import steps
+from earthlab.ui import (
+    approvals,
+    board_view,
+    common,
+    experiments,
+    lab_data,
+    provenance,
+    scenarios,
+    story_view,
+)
+from earthlab.ui.scenarios import Tile
+from earthlab.ui.story_view import Opened, section
 
 APPROVALS_DIR = Path("config/approvals")
 ROLE_ORDER = (
@@ -91,7 +103,7 @@ def event_rows(events: list[EventV1], topology: str | None = None) -> list[dict[
 
 
 def _cards(run: RunEvents | None, error: str | None) -> None:
-    cols = common.columns(4)
+    cols = st.columns(4)
     with cols[0], common.panel("Runtime", "implemented"):
         st.write("The Muse investigator with deterministic tools. The PM path adds model roles.")
     with cols[1], common.panel("Plan critic", "implemented"):
@@ -118,8 +130,6 @@ def _topology() -> None:
                 else "planned"
             )
             st.write(f"**{ROLE_LABELS[role]}** · {state} · {role_kind(role)}")
-            if role in PLANNED_ROLES:
-                st.button(f"Open {role.replace('_', ' ')} console", disabled=True, key=role)
         st.caption(
             "The Muse investigator and the deterministic verification path are implemented. "
             "The product manager to engineer workflow, in its combined and separate "
@@ -143,7 +153,7 @@ def _timeline(run: RunEvents | None, topology: str | None = None) -> None:
             f"Recorded events from {run.run_id}; run {state}; status {run.status}. "
             f"{withheld} event(s) withheld for audience {common.audience().value}."
         )
-        st.dataframe(event_rows(shown, topology), use_container_width=True, hide_index=True)
+        st.dataframe(event_rows(shown, topology), width="stretch", hide_index=True)
         st.caption(
             "Summaries of recorded actions only. Raw prompts and model reasoning are never "
             "shown. No role-to-role conversation is recorded, so none is shown."
@@ -196,7 +206,7 @@ def recorded_approvals(root: Path = APPROVALS_DIR) -> list[dict[str, Any]]:
 
 def _human_control(run: RunEvents | None) -> None:
     with common.panel("Human control", "implemented", "Recorded approvals, read-only."):
-        st.dataframe(recorded_approvals(), use_container_width=True, hide_index=True)
+        st.dataframe(recorded_approvals(), width="stretch", hide_index=True)
         st.caption("Source: config/approvals. These records are not part of the run trace.")
         st.table(
             [
@@ -209,11 +219,11 @@ def _human_control(run: RunEvents | None) -> None:
             rows = approval_event_rows(run)
             st.caption("Approval-gate events in this run's trace:")
             if rows:
-                st.dataframe(rows, use_container_width=True, hide_index=True)
+                st.dataframe(rows, width="stretch", hide_index=True)
             else:
                 st.write("This run asked the approval gate for nothing.")
         if run is not None:
-            st.dataframe(_durations(run), use_container_width=True, hide_index=True)
+            st.dataframe(_durations(run), width="stretch", hide_index=True)
 
 
 def shown(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -234,12 +244,12 @@ def _workflow(view: WorkflowView) -> None:
         note = PROVENANCE_NOTES[view.provenance]
         (st.info if view.provenance == "live" else st.warning)(note)
         st.caption(f"Run {view.run_id}: status {view.status}. Python validated every step.")
-        st.dataframe(view.stages, use_container_width=True, hide_index=True)
+        st.dataframe(view.stages, width="stretch", hide_index=True)
         st.caption("Per-role use, counted from the hash-chained trace:")
-        st.dataframe(shown(view.roles), use_container_width=True, hide_index=True)
+        st.dataframe(shown(view.roles), width="stretch", hide_index=True)
         if view.retries:
             st.caption("Failed model calls and retries:")
-            st.dataframe(shown(view.retries), use_container_width=True, hide_index=True)
+            st.dataframe(shown(view.retries), width="stretch", hide_index=True)
         else:
             st.caption("No model call failed in this run.")
         st.caption(f"Budget limits: {view.budget['limits']}. Used: {view.budget['used']}.")
@@ -257,16 +267,85 @@ def _telemetry() -> None:
         )
 
 
-def render() -> None:
-    common.header(
-        "Axiom Control Room",
-        "Recorded run chronology, roles, approvals and trace integrity. "
-        "No hidden reasoning is shown.",
+def _gate(opened: Opened) -> None:
+    gate = provenance.human_gate(opened.run_dir, opened.entry)
+    (st.warning if gate.open else st.info)(f"**{gate.state}.** {gate.detail}")
+    if gate.open and common.ui_mode() == "replay":
+        st.caption("Nothing can be approved in replay. A decision needs the local operator key.")
+
+
+def _integrity(opened: Opened) -> None:
+    packaging = provenance.is_packaging(opened.entries)
+    status = opened.events.status or "unknown"
+    usage = scenarios.record_of(opened.run_dir).get("usage") or {}
+    story_view.tiles(
+        [
+            Tile("Trace chain", "Intact", f"{opened.events.trace_records} records"),
+            Tile("Trace type", "Packaging" if packaging else "Run's own trace",
+                 "not the original job" if packaging else "written during the run"),
+            Tile("Run status", status.replace("_", " ").capitalize()),
+            Tile("Model calls", str(usage.get("model_calls", "None recorded"))),
+        ]
+    )  # fmt: skip
+
+
+def _muse_steps(opened: Opened) -> None:
+    rows = []
+    for who, what, said in steps(opened.run_dir):
+        for role, seat in provenance.MODEL_SEATS.items():
+            who = who.replace(f"({role})", f"({seat})")
+        rows.append({"Done by": who, "Step": what, "Recorded": said})
+    section("What each step really was")
+    story_view.table(rows)
+
+
+def _stages(opened: Opened) -> None:
+    rows = provenance.stages(opened.entries)
+    section("Stages")
+    if rows:
+        story_view.table(rows)
+    else:
+        st.write("No stages are recorded: this trace holds the packaging step only.")
+
+
+def _decisions(opened: Opened) -> None:
+    record = scenarios.record_of(opened.run_dir)
+    section("Decision and refusals")
+    st.write(
+        f"{opened.story.decision}. Code rule outcome: {record.get('code_outcome', 'not recorded')}."
     )
-    common.replay_notice()
-    picked = common.pick_run()
+    refusals = record.get("refusal_codes") or []
+    if opened.story.key == "S4":
+        refusals = [r["code"] for r in scenarios.s4_verdict(opened.run_dir)["refusals"]]
+    ready = lab_data.readiness(opened.story.key, opened.run_dir)
+    if ready is not None and ready["verification_outcome"] == "refused":
+        refusals = [*refusals, f"inference refused: {ready['inference']['note']}"]
+    st.write(f"Refusals: {', '.join(refusals) or 'none recorded'}.")
+
+
+def _story(opened: Opened) -> None:
+    st.subheader(opened.story.title)
+    _gate(opened)
+    if common.ui_mode() == "operator":
+        approvals.queue_panel()
+    section("Run integrity")
+    _integrity(opened)
+    section("Who took part")
+    record = scenarios.record_of(opened.run_dir)
+    story_view.table(provenance.participants(opened.entries, record))
+    st.caption(provenance.critic_note(record, opened.entries))
+    _stages(opened)
+    if opened.story.key == "M1":
+        _muse_steps(opened)
+    _decisions(opened)
+    story_view.identity(opened)
+
+
+def _classic(picked: tuple[str, Path | None] | None) -> None:
+    """Every panel for any recorded run, with the full event timeline."""
     run: RunEvents | None = None
     error: str | None = "No recorded run is available."
+    run_dir = None
     if picked is not None:
         st.caption(f"Provenance: {common.run_provenance(picked[1], picked[0])}")
         board_view.run_panel(*picked)
@@ -280,12 +359,25 @@ def render() -> None:
     if view is not None:
         _workflow(view)
     _timeline(run, None if view is None else view.topology)
-    left, right = common.columns(2)
-    with left:
+    approvals.queue_panel()
+    if picked is not None:
+        experiments.decision_panel(run_dir if picked[1] is not None else None)
+    _human_control(run)
+
+
+def render(label: str | None) -> None:
+    st.caption("Who took part, what state the run is in, and what still needs a person.")
+    opened = story_view.open_story(label) if label else None
+    if opened is not None:
+        _story(opened)
+        with st.expander("Advanced: full event timeline, roles and approvals"):
+            _classic(common.pick_run())
+            _topology()
+            _telemetry()
+        return
+    if label is not None and scenarios.key_of(label) is not None:
+        return
+    _classic(common.pick_run())
+    with st.expander("Advanced: roles and telemetry"):
         _topology()
         _telemetry()
-    with right:
-        approvals.queue_panel()
-        if picked is not None:
-            experiments.decision_panel(run_dir if picked[1] is not None else None)
-        _human_control(run)
