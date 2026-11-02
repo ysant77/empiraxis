@@ -267,12 +267,11 @@ def s3(run_dir: Path) -> Story:
     variants = len(boxes[0]["variants"])
     rows = [
         {
-            "Box": b["box_id"].replace("box-", "Box ").title(),
-            "Level": b["level"],
+            "Box": f"{b['box_id'].replace('box-', 'Box ').title()}, {b['level']}",
             "Verdict": b["verdict"],
-            "Haze onsets passing": _percent(b["base_event_rate"]),
-            "Clean hours passing": _percent(b["base_clean_rate"]),
-            "Stable across variants": _percent(b["stable_share"]),
+            "Haze onsets": _percent(b["base_event_rate"]),
+            "Clean hours": _percent(b["base_clean_rate"]),
+            "Stable": _percent(b["stable_share"]),
         }
         for b in record["comparison"]
     ]
@@ -299,7 +298,8 @@ def s3(run_dir: Path) -> Story:
             Tile("Identifiable source", "Yes" if wind["identifiable_source"] else "No"),
         ],
         rows=rows,
-        rows_title="Result for each box and level",
+        rows_title="Share of hours that pass, for each box and level. Stable: share of variants "
+        "with the same verdict.",
         decision=f"{outcome_name(record['recommendation']['outcome'])}: {wind['overall']}",
         why="No box and level reached consistent. Winds that pass in haze hours also pass in "
         "clean hours, so this evidence cannot name a source.",

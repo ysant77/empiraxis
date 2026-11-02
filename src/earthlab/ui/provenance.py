@@ -56,7 +56,10 @@ def human_gate(run_dir: Path, entry: dict[str, Any]) -> HumanGate:
     """The gate state comes from the run's decision file and its signed approvals."""
     record = record_of(run_dir)
     if record["status"] != "awaiting_human":
-        return HumanGate(False, "No human decision is open", str(entry.get("planned", "")))
+        return HumanGate(
+            False, "No human decision is open",
+            str(entry.get("planned", "")).removeprefix("None. "),
+        )  # fmt: skip
     saved = (
         read(run_dir, "decision.json").get("human_status", "pending")
         if (run_dir / "decision.json").is_file()
@@ -92,13 +95,13 @@ def participants(entries: list[dict[str, Any]], record: dict[str, Any]) -> list[
 def stages(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return [
         {
-            "Step": i,
             "From": e["data"].get("from", ""),
             "To": e["data"].get("to", ""),
             "By": e["actor"],
             "Detail": e["data"].get("outcome") or e["data"].get("plan") or "",
         }
-        for i, e in enumerate((x for x in entries if x["event"] == "harness_transition"), start=1)
+        for e in entries
+        if e["event"] == "harness_transition"
     ]
 
 
