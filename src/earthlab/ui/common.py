@@ -7,9 +7,8 @@ Operator mode is for a local machine and enables the live investigation tab.
 from __future__ import annotations
 
 import os
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterator
 from contextlib import contextmanager
-from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal
 
@@ -30,7 +29,7 @@ PROVIDERS = Path("config/providers.yaml")
 METRICS_PORT = int(os.environ.get("EARTHLAB_METRICS_PORT", "9464"))
 Status = Literal["implemented", "experimental", "planned", "unavailable"]
 SHARED_RUN = "shared_run"
-REPLAY_NOTE = "Replay mode: recorded artifacts only. No model is called."
+REPLAY_NOTE = "Replay mode: recorded artifacts only. No model is called now."
 MAP_CAPTION = (
     "Map source: NASA MODIS MCD64A1 v061 monthly burned area, 500 m pixels, after the "
     "selected QA policy. FIRMS MODIS hotspots are context only, not burned area. Axes: "
@@ -90,21 +89,6 @@ def panel(title: str, status: Status, note: str = "") -> Iterator[Any]:
         yield box
 
 
-def columns(count: int) -> Sequence[Any]:
-    """Side-by-side columns, or one stacked column in the single-column (phone) layout."""
-    if st.session_state.get("compact", False):
-        return [st.container() for _ in range(count)]
-    return list(st.columns(count))
-
-
-def header(surface: str, purpose: str) -> None:
-    st.header(surface)
-    st.write(purpose)
-    now = datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC")
-    access = "read-only replay" if ui_mode() == "replay" else "local operator (not public)"
-    st.caption(f"{now} · Access: {access} · Audience: {audience().value}")
-
-
 def replay_names() -> list[str]:
     try:
         return [str(r["run"]) for r in listed_runs(REPLAY_DIR)]
@@ -151,6 +135,8 @@ def pick_run() -> tuple[str, Path | None] | None:
     picked: str = st.selectbox("Recorded run", labels, index=index)
     st.session_state[SHARED_RUN] = picked
     st.query_params["run"] = picked
+    if shared in labels and picked != shared:
+        st.rerun()  # the surface above this control still shows the old run
     return picked, dict(choices)[picked]
 
 
@@ -188,8 +174,3 @@ def scenario_note(label: str) -> str | None:
         f"Science label: {entry['science_label']}. {entry['planned']} "
         f"Artifact result.json {str(entry['result_sha256'])[:16]}."
     )
-
-
-def replay_notice() -> None:
-    if ui_mode() == "replay":
-        st.info(REPLAY_NOTE)

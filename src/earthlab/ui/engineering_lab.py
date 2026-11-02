@@ -18,7 +18,8 @@ import yaml
 from earthlab.events.bench import DEV_LABEL, DevBench, find_dev_benches
 from earthlab.science.burned_area import QaPolicy
 from earthlab.tools.burned_area_tools import month_report
-from earthlab.ui import board_view, common, experiments
+from earthlab.ui import board_view, common, experiments, lab_data, story_view
+from earthlab.ui.story_view import Opened, section
 
 METHOD_FILE = Path("config/methods/mcd64a1_burned_area.yaml")
 PROTOCOL_FILE = Path("evals/heldout_v1.protocol.yaml")
@@ -49,18 +50,6 @@ BENCH_KEYS = (
     "provider_errors",
     "billed_inference_usd",
 )
-
-
-def _cards() -> None:
-    cols = common.columns(4)
-    with cols[0], common.panel("Default method", "implemented"):
-        st.write("Deterministic, pre-registered method per case.")
-    with cols[1], common.panel("Model training", "experimental"):
-        st.write("E1 only: small models, approved template, isolated. See the run panel.")
-    with cols[2], common.panel("Segmentation (Prithvi)", "planned"):
-        st.write("Not run. Downloads wait for a person. Fits HLS imagery, not PM2.5.")
-    with cols[3], common.panel("Experiment tracker (MLflow)", "planned"):
-        st.write("Proposed for real experiments only. Not installed.")
 
 
 def _pipeline() -> None:
@@ -108,7 +97,7 @@ def _method() -> None:
                 {"field": "Learned model", "value": "none for burned area"},
             ]
         )
-        st.dataframe(qa_rows(), use_container_width=True, hide_index=True)
+        st.dataframe(qa_rows(), width="stretch", hide_index=True)
         st.caption("Computed now from the pinned MCD64A1 files. Unit of area: hectares (ha).")
 
 
@@ -130,7 +119,7 @@ def _dev_bench() -> None:
             )
             return
         bench = benches[0]
-        st.dataframe(_bench_table(bench), use_container_width=True, hide_index=True)
+        st.dataframe(_bench_table(bench), width="stretch", hide_index=True)
         st.caption(
             f"{DEV_LABEL}. Code {bench.code_revision}; started {bench.started_at_utc}; "
             f"model {bench.model}; rows {bench.rows_written}/{bench.rows_expected}. "
@@ -163,14 +152,6 @@ def _heldout() -> None:
             f"Measured once at code revision {revision}. Later changes do not inherit these "
             "counts, and the set is spent: it is not re-run to claim an improvement. "
             f"{summary.get('caveat', '')}"
-        )
-
-
-def _experiments() -> None:
-    with common.panel("Experiment tracker", "planned", "MLflow is not installed."):
-        st.caption(
-            "Science metrics (for example area or PM2.5 error) and serving metrics (latency) "
-            "will stay in separate views."
         )
 
 
@@ -212,7 +193,7 @@ def _run_evidence() -> None:
         st.write(
             f"Status: {result['status']}. {len(evidence_files(result))} input hashes recorded."
         )
-        st.dataframe(evidence_rows(result), use_container_width=True, hide_index=True)
+        st.dataframe(evidence_rows(result), width="stretch", hide_index=True)
     experiments.experiment_panel(run_dir)
     with common.panel("Specialist tasks", "experimental", "From this run's own record."):
         _specialist(run_dir, result)
@@ -246,25 +227,83 @@ def _specialist(run_dir: Path, result: dict[str, Any]) -> None:
         f"{author.get('provider')} / {author.get('model')}. Result: {result['status']}. "
         f"Parent run {result.get('parent_run_id')}."
     )
-    st.dataframe(specialist_rows(result), use_container_width=True, hide_index=True)
-    st.dataframe(acceptance.get("checks", []), use_container_width=True, hide_index=True)
+    st.dataframe(specialist_rows(result), width="stretch", hide_index=True)
+    st.dataframe(acceptance.get("checks", []), width="stretch", hide_index=True)
     st.caption(f"Artifact {ticket['artifact']}, sha256 {str(block.get('rows_sha256'))[:16]}...")
     st.caption(f"Saved in {run_dir.name}. Code recomputed every row; no model decided a check.")
 
 
-def render() -> None:
-    common.header(
-        "Geospatial Engineering Lab",
-        "Method selection, data quality and benchmark status for the engineer and reviewer.",
-    )
-    common.replay_notice()
-    _cards()
-    left, right = common.columns(2)
-    with left:
+def _artifacts(opened: Opened) -> None:
+    files = opened.entry.get("files", {})
+    story_view.table([{"File": name, "sha256": sha[:16]} for name, sha in sorted(files.items())])
+
+
+def _verification(opened: Opened) -> None:
+    ready = lab_data.readiness(opened.story.key, opened.run_dir)
+    if ready is None:
+        st.write("This scenario has no model bundle to verify.")
+    else:
+        checks = ready["integrity_checks"]
+        passed = sum(c["passed"] for c in checks)
+        st.write(
+            f"Bundle {ready['model_name']}: {ready['verification_outcome']}, {passed} of "
+            f"{len(checks)} checks passed. {lab_data.inference_line(ready)}"
+        )
+        story_view.table(
+            [
+                {
+                    "Check": c["name"],
+                    "Passed": "yes" if c["passed"] else "no",
+                    "Detail": c["detail"],
+                }
+                for c in checks
+            ]
+        )
+    with st.expander("Artifact digests"):
+        _artifacts(opened)
+
+
+def _story(opened: Opened) -> None:
+    story, run_dir = opened.story, opened.run_dir
+    st.subheader(story.title)
+    section("Datasets and availability")
+    rows = lab_data.data_rows(story.key, run_dir)
+    if rows:
+        story_view.table(rows)
+    section("Alternatives and execution")
+    st.write(lab_data.execution(story.key, run_dir))
+    rows = lab_data.alternatives(run_dir)
+    if rows:
+        story_view.table(rows)
+    else:
+        st.caption("This packaged result holds no suitability record.")
+    section(story.rows_title)
+    story_view.table(story.rows)
+    extra = lab_data.extra_comparison(story.key, run_dir)
+    if extra:
+        st.caption("Other model families, with recall in elevated hours. Same evaluator.")
+        story_view.table(extra)
+    limits = lab_data.negatives(story.key, run_dir)
+    if limits:
+        section("Negative results and subgroup limits")
+        st.markdown("\n".join(f"- {line}" for line in limits))
+    section("Features, models and inference")
+    _verification(opened)
+    story_view.identity(opened)
+
+
+def _advanced() -> None:
+    with st.expander("Advanced: pipeline, benchmarks and recorded run evidence"):
         _pipeline()
         _dev_bench()
         _heldout()
-    with right:
         _run_evidence()
         _method()
-        _experiments()
+
+
+def render(label: str | None) -> None:
+    st.caption("Data, alternatives, comparisons and verification, for the engineer and reviewer.")
+    opened = story_view.open_story(label) if label else None
+    if opened is not None:
+        _story(opened)
+    _advanced()

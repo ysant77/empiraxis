@@ -130,7 +130,7 @@ def entries(root: Path) -> list[dict[str, Any]]:
     s4 = copied_run(root / S4_RUN, [root / S4_FILE], OUT / "scenario-s4-resource-request")
     return [
         {"run": "scenario-s1-regression", "scenario_id": "S1", "sources": s1,
-         "evidence_mode": "Real execution, recorded replay. No model in this run.",
+         "evidence_mode": "Real execution, recorded replay. No LLM call in this run.",
          "science_label": HINDCAST, "planned": "A human decision on the model is still open."},
         {"run": "scenario-s2-encoder-reuse", "scenario_id": "S2", "sources": s2,
          "evidence_mode": "Real execution, recorded results. The trace records packaging only.",

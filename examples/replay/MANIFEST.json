@@ -111,7 +111,7 @@
         "readiness-02d39d3ee183.json": "fe40600831ca15ffd4a43f068309bce159d56150143858db6bb8aa1899c6038c",
         "families-regression-evaluation.json": "6f3326ec902d50d5a8ff19faf25725e5cfa4ccba98b30e346bc40ff891b4dbb2"
       },
-      "evidence_mode": "Real execution, recorded replay. No model in this run.",
+      "evidence_mode": "Real execution, recorded replay. No LLM call in this run.",
       "science_label": "simulated_availability_hindcast",
       "planned": "A human decision on the model is still open.",
       "split": "validation only; the sealed test period was not read",
@@ -148,7 +148,7 @@
         "families-classification-evaluation.json": "8bcdf31fb525e782fdcdc63b84d813f57094cbf399380373bb626c7586f29fbb",
         "readiness-e53f6e427df8.json": "af045db95e12724189062bd0cd22a33c5ff03a77c34398c5006c50cc9b2d64dc",
         "result.json": "2ab4d069e50b75c52e2dac7767d2be17f87780c621f82d6194642ffcf54b603b",
-        "trace.jsonl": "4de8feeb1d77e6be2e7b2653573e5c6d2aa2ee9e21f057ca15d710dee5e904f4"
+        "trace.jsonl": "a33023e70df58538fef0d18e92f06e734c776b2d7d8168ffad9d767e8e16e2c8"
       }
     },
     {
@@ -166,7 +166,7 @@
       "files": {
         "result.json": "8095e5d5f104a7ce2837f967c9482f669f989be194f7f3d1593ca66107adecf6",
         "s3-wind-consistency-2015.json": "fbdcc091b5ac8867443a84b64912a03f40f791bd4ac2d4642fac27d65c3688b0",
-        "trace.jsonl": "626efd6000ad379229e26decbf1dafd6bddba5f3a59a8c89708d630148069be8"
+        "trace.jsonl": "b8e972ce6b0259a9ccf40da5095c8aebec88f36d539264002697c6c68622836d"
       }
     },
     {

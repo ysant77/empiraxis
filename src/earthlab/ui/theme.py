@@ -1,0 +1,30 @@
+"""The one small stylesheet of the app. Colour lives in .streamlit/config.toml."""
+
+from __future__ import annotations
+
+import streamlit as st
+
+BAR = "#0f5c6e"
+MUTED_BAR = "#b4bec5"
+CSS = """
+<style>
+.block-container {max-width: 1080px; padding-top: 2.5rem; padding-bottom: 4rem;}
+h1 {font-size: 1.9rem !important; padding-bottom: 0 !important;}
+h2 {font-size: 1.45rem !important;}
+h5 {font-size: 0.95rem !important; color: #47535c; margin-top: 0.9rem;}
+[data-testid="stMetric"] {min-width: 200px;}
+[data-testid="stMetricLabel"] p {white-space: normal; font-size: 0.82rem; color: #47535c;}
+[data-testid="stMetricValue"] {font-size: 1.5rem; font-variant-numeric: tabular-nums;}
+[data-testid="stMetricDelta"] {font-size: 0.78rem;}
+[data-testid="stMetricDelta"] svg {display: none;}
+[data-testid="stTable"] table {table-layout: auto; width: 100%;}
+[data-testid="stTable"] td, [data-testid="stTable"] th {overflow-wrap: anywhere;}
+@media (max-width: 640px) {
+  .block-container {padding: 1.5rem 1rem 3rem 1rem;}
+}
+</style>
+"""
+
+
+def apply() -> None:
+    st.html(CSS)

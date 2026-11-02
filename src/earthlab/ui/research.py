@@ -1,15 +1,15 @@
-"""EarthLab Research Workspace: the researcher-facing product surface.
+"""EarthLab Research Workspace: one scenario at a time, readable without opening a trace.
 
-It keeps every working product tab. The product assistant role, wind-linked haze and the
-challenge workflow are not implemented, so their controls are shown disabled.
+Each page runs in one order: question, method, evidence, comparison, decision, limits.
+Other recorded runs and the checking tools sit in the advanced section.
 """
 
 from __future__ import annotations
 
 import streamlit as st
 
-from earthlab.cases.models import ScientificCase
-from earthlab.ui import common, experiments
+from earthlab.ui import common, experiments, nav, provenance, scenarios, story_view
+from earthlab.ui.story_view import Opened, section
 from earthlab.ui.workspace_tabs import (
     tab_data,
     tab_investigate,
@@ -18,118 +18,78 @@ from earthlab.ui.workspace_tabs import (
     tab_wildfire,
 )
 
-DATASETS = {
-    "Kalimantan 2015 fire / burned area": "kalimantan-2015-burned-area",
-    "Singapore 2015 haze observations": "nea-2015-haze",
-}
-PROMPTS = {
-    "kalimantan-2015-burned-area": [
-        "How many hectares were mapped as burned in the study box in September 2015?",
-        "How many hectares were mapped as burned in October 2015, after quality checks?",
-        "How sensitive is the September area to the QA policy?",
-    ],
-    "nea-2015-haze": [
-        "Which NEA region recorded the highest hourly PM2.5 in September-October 2015?",
-        "How many hours was the west region above 200 ug/m3?",
-    ],
-}
-CAPABILITIES = [
-    ("NEA PM2.5 historical tools", "implemented"),
-    ("Kalimantan burned-area case", "implemented"),
-    ("Independent verification", "implemented"),
-    ("Plan critique (deterministic code)", "implemented"),
-    ("Haze H1 wind-transport plausibility", "backend implemented (CLI), not in this UI"),
-    ("Product manager to engineer workflow", "experimental; local live runs, operator mode"),
-    ("Shared run state across surfaces", "experimental; operator mode, polled, local only"),
-    ("Implementation workers", "planned"),
-]
-TAB_NAMES = ["Investigate", "Wildfire case", "Saved runs", "Verifier", "Data", "Challenge"]
+TAB_NAMES = ["Recorded runs", "Wildfire case", "Verifier", "Data"]
+TEAM_LABEL = f"replay/{scenarios.TEAM_RUN}"
 
 
-def _study(case: ScientificCase) -> None:
-    area = case.area
-    if area.bbox is not None:
-        box = area.bbox
-        where = (
-            f"{area.name}: lon {box.min_lon} to {box.max_lon}, lat {box.min_lat} to "
-            f"{box.max_lat} (EPSG:4326)"
-        )
+def _decision(opened: Opened) -> None:
+    story = opened.story
+    gate = provenance.human_gate(opened.run_dir, opened.entry)
+    with st.container(border=True):
+        st.markdown(f"**Engineering decision: {story.decision}**")
+        st.write(story.why)
+        st.caption(f"{gate.state}. {gate.detail}")
+
+
+def _story(opened: Opened) -> None:
+    story = opened.story
+    st.subheader(story.title)
+    story_view.badges(opened)
+    section("Scientific question")
+    st.write(story.question)
+    section("Chosen method")
+    st.write(story.method)
+    section("Evidence")
+    st.markdown("\n".join(f"- {line}" for line in story.evidence))
+    section("Comparison")
+    story_view.tiles(story.tiles)
+    if story.charts:
+        for column, chart in zip(st.columns(len(story.charts)), story.charts, strict=True):
+            with column:
+                story_view.bars(chart)
     else:
-        names = ", ".join(r.value for r in area.regions)
-        where = f"{area.name}: {names}. These are reporting regions, not point stations."
-    st.write(f"**Study area.** {where}")
-    st.write(
-        f"**Data period.** {case.period.start:%Y-%m-%d} to {case.period.end:%Y-%m-%d} "
-        f"(end excluded); local zone {case.period.local_zone}."
-    )
-    if case.notes:
-        st.write(f"**Note.** {case.notes}")
-
-
-def start_panel() -> None:
-    with common.panel("Investigation start", "implemented", "Two datasets have pinned data."):
-        label = st.radio("Dataset", list(DATASETS), horizontal=True)
-        case_id = DATASETS[label]
-        st.checkbox(
-            "Wind-transport plausibility (H1 backend exists as a CLI; not in this UI)",
-            disabled=True,
-        )
-        st.selectbox("Example research question", PROMPTS[case_id])
-        library = common.workspace().cases
-        if library is not None and case_id in library.ids():
-            _study(library.get(case_id).case)
-        st.caption(
-            "Observed data, statistical association, transport plausibility and forecasts are "
-            "different claims. This product reports observed data and verified computations "
-            "only. It makes no forecast and no causal attribution."
-        )
-
-
-def assistant_panel() -> None:
-    with common.panel(
-        "Product assistant", "planned", "No assistant conversation is recorded or shown."
-    ):
+        st.caption(story.rows_title)
+        story_view.table(story.rows)
+    section("Decision")
+    _decision(opened)
+    section("Limitations")
+    st.markdown("\n".join(f"- {line}" for line in story.limits))
+    section("What is real here")
+    story_view.table(provenance.evidence_ladder(opened.run_dir, opened.entry, opened.entries))
+    story_view.identity(opened)
+    if story.key != "M1":
+        section("Where the Meta model ran")
         st.write(
-            "A product assistant will take a research request, ask clarifying questions and "
-            "report results. It will not approve its own actions or publish."
+            "This scenario's page is built from recorded engineering evidence. For a recorded "
+            "run where Muse Glimmer proposed the steps, open the Muse team run."
         )
-        st.text_input("Message to the product assistant", disabled=True)
-        st.button("Send to assistant", disabled=True)
+        st.button("Open the recorded Muse team run", on_click=nav.go, args=(TEAM_LABEL,))
 
 
-def capabilities_panel() -> None:
-    with common.panel("Evidence and scientific limitations", "implemented"):
-        st.table([{"capability": name, "status": status} for name, status in CAPABILITIES])
-        st.caption(
-            "Do not infer a fire source from PM2.5 alone. A time match is a temporal "
-            "association, not a cause."
-        )
-
-
-def tab_challenge() -> None:
-    st.caption(common.status_text("planned", "The challenge workflow is not implemented."))
-    st.write(
-        "A researcher will be able to request a review or offer counter-evidence on a run. "
-        "Cross-run learning is not implemented."
-    )
-    st.text_area("Counter-evidence or review request", disabled=True)
-    st.button("Submit challenge", disabled=True)
-
-
-def render() -> None:
-    common.header(
-        "EarthLab Research Workspace",
-        "Ask a question, inspect the study area, the evidence and the verified findings.",
-    )
-    common.replay_notice()
+def _other_run(label: str) -> None:
+    """A run that is not one of the scenarios: its request panel, for a local operator."""
+    st.caption(f"Selected run: {label}. Open it under Recorded runs below.")
     experiments.request_panel()
-    left, right = common.columns(2)
-    with left:
-        start_panel()
-    with right:
-        assistant_panel()
-        capabilities_panel()
-    renders = (tab_investigate, tab_wildfire, tab_runs, tab_verifier, tab_data, tab_challenge)
-    for tab, draw in zip(st.tabs(TAB_NAMES), renders, strict=True):
-        with tab:
-            draw()
+
+
+def _advanced() -> None:
+    operator = common.ui_mode() == "operator"
+    with st.expander("Advanced: other recorded runs and checking tools", expanded=operator):
+        names = ["Live investigation", *TAB_NAMES] if operator else TAB_NAMES
+        draws = (tab_runs, tab_wildfire, tab_verifier, tab_data)
+        renders = (tab_investigate, *draws) if operator else draws
+        for tab, draw in zip(st.tabs(names), renders, strict=True):
+            with tab:
+                draw()
+
+
+def render(label: str | None) -> None:
+    st.caption("What was asked, what was done, and what the evidence supports.")
+    opened = story_view.open_story(label) if label else None
+    if opened is not None:
+        _story(opened)
+    elif label is None:
+        st.info("No recorded runs are available.")
+    elif scenarios.key_of(label) is None:
+        _other_run(label)
+    _advanced()
