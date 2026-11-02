@@ -1,0 +1,23 @@
+{
+  "evidence_sha256": [],
+  "human_status": "pending",
+  "limitations": [
+    "Non-operational research result.",
+    "Historical evaluation. Not a forecast of any future date.",
+    "Not for health, safety or travel decisions.",
+    "PM2.5 is not PSI or AQI.",
+    "PM2.5 concentration alone does not identify wildfire haze or its cause.",
+    "Above 55 ug/m3 the MAE of candidate-1 is 28.772 against 26.324 for persistence. Do not rely on it in elevated hours."
+  ],
+  "outcome": "adopt_limited",
+  "reason": "The rule applied by code.",
+  "rejected": [
+    "B0_persistence",
+    "B1_daily_naive",
+    "B2_weekly_naive",
+    "B3_climatology",
+    "B4_lagged_ridge"
+  ],
+  "schema_version": "1",
+  "selected": "candidate-1"
+}

@@ -1,0 +1,19 @@
+{
+  "evidence_sha256": [],
+  "human_status": "pending",
+  "limitations": [
+    "MCD64A1 maps burned area at 500 m resolution. It is not forest loss, destroyed trees or emissions.",
+    "FIRMS detections are thermal anomalies at satellite overpass time. They are context only and not burned area.",
+    "A month whose valid-land fraction is below the pre-registered gate is not reported.",
+    "The report makes no claim about what caused the fires or who is responsible.",
+    "A pretrained segmentation model was not run. No segmentation accuracy is reported.",
+    "Not reported: segmentation_pretrained."
+  ],
+  "outcome": "request_resource",
+  "reason": "The inputs do not fit: approved imagery and reference masks are needed.",
+  "rejected": [
+    "segmentation_pretrained"
+  ],
+  "schema_version": "1",
+  "selected": null
+}

@@ -1,0 +1,26 @@
+{
+  "availability_latency_hours": 2,
+  "bands": [],
+  "first_label": "2014-04-01T01:00:00",
+  "granularity": "1 h, five regions",
+  "label_provenance": "the published NEA series itself",
+  "labels_present": true,
+  "last_label": "2026-10-01T00:00:00",
+  "leakage_risks": [
+    "test period sealed from every feature file",
+    "scalers fitted on the train split only"
+  ],
+  "missing_fraction": 7.30033581544751e-05,
+  "positive_rate": null,
+  "resolution_m": null,
+  "schema_version": "1",
+  "sources": [
+    {
+      "name": "Historical1hrPM2.5.csv",
+      "sha256": "2fb76e1c4e4208e92f49670602e303c86e21eaa3704651633323e50f51015de4"
+    }
+  ],
+  "unit": "ug/m3",
+  "usable_rows": 109584,
+  "variable": "pm25"
+}

@@ -1,0 +1,6 @@
+{
+  "constraints": [],
+  "objective": "Can historical regional NEA PM2.5 observations predict concentration six hours ahead more accurately than persistence?",
+  "request_id": "pm25-regression",
+  "schema_version": "1"
+}

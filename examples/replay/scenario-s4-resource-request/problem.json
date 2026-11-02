@@ -1,0 +1,20 @@
+{
+  "domain": "Kalimantan study box, 2015-09 and 2015-10",
+  "horizon_hours": null,
+  "kind": "raster_method",
+  "permitted_evidence": [
+    "pinned MCD64A1 collection 6.1"
+  ],
+  "problem_id": "burned-area-method",
+  "repeated_inference_per_day": 0,
+  "schema_version": "1",
+  "success_criteria": [
+    "the method fits the available inputs",
+    "each reported month passes the quality gate",
+    "a month below the gate is not reported"
+  ],
+  "target": "mapped burned area by month",
+  "threshold": null,
+  "unit": "ha",
+  "variable": "burned_area"
+}

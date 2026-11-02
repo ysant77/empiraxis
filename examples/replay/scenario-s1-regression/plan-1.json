@@ -1,0 +1,37 @@
+{
+  "budget": {
+    "max_model_calls": 40,
+    "max_seconds": 5400.0,
+    "max_training_seconds": 1200.0
+  },
+  "config": {
+    "architecture": "gru",
+    "hidden": 32,
+    "layers": 1,
+    "log_transform": true,
+    "loss": "mae",
+    "max_epochs": 12,
+    "strategy": "small_neural",
+    "window_hours": 48
+  },
+  "decided_by": "preset",
+  "input_offset_hours": 2,
+  "methods": [
+    "persistence",
+    "naive",
+    "climatology",
+    "ridge",
+    "gru"
+  ],
+  "metrics": [
+    "mae",
+    "rmse",
+    "bias",
+    "skill_against_persistence",
+    "above_55_mae"
+  ],
+  "plan_id": "plan-1",
+  "schema_version": "1",
+  "seed": 20261101,
+  "split_protocol": "docs/science-data-forecast-protocol.md v1; validation only"
+}
