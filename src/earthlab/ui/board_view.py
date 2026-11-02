@@ -112,7 +112,7 @@ def _draw(label: str, run_dir: Path, entry: RunEntry | None) -> None:
         st.warning(f"Worker note: {entry.note}. The trace shows only what was recorded.")
     _facts(view)
     if view.tasks:
-        st.dataframe(task_rows(view.tasks), use_container_width=True, hide_index=True)
+        st.dataframe(task_rows(view.tasks), width="stretch", hide_index=True)
     if entry is not None and entry.active and view.notes:
         st.table([{"recent step": note} for note in view.notes[-NOTES_SHOWN:]])
     links(label)

@@ -63,7 +63,7 @@ def _card(desk: ResourceDesk, view: RequestView) -> None:
             "environment before you approve. Never enter a secret here or in chat."
         )
     key = st.text_input("Operator key", type="password", key=f"key-{request.request_id}")
-    approve, deny = common.columns(2)
+    approve, deny = st.columns(2)
     if approve.button("Approve", key=f"approve-{request.request_id}", disabled=not key):
         _decide(desk, view, key, True)
     if deny.button("Deny", key=f"deny-{request.request_id}", disabled=not key):

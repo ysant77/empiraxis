@@ -138,10 +138,18 @@ def _start_delegation(view: Progress, data: dict[str, Any]) -> None:
     _note(view, f"Delegation under run {data.get('parent_run_id')}")
 
 
+EXPERIMENT_OWNER = {
+    "team": "product_manager",
+    "multi_agent": "product_manager",
+    "single": "geospatial_engineer",
+}
+
+
 def _start_experiment(view: Progress, data: dict[str, Any]) -> None:
     task_id = str(data["task_id"])
     view.kind, view.root = "workflow", task_id
-    view.tasks[task_id] = TaskRow(task_id, None, "product_manager", "running")
+    owner = EXPERIMENT_OWNER.get(str(data.get("arm")), "controller")
+    view.tasks[task_id] = TaskRow(task_id, None, owner, "running")
     _note(view, f"Historical evaluation E1, arm {data.get('arm')}")
 
 

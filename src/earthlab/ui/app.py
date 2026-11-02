@@ -11,44 +11,46 @@ from collections.abc import Callable
 
 import streamlit as st
 
-from earthlab.ui import board_view, common, control_room, engineering_lab, research
+from earthlab.ui import board_view, common, control_room, engineering_lab, nav, research, theme
 
-ROUTES: dict[str, tuple[str, Callable[[], None]]] = {
-    "workspace": ("EarthLab Research Workspace", research.render),
-    "control": ("Axiom Control Room", control_room.render),
-    "lab": ("Geospatial Engineering Lab", engineering_lab.render),
+SURFACES: dict[str, str] = {
+    "workspace": "Research Workspace",
+    "lab": "Engineering Lab",
+    "control": "Control Room",
+}
+ROUTES: dict[str, Callable[[str | None], None]] = {
+    "workspace": research.render,
+    "lab": engineering_lab.render,
+    "control": control_room.render,
 }
 
 
-def _route() -> str:
-    keys = list(ROUTES)
-    wanted = st.query_params.get("view", "workspace")
-    index = keys.index(wanted) if wanted in keys else 0
-    picked: str = st.sidebar.radio(
-        "Surface", keys, index=index, format_func=lambda k: ROUTES[k][0], key="route"
-    )
-    st.query_params["view"] = picked
-    return picked
+def _mode() -> None:
+    if common.ui_mode() == "replay":
+        st.caption(f"**{common.REPLAY_NOTE}**")
+    else:
+        common.metrics()
+        st.caption(
+            f"**Local operator mode.** Metrics: http://127.0.0.1:{common.METRICS_PORT}/metrics"
+        )
 
 
 def main() -> None:
-    st.set_page_config(page_title="Axiom EarthLab", layout="wide")
-    st.title("Axiom EarthLab")
-    st.caption(
-        "Evidence-first investigation of the 2015 haze and Kalimantan burned area with a Meta "
-        "open-weight model. Research prototype: not health advice, not a forecast."
+    st.set_page_config(
+        page_title="Axiom EarthLab", layout="wide", initial_sidebar_state="collapsed"
     )
-    route = _route()
-    st.sidebar.toggle("Single-column layout (phones)", key="compact")
-    if common.ui_mode() == "replay":
-        st.sidebar.caption(common.REPLAY_NOTE)
-    else:
-        common.metrics()
-        st.sidebar.caption(
-            f"Prometheus metrics: http://127.0.0.1:{common.METRICS_PORT}/metrics (local only)"
-        )
+    theme.apply()
+    st.title("Axiom EarthLab")
+    st.write(
+        "Human-supervised geospatial engineering: the system can train, reuse, reject a model "
+        "or ask for evidence. Research prototype: not health advice, not a forecast."
+    )
+    _mode()
+    route = nav.surface(SURFACES)
+    label = nav.current_label()
+    nav.scenario(label)
     board_view.banner()
-    ROUTES[route][1]()
+    ROUTES[route](label)
 
 
 main()

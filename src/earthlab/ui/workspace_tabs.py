@@ -59,13 +59,13 @@ def show_result(run_dir: Path) -> None:
     findings = [f for f in result.get("findings", []) if f["verdict"] == "supported"]
     if findings or result["rounds"]:
         st.markdown("**Findings (verified claims)**")
-        st.dataframe(findings, use_container_width=True)
+        st.dataframe(findings, width="stretch")
     st.markdown("**Interpretation (model text)**")
     for issue in result.get("answer_issues", []):
         st.error(f"Not verified: {issue}")
     st.write(result["answer"] or "_No final answer._")
     if result["rounds"]:
-        st.dataframe(_verdict_rows(result["rounds"]), use_container_width=True)
+        st.dataframe(_verdict_rows(result["rounds"]), width="stretch")
     _show_area(result, run_dir)
     chart = run_dir / "pm25_hourly.png"
     if chart.exists():
@@ -95,7 +95,7 @@ def _show_area(result: dict[str, Any], run_dir: Path) -> None:
     """Burned-area claims with every verdict, declared limitations and the run's maps."""
     if result.get("area_findings"):
         st.markdown("**Burned-area claims (independent verifier)**")
-        st.dataframe(result["area_findings"], use_container_width=True)
+        st.dataframe(result["area_findings"], width="stretch")
     for entry in result.get("limitations", []):
         st.warning(f"Declared limitation {', '.join(entry['reasons'])}: {entry['explanation']}")
     maps = sorted(run_dir.glob("burn_map_*.png"))
@@ -125,13 +125,13 @@ def tab_wildfire() -> None:
     case_file = library.get(st.selectbox("Registered case", cases))
     folder = library.root / str(case_file.case.data_dir)
     manifest = read_manifest(folder / f"{mcd64a1_asset_id(case_file)}.manifest.json")
-    cols = common.columns(2)
+    cols = st.columns(2)
     month = cols[0].selectbox("Month (UTC)", [f["month"] for f in manifest["files"]])
     policy = QaPolicy(cols[1].selectbox("QA policy", [p.value for p in QaPolicy]))
     report = month_report(case_file, library.root, month, policy)
     s, c = report["summary"], report["check"]
     area = f"{s['primary_area_ha']:,.1f}" if s["gate_passed"] else "not reported (gate)"
-    m = common.columns(4)
+    m = st.columns(4)
     m[0].metric("Mapped burned area (ha)", area)
     m[1].metric("Valid-land fraction", f"{s['valid_fraction']:.3f}")
     m[2].metric("Verifier checks", "pass" if c["passed"] else "FAIL")
@@ -149,15 +149,6 @@ def tab_wildfire() -> None:
 
 
 def tab_investigate() -> None:
-    if common.ui_mode() == "replay":
-        st.caption(common.status_text("unavailable", "Live investigation is off in replay mode."))
-        st.text_area("Research question", DEFAULT_QUESTION, height=110, disabled=True)
-        st.button("Run investigation", type="primary", disabled=True)
-        st.write(
-            "A local operator can start the app with EARTHLAB_UI_MODE=operator to run a live "
-            "investigation on a local Meta model. The public replay never calls a model."
-        )
-        return
     question = st.text_area("Research question", DEFAULT_QUESTION, height=110)
     submit_live(question)
     label = st.query_params.get("run", "")
@@ -194,7 +185,7 @@ def tab_runs() -> None:
 
 def tab_verifier() -> None:
     st.write("Check one claim against the raw source, with no model involved.")
-    cols = common.columns(3)
+    cols = st.columns(3)
     kind = cols[0].selectbox("Claim kind", [k.value for k in ClaimKind])
     region = cols[1].selectbox("Region", [r.value for r in Region])
     value = cols[2].number_input("Value", value=471.0)
