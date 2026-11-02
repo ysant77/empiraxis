@@ -11,6 +11,7 @@ from streamlit.testing.v1 import AppTest
 
 from earthlab.events.adapter import load_run
 from earthlab.events.manifest import listed_runs, verified_run
+from earthlab.harness.credit import steps
 from earthlab.ui import common
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -95,3 +96,23 @@ def test_no_scenario_file_holds_a_local_path() -> None:
     for run in RUNS.values():
         for path in (REPLAY / run).iterdir():
             assert "/Users/" not in path.read_text("utf-8"), path.name
+
+
+TEAM = REPLAY / "scenario-muse-team-exceedance"
+
+
+def test_the_muse_team_replay_holds_no_model_text_or_reasoning() -> None:
+    for line in (TEAM / "trace.jsonl").read_text("utf-8").splitlines():
+        entry = json.loads(line)
+        if entry["event"] == "model_turn":
+            assert not {"content", "reasoning", "request_id"} & set(entry["data"])
+
+
+def test_a_step_is_credited_to_muse_only_when_the_trace_shows_its_proposal() -> None:
+    rows = steps(TEAM)
+    tools = {what: who for who, what, _ in rows}
+    assert tools["prepare_data"] == tools["train_models"] == "deterministic code"
+    assert tools["score"] == "independent evaluator code"
+    assert tools["recommend"] == "muse-glimmer-30B (geospatial_engineer)"
+    assert tools["review_scope"] == "muse-glimmer-30B (product_manager)"
+    assert rows[-1][0] == "human" and "pending" in rows[-1][2]

@@ -146,7 +146,7 @@
         "families-classification-evaluation.json": "8bcdf31fb525e782fdcdc63b84d813f57094cbf399380373bb626c7586f29fbb",
         "readiness-e53f6e427df8.json": "af045db95e12724189062bd0cd22a33c5ff03a77c34398c5006c50cc9b2d64dc",
         "result.json": "24d6c023dad5102beb44b18d06a18373b80ae7d2cbd8fd2d6332bbaf69f10d50",
-        "trace.jsonl": "be18f56922f7199fd3cd7918781aa76a21751eb8a4a41c302759dbcdfc0a66c6"
+        "trace.jsonl": "2ee27d7227f12cf143de490354088c8314bfd7142000bc3032a73508e40ebf64"
       }
     },
     {
@@ -163,7 +163,7 @@
       "files": {
         "result.json": "ebce9c589c2a33ff1a91bc9530a5c66fdf66de273d8bafd2713ec5df8b6aa932",
         "s3-wind-consistency-2015.json": "fbdcc091b5ac8867443a84b64912a03f40f791bd4ac2d4642fac27d65c3688b0",
-        "trace.jsonl": "b256e01cb94a130d617fe694bfa9a0086fc4d4f353c9fd9a9c325e64f919324f"
+        "trace.jsonl": "6aa83fb5808ae3b4d6b08cccf4847962f03a449e9a77295953d40a6a83b37e08"
       }
     },
     {
@@ -197,6 +197,38 @@
         "s4-measured-chips.json": "9fcd39ab56ffefba9b209b445c78286b2083b107e72ef5dcff658a08167a53e8",
         "suitability.json": "776131a3e824d6e210570aab9de6111466d699f1ab95ea0cf85099f54fecec8e",
         "trace.jsonl": "f40fb215bdb712d6f9d7a23901f56c59c72047498b42e57867ac5460fed2a1fc"
+      }
+    },
+    {
+      "run": "scenario-muse-team-exceedance",
+      "scenario_id": "M1",
+      "removed_fields": [
+        "model_turn.content",
+        "model_turn.reasoning",
+        "model_turn.request_id",
+        "model_turn.tool_calls.arguments (choose_method)",
+        "model_turn.tool_calls.arguments (choose_strategy)",
+        "model_turn.tool_calls.arguments (forward_decision)",
+        "model_turn.tool_calls.arguments (prepare_data)",
+        "model_turn.tool_calls.arguments (recommend)",
+        "model_turn.tool_calls.arguments (review_results)",
+        "model_turn.tool_calls.arguments (review_scope)",
+        "model_turn.tool_calls.arguments (submit_note)",
+        "model_turn.tool_calls.arguments (train_models)",
+        "tool_result.arguments and data (prepare_data)",
+        "tool_result.arguments and data (train_models)"
+      ],
+      "source_trace_sha256": "ebe1fcd3f6dabc0db49c23238fe413df6c8f48bdeb1139d5881ee1bfa4c2152e",
+      "evidence_mode": "Real Muse Glimmer team run, recorded replay, redacted copy.",
+      "science_label": "simulated_availability_hindcast",
+      "planned": "A human decision on the outcome is still open.",
+      "split": "validation only; the sealed test period was not read",
+      "result_sha256": "2a5e7cce9d7b6e037cf92f5213a1ff9ea76c52f241cebcc42b264c29b3848fc3",
+      "files": {
+        "evaluation-plan-1.json": "486fc5ceb24a6989ec03b3a1deb640d0ede715b516219e3048bb4efd1839deea",
+        "evaluation-plan-2.json": "58dfd806185f41dfc68304acc3e7bb158a1d3dbc7b393c00c0ebd8d7ee1925f8",
+        "result.json": "2a5e7cce9d7b6e037cf92f5213a1ff9ea76c52f241cebcc42b264c29b3848fc3",
+        "trace.jsonl": "958d1ab63370a8533d912481392b9445e23ac1bcede1a16b8f03e53fb3927ea1"
       }
     }
   ]

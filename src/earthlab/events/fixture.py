@@ -132,6 +132,16 @@ def copy_redacted_workflow(
     }
 
 
+def copy_redacted_harness(source: Path, out_dir: Path) -> set[str]:
+    """Redact one live harness run. Typed proposals stay, because code checked each one."""
+    if any(HELDOUT_MARK in part.lower() for part in source.resolve().parts):
+        raise FixtureSourceError("held-out sources are never copied")
+    roles = json.loads((source / "result.json").read_text(encoding="utf-8")).get("roles") or {}
+    if not roles or {r["kind"] for r in roles.values()} != {"live_http"}:
+        raise FixtureSourceError(f"{source.name} is not a live run")
+    return _copy(source, out_dir)
+
+
 def _client_kinds(source: Path) -> set[str]:
     for entry in RunTrace(source / "trace.jsonl").records():
         if entry["event"] == "workflow_start":
