@@ -181,7 +181,7 @@ class ClassificationAdapter:
         return {"train": len(self.train_issues), "tune": len(self.tune_issues),
                 "scored": len(self.issues), "lags": lags}  # fmt: skip
 
-    def _keep(self, name: str, prob: np.ndarray, cut: float) -> None:
+    def keep(self, name: str, prob: np.ndarray, cut: float) -> None:
         self.rows[name] = (prob, cut)
         path = self.folder / f"probabilities-{name}.npz"
         np.savez(path, issues=self.issues, probabilities=prob, cut=np.array(cut))
@@ -190,8 +190,8 @@ class ClassificationAdapter:
         y_train = independent.labels(self.truth, self.train_issues, HORIZON, THRESHOLD)
         y_tune = independent.labels(self.truth, self.tune_issues, HORIZON, THRESHOLD)
         rate = np.nanmean(y_train, axis=0)
-        self._keep(RATE, np.tile(rate, (len(self.issues), 1)), 0.5)
-        self._keep(BASE, independent.persistence_alarm(self.truth, self.issues, THRESHOLD), 0.5)
+        self.keep(RATE, np.tile(rate, (len(self.issues), 1)), 0.5)
+        self.keep(BASE, independent.persistence_alarm(self.truth, self.issues, THRESHOLD), 0.5)
         if plan.config.get("strategy") != "statistical":
             return {"models": "baselines only"}
         tune, scored = [], []
@@ -203,7 +203,7 @@ class ClassificationAdapter:
             tune.append(apply_logistic(self.x_tune, weights))
             scored.append(apply_logistic(self.x_score, weights))
         cut = best_cut(np.stack(tune, axis=1), y_tune)
-        self._keep(LOGIT, np.stack(scored, axis=1), cut)
+        self.keep(LOGIT, np.stack(scored, axis=1), cut)
         return {"model_id": LOGIT, "alarm_cut": cut}
 
     def evaluate(self) -> EvaluationReportV1:
