@@ -12,9 +12,11 @@ CSS = """
 h1 {font-size: 1.9rem !important; padding-bottom: 0 !important;}
 h2 {font-size: 1.45rem !important;}
 h5 {font-size: 0.95rem !important; color: #47535c; margin-top: 0.9rem;}
-[data-testid="stMetric"] {min-width: 200px;}
+[data-testid="stMetric"] {min-width: 165px; flex: 1 1 165px;}
 [data-testid="stMetricLabel"] p {white-space: normal; font-size: 0.82rem; color: #47535c;}
-[data-testid="stMetricValue"] {font-size: 1.5rem; font-variant-numeric: tabular-nums;}
+[data-testid="stMetricValue"] {font-size: 1.4rem; font-variant-numeric: tabular-nums;}
+[data-testid="stMetricValue"] > div {white-space: normal; overflow-wrap: anywhere;}
+[data-testid="stMetricDelta"] > div {white-space: normal;}
 [data-testid="stMetricDelta"] {font-size: 0.78rem;}
 [data-testid="stMetricDelta"] svg {display: none;}
 [data-testid="stTable"] table {table-layout: auto; width: 100%;}

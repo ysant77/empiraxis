@@ -50,7 +50,6 @@ def main() -> None:
     label = nav.current_label()
     nav.scenario(label)
     board_view.banner()
-    st.divider()
     ROUTES[route](label)
 
 
