@@ -1,42 +1,72 @@
 """Contract rules for the method review: registered names, training budget, fixed criteria.
 
-Model text may name a method in its own words. Only a registered name, or an alias listed here,
-maps to a method. A name that could mean more than one method maps to none. A review may not
-move the success measure, test on the sealed period, or bring a threshold that no measured
-record or registered criterion holds. Code applies these rules; no model text can relax them.
+Model text may name a method in its own words. Only a registered name, or an alias listed here
+for the task kind, maps to a method. A name that could mean more than one method maps to none,
+and a name that carries a feature setting (a lag window) is refused, not cut down. A review may
+not move the success measure, test on the sealed period of the registered split, or bring a
+threshold that no typed criterion for that metric holds. Code applies these rules; no model text
+can relax them.
 """
 
 from __future__ import annotations
 
 import re
-from typing import Any
+from dataclasses import dataclass
+from datetime import datetime
 
 from earthlab.forecast.dataset import SPLITS
 from earthlab.harness.contracts import MethodProposalV1, ProblemSpecV1
 
-ALIASES = {
-    "persistence alarm": "persistence", "persistence baseline": "persistence",
-    "climatology baseline": "climatology", "ridge regression": "ridge", "lagged ridge": "ridge",
-    "logistic regression": "logistic", "tree classifier": "trees_classifier",
-    "gated recurrent unit": "gru", "temporal convolutional network": "tcn",
-    "raster deterministic": "raster_deterministic",
-}  # fmt: skip
+REGRESSION, CLASSIFICATION, RASTER = "regression", "classification", "raster_method"
+# An alias holds only for the task kinds where the registered method has the same output.
+ALIASES: dict[str, tuple[str, frozenset[str]]] = {
+    "persistence alarm": ("persistence", frozenset({CLASSIFICATION})),
+    "persistence baseline": ("persistence", frozenset({REGRESSION, CLASSIFICATION})),
+    "climatology baseline": ("climatology", frozenset({REGRESSION, CLASSIFICATION})),
+    "ridge regression": ("ridge", frozenset({REGRESSION})),
+    "lagged ridge": ("ridge", frozenset({REGRESSION})),
+    "logistic regression": ("logistic", frozenset({CLASSIFICATION})),
+    "tree classifier": ("trees_classifier", frozenset({CLASSIFICATION})),
+    "gated recurrent unit": ("gru", frozenset({REGRESSION})),
+    "temporal convolutional network": ("tcn", frozenset({REGRESSION})),
+    "raster deterministic": ("raster_deterministic", frozenset({RASTER})),
+}
 AMBIGUOUS = frozenset({
     "tree ensemble", "random forest", "gradient boosting", "neural network", "deep learning",
     "rnn", "lstm", "linear model", "regression", "baseline", "machine learning",
 })  # fmt: skip
-SEALED_YEAR = SPLITS["test"][0].year
+_SETTING = re.compile(r"\b\d+\s*(?:h|hr|hours?|d|days?)\b|\blags?\b|\bwindow\b", re.I)
 _SEALED = re.compile(r"\b(?:test (?:split|period|set|years?)|held[- ]?out|holdout|sealed)\b", re.I)
 _YEAR = re.compile(r"\b(20\d\d)\b")
-_NUMBER = re.compile(r"-?\d+(?:\.\d+)?")
+# The sealed span of each registered experiment. None: the experiment has no time split.
+SEALED_SPANS: dict[str, tuple[datetime, datetime] | None] = {
+    "pm25-regression-6h": SPLITS["test"],
+    "pm25-exceedance-6h": SPLITS["test"],
+    "burned-area-method": None,
+}
+SKILL_METRICS = frozenset({"skill", "skill_against_persistence"})
+
+
+@dataclass(frozen=True)
+class Criterion:
+    """A threshold a critique may test against, with where it comes from."""
+
+    metric: str
+    unit: str
+    split: str
+    source: str
+    threshold: float
+
+    def text(self) -> str:
+        return f"{self.metric} {self.threshold:g} {self.unit} on {self.split} ({self.source})"
 
 
 def _key(name: str) -> str:
     return re.sub(r"[\s_-]+", " ", name.strip().lower())
 
 
-def registered_name(name: str, registry: dict[str, str]) -> str | None:
-    """The registered method a name means, or None when it is unknown or ambiguous."""
+def registered_name(name: str, registry: dict[str, str], kind: str | None = None) -> str | None:
+    """The registered method a name means for this task kind, or None."""
     if name in registry:
         return name
     key = _key(name)
@@ -44,22 +74,33 @@ def registered_name(name: str, registry: dict[str, str]) -> str | None:
         return None
     if key.replace(" ", "_") in registry:
         return key.replace(" ", "_")
-    method = ALIASES.get(key)
-    return method if method in registry else None
+    method, kinds = ALIASES.get(key, (None, frozenset()))
+    if method not in registry or (kind is not None and kind not in kinds):
+        return None
+    return method
 
 
-def is_ambiguous(name: str) -> bool:
-    return _key(name) in AMBIGUOUS
+def unknown_reason(name: str) -> str:
+    """Why code refuses a name, in words the Lead can act on."""
+    if _key(name) in AMBIGUOUS:
+        return "ambiguous: name one method"
+    setting = _SETTING.search(name)
+    if setting:
+        return (
+            f"names a feature setting ({setting.group(0)}): name the method alone; "
+            "the lag window is the plan's typed config, not part of the name"
+        )
+    return "not a registered method"
 
 
 def normalize(
-    proposal: MethodProposalV1, registry: dict[str, str]
+    proposal: MethodProposalV1, registry: dict[str, str], kind: str
 ) -> tuple[MethodProposalV1, list[str]]:
-    """Map each listed alias to its registered name. Unknown names stay for code to refuse."""
+    """Map each alias for this task kind to its registered name. Others stay for refusal."""
     notes: list[str] = []
 
     def mapped(name: str) -> str:
-        method = registered_name(name, registry)
+        method = registered_name(name, registry, kind)
         if method is None or method == name:
             return name
         notes.append(f"{name} -> {method}")
@@ -72,33 +113,50 @@ def normalize(
     return MethodProposalV1.model_validate(data), list(dict.fromkeys(notes))
 
 
-def sealed_issues(text: str) -> list[str]:
-    """A critique may not test on the sealed period. Only validation years are open."""
+def sealed_issues(text: str, problem_id: str) -> list[str]:
+    """A critique may not test on the sealed span of the registered split."""
+    if _SEALED.search(text):
+        return ["test.samples: the test period is sealed; use validation"]
     years = [int(y) for y in _YEAR.findall(text)]
-    if _SEALED.search(text) or any(year >= SEALED_YEAR for year in years):
-        return [f"test.samples: the period from {SEALED_YEAR}-01-01 is sealed; use validation"]
+    if problem_id not in SEALED_SPANS:
+        return [f"test.samples: no split is registered for {problem_id}; name no year"] * bool(
+            years
+        )
+    span = SEALED_SPANS[problem_id]
+    if span is not None and any(year >= span[0].year for year in years):
+        return [f"test.samples: the period from {span[0]:%Y-%m-%d} is sealed; use validation"]
     return []
 
 
-def _numbers(value: Any) -> set[float]:
-    return {float(n) for n in _NUMBER.findall(str(value))}
+def _unit(metric: str, problem: ProblemSpecV1) -> str:
+    return problem.unit if "mae" in metric else "1"
 
 
-def allowed_thresholds(
-    problem: ProblemSpecV1, profile: Any, proposal: MethodProposalV1, metric: str
-) -> set[float]:
-    """Zero, measured profile values, registered criteria and the case's own stated limits."""
-    allowed = {0.0} | _numbers(profile.model_dump(mode="json")) | _numbers(problem.threshold)
-    allowed |= _numbers(problem.success_criteria) | _numbers(proposal.failure_conditions)
-    if metric == proposal.expected_benefit.metric:
-        allowed.add(proposal.expected_benefit.minimum_gain)
-    return allowed
+def criteria(problem: ProblemSpecV1, proposal: MethodProposalV1) -> list[Criterion]:
+    """Typed thresholds only. Profile counts, years, event limits and prose are not criteria."""
+    gain = proposal.expected_benefit
+    found = [
+        Criterion(
+            gain.metric, _unit(gain.metric, problem), "validation",
+            "proposal.expected_benefit.minimum_gain", gain.minimum_gain,
+        ),
+    ]  # fmt: skip
+    found += [
+        Criterion(m, "1", "validation", "evaluator: skill 0 equals the baseline", 0.0)
+        for m in sorted(SKILL_METRICS)
+    ]
+    return found
 
 
-def threshold_issues(threshold: float, allowed: set[float]) -> list[str]:
-    if any(abs(threshold - value) < 1e-9 for value in allowed):
+def threshold_issues(
+    metric: str, threshold: float, problem: ProblemSpecV1, proposal: MethodProposalV1
+) -> list[str]:
+    """The threshold must equal a typed criterion for the same metric and unit."""
+    known = [c for c in criteria(problem, proposal) if c.metric == metric]
+    if any(abs(threshold - c.threshold) < 1e-9 for c in known):
         return []
-    return [f"test.threshold: {threshold:g} is not a measured value or a registered criterion"]
+    have = "; ".join(c.text() for c in known) or "none"
+    return [f"test.threshold: {threshold:g} is not a criterion for {metric}; registered: {have}"]
 
 
 def drift_issues(revised: MethodProposalV1, original: MethodProposalV1) -> list[str]:

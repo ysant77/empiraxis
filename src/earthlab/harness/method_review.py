@@ -190,9 +190,7 @@ def _each_method(proposal: MethodProposalV1, facts: ReviewFacts) -> list[ReviewF
     for method in dict.fromkeys(named):
         strategy = STRATEGY_OF.get(method)
         if strategy is None:
-            ambiguous = rules.is_ambiguous(method)
-            detail = "ambiguous: name one method" if ambiguous else "not a registered method"
-            out.append(_finding(ReviewCode.UNKNOWN_METHOD, detail, method))
+            out.append(_finding(ReviewCode.UNKNOWN_METHOD, rules.unknown_reason(method), method))
         elif not checks[strategy].eligible:  # type: ignore[index]
             why = "; ".join(checks[strategy].reasons)  # type: ignore[index]
             out.append(_finding(ReviewCode.METHOD_BLOCKED, f"{strategy}: {why}", method))
@@ -306,12 +304,10 @@ def critique_issues(
     proposal: MethodProposalV1 | None = None,
 ) -> list[str]:
     """Why a critique is not a review. Praise, vague text, sealed or invented tests fail."""
-    issues = rules.sealed_issues(f"{value.test.samples} {value.claim}")
+    issues = rules.sealed_issues(f"{value.test.samples} {value.claim}", facts.problem.problem_id)
     if proposal is not None:
-        allowed = rules.allowed_thresholds(
-            facts.problem, facts.profile, proposal, value.test.metric
-        )
-        issues += rules.threshold_issues(value.test.threshold, allowed)
+        test = value.test
+        issues += rules.threshold_issues(test.metric, test.threshold, facts.problem, proposal)
     if value.finding not in {f.code for f in findings}:
         issues.append("finding: name one code from the findings")
     if _PRAISE.search(value.claim):
@@ -443,7 +439,7 @@ def review_case(
     seats: Seats, proposal: MethodProposalV1, facts: ReviewFacts
 ) -> MethodReviewRecordV1:
     """Code's findings, at most one critic call and one Lead response."""
-    proposal, notes = rules.normalize(proposal, STRATEGY_OF)
+    proposal, notes = rules.normalize(proposal, STRATEGY_OF, facts.problem.kind)
     findings = check_proposal(proposal, facts)
     if any(f.blocking for f in findings) or not findings:
         return MethodReviewRecordV1(
