@@ -129,3 +129,17 @@ def test_a_role_owns_a_run_only_when_that_role_took_part(run: str, owner: str) -
     entries = list(RunTrace(REPLAY / run / "trace.jsonl").records())
     view = fold(run, entries)
     assert view.root is not None and view.tasks[view.root].owner == owner
+
+
+@pytest.mark.parametrize("scenario", ["S3", "S4"])
+def test_a_run_with_no_score_makes_no_scoring_claim(
+    monkeypatch: pytest.MonkeyPatch, scenario: str
+) -> None:
+    monkeypatch.delenv("EARTHLAB_UI_MODE", raising=False)
+    monkeypatch.chdir(ROOT)
+    app = AppTest.from_file(str(APP), default_timeout=120)
+    app.query_params["view"] = "lab"
+    app.query_params["run"] = f"replay/{RUNS[scenario]}"
+    app.run()
+    text = "\n".join(str(c.value) for c in [*app.markdown, *app.caption])
+    assert "Scored on validation only" not in text and "block-bootstrap" not in text

@@ -136,10 +136,12 @@ def entries(root: Path) -> list[dict[str, Any]]:
          "evidence_mode": "Real execution, recorded results. The trace records packaging only.",
          "science_label": HINDCAST, "planned": "None. The negative result stands."},
         {"run": "scenario-s3-transport", "scenario_id": "S3", "sources": s3,
+         "split": "2015 hindsight diagnostic; no model was scored",
          "evidence_mode": "Retrospective reanalysis, recorded results. The trace records "
                           "packaging only.",
          "science_label": "hindsight_diagnostic", "planned": "None. This is not an attribution."},
         {"run": "scenario-s4-resource-request", "scenario_id": "S4", "sources": s4,
+         "split": "fixed months of a pinned product; no model was scored",
          "evidence_mode": "Real execution, recorded replay. No segmentation model ran.",
          "science_label": "historical_raster_analysis",
          "planned": "Planned work: the human decision on the request. No signed approval exists."},
@@ -170,7 +172,7 @@ def main() -> int:
         shutil.rmtree(old)
     built = [*entries(args.root.resolve()), team_entry(args.root.resolve())]
     for entry in built:
-        entry["split"] = "validation only; the sealed test period was not read"
+        entry.setdefault("split", "validation only; the sealed test period was not read")
         entry.setdefault("label", SCENARIO_LABEL)
         entry["result_sha256"] = file_digest(OUT / str(entry["run"]) / "result.json")
     note = str(read_manifest(OUT).get("note", NOTE))
