@@ -419,7 +419,7 @@ A case binds one question to one study area, one period, named source assets and
 | Case file | Result today |
 | --- | --- |
 | `nea-2015-haze.yaml` | `feasible`. The asset comes from the pinned NEA manifest. |
-| `kalimantan-2015-burned-area.yaml` | `needs_approval`: a human must confirm the draft study area, then approve the MCD64A1 download. The burned-area method is not implemented yet. |
+| `kalimantan-2015-burned-area.yaml` | `needs_approval`: a human must confirm the draft study area, then approve the MCD64A1 download. This legacy case-assessment route is not yet integrated with the separately implemented and verified `earthlab burned-area` MCD64A1 analysis documented below. |
 | `uttarakhand-2024-burned-area.yaml` | `blocked`. Coverage, QA and licence for this area and period are not verified. Same method and code path as the Indonesia case. |
 
 An evidence claim keeps observation support apart from causal status. Causal status can only be `not_requested`, `not_established` or `insufficient_data`; no "established" value exists. Human approvals (confirm study area, download, hosted spend, sandbox execution, publish) are scoped by asset IDs, bytes or USD, expire, and cannot be created by any model tool. A download must state its asset and size, and a spend its amount; each must fit the approved cap. The agent does not use these contracts yet.
