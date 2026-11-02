@@ -115,6 +115,7 @@
       "science_label": "simulated_availability_hindcast",
       "planned": "A human decision on the model is still open.",
       "split": "validation only; the sealed test period was not read",
+      "label": "recorded scenario evidence; no model turn in this folder",
       "result_sha256": "f7a8c665e4a84ac5c70c86732e35b9b9fd77b1782bbc600b97b89b2e8664d8ca",
       "files": {
         "decision.json": "c520b3cac23af6adb6a017db5366277526963b17cbe9f5b9de2c756f7c74cdae",
@@ -141,12 +142,13 @@
       "science_label": "simulated_availability_hindcast",
       "planned": "None. The negative result stands.",
       "split": "validation only; the sealed test period was not read",
+      "label": "recorded scenario evidence; no model turn in this folder",
       "result_sha256": "24d6c023dad5102beb44b18d06a18373b80ae7d2cbd8fd2d6332bbaf69f10d50",
       "files": {
         "families-classification-evaluation.json": "8bcdf31fb525e782fdcdc63b84d813f57094cbf399380373bb626c7586f29fbb",
         "readiness-e53f6e427df8.json": "af045db95e12724189062bd0cd22a33c5ff03a77c34398c5006c50cc9b2d64dc",
         "result.json": "24d6c023dad5102beb44b18d06a18373b80ae7d2cbd8fd2d6332bbaf69f10d50",
-        "trace.jsonl": "2ee27d7227f12cf143de490354088c8314bfd7142000bc3032a73508e40ebf64"
+        "trace.jsonl": "70bc3c2f492914ea2e3b7c4f52994e46f7afe223a9072180b610540f744f0778"
       }
     },
     {
@@ -159,11 +161,12 @@
       "science_label": "hindsight_diagnostic",
       "planned": "None. This is not an attribution.",
       "split": "validation only; the sealed test period was not read",
+      "label": "recorded scenario evidence; no model turn in this folder",
       "result_sha256": "ebce9c589c2a33ff1a91bc9530a5c66fdf66de273d8bafd2713ec5df8b6aa932",
       "files": {
         "result.json": "ebce9c589c2a33ff1a91bc9530a5c66fdf66de273d8bafd2713ec5df8b6aa932",
         "s3-wind-consistency-2015.json": "fbdcc091b5ac8867443a84b64912a03f40f791bd4ac2d4642fac27d65c3688b0",
-        "trace.jsonl": "6aa83fb5808ae3b4d6b08cccf4847962f03a449e9a77295953d40a6a83b37e08"
+        "trace.jsonl": "9071a688326e0c0c33d215b0bf123a493b6d7714f2a47cca781fbc7dc12f80b4"
       }
     },
     {
@@ -185,6 +188,7 @@
       "science_label": "historical_raster_analysis",
       "planned": "Planned work: the human decision on the request. No signed approval exists.",
       "split": "validation only; the sealed test period was not read",
+      "label": "recorded scenario evidence; no model turn in this folder",
       "result_sha256": "ef4fc084b6305b1a0fafbcf02a6369936824e9bcfe3abada9ccb9bea7745ea27",
       "files": {
         "decision.json": "6a73deac852f6b5843bb3c53430a5e3bc4ccafa6141744b65266645eb1310184",
@@ -218,6 +222,7 @@
         "tool_result.arguments and data (prepare_data)",
         "tool_result.arguments and data (train_models)"
       ],
+      "label": "real Muse Glimmer team run; redacted copy",
       "source_trace_sha256": "ebe1fcd3f6dabc0db49c23238fe413df6c8f48bdeb1139d5881ee1bfa4c2152e",
       "evidence_mode": "Real Muse Glimmer team run, recorded replay, redacted copy.",
       "science_label": "simulated_availability_hindcast",

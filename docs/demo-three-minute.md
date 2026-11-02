@@ -19,7 +19,7 @@ Muse Glimmer 30B ran locally, served by llama-server. It did the steps below, an
 | Method critique, when the gate is on | Muse Glimmer, a second pass by the same model. It is not independent. |
 | Data preparation, training, baselines | Deterministic code. No model decides a number. |
 | Scores and comparison tables | Independent evaluator code |
-| S1, S3 and S4 evidence in this script | Deterministic code. No Meta model ran in these runs. |
+| S1 to S4 evidence in this script | Deterministic code. No Meta model ran in these four runs. |
 | Safety screening of investigation answers | Llama Guard 3 8B, in the investigation path only. It did not run in these harness runs. |
 | Approval | A human. No decision is recorded in these runs. |
 

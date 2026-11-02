@@ -175,7 +175,14 @@ def test_recorded_run_tab_replays_both_months(offline: None) -> None:
     app = open_view("workspace")
     picker = next(s for s in app.selectbox if s.label == "Recorded run")
     assert picker.options[:2] == ["replay/sb05-september", "replay/sb05b-october"]
-    assert picker.options[2:] == ["replay/live-september-verified", "replay/live-october-abstained"]
+    assert picker.options[2:4] == [
+        "replay/live-september-verified", "replay/live-october-abstained",
+    ]  # fmt: skip
+    assert picker.options[4:] == [
+        "replay/scenario-s1-regression", "replay/scenario-s2-encoder-reuse",
+        "replay/scenario-s3-transport", "replay/scenario-s4-resource-request",
+        "replay/scenario-muse-team-exceedance",
+    ]  # fmt: skip
     assert any(s.value == "Trace hash chain intact (13 records)." for s in app.success)
     picker.set_value("replay/sb05b-october").run()
     assert any("insufficient_valid_data" in w.value for w in app.warning)

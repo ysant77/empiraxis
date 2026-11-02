@@ -35,6 +35,7 @@ S3_FILE = "earthlab-e1-runs/suitability-v1/s3-wind-consistency-2015.json"
 S4_FILE = "earthlab-e1-runs/suitability-v1/s4-measured-chips.json"
 TEAM_RUN = "earthlab-matrix-runs/decisions-v1/confirm/runs/20261101T185947Z-d31490"
 HINDCAST = "simulated_availability_hindcast"
+SCENARIO_LABEL = "recorded scenario evidence; no model turn in this folder"
 NOTE = (
     "Recorded replay. development, visible questions. Each scenario entry states what ran. "
     "S1 to S4 run no model here. The research questions are visible development questions."
@@ -153,6 +154,7 @@ def team_entry(root: Path) -> dict[str, Any]:
         shutil.copyfile(source, run_dir / source.name)
     return {
         "run": run_dir.name, "scenario_id": "M1", "removed_fields": sorted(removed),
+        "label": "real Muse Glimmer team run; redacted copy",
         "source_trace_sha256": file_digest(root / TEAM_RUN / "trace.jsonl"),
         "evidence_mode": "Real Muse Glimmer team run, recorded replay, redacted copy.",
         "science_label": HINDCAST, "planned": "A human decision on the outcome is still open.",
@@ -169,6 +171,7 @@ def main() -> int:
     built = [*entries(args.root.resolve()), team_entry(args.root.resolve())]
     for entry in built:
         entry["split"] = "validation only; the sealed test period was not read"
+        entry.setdefault("label", SCENARIO_LABEL)
         entry["result_sha256"] = file_digest(OUT / str(entry["run"]) / "result.json")
     note = str(read_manifest(OUT).get("note", NOTE))
     write_manifest(OUT, [*kept, *built], note=note)
