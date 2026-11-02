@@ -175,7 +175,8 @@ def test_a_material_fault_starts_one_critic_call(tmp_path: Path) -> None:
     )
     done = run_review(held, FACTS)
     assert done.critique_state == "usable" and done.critic_calls == 1
-    assert done.verdict == "proceed" and len(client.requests) == 2
+    assert done.verdict == "needs_revision" and done.lead_responses == 1
+    assert len(client.requests) == 4  # the Lead gave no answer, and got its one correction
 
 
 def test_an_unusable_critique_changes_nothing_and_is_bounded(tmp_path: Path) -> None:

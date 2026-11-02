@@ -148,6 +148,7 @@ class Engine:
         self.preset_config: dict[str, Any] = {}
         self.method_review = method_review and arm != "fixed"
         self.review: review.MethodReviewRecordV1 | None = None
+        self.held: list[review.ReviewFinding] = []
 
     def keep(self, name: str, record: BaseModel, task: str) -> None:
         self.digests[name] = self.store.put(name, record, task)
@@ -233,8 +234,10 @@ class Engine:
             )  # fmt: skip
             seats.invoke("finished", owner, task, "verified")
 
-    def review_method(self, profile: DatasetProfileV1, plan: ExperimentPlanV1) -> list[Refusal]:
-        """The Lead's case and code's checks, before work runs. Refusal needs a blocking fault."""
+    def review_method(
+        self, profile: DatasetProfileV1, plan: ExperimentPlanV1
+    ) -> tuple[ExperimentPlanV1, list[Refusal]]:
+        """The case, code's checks and the answered critique, before work runs."""
         if self.suits is None:
             raise ValueError("the review needs the suitability checks")
         facts = review.ReviewFacts(
@@ -243,11 +246,26 @@ class Engine:
         )  # fmt: skip
         self.review = review.run_review(self.seats, facts)
         self.keep("method-review", self.review, self.seats.root)
-        return [
-            Refusal(gates.Code.METHOD_REVIEW, f"{f.code}: {f.detail}")
-            for f in self.review.findings
-            if f.blocking
-        ]
+        if self.review.verdict == "needs_revision":
+            return plan, [Refusal(gates.Code.METHOD_REVIEW, "the critic's concern is unresolved")]
+        blocking = [f"{f.code}: {f.detail}" for f in self.review.findings if f.blocking]
+        if blocking:
+            return plan, [Refusal(gates.Code.METHOD_REVIEW, text) for text in blocking]
+        strategy = review.revised_strategy(self.review, plan)
+        if strategy is None:
+            return plan, []
+        new = self.adapter.plan(self.adapter.preset(), plan.plan_id, "preset")
+        new = new.model_copy(update={"config": new.config | {"strategy": strategy}})
+        estimate = self.adapter.estimate(new)
+        return new, gates.check_plan(new, profile, self.adapter.methods, estimate)
+
+    def stop_review(self, found: list[Refusal]) -> dict[str, Any]:
+        """A refused method ends the run. An open concern waits for a person, and nothing ran."""
+        if self.review is None or self.review.verdict != "needs_revision":
+            return self.refuse(found)
+        codes = [str(r.code) for r in found]
+        self.life.move("refused", "controller", codes=codes)
+        return self.close("needs_revision", found[0].detail, None, None, codes)
 
     def report_for(self, plan: ExperimentPlanV1) -> EvaluationReportV1:
         self.life.move("executing", "controller", plan=plan.plan_id)
@@ -330,21 +348,34 @@ class Engine:
         if found:
             return self.refuse(found)
         if self.method_review:
-            found = self.review_method(profile, plan)
+            plan, found = self.review_method(profile, plan)
             if found:
-                return self.refuse(found)
+                return self.stop_review(found)
+            strategy = str(plan.config.get("strategy", strategy))
         self.keep("plan-1", plan, seats.root)
         self.life.move("planned", "controller", plan_sha256=self.digests["plan-1"])
         self.plan = plan
         report = self.report_for(plan)
         report = self.maybe_refine(profile, report, strategy)
-        decision = self.recommend(report)
+        decision = self.checked(self.recommend(report), report)
         self.keep("decision", decision, seats.root)
         self.life.move("reviewed", "controller", outcome=decision.outcome)
         return self.forward(decision, report)
 
+    def checked(self, decision: DecisionRecordV1, report: EvaluationReportV1) -> DecisionRecordV1:
+        """With the review on, a subgroup failure joins the limits and no gain stops adoption."""
+        if not self.method_review:
+            return decision
+        claims = ladder(report, decision.selected or report.reference)
+        decision, self.held = review.apply_claims(decision, claims)
+        return decision
+
     def forward(self, decision: DecisionRecordV1, report: EvaluationReportV1) -> dict[str, Any]:
         seats = self.seats
+        if self.held:
+            why = "; ".join(f"{f.code}: {f.detail}" for f in self.held)
+            self.life.move("abstained", "controller", note=why)
+            return self.close("needs_revision", why, decision, report, [gates.Code.METHOD_REVIEW])
         if self.arm == "team":
             sent = {"problem": self.problem, "decision": decision, "report": report}
             pm = seats.propose(
@@ -380,15 +411,21 @@ class Engine:
         self.plan = plan
         return self.report_for(plan)
 
-    def claims(
-        self, report: EvaluationReportV1, decision: DecisionRecordV1, used: dict[str, Any]
-    ) -> Any:
-        """The six claims for the recommended model. No role writes these."""
-        case = self.review.proposal if self.review else None
-        cost = case and CostEvidence(
-            case.expected_benefit, case.compute_seconds, float(used["training_seconds"])
-        )
-        return ladder(report, decision.selected or report.reference, None, cost or None)
+    def review_outcome(
+        self, report: EvaluationReportV1 | None, decision: DecisionRecordV1 | None,
+        used: dict[str, Any],
+    ) -> dict[str, Any]:  # fmt: skip
+        """The review record and the six claims. No role writes these."""
+        if self.review is None:
+            return {}
+        out: dict[str, Any] = {"method_review": self.review.model_dump(mode="json")}
+        if report is not None and decision is not None:
+            case, seconds = self.review.proposal, float(used["training_seconds"])
+            cost = CostEvidence(case.expected_benefit, case.compute_seconds, seconds)
+            out["claims"] = ladder(
+                report, decision.selected or report.reference, None, cost
+            ).model_dump()
+        return out
 
     def close(
         self, status: str, reason: str, decision: DecisionRecordV1 | None,
@@ -429,10 +466,7 @@ class Engine:
         outcome["prompt_variant"] = self.prompts.variant_id
         outcome["prompt_digests"] = self.prompts.digests()
         outcome["usage"] = usage(self.seats)
-        if self.review is not None:
-            outcome["method_review"] = self.review.model_dump(mode="json")
-        if self.review is not None and report is not None and decision is not None:
-            outcome["claims"] = self.claims(report, decision, outcome["usage"]).model_dump()
+        outcome |= self.review_outcome(report, decision, outcome["usage"])
         outcome["roles"] = {n: c.identity_record() for n, c in self.seats.calls.items()}
         self.seats.trace.append(
             "finish", "runtime", status=status, reason=reason, workflow=True,
