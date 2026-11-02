@@ -83,12 +83,17 @@ uv run python scripts/demo_contributions.py examples/replay/scenario-muse-team-e
 ```
 
 ```bash
+uv run earthlab --data-dir data/nea replay examples/replay/scenario-muse-team-exceedance
+```
+
+```bash
 uv run --extra ui streamlit run src/earthlab/ui/app.py --server.address 127.0.0.1
 ```
 
 Check each item:
 
 - [ ] Each replay prints an intact hash chain, and input hashes match.
+- [ ] The team run replay says the manifest matches and names the 11 files that the redacted copy leaves out.
 - [ ] The credit table ends with a pending human decision.
 - [ ] Each scenario opens on all three surfaces with the same scenario line: run name, trace head and digest.
 - [ ] The table "What is real here" states what ran.
