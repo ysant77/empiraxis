@@ -1,0 +1,61 @@
+{
+ "status": "recorded",
+ "reason": "recorded result; no human decision is open",
+ "arm": "recorded",
+ "kind": "classification",
+ "problem_id": "s2-frozen-encoder-reuse",
+ "evidence_label": "Recorded results of a real run. simulated_availability_hindcast. Scored on validation.",
+ "limitations": [
+  "Reuse ran, and the hybrid beat logistic. It stayed below the persistence alarm.",
+  "No single verified bundle loads the hybrid, so inference is refused.",
+  "Not a forecast of any future date, and not a health or hazard warning."
+ ],
+ "recommendation": {
+  "outcome": "retain_baseline",
+  "model_id": "persistence_alarm",
+  "reason": "The rule applied by code to the evaluator's rows."
+ },
+ "comparison": [
+  {
+   "model": "train_rate",
+   "f1": 0.0,
+   "gain_low": -0.43670345076205164,
+   "gain_high": -0.11524565837371611,
+   "passes": false
+  },
+  {
+   "model": "persistence_alarm",
+   "f1": 0.3055555555555556,
+   "gain_low": 0.0,
+   "gain_high": 0.0,
+   "passes": false
+  },
+  {
+   "model": "logistic",
+   "f1": 0.16210739614994935,
+   "gain_low": -0.23863950244114304,
+   "gain_high": -0.06021370651337687,
+   "passes": false
+  },
+  {
+   "model": "trees_classifier",
+   "f1": 0.15725806451612903,
+   "gain_low": -0.20066423504729203,
+   "gain_high": -0.08781026755488848,
+   "passes": false
+  },
+  {
+   "model": "frozen_gru_logistic",
+   "f1": 0.25528317836010145,
+   "gain_low": -0.16465516341450565,
+   "gain_high": -0.0008126156455653196,
+   "passes": false
+  }
+ ],
+ "evidence": {
+  "files": {
+   "families-classification-evaluation.json": "8bcdf31fb525e782fdcdc63b84d813f57094cbf399380373bb626c7586f29fbb",
+   "readiness-e53f6e427df8.json": "af045db95e12724189062bd0cd22a33c5ff03a77c34398c5006c50cc9b2d64dc"
+  }
+ }
+}

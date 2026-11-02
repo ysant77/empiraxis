@@ -1,0 +1,154 @@
+{
+  "archive": {
+    "members": 1612,
+    "suffix_counts": {
+      "_merged.tif": 804,
+      ".mask.tif": 804,
+      ".csv": 2
+    },
+    "splits": {
+      "training": 1081,
+      "validation": 529
+    },
+    "sample_chip": "training/subsetted_512x512_HLS.S30.T14SNB.2018215.v1.4_merged.tif",
+    "sample_mask": "training/subsetted_512x512_HLS.S30.T14SNB.2018215.v1.4.mask.tif"
+  },
+  "chip": {
+    "file": "subsetted_512x512_HLS.S30.T14SNB.2018215.v1.4_merged.tif",
+    "shape": [
+      512,
+      512,
+      6
+    ],
+    "dtype": "float32",
+    "band_count": 6,
+    "nodata": "0",
+    "crs_epsg": null,
+    "crs_name": "UTM Zone 14, Northern Hemisphere",
+    "origin_xy": [
+      552840.0,
+      3661530.0
+    ],
+    "pixel_size": [
+      30.0,
+      30.0,
+      0.0
+    ],
+    "band_names_in_tags": [],
+    "value_min": 0.0032999999821186066,
+    "value_max": 0.5144000053405762,
+    "nodata_pixels": 0,
+    "mask_values": []
+  },
+  "mask": {
+    "file": "subsetted_512x512_HLS.S30.T14SNB.2018215.v1.4.mask.tif",
+    "shape": [
+      512,
+      512
+    ],
+    "dtype": "int16",
+    "band_count": 1,
+    "nodata": "-1000",
+    "crs_epsg": null,
+    "crs_name": "UTM Zone 14, Northern Hemisphere",
+    "origin_xy": [
+      552840.0,
+      3661530.0
+    ],
+    "pixel_size": [
+      30.0,
+      30.0,
+      0.0
+    ],
+    "band_names_in_tags": [],
+    "value_min": 0.0,
+    "value_max": 1.0,
+    "nodata_pixels": 0,
+    "mask_values": [
+      0,
+      1
+    ]
+  },
+  "footprint": {
+    "min_lon": -98.43377820499319,
+    "min_lat": 32.95171226543973,
+    "max_lon": -98.27033637351794,
+    "max_lat": 33.0911096947179
+  },
+  "weights_authority": "owner approval in chat, 2026-11-01; no signed ResourceApprovalV1 exists",
+  "verdicts": {
+    "s4-chips": {
+      "schema_version": "1",
+      "request_id": "s4-chips",
+      "outcome": "request_resources",
+      "refusals": [
+        {
+          "code": "unsupported_method",
+          "detail": "prithvi-burnscars-weights: file verified, permission chat_only_unsigned"
+        }
+      ],
+      "needs": [
+        {
+          "item": "signed approval record for prithvi-burnscars-weights",
+          "estimated_bytes": null,
+          "detail": ""
+        }
+      ],
+      "alternatives": [
+        "MCD64A1 monthly burned area with its quality gate (already local)",
+        "a dNBR threshold on six-band HLS, scored against independent masks"
+      ],
+      "route": [
+        "data_specialist",
+        "geospatial_lead",
+        "product_manager",
+        "human"
+      ],
+      "notes": [
+        "no segmentation score exists: nothing was run",
+        "band order rests on the dataset card; the files carry no band names"
+      ]
+    },
+    "s4-kalimantan": {
+      "schema_version": "1",
+      "request_id": "s4-kalimantan",
+      "outcome": "request_resources",
+      "refusals": [
+        {
+          "code": "no_usable_data",
+          "detail": "the imagery lies outside the task area"
+        },
+        {
+          "code": "unsupported_method",
+          "detail": "prithvi-burnscars-weights: file verified, permission chat_only_unsigned"
+        }
+      ],
+      "needs": [
+        {
+          "item": "six-band HLS for the task area: one 512 x 512 window before and one after",
+          "estimated_bytes": 6291456,
+          "detail": "run an availability query"
+        },
+        {
+          "item": "signed approval record for prithvi-burnscars-weights",
+          "estimated_bytes": null,
+          "detail": ""
+        }
+      ],
+      "alternatives": [
+        "MCD64A1 monthly burned area with its quality gate (already local)",
+        "a dNBR threshold on six-band HLS, scored against independent masks"
+      ],
+      "route": [
+        "data_specialist",
+        "geospatial_lead",
+        "product_manager",
+        "human"
+      ],
+      "notes": [
+        "no segmentation score exists: nothing was run",
+        "band order rests on the dataset card; the files carry no band names"
+      ]
+    }
+  }
+}

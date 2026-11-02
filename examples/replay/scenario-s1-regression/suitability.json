@@ -1,0 +1,59 @@
+{
+  "checks": [
+    {
+      "eligible": true,
+      "reasons": [],
+      "strategy": "deterministic"
+    },
+    {
+      "eligible": true,
+      "reasons": [],
+      "strategy": "statistical"
+    },
+    {
+      "eligible": true,
+      "reasons": [],
+      "strategy": "small_neural"
+    },
+    {
+      "eligible": false,
+      "reasons": [
+        "no approved weights",
+        "no approved pretrained model fits a tabular series"
+      ],
+      "strategy": "pretrained_transfer"
+    },
+    {
+      "eligible": false,
+      "reasons": [
+        "no approved weights",
+        "no approved pretrained model fits a tabular series"
+      ],
+      "strategy": "fine_tuning"
+    },
+    {
+      "eligible": false,
+      "reasons": [
+        "no repeated inference workload declared"
+      ],
+      "strategy": "distillation"
+    },
+    {
+      "eligible": true,
+      "reasons": [],
+      "strategy": "abstain_or_request"
+    }
+  ],
+  "facts": {
+    "availability_latency_hours": 2,
+    "evaluable": true,
+    "kind": "regression",
+    "labels_with_provenance": true,
+    "positive_rate": null,
+    "pretrained_assets_approved": [],
+    "repeated_inference_per_day": 0,
+    "rows": 109584,
+    "training_budget_seconds": 1200.0
+  },
+  "schema_version": "1"
+}

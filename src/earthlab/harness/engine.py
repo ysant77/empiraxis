@@ -40,7 +40,7 @@ from earthlab.harness.gates import Refusal
 from earthlab.harness.lifecycle import Lifecycle
 from earthlab.harness.seats import Seats, Stopped, usage
 from earthlab.harness.strategy import Strategy, SuitabilityReportV1, assess
-from earthlab.harness.variants import BASELINE_ID, PromptSet, PromptVariant, resolve
+from earthlab.harness.variants import BASELINE_ID, PROMOTED, PromptSet, PromptVariant, resolve
 from earthlab.llm.client import ChatClient
 from earthlab.llm.types import ProviderError
 
@@ -131,7 +131,7 @@ class Engine:
     def __init__(
         self, arm: Arm, request: ResearchRequestV1, problem: ProblemSpecV1, adapter: Adapter,
         run_dir: Path, client: ChatClient | None, *,
-        role_clients: Mapping[str, ChatClient] | None = None, variant: PromptVariant = BASELINE,
+        role_clients: Mapping[str, ChatClient] | None = None, variant: PromptVariant = PROMOTED,
         method_review: bool = False,
     ):  # fmt: skip
         if (client is None) != (arm == "fixed"):
@@ -148,6 +148,7 @@ class Engine:
         self.preset_config: dict[str, Any] = {}
         self.method_review = method_review and arm != "fixed"
         self.review: review.MethodReviewRecordV1 | None = None
+        self.held: list[review.ReviewFinding] = []
 
     def keep(self, name: str, record: BaseModel, task: str) -> None:
         self.digests[name] = self.store.put(name, record, task)
@@ -233,8 +234,10 @@ class Engine:
             )  # fmt: skip
             seats.invoke("finished", owner, task, "verified")
 
-    def review_method(self, profile: DatasetProfileV1, plan: ExperimentPlanV1) -> list[Refusal]:
-        """The Lead's case and code's checks, before work runs. Refusal needs a blocking fault."""
+    def review_method(
+        self, profile: DatasetProfileV1, plan: ExperimentPlanV1
+    ) -> tuple[ExperimentPlanV1, list[Refusal]]:
+        """The case, code's checks and the answered critique, before work runs."""
         if self.suits is None:
             raise ValueError("the review needs the suitability checks")
         facts = review.ReviewFacts(
@@ -243,11 +246,26 @@ class Engine:
         )  # fmt: skip
         self.review = review.run_review(self.seats, facts)
         self.keep("method-review", self.review, self.seats.root)
-        return [
-            Refusal(gates.Code.METHOD_REVIEW, f"{f.code}: {f.detail}")
-            for f in self.review.findings
-            if f.blocking
-        ]
+        if self.review.verdict == "needs_revision":
+            return plan, [Refusal(gates.Code.METHOD_REVIEW, "the critic's concern is unresolved")]
+        blocking = [f"{f.code}: {f.detail}" for f in self.review.findings if f.blocking]
+        if blocking:
+            return plan, [Refusal(gates.Code.METHOD_REVIEW, text) for text in blocking]
+        strategy = review.revised_strategy(self.review, plan)
+        if strategy is None:
+            return plan, []
+        new = self.adapter.plan(self.adapter.preset(), plan.plan_id, "preset")
+        new = new.model_copy(update={"config": new.config | {"strategy": strategy}})
+        estimate = self.adapter.estimate(new)
+        return new, gates.check_plan(new, profile, self.adapter.methods, estimate)
+
+    def stop_review(self, found: list[Refusal]) -> dict[str, Any]:
+        """A refused method ends the run. An open concern waits for a person, and nothing ran."""
+        if self.review is None or self.review.verdict != "needs_revision":
+            return self.refuse(found)
+        codes = [str(r.code) for r in found]
+        self.life.move("refused", "controller", codes=codes)
+        return self.close("needs_revision", found[0].detail, None, None, codes)
 
     def report_for(self, plan: ExperimentPlanV1) -> EvaluationReportV1:
         self.life.move("executing", "controller", plan=plan.plan_id)
@@ -330,21 +348,33 @@ class Engine:
         if found:
             return self.refuse(found)
         if self.method_review:
-            found = self.review_method(profile, plan)
+            plan, found = self.review_method(profile, plan)
             if found:
-                return self.refuse(found)
+                return self.stop_review(found)
+            strategy = str(plan.config.get("strategy", strategy))
         self.keep("plan-1", plan, seats.root)
         self.life.move("planned", "controller", plan_sha256=self.digests["plan-1"])
         self.plan = plan
         report = self.report_for(plan)
         report = self.maybe_refine(profile, report, strategy)
-        decision = self.recommend(report)
+        decision = self.checked(self.recommend(report), report)
         self.keep("decision", decision, seats.root)
         self.life.move("reviewed", "controller", outcome=decision.outcome)
         return self.forward(decision, report)
 
+    def checked(self, decision: DecisionRecordV1, report: EvaluationReportV1) -> DecisionRecordV1:
+        """A failed subgroup claim always joins the limits. Only the review holds a decision."""
+        claims = ladder(report, decision.selected or report.reference)
+        decision, held = review.apply_claims(decision, claims)
+        self.held = held if self.method_review else []
+        return decision
+
     def forward(self, decision: DecisionRecordV1, report: EvaluationReportV1) -> dict[str, Any]:
         seats = self.seats
+        if self.held:
+            why = "; ".join(f"{f.code}: {f.detail}" for f in self.held)
+            self.life.move("abstained", "controller", note=why)
+            return self.close("needs_revision", why, decision, report, [gates.Code.METHOD_REVIEW])
         if self.arm == "team":
             sent = {"problem": self.problem, "decision": decision, "report": report}
             pm = seats.propose(
@@ -449,7 +479,7 @@ class Engine:
 def run_harness(
     arm: Arm, request: ResearchRequestV1, problem: ProblemSpecV1, adapter: Adapter,
     run_dir: Path, client: ChatClient | None = None, *,
-    role_clients: Mapping[str, ChatClient] | None = None, variant: PromptVariant = BASELINE,
+    role_clients: Mapping[str, ChatClient] | None = None, variant: PromptVariant = PROMOTED,
     method_review: bool = False,
 ) -> dict[str, Any]:  # fmt: skip
     """One run to a result, a refusal, or a clear failure state."""

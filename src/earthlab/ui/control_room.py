@@ -268,7 +268,7 @@ def render() -> None:
     run: RunEvents | None = None
     error: str | None = "No recorded run is available."
     if picked is not None:
-        st.caption(f"Provenance: {common.run_provenance(picked[1])}")
+        st.caption(f"Provenance: {common.run_provenance(picked[1], picked[0])}")
         board_view.run_panel(*picked)
         run_dir, run, error = common.open_run(*picked)
         if run is None and board_view.is_waiting(picked[0]):

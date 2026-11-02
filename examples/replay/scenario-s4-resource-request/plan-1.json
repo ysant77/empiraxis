@@ -1,0 +1,25 @@
+{
+  "budget": {
+    "max_model_calls": 40,
+    "max_seconds": 1800.0,
+    "max_training_seconds": 0.0
+  },
+  "config": {
+    "method": "segmentation_pretrained",
+    "strategy": "abstain_or_request"
+  },
+  "decided_by": "preset",
+  "input_offset_hours": 0,
+  "methods": [
+    "segmentation_pretrained"
+  ],
+  "metrics": [
+    "area_ha",
+    "valid_fraction",
+    "gate_passed"
+  ],
+  "plan_id": "plan-1",
+  "schema_version": "1",
+  "seed": 0,
+  "split_protocol": "no split: fixed months of a pinned product"
+}

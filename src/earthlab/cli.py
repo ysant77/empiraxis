@@ -39,7 +39,7 @@ from earthlab.safety.llama_guard import LlamaGuard
 from earthlab.team.cli import add_team_parsers
 from earthlab.tools.burned_area_tools import case_report
 from earthlab.verify.claims import Claim
-from earthlab.verify.replay import replay_run
+from earthlab.verify.replay import replay_lines, replay_run
 from earthlab.workflow.assign import repo_assignment
 from earthlab.workflow.run import run_workflow
 
@@ -155,21 +155,7 @@ def cmd_workflow(args: argparse.Namespace) -> int:
 def cmd_replay(args: argparse.Namespace) -> int:
     """Re-check a saved run without any model: trace chain, verdicts and input hashes."""
     out = replay_run(args.run_dir, open_workspace(args.data_dir))
-    print(f"trace: {out.trace_records} records, hash chain intact")
-    print(f"PM2.5 source hash: {'match' if out.source_matches else 'CHANGED'}")
-    print(f"verdicts reproduced: {out.pm25[0]}/{out.pm25[1]}")
-    print(f"area verdicts reproduced: {out.area[0]}/{out.area[1]}")
-    print(f"month checks reproduced: {out.months[0]}/{out.months[1]}")
-    if not out.files_checked:
-        print("input hashes: none recorded")
-    elif not out.changed_files:
-        print(f"input hashes: all match ({out.files_checked} files)")
-    else:
-        print(f"input hashes: {len(out.changed_files)} of {out.files_checked} files CHANGED")
-    for rel in out.changed_files:
-        print(f"changed: {rel}")
-    for problem in out.problems:
-        print(f"problem: {problem}")
+    print("\n".join(replay_lines(out)))
     return 0 if out.ok else 1
 
 

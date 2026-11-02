@@ -1,0 +1,143 @@
+{
+  "status": "awaiting_human",
+  "reason": "evidence ready for a human decision",
+  "arm": "fixed",
+  "kind": "raster_method",
+  "problem_id": "burned-area-method",
+  "evidence_label": "Historical raster analysis of a pinned product",
+  "limitations": [
+    "MCD64A1 maps burned area at 500 m resolution. It is not forest loss, destroyed trees or emissions.",
+    "FIRMS detections are thermal anomalies at satellite overpass time. They are context only and not burned area.",
+    "A month whose valid-land fraction is below the pre-registered gate is not reported.",
+    "The report makes no claim about what caused the fires or who is responsible.",
+    "A pretrained segmentation model was not run. No segmentation accuracy is reported.",
+    "Not reported: segmentation_pretrained."
+  ],
+  "refusal_codes": [],
+  "state": "forwarded",
+  "model_changed_the_plan": false,
+  "workflow_class": "deterministic workflow",
+  "split_scored": "no split",
+  "test_period": "not evaluated; it needs a lock and a human decision",
+  "artifacts": {
+    "request": "3320a0ad0e5472250c9d3d188851b00c4425b57bf1a720402285f513661a897e",
+    "problem": "5134edeb0460f9254077e289fc47b2bdfa6097f7e48dc829bd4adf3b136ea35b",
+    "profile": "44466aadfc6d6073a22643aad720e5ebc300378460e64cf0de54906f8b77b83e",
+    "suitability": "776131a3e824d6e210570aab9de6111466d699f1ab95ea0cf85099f54fecec8e",
+    "plan-1": "042b0c31fff40074218d9829eed5867a778b5d8215a990811c5fe7b0bc57b4c4",
+    "evaluation-plan-1": "ccb2e810e12cea31fdf522ab37045da53b639f33425a7ff23469916d2597639e",
+    "decision": "6a73deac852f6b5843bb3c53430a5e3bc4ccafa6141744b65266645eb1310184"
+  },
+  "strategy": "abstain_or_request",
+  "suitability": {
+    "schema_version": "1",
+    "facts": {
+      "kind": "raster_method",
+      "rows": 1000,
+      "labels_with_provenance": true,
+      "positive_rate": null,
+      "availability_latency_hours": 0,
+      "training_budget_seconds": 1200.0,
+      "repeated_inference_per_day": 0,
+      "pretrained_assets_approved": [],
+      "evaluable": true
+    },
+    "checks": [
+      {
+        "strategy": "deterministic",
+        "eligible": true,
+        "reasons": []
+      },
+      {
+        "strategy": "statistical",
+        "eligible": false,
+        "reasons": [
+          "this problem has nothing to fit"
+        ]
+      },
+      {
+        "strategy": "small_neural",
+        "eligible": false,
+        "reasons": [
+          "this problem has nothing to fit",
+          "only 1000 rows"
+        ]
+      },
+      {
+        "strategy": "pretrained_transfer",
+        "eligible": false,
+        "reasons": [
+          "no approved weights",
+          "the inputs and reference masks do not fit"
+        ]
+      },
+      {
+        "strategy": "fine_tuning",
+        "eligible": false,
+        "reasons": [
+          "no approved weights",
+          "the inputs and reference masks do not fit"
+        ]
+      },
+      {
+        "strategy": "distillation",
+        "eligible": false,
+        "reasons": [
+          "this problem has nothing to fit",
+          "no repeated inference workload declared"
+        ]
+      },
+      {
+        "strategy": "abstain_or_request",
+        "eligible": true,
+        "reasons": []
+      }
+    ]
+  },
+  "recommendation": {
+    "outcome": "request_resource",
+    "model_id": null,
+    "reason": "The inputs do not fit: approved imagery and reference masks are needed."
+  },
+  "comparison": [
+    {
+      "model": "segmentation_pretrained",
+      "low": null,
+      "high": null,
+      "passes": false
+    }
+  ],
+  "acceptance": {
+    "failed_month_has_no_area": true,
+    "no_segmentation_score": true,
+    "every_source_pinned": true
+  },
+  "code_outcome": "request_resource",
+  "prompt_variant": "baseline",
+  "prompt_digests": {
+    "scope": "deb591a50ba4bcaf200768b7357105d0eff87f4e3b915c7201339de6a21854d1",
+    "strategy": "8791d37347f9bd681f0de37c55233ffd8dc22f07cdfac9c16aaa58cdbceafef2",
+    "plan": "74b0548d49044ce59f1f820eee94ff864b44db2bd159db841d12892eb47cdd16",
+    "data": "4076af1773088a2e31b86eb8c1253c0dd87d9f241c081f41c037d7f1fd9a47e3",
+    "ml": "e7ef78e03643b67df64c21b7c0847ab78249270c042e86c3df45c2eb530293d7",
+    "review": "fe133f5f47f48dcf2ca312a9b99ef0c40998fea3af0d81583e4ed43be9b863c0",
+    "decide": "870361b04cf398c4e1ecae2941566e40fcb0ebbaf6fb098757d913538bf088a0",
+    "forward": "d29d528e0d591813fc092a6807cde82a8d75ace165cfb973a6be853cee49208e"
+  },
+  "usage": {
+    "wall_seconds": 0.1,
+    "inference_seconds": 0,
+    "training_seconds": 0.0,
+    "peak_training_rss_mb": 0.0,
+    "model_calls": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "cached_tokens": "not exposed by this provider",
+    "retries": 0,
+    "provider_faults": 0,
+    "tool_calls": 0,
+    "rejected_tool_calls": 0,
+    "human_interventions": 0
+  },
+  "roles": {}
+}

@@ -1,0 +1,109 @@
+{
+  "schema_version": "1",
+  "bundle_sha256": "e53f6e427df8991a4cad5f96203355e5a015a44450d565f98520b32d84f34c83",
+  "model_name": "s2-frozen_gru_logistic",
+  "scientific_label": "simulated_availability_hindcast",
+  "data": {
+    "source_sha256": "2fb76e1c4e4208e92f49670602e303c86e21eaa3704651633323e50f51015de4",
+    "pinned_source": true,
+    "quality_issues": [],
+    "alignment_verdict": "aligned_with_caveats",
+    "alignment_findings": [
+      "modelled_availability: label it a simulated-availability hindcast",
+      "time_convention_unknown: run a convention sensitivity"
+    ],
+    "valid": true
+  },
+  "integrity_checks": [
+    {
+      "name": "status_log",
+      "passed": true,
+      "detail": "chain intact over 18 entries"
+    },
+    {
+      "name": "weights",
+      "passed": true,
+      "detail": "sha256 220a1dfa9cd7, npz, shape fits"
+    },
+    {
+      "name": "feature_schema",
+      "passed": true,
+      "detail": "32 features in the saved order"
+    },
+    {
+      "name": "preprocessing",
+      "passed": true,
+      "detail": "2 steps over 5 columns"
+    },
+    {
+      "name": "postprocessing",
+      "passed": false,
+      "detail": "the feature record and its preprocessing disagree"
+    },
+    {
+      "name": "provenance",
+      "passed": true,
+      "detail": "source 2fb76e1c4e42, fit to row 41662"
+    },
+    {
+      "name": "method",
+      "passed": true,
+      "detail": "frozen_gru_logistic (hybrid)"
+    },
+    {
+      "name": "limitations",
+      "passed": true,
+      "detail": "5 subgroup results match the report"
+    },
+    {
+      "name": "environment",
+      "passed": true,
+      "detail": "Python 3.12.15, 2 pinned packages"
+    },
+    {
+      "name": "readiness",
+      "passed": false,
+      "detail": "hybrid inference is not supported: no single verified bundle loads it"
+    },
+    {
+      "name": "independent_evaluation",
+      "passed": false,
+      "detail": "no prediction artifact: probabilities-frozen_gru_logistic.npz"
+    },
+    {
+      "name": "source_file",
+      "passed": true,
+      "detail": "sha256 2fb76e1c4e42"
+    }
+  ],
+  "verification_outcome": "refused",
+  "independent_evaluation": null,
+  "inference": {
+    "state": "not_run",
+    "input_sha256": null,
+    "output_sha256": null,
+    "rows_compared": 0,
+    "max_abs_difference": null,
+    "matches_reference": false,
+    "reference_mae": null,
+    "output_mae": null,
+    "note": "the bundle check refused this model"
+  },
+  "high_pm25": null,
+  "resources": {
+    "seconds_total": null,
+    "seconds_per_row": null,
+    "peak_rss_mb": null,
+    "conditions": "not measured"
+  },
+  "missing_operational_evidence": [
+    "prospective issue-time runs with a logged available-at time for each input",
+    "monitoring of input drift and output quality in operation",
+    "a rollback drill on a live path",
+    "load and failure tests on the target hardware",
+    "a named operator and an incident path"
+  ],
+  "human_approval": "none",
+  "readiness": "research",
+  "production_ready": false
+}

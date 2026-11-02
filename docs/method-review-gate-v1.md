@@ -65,9 +65,11 @@ The 35 µg/m³ threshold came from the train split alone. That protects it from 
 1. **Case.** After the plan exists and before work runs, the Lead submits `MethodProposalV1`: hypothesis, simplest baseline, alternatives, data sufficiency, expected benefit, leakage risks, compute seconds and failure conditions. A placeholder gets one correction.
 2. **Code's checks.** `check_proposal` tests every named method against `strategy.assess`, and tests the case against the plan, the budget and the measured profile. A blocking finding refuses the method through the normal refusal path.
 3. **One critique.** A material finding starts one critic call, with its one correction. A critic must name a finding and a measurement that can prove it wrong, or name an eligible competing experiment. Praise is refused. An unusable critique changes nothing.
-4. **Claims.** After evaluation, code writes six separate claims. No role can raise one.
+4. **One Lead answer.** A usable critique needs a typed answer, with its one correction, and no more debate. `accepted` carries a revised case, and code checks that the named finding is gone. A revised case on a different method moves the run to that method's plan. `rebutted` names measured facts and the critic's metric. `needs_revision`, or an answer that fails these checks, stops the run before any work with the status `needs_revision`. A person then reviews it and starts a new run.
+5. **Claims.** After evaluation, code writes six separate claims. No role can raise one.
+6. **Recommendation check.** With the gate on, adoption with a failed gain claim stops at `needs_revision`. With the gate on or off, a failed subgroup claim joins the limitations, so the recommendation cannot hide it.
 
-The critic's schema has no score, status or approval field. The evaluator, the safety gates and the signed human decision do not read it. A refinement that repeats its plan runs nothing.
+The critic's and the answer's schemas have no score, status or approval field. The evaluator, the safety gates and the signed human decision do not read it. A refinement that repeats its plan runs nothing.
 
 Turn it on with `run_harness(..., method_review=True)`. The fixed arm has no Lead, so it skips the gate.
 
@@ -109,6 +111,6 @@ Proposed acceptance, for the owner to confirm before the run: the gate adds at m
 
 - The two repeated refinements are a reading of saved traces. The gate has not run live on them.
 - All tests use scripted model replies, so the critic's quality is not measured.
-- A critic on the same model as the Lead is a separate call, not an independent mind. Run it on another model if that arm passes its gates.
+- A critic on the same model as the Lead is a separate call, not an independent mind. The record labels it `same_model_second_pass`. A critic on another model is labelled `independent_model`.
 - `justified_by_incremental_cost` needs a declared case, so saved runs show `not_measured` unless no gain exists.
 - Sample sizes are small, and every result is on validation.

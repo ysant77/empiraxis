@@ -1,0 +1,200 @@
+{
+  "status": "awaiting_human",
+  "reason": "evidence ready for a human decision",
+  "arm": "fixed",
+  "kind": "regression",
+  "problem_id": "pm25-regression-6h",
+  "evidence_label": "Issue-time replay with modelled availability",
+  "limitations": [
+    "Non-operational research result.",
+    "Historical evaluation. Not a forecast of any future date.",
+    "Not for health, safety or travel decisions.",
+    "PM2.5 is not PSI or AQI.",
+    "PM2.5 concentration alone does not identify wildfire haze or its cause.",
+    "Above 55 ug/m3 the MAE of candidate-1 is 28.772 against 26.324 for persistence. Do not rely on it in elevated hours."
+  ],
+  "refusal_codes": [],
+  "state": "forwarded",
+  "model_changed_the_plan": false,
+  "workflow_class": "deterministic workflow",
+  "split_scored": "validation",
+  "test_period": "not evaluated; it needs a lock and a human decision",
+  "artifacts": {
+    "request": "ec95a2e71391ccd1a84bba8bfeeffd2182d29b8588b39d9a775db675ea56a2ed",
+    "problem": "22072871ee2f756e4a138e6295c4b711c9a5723e8451012ae0520eae7a400905",
+    "profile": "6c2755cfe5ca7434d4c2a713b03d0cd0e22a2cf6f6ab1fefaf665e191a32cb70",
+    "suitability": "8029e17f1c7eead424dd02ad9464c1cb5cf906bd13c437744d747df90682753f",
+    "plan-1": "52db760b27f6a30a9c7333fba6d7cd2c7996623c6b48d5a96f0295eb6325da22",
+    "evaluation-plan-1": "32563eb9e1b4a2b2e953de64c256f11683dbd286942e2654932f8eccacb52e94",
+    "decision": "c520b3cac23af6adb6a017db5366277526963b17cbe9f5b9de2c756f7c74cdae"
+  },
+  "strategy": "small_neural",
+  "suitability": {
+    "schema_version": "1",
+    "facts": {
+      "kind": "regression",
+      "rows": 109584,
+      "labels_with_provenance": true,
+      "positive_rate": null,
+      "availability_latency_hours": 2,
+      "training_budget_seconds": 1200.0,
+      "repeated_inference_per_day": 0,
+      "pretrained_assets_approved": [],
+      "evaluable": true
+    },
+    "checks": [
+      {
+        "strategy": "deterministic",
+        "eligible": true,
+        "reasons": []
+      },
+      {
+        "strategy": "statistical",
+        "eligible": true,
+        "reasons": []
+      },
+      {
+        "strategy": "small_neural",
+        "eligible": true,
+        "reasons": []
+      },
+      {
+        "strategy": "pretrained_transfer",
+        "eligible": false,
+        "reasons": [
+          "no approved weights",
+          "no approved pretrained model fits a tabular series"
+        ]
+      },
+      {
+        "strategy": "fine_tuning",
+        "eligible": false,
+        "reasons": [
+          "no approved weights",
+          "no approved pretrained model fits a tabular series"
+        ]
+      },
+      {
+        "strategy": "distillation",
+        "eligible": false,
+        "reasons": [
+          "no repeated inference workload declared"
+        ]
+      },
+      {
+        "strategy": "abstain_or_request",
+        "eligible": true,
+        "reasons": []
+      }
+    ]
+  },
+  "recommendation": {
+    "outcome": "adopt_limited",
+    "model_id": "candidate-1",
+    "reason": "The rule applied by code."
+  },
+  "comparison": [
+    {
+      "model": "candidate-1",
+      "mae": 4.588,
+      "rmse": 6.416,
+      "bias": -0.51,
+      "skill": 0.1595,
+      "above_55_mae": 28.772,
+      "low": 0.14897599542617004,
+      "high": 0.16954361715125188,
+      "passes": true
+    },
+    {
+      "model": "B4_lagged_ridge",
+      "mae": 4.68,
+      "rmse": 6.385,
+      "bias": 0.518,
+      "skill": 0.1419,
+      "above_55_mae": 30.254,
+      "low": 0.13208726569484483,
+      "high": 0.15140389876301877,
+      "passes": true
+    },
+    {
+      "model": "B0_persistence",
+      "mae": 5.465,
+      "rmse": 7.707,
+      "bias": 0.001,
+      "skill": 0.0,
+      "above_55_mae": 26.324,
+      "low": 0.0,
+      "high": 0.0,
+      "passes": false
+    },
+    {
+      "model": "B1_daily_naive",
+      "mae": 5.64,
+      "rmse": 8.191,
+      "bias": -0.0,
+      "skill": -0.0318,
+      "above_55_mae": 32.43,
+      "low": -0.05308750460980289,
+      "high": -0.013173477070768299,
+      "passes": false
+    },
+    {
+      "model": "B2_weekly_naive",
+      "mae": 6.515,
+      "rmse": 9.366,
+      "bias": 0.018,
+      "skill": -0.1916,
+      "above_55_mae": 41.127,
+      "low": -0.2334652138313038,
+      "high": -0.15421623353993333,
+      "passes": false
+    },
+    {
+      "model": "B3_climatology",
+      "mae": 7.788,
+      "rmse": 10.16,
+      "bias": 4.738,
+      "skill": -0.4356,
+      "above_55_mae": 45.997,
+      "low": -0.5389550333329717,
+      "high": -0.3465910640911091,
+      "passes": false
+    }
+  ],
+  "acceptance": {
+    "profile_written": true,
+    "baselines_evaluated": true,
+    "neural_model_when_chosen": true,
+    "every_model_has_predictions_hash": true,
+    "no_feature_file_reaches_test": true,
+    "elevated_hours_reported": true
+  },
+  "code_outcome": "adopt_limited",
+  "prompt_variant": "baseline",
+  "prompt_digests": {
+    "scope": "deb591a50ba4bcaf200768b7357105d0eff87f4e3b915c7201339de6a21854d1",
+    "strategy": "8791d37347f9bd681f0de37c55233ffd8dc22f07cdfac9c16aaa58cdbceafef2",
+    "plan": "74b0548d49044ce59f1f820eee94ff864b44db2bd159db841d12892eb47cdd16",
+    "data": "4076af1773088a2e31b86eb8c1253c0dd87d9f241c081f41c037d7f1fd9a47e3",
+    "ml": "e7ef78e03643b67df64c21b7c0847ab78249270c042e86c3df45c2eb530293d7",
+    "review": "fe133f5f47f48dcf2ca312a9b99ef0c40998fea3af0d81583e4ed43be9b863c0",
+    "decide": "870361b04cf398c4e1ecae2941566e40fcb0ebbaf6fb098757d913538bf088a0",
+    "forward": "d29d528e0d591813fc092a6807cde82a8d75ace165cfb973a6be853cee49208e"
+  },
+  "usage": {
+    "wall_seconds": 22.2,
+    "inference_seconds": 0,
+    "training_seconds": 20.2,
+    "peak_training_rss_mb": 363.9,
+    "model_calls": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "cached_tokens": "not exposed by this provider",
+    "retries": 0,
+    "provider_faults": 0,
+    "tool_calls": 0,
+    "rejected_tool_calls": 0,
+    "human_interventions": 0
+  },
+  "roles": {}
+}

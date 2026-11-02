@@ -1,0 +1,209 @@
+{
+  "schema_version": "1",
+  "evaluator": "earthlab.forecast.evaluator",
+  "evaluator_sha256": "00d3df0a84da3fcb9702b0da75170853852d7568647da932ddbbb4f84b7767b1",
+  "split_scored": "validation",
+  "reference": "B0_persistence",
+  "scores": [
+    {
+      "model": "M_ridge",
+      "metrics": {
+        "mae": 4.65,
+        "rmse": 6.56,
+        "bias": -0.598,
+        "skill": 0.148,
+        "above_55_mae": 37.337
+      },
+      "low": 0.13764831666571448,
+      "high": 0.157970145965,
+      "subgroups": {
+        "elevated": {
+          "mae": 37.337,
+          "recall": 0.051351351351351354
+        }
+      },
+      "passes": true,
+      "reasons": []
+    },
+    {
+      "model": "B4_lagged_ridge",
+      "metrics": {
+        "mae": 4.68,
+        "rmse": 6.385,
+        "bias": 0.518,
+        "skill": 0.1419,
+        "above_55_mae": 30.254
+      },
+      "low": 0.13208726569484483,
+      "high": 0.15140389876301877,
+      "subgroups": {
+        "elevated": {
+          "mae": 30.254,
+          "recall": 0.2472972972972973
+        }
+      },
+      "passes": true,
+      "reasons": []
+    },
+    {
+      "model": "M_trees",
+      "metrics": {
+        "mae": 4.747,
+        "rmse": 6.551,
+        "bias": -0.102,
+        "skill": 0.1295,
+        "above_55_mae": 29.466
+      },
+      "low": 0.11639089627765635,
+      "high": 0.14205458167124596,
+      "subgroups": {
+        "elevated": {
+          "mae": 29.466,
+          "recall": 0.37972972972972974
+        }
+      },
+      "passes": true,
+      "reasons": []
+    },
+    {
+      "model": "B0_persistence",
+      "metrics": {
+        "mae": 5.465,
+        "rmse": 7.707,
+        "bias": 0.001,
+        "skill": 0.0,
+        "above_55_mae": 26.324
+      },
+      "low": 0.0,
+      "high": 0.0,
+      "subgroups": {
+        "elevated": {
+          "mae": 26.324,
+          "recall": 0.4297297297297297
+        }
+      },
+      "passes": false,
+      "reasons": [
+        "the lower limit of mean skill is not above zero"
+      ]
+    },
+    {
+      "model": "M_persistence",
+      "metrics": {
+        "mae": 5.465,
+        "rmse": 7.707,
+        "bias": 0.001,
+        "skill": 0.0,
+        "above_55_mae": 26.324
+      },
+      "low": 0.0,
+      "high": 0.0,
+      "subgroups": {
+        "elevated": {
+          "mae": 26.324,
+          "recall": 0.44324324324324327
+        }
+      },
+      "passes": false,
+      "reasons": [
+        "the lower limit of mean skill is not above zero"
+      ]
+    },
+    {
+      "model": "B1_daily_naive",
+      "metrics": {
+        "mae": 5.64,
+        "rmse": 8.191,
+        "bias": -0.0,
+        "skill": -0.0318,
+        "above_55_mae": 32.43
+      },
+      "low": -0.05308750460980289,
+      "high": -0.013173477070768299,
+      "subgroups": {
+        "elevated": {
+          "mae": 32.43,
+          "recall": 0.31486486486486487
+        }
+      },
+      "passes": false,
+      "reasons": [
+        "the lower limit of mean skill is not above zero",
+        "a region has a clear loss against persistence"
+      ]
+    },
+    {
+      "model": "M_climatology",
+      "metrics": {
+        "mae": 6.134,
+        "rmse": 8.262,
+        "bias": 1.483,
+        "skill": -0.1273,
+        "above_55_mae": 58.079
+      },
+      "low": -0.17027966966136412,
+      "high": -0.08604764970620861,
+      "subgroups": {
+        "elevated": {
+          "mae": 58.079,
+          "recall": 0.0
+        }
+      },
+      "passes": false,
+      "reasons": [
+        "the lower limit of mean skill is not above zero",
+        "a region has a clear loss against persistence"
+      ]
+    },
+    {
+      "model": "B2_weekly_naive",
+      "metrics": {
+        "mae": 6.515,
+        "rmse": 9.366,
+        "bias": 0.018,
+        "skill": -0.1916,
+        "above_55_mae": 41.127
+      },
+      "low": -0.2334652138313038,
+      "high": -0.15421623353993333,
+      "subgroups": {
+        "elevated": {
+          "mae": 41.127,
+          "recall": 0.07837837837837838
+        }
+      },
+      "passes": false,
+      "reasons": [
+        "the lower limit of mean skill is not above zero",
+        "a region has a clear loss against persistence"
+      ]
+    },
+    {
+      "model": "B3_climatology",
+      "metrics": {
+        "mae": 7.788,
+        "rmse": 10.16,
+        "bias": 4.738,
+        "skill": -0.4356,
+        "above_55_mae": 45.997
+      },
+      "low": -0.5389550333329717,
+      "high": -0.3465910640911091,
+      "subgroups": {
+        "elevated": {
+          "mae": 45.997,
+          "recall": 0.0
+        }
+      },
+      "passes": false,
+      "reasons": [
+        "the lower limit of mean skill is not above zero",
+        "a region has a clear loss against persistence"
+      ]
+    }
+  ],
+  "failures": [],
+  "notes": [
+    "the test period was not read"
+  ]
+}

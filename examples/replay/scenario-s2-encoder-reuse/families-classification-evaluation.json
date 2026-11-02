@@ -1,0 +1,215 @@
+{
+  "schema_version": "1",
+  "evaluator": "earthlab.harness.eval_classify",
+  "evaluator_sha256": "07027c3fbabe821d6aad83ce890d5976573303ca3805dbc643d86ef39da2e38c",
+  "split_scored": "validation years 2022 to 2023",
+  "reference": "persistence_alarm",
+  "scores": [
+    {
+      "model": "train_rate",
+      "metrics": {
+        "scored": 87570.0,
+        "positives": 828.0,
+        "base_rate": 0.00945529290853032,
+        "accuracy": 0.9905447070914697,
+        "accuracy_of_always_no": 0.9905447070914697,
+        "precision": null,
+        "recall": 0.0,
+        "f1": 0.0,
+        "false_alarm_rate": 0.0,
+        "pr_auc": 0.006062806794199274,
+        "brier": 0.012064936859433098,
+        "ece": 0.05052066862993124
+      },
+      "low": -0.43670345076205164,
+      "high": -0.11524565837371611,
+      "subgroups": {
+        "region_0": {
+          "f1": 0.0
+        },
+        "region_1": {
+          "f1": 0.0
+        },
+        "region_2": {
+          "f1": 0.0
+        },
+        "region_3": {
+          "f1": 0.0
+        },
+        "region_4": {
+          "f1": 0.0
+        }
+      },
+      "passes": false,
+      "reasons": [
+        "it finds no exceedance; this is the majority class",
+        "its precision does not beat the base rate",
+        "its PR area does not beat the base rate",
+        "the lower limit of its F1 gain over persistence is not above zero"
+      ]
+    },
+    {
+      "model": "persistence_alarm",
+      "metrics": {
+        "scored": 87570.0,
+        "positives": 828.0,
+        "base_rate": 0.00945529290853032,
+        "accuracy": 0.9868676487381524,
+        "accuracy_of_always_no": 0.9905447070914697,
+        "precision": 0.3055555555555556,
+        "recall": 0.3055555555555556,
+        "f1": 0.3055555555555556,
+        "false_alarm_rate": 0.006628853381291646,
+        "pr_auc": 0.07875788384294687,
+        "brier": 0.013132351261847666,
+        "ece": 0.013132351261847666
+      },
+      "low": 0.0,
+      "high": 0.0,
+      "subgroups": {
+        "region_0": {
+          "f1": 0.02631578947368421
+        },
+        "region_1": {
+          "f1": 0.2897196261682243
+        },
+        "region_2": {
+          "f1": 0.32717678100263853
+        },
+        "region_3": {
+          "f1": 0.0
+        },
+        "region_4": {
+          "f1": 0.354014598540146
+        }
+      },
+      "passes": false,
+      "reasons": []
+    },
+    {
+      "model": "logistic",
+      "metrics": {
+        "scored": 87570.0,
+        "positives": 828.0,
+        "base_rate": 0.00945529290853032,
+        "accuracy": 0.9905561265273496,
+        "accuracy_of_always_no": 0.9905447070914697,
+        "precision": 0.5031446540880503,
+        "recall": 0.0966183574879227,
+        "f1": 0.16210739614994935,
+        "false_alarm_rate": 0.0009107468123861566,
+        "pr_auc": 0.20042914376392282,
+        "brier": 0.00840207711142462,
+        "ece": 0.002816906564577089
+      },
+      "low": -0.23863950244114304,
+      "high": -0.06021370651337687,
+      "subgroups": {
+        "region_0": {
+          "f1": 0.0784313725490196
+        },
+        "region_1": {
+          "f1": 0.2958579881656805
+        },
+        "region_2": {
+          "f1": 0.1493975903614458
+        },
+        "region_3": {
+          "f1": 0.0
+        },
+        "region_4": {
+          "f1": 0.14864864864864866
+        }
+      },
+      "passes": false,
+      "reasons": [
+        "the lower limit of its F1 gain over persistence is not above zero"
+      ]
+    },
+    {
+      "model": "trees_classifier",
+      "metrics": {
+        "scored": 87570.0,
+        "positives": 828.0,
+        "base_rate": 0.00945529290853032,
+        "accuracy": 0.9904533516044307,
+        "accuracy_of_always_no": 0.9905447070914697,
+        "precision": 0.47560975609756095,
+        "recall": 0.09420289855072464,
+        "f1": 0.15725806451612903,
+        "false_alarm_rate": 0.000991445897027968,
+        "pr_auc": 0.17084373130964953,
+        "brier": 0.008725282130132758,
+        "ece": 0.002757117151011437
+      },
+      "low": -0.20066423504729203,
+      "high": -0.08781026755488848,
+      "subgroups": {
+        "region_0": {
+          "f1": 0.0
+        },
+        "region_1": {
+          "f1": 0.37073170731707317
+        },
+        "region_2": {
+          "f1": 0.15676959619952494
+        },
+        "region_3": {
+          "f1": 0.0
+        },
+        "region_4": {
+          "f1": 0.04964539007092199
+        }
+      },
+      "passes": false,
+      "reasons": [
+        "the lower limit of its F1 gain over persistence is not above zero"
+      ]
+    },
+    {
+      "model": "frozen_gru_logistic",
+      "metrics": {
+        "scored": 87570.0,
+        "positives": 828.0,
+        "base_rate": 0.00945529290853032,
+        "accuracy": 0.9899394769898368,
+        "accuracy_of_always_no": 0.9905447070914697,
+        "precision": 0.4253521126760563,
+        "recall": 0.1823671497584541,
+        "f1": 0.25528317836010145,
+        "false_alarm_rate": 0.002351801895275645,
+        "pr_auc": 0.20044065093292765,
+        "brier": 0.008336604556342515,
+        "ece": 0.0027883934651093375
+      },
+      "low": -0.16465516341450565,
+      "high": -0.0008126156455653196,
+      "subgroups": {
+        "region_0": {
+          "f1": 0.17647058823529413
+        },
+        "region_1": {
+          "f1": 0.35443037974683544
+        },
+        "region_2": {
+          "f1": 0.22807017543859648
+        },
+        "region_3": {
+          "f1": 0.0
+        },
+        "region_4": {
+          "f1": 0.2922636103151863
+        }
+      },
+      "passes": false,
+      "reasons": [
+        "the lower limit of its F1 gain over persistence is not above zero"
+      ]
+    }
+  ],
+  "failures": [],
+  "notes": [
+    "the test period was not read",
+    "limits are of F1 gain over persistence"
+  ]
+}
