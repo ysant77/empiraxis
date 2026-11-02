@@ -67,7 +67,7 @@ The 35 µg/m³ threshold came from the train split alone. That protects it from 
 3. **One critique.** A material finding starts one critic call, with its one correction. A critic must name a finding and a measurement that can prove it wrong, or name an eligible competing experiment. Praise is refused. An unusable critique changes nothing.
 4. **One Lead answer.** A usable critique needs a typed answer, with its one correction, and no more debate. `accepted` carries a revised case, and code checks that the named finding is gone. A revised case on a different method moves the run to that method's plan. `rebutted` names measured facts and the critic's metric. `needs_revision`, or an answer that fails these checks, stops the run before any work with the status `needs_revision`. A person then reviews it and starts a new run.
 5. **Claims.** After evaluation, code writes six separate claims. No role can raise one.
-6. **Recommendation check.** Adoption with no shown gain stops at `needs_revision`. A failed subgroup claim joins the limitations, so the recommendation cannot hide it.
+6. **Recommendation check.** With the gate on, adoption with a failed gain claim stops at `needs_revision`. With the gate on or off, a failed subgroup claim joins the limitations, so the recommendation cannot hide it.
 
 The critic's and the answer's schemas have no score, status or approval field. The evaluator, the safety gates and the signed human decision do not read it. A refinement that repeats its plan runs nothing.
 

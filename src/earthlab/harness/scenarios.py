@@ -8,10 +8,10 @@ from typing import Any
 
 from earthlab.harness.classify import EXCEED_PROBLEM, ClassificationAdapter
 from earthlab.harness.contracts import ProblemSpecV1, ResearchRequestV1
-from earthlab.harness.engine import BASELINE, Adapter, Arm, run_harness
+from earthlab.harness.engine import Adapter, Arm, run_harness
 from earthlab.harness.raster import BURN_PROBLEM, RasterAdapter, segmentation_request
 from earthlab.harness.regression import PM25_PROBLEM, RegressionAdapter
-from earthlab.harness.variants import PromptVariant
+from earthlab.harness.variants import PROMOTED, PromptVariant
 from earthlab.llm.client import ChatClient
 
 SUMMARY = (
@@ -48,7 +48,7 @@ SCENARIOS: dict[str, Scenario] = {
 
 def run_scenario(
     name: str, arm: Arm, run_dir: Path, client: ChatClient | None, *,
-    role_clients: Mapping[str, ChatClient] | None = None, variant: PromptVariant = BASELINE,
+    role_clients: Mapping[str, ChatClient] | None = None, variant: PromptVariant = PROMOTED,
     method_review: bool = False,
 ) -> dict[str, Any]:  # fmt: skip
     objective, problem, make = SCENARIOS[name]

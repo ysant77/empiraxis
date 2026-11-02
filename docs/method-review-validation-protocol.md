@@ -62,3 +62,14 @@ The proposed limit in `docs/method-review-gate-v1.md` was at most 10% added medi
 - The scripted tests check the code path. They are not evidence of critic quality.
 - Rows on the off side at the recommendation stage record today's rules, read from the saved report. The harness menu did not run for these seeded decisions.
 - Timing is one shared Mac under swap pressure.
+
+## Review-gate v2 (set after v1 Part A, before any v2 result)
+
+Experiment ID: `review-gate-v2`. The v1 rows stay as recorded. v1 Part B was not run, because the live v1 rows and a code reading showed two defects that would make Part B uninformative:
+
+1. The critic received strategy names but had to name a method. Two of its submissions failed for this reason, although the concern was correct.
+2. The recommendation check treated `not_tested` as a failure. A correct raster `adopt_limited` would have stopped.
+
+Changes: the critic receives `eligible_methods`, the prompt states the rule for `competing_method` and `test.metric`, and only a `failed` claim stops adoption. A failed subgroup claim now joins the limits with the gate on or off.
+
+v2 runs: `gru-no-comparison` 3 times, then Part B as written above. Measures, limits and acceptance text stay as written. The owner still has not confirmed the 10% limit.

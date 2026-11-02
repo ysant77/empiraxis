@@ -13,7 +13,12 @@ from pydantic import ValidationError
 from test_method_review import CASE, CONCERN, FACTS, HYBRID, PLAN, SOURCE, proposal, seats
 
 from earthlab.harness.claims import ladder
-from earthlab.harness.contracts import DecisionRecordV1, ResearchRequestV1
+from earthlab.harness.contracts import (
+    DecisionRecordV1,
+    EvaluationReportV1,
+    ModelScore,
+    ResearchRequestV1,
+)
 from earthlab.harness.engine import run_harness
 from earthlab.harness.method_review import (
     CritiqueV1,
@@ -239,3 +244,36 @@ def test_an_answered_critique_lets_the_run_continue(tmp_path: Path) -> None:
     out = run(tmp_path, steps)
     assert out["status"] == "awaiting_human" and out["method_review"]["verdict"] == "proceed"
     assert out["code_outcome"] == "retain_baseline"
+
+
+def test_no_score_to_compare_does_not_stop_a_raster_adoption() -> None:
+    row = ModelScore(model="raster_deterministic", metrics={}, passes=True)
+    raster = HYBRID.model_copy(update={"scores": (row,), "reference": "raster_deterministic"})
+    claims = ladder(raster, "raster_deterministic")
+    assert claims.better_than_baseline.state == "not_tested"
+    assert check_recommendation(decision("adopt_limited", "raster_deterministic"), claims) == []
+
+
+def test_the_critic_is_told_the_method_names_it_may_use(tmp_path: Path) -> None:
+    steps = [call("propose_method", **THIN), call("submit_critique", **CONCERN),
+             call("answer_critique", **OPEN)]  # fmt: skip
+    held, client = seats(tmp_path, steps)
+    run_review(held, FACTS)
+    sent = client.requests[1]["messages"][1]["content"]
+    assert '"eligible_methods"' in sent and '"ridge"' in sent and '"gru"' in sent
+
+
+def test_a_subgroup_failure_joins_the_limits_with_the_review_off(tmp_path: Path) -> None:
+    class Open(RegressionAdapter):
+        def allowed(self, report: EvaluationReportV1) -> dict[str, list[str]]:
+            return {"adopt": ["B4_lagged_ridge"]}
+
+    steps = [STRATEGY, FINISH, call(
+        "recommend", outcome="adopt", model_id="B4_lagged_ridge", reason="Test of the limits."
+    )]  # fmt: skip
+    done = run_harness(
+        "single", ResearchRequestV1(request_id="r-1", objective="Assess PM2.5 at T+6 h."),
+        PM25_PROBLEM, Open(tmp_path, SOURCE), tmp_path, ScriptedClient(steps),
+    )  # fmt: skip
+    assert done["status"] == "awaiting_human"
+    assert any("subgroup_failure" in text for text in done["limitations"])

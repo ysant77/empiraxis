@@ -45,7 +45,9 @@ why the data suffice, the smallest gain that justifies the cost, the leakage ris
 seconds, and measurable failure conditions. Choose the baseline when nothing justifies more."
 CRITIC_SYSTEM = "You review a method plan before it runs. Read the findings. Call submit_critique \
 with one specific concern that a stated measurement can prove wrong, or one competing experiment. \
-Agreement or praise is not a review. You cannot change a score, a rule or a human decision."
+Agreement or praise is not a review. You cannot change a score, a rule or a human decision. Use \
+competing_method only with kind competing_experiment, and choose it from eligible_methods. Choose \
+test.metric from metrics."
 ANSWER_SYSTEM = "You are the Geospatial Lead. A critic raised one concern about your case. Call \
 answer_critique once. Use accepted with a full revised_case that removes the concern, or a simpler \
 method. Use rebutted with evidence_fields that name measured facts, and name the critic's metric \
@@ -280,7 +282,7 @@ def check_recommendation(decision: DecisionRecordV1, claims: ClaimLadderV1) -> l
     if decision.outcome not in ("adopt", "adopt_limited"):
         return out
     better, robust = claims.better_than_baseline, claims.robust_across_subgroups
-    if better.state != "passed":
+    if better.state == "failed":
         out.append(_finding(ReviewCode.ADOPT_WITHOUT_GAIN, better.evidence, claims.model))
     if robust.state == "failed":
         out.append(_finding(ReviewCode.SUBGROUP_FAILURE, robust.evidence, claims.model))
@@ -323,6 +325,12 @@ def apply_claims(
     return decision.model_copy(update=limits), [f for f in found if f.blocking]
 
 
+def eligible_methods(facts: ReviewFacts) -> list[str]:
+    """Registered methods whose strategy code found eligible, by the names a critique must use."""
+    open_now = facts.suitability.eligible()
+    return [method for method, strategy in STRATEGY_OF.items() if strategy in open_now]
+
+
 def fact_names(facts: ReviewFacts) -> frozenset[str]:
     """What a rebuttal may cite: measured fields only."""
     measured = set(type(facts.profile).model_fields) | set(
@@ -357,7 +365,7 @@ def _critique(
     """One call and its one correction. An unusable critique changes nothing."""
     sent: dict[str, Any] = {
         "proposal": proposal, "findings": findings, "metrics": facts.plan.metrics,
-        "eligible": facts.suitability.eligible(), "data": facts.profile,
+        "eligible_methods": eligible_methods(facts), "data": facts.profile,
     }  # fmt: skip
     try:
         return seats.propose(

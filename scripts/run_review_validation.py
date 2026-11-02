@@ -35,6 +35,8 @@ def row_out(path: Path, row: dict[str, Any]) -> None:
 def cases(args: argparse.Namespace, client: ChatClient) -> None:
     plan = load_cases(CONFIG / "benchmark" / "review_validation.yaml")
     for case in plan.cases:
+        if args.only and case.id not in args.only:
+            continue
         probe, _ = facts_for(case, new_run_dir(args.out / "cases"))
         repeats = plan.critic_repeats if needs_model(case, probe) else 1
         for repeat in range(1, repeats + 1):
@@ -70,6 +72,7 @@ def main() -> int:
     top.add_argument("step", choices=["cases", "matched"])
     top.add_argument("--commit", required=True)
     top.add_argument("--out", type=Path, required=True)
+    top.add_argument("--only", nargs="*", help="case IDs, for a later experiment ID")
     args = top.parse_args()
     head, dirty = git_state(ROOT)
     wrong = pin_problems(args.commit, head, dirty)
