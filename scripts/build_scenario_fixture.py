@@ -33,6 +33,7 @@ S1_FAMILY = "earthlab-e1-runs/mlops-v1/regression/families-regression-evaluation
 S3_FILE = "earthlab-e1-runs/suitability-v1/s3-wind-consistency-2015.json"
 S4_FILE = "earthlab-e1-runs/suitability-v1/s4-measured-chips.json"
 HINDCAST = "simulated_availability_hindcast"
+SCENARIO_LABEL = "recorded scenario evidence; no model turn in this folder"
 NOTE = (
     "Recorded replay. development, visible questions. Each scenario entry states what ran. "
     "S1 to S4 run no model here. The research questions are visible development questions."
@@ -153,6 +154,7 @@ def main() -> int:
     built = entries(args.root.resolve())
     for entry in built:
         entry["split"] = "validation only; the sealed test period was not read"
+        entry["label"] = SCENARIO_LABEL
         entry["result_sha256"] = file_digest(OUT / str(entry["run"]) / "result.json")
     note = str(read_manifest(OUT).get("note", NOTE))
     write_manifest(OUT, [*kept, *built], note=note)

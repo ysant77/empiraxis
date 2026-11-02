@@ -115,6 +115,7 @@
       "science_label": "simulated_availability_hindcast",
       "planned": "A human decision on the model is still open.",
       "split": "validation only; the sealed test period was not read",
+      "label": "recorded scenario evidence; no model turn in this folder",
       "result_sha256": "f7a8c665e4a84ac5c70c86732e35b9b9fd77b1782bbc600b97b89b2e8664d8ca",
       "files": {
         "decision.json": "c520b3cac23af6adb6a017db5366277526963b17cbe9f5b9de2c756f7c74cdae",
@@ -141,12 +142,13 @@
       "science_label": "simulated_availability_hindcast",
       "planned": "None. The negative result stands.",
       "split": "validation only; the sealed test period was not read",
+      "label": "recorded scenario evidence; no model turn in this folder",
       "result_sha256": "24d6c023dad5102beb44b18d06a18373b80ae7d2cbd8fd2d6332bbaf69f10d50",
       "files": {
         "families-classification-evaluation.json": "8bcdf31fb525e782fdcdc63b84d813f57094cbf399380373bb626c7586f29fbb",
         "readiness-e53f6e427df8.json": "af045db95e12724189062bd0cd22a33c5ff03a77c34398c5006c50cc9b2d64dc",
         "result.json": "24d6c023dad5102beb44b18d06a18373b80ae7d2cbd8fd2d6332bbaf69f10d50",
-        "trace.jsonl": "be18f56922f7199fd3cd7918781aa76a21751eb8a4a41c302759dbcdfc0a66c6"
+        "trace.jsonl": "88811dd507e8d6933852b7e16940ac546bbc0aac6ca08120ec3cdb11799aae90"
       }
     },
     {
@@ -159,11 +161,12 @@
       "science_label": "hindsight_diagnostic",
       "planned": "None. This is not an attribution.",
       "split": "validation only; the sealed test period was not read",
+      "label": "recorded scenario evidence; no model turn in this folder",
       "result_sha256": "ebce9c589c2a33ff1a91bc9530a5c66fdf66de273d8bafd2713ec5df8b6aa932",
       "files": {
         "result.json": "ebce9c589c2a33ff1a91bc9530a5c66fdf66de273d8bafd2713ec5df8b6aa932",
         "s3-wind-consistency-2015.json": "fbdcc091b5ac8867443a84b64912a03f40f791bd4ac2d4642fac27d65c3688b0",
-        "trace.jsonl": "b256e01cb94a130d617fe694bfa9a0086fc4d4f353c9fd9a9c325e64f919324f"
+        "trace.jsonl": "e5bb5d06052fa911ad4a51f0f144169361ac7c94ce70f4f123ba1664bcb5f41d"
       }
     },
     {
@@ -185,6 +188,7 @@
       "science_label": "historical_raster_analysis",
       "planned": "Planned work: the human decision on the request. No signed approval exists.",
       "split": "validation only; the sealed test period was not read",
+      "label": "recorded scenario evidence; no model turn in this folder",
       "result_sha256": "ef4fc084b6305b1a0fafbcf02a6369936824e9bcfe3abada9ccb9bea7745ea27",
       "files": {
         "decision.json": "6a73deac852f6b5843bb3c53430a5e3bc4ccafa6141744b65266645eb1310184",
