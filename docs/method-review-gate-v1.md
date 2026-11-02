@@ -114,3 +114,16 @@ Proposed acceptance, for the owner to confirm before the run: the gate adds at m
 - A critic on the same model as the Lead is a separate call, not an independent mind. The record labels it `same_model_second_pass`. A critic on another model is labelled `independent_model`.
 - `justified_by_incremental_cost` needs a declared case, so saved runs show `not_measured` unless no gain exists.
 - Sample sizes are small, and every result is on validation.
+
+## Contract rules added after review-gate-v2
+
+The v2 runs showed failures in the contract between model text and code. These rules are in `src/earthlab/harness/review_contracts.py`. They change no recorded row. No live run has used them yet, so a new live experiment needs a new protocol version.
+
+| Failure seen | Rule now |
+|---|---|
+| The Lead wrote "persistence alarm" and "logistic regression with 24h lags", and code refused both as unknown. | Code maps a registered name, or an alias in a fixed list, to the method. The record lists each mapping in `normalized`. Free text and ambiguous names, for example "random forest", stay unknown and are refused. |
+| A deterministic raster plan asked for 60 s, and code refused it against a 0 s training budget. | The training budget applies only to a method that trains. |
+| A critic turned a 0.2 µg/m³ MAE gain into a 0.2 skill threshold, and the Lead copied it into the revised case. | A revised case may not change `expected_benefit` or drop a failure condition. A critique threshold must be zero, a measured profile value, a number in a registered criterion or failure condition, or the case's minimum gain for the same metric. |
+| Critics proposed tests on "2026-01-01 to 2026-10-01 holdout" and "2023-2025". | A critique that names the test split, a holdout or a year from 2024 is refused. |
+
+The gate stays off by default. One critique and one Lead answer stay the limit. The signed decision and the human gate do not change.

@@ -66,7 +66,7 @@ FACTS = ReviewFacts(PM25_PROBLEM, PROFILE, assess(PM25_PROBLEM, PROFILE, 1200.0)
 CONCERN: dict[str, Any] = {
     "kind": "falsifiable_concern", "finding": "no_real_alternative",
     "claim": "Ridge may lose to persistence in the hours with a sudden jump in PM2.5.",
-    "test": {"metric": "mae", "direction": "above", "threshold": 26.3,
+    "test": {"metric": "mae", "direction": "above", "threshold": 0.2,
              "samples": "validation hours above 55 ug/m3"},
 }  # fmt: skip
 
