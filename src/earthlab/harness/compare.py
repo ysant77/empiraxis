@@ -29,7 +29,16 @@ def load_runs(manifest: Path) -> list[dict[str, Any]]:
         record = (
             json.loads(path.read_text(encoding="utf-8")) if path and path.is_file() else {}
         )  # fmt: skip
-        out.append({"scenario": row["scenario"], "arm": row["arm"], "record": record})
+        out.append(
+            {
+                "scenario": row["scenario"],
+                "arm": row.get("arm_id", row["arm"]),
+                "variant": row.get("prompt_variant"),
+                "models": row.get("models"),
+                "ranked": row.get("ranked", True),
+                "record": record,
+            }
+        )
     return out
 
 
@@ -63,12 +72,26 @@ def agrees_with_code(record: dict[str, Any]) -> bool | None:
     return bool(rec["outcome"] == record["code_outcome"])
 
 
+def _variants(rows: list[dict[str, Any]]) -> str:
+    found = sorted({str(r["variant"]) for r in rows if r.get("variant")})
+    return ", ".join(found) or NOT_MEASURED
+
+
+def _models(rows: list[dict[str, Any]]) -> str:
+    """Role to provider, as the manifest recorded it. Blank for an arm with no model."""
+    found = sorted({json.dumps(r["models"], sort_keys=True) for r in rows if r.get("models")})
+    return "; ".join(found) or "none"
+
+
 def cell(rows: list[dict[str, Any]]) -> dict[str, Any]:
     """One scenario and one arm, over its repeats."""
     records = [r["record"] for r in rows]
     accepted = sum(bool(a) and all(a.values()) for a in (r.get("acceptance") for r in records))
     return {
         "runs": len(rows),
+        "prompt_variant": _variants(rows),
+        "models": _models(rows),
+        "ranked": "yes" if all(r.get("ranked", True) for r in rows) else "no: Lead gate waived",
         "reached_decision_gate": sum(r.get("state") == "forwarded" for r in records),
         "ended_in_refusal_or_abstention": sum(
             r.get("state") in ("refused", "abstained") for r in records
@@ -97,10 +120,12 @@ def cell(rows: list[dict[str, Any]]) -> dict[str, Any]:
 
 def build(runs: list[dict[str, Any]]) -> dict[str, Any]:
     scenarios = sorted({r["scenario"] for r in runs})
+    labels = [a for a in dict.fromkeys(r["arm"] for r in runs)]
+    labels.sort(key=lambda a: ARMS.index(a) if a in ARMS else len(ARMS))
     table = {
         name: {
             arm: cell(rows)
-            for arm in ARMS
+            for arm in labels
             if (rows := [r for r in runs if r["scenario"] == name and r["arm"] == arm])
         }
         for name in scenarios
@@ -109,6 +134,7 @@ def build(runs: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 SECTIONS = (
+    ("Arm", ("prompt_variant", "models", "ranked")),
     ("Scientific result", ("runs", "reached_decision_gate", "ended_in_refusal_or_abstention",
                            "failed", "acceptance_passed", "outcomes", "strategies",
                            "agrees_with_code_rule")),
