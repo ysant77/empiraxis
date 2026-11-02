@@ -108,11 +108,17 @@ def test_the_training_budget_applies_only_to_a_method_that_trains() -> None:
         "T+6 h skill on 2026-01-01 to 2026-10-01 holdout",
         "mean T+6h skill for ridge vs persistence across five regions 2023-2025",
         "the test split 2024-01-01 to 2026-10-01", "held-out test years",
+        "T+6h test forecasts where true PM2.5 >55 ug/m3",  # seen in review-gate-v1
     ],
 )  # fmt: skip
 def test_a_critique_cannot_test_on_the_sealed_period(samples: str) -> None:
     issues = critique_issues(critique(samples=samples), [], FACTS)
     assert any("sealed" in issue for issue in issues)
+
+
+def test_the_word_test_in_a_claim_is_not_a_sealed_sample() -> None:
+    claim = "A test of ridge against persistence can prove this concern wrong."
+    assert rules.sealed_issues(claim, "pm25-regression-6h", "validation hours above 55") == []
 
 
 def test_a_validation_test_is_open() -> None:

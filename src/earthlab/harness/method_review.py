@@ -304,7 +304,7 @@ def critique_issues(
     proposal: MethodProposalV1 | None = None,
 ) -> list[str]:
     """Why a critique is not a review. Praise, vague text, sealed or invented tests fail."""
-    issues = rules.sealed_issues(f"{value.test.samples} {value.claim}", facts.problem.problem_id)
+    issues = rules.sealed_issues(value.claim, facts.problem.problem_id, value.test.samples)
     if proposal is not None:
         test = value.test
         issues += rules.threshold_issues(test.metric, test.threshold, facts.problem, proposal)
