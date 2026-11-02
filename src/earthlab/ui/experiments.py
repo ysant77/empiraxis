@@ -56,9 +56,10 @@ def experiment_panel(run_dir: Path) -> None:
         st.warning(" ".join(record["limitations"]))
         rec = record.get("recommendation") or {}
         scored = record.get("kind") in SCORED_KINDS
+        note = UNLOCKED if scored else ""
         st.write(
             f"Arm {record['arm']}. Status {record['status']}. Recommendation: "
-            f"{rec.get('outcome', 'none')} {rec.get('model_id') or ''}. {UNLOCKED if scored else ''}"
+            f"{rec.get('outcome', 'none')} {rec.get('model_id') or ''}. {note}"
         )
         st.dataframe(record.get("comparison", []), use_container_width=True, hide_index=True)
         if scored:
