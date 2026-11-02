@@ -105,9 +105,9 @@ def test_repository_arms_report_what_blocks_the_llama_arm() -> None:
     blocked = {a.id: arm_blockers(a, repo, providers) for a in SUITE.arms}
     assert blocked["single-muse"] == blocked["combined-muse"] == blocked["separate-muse"] == []
     llama = " ".join(blocked["separate-llama-pm"])
-    for reason in ("not listed for product_manager", "provider is not configured",
-                   "preflight not run", "licence not checked", "not approved"):  # fmt: skip
-        assert reason in llama
+    assert "not listed for product_manager" in llama  # only the PM seat is untested
+    for reason in ("provider is not configured", "preflight not run", "licence not checked"):
+        assert reason not in llama
     assert next(a for a in SUITE.arms if a.id == "separate-llama-pm").conditional
 
 

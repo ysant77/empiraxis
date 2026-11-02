@@ -71,3 +71,16 @@ def test_a_recommendation_is_compared_with_the_code_rule() -> None:
     record = {"recommendation": {"outcome": "abstain"}, "code_outcome": "adopt"}
     assert agrees_with_code(record) is False
     assert agrees_with_code({"state": "refused"}) is None
+
+
+def test_an_unranked_arm_keeps_its_label_from_the_manifest(tmp_path: Path) -> None:
+    run = _run(tmp_path, "c", {"state": "forwarded"})
+    rows = [
+        {"scenario": "s", "arm": "single", "arm_id": "S-q4", "ranked": False, "run": run},
+        {"scenario": "s", "arm": "single", "arm_id": "S-M", "ranked": True, "run": run},
+    ]
+    path = tmp_path / "m.jsonl"
+    path.write_text("\n".join(json.dumps(r) for r in rows), encoding="utf-8")
+    table = build(load_runs(path))["scenarios"]["s"]
+    assert table["S-q4"]["ranked"] == "no: Lead gate waived"
+    assert table["S-M"]["ranked"] == "yes"

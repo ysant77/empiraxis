@@ -39,10 +39,40 @@ candidates:
   - candidate_id: llama-3-2-3b
     family: meta-llama
     model_id: meta-llama/Llama-3.2-3B-Instruct
+    provider_id: local-llama-3-2-3b
+    roles: [data_specialist, ml_engineer]
     planned_roles: [product_manager]
     license: Llama 3.2 Community License
-    license_checked: false
+    license_checked: true  # owner accepted the licence in chat, 2026-11-01
+    enabled: true
+    preflight:
+      checked_on: "2026-11-02"
+      json_schema: pass
+      tool_call: pass
+      served_model: meta-llama/Llama-3.2-3B-Instruct
+      peak_memory_gb: 7.25
+      note: >-
+        Served alone on port 8081 (llama-server --jinja, 16k context). JSON schema check passed.
+        A scripted loop made prepare_data, then submit_note, then stopped. Wired memory is the
+        system figure with Muse down. Specialist roles only: the PM seat was not tested.
+
+  - candidate_id: llama-3-1-8b
+    family: meta-llama
+    model_id: meta-llama/Llama-3.1-8B-Instruct
+    provider_id: local-llama-3-1-8b
+    planned_roles: [product_manager, data_specialist, ml_engineer]
+    license: Llama 3.1 Community License
+    license_checked: true  # owner accepted the licence in chat, 2026-11-01
     enabled: false
+    preflight:
+      checked_on: "2026-11-02"
+      json_schema: pass
+      tool_call: fail
+      served_model: meta-llama/Llama-3.1-8B-Instruct
+      peak_memory_gb: 10.15
+      note: >-
+        Failed. In a scripted tool loop the model wrote a stray ";" before the second tool call.
+        The server rejected the call with HTTP 500. Stays disabled.
 
   - candidate_id: muse-spark-open
     family: meta-muse
@@ -64,10 +94,22 @@ candidates:
   - candidate_id: qwen3-4b-2507
     family: qwen
     model_id: Qwen/Qwen3-4B-Instruct-2507
+    provider_id: local-qwen3-4b-2507
+    roles: [data_specialist, ml_engineer]
     planned_roles: [implementor]
     license: Apache-2.0 (verify the exact revision)
-    license_checked: false
-    enabled: false
+    license_checked: true  # owner approved the Apache-2.0 download in chat, relayed 2026-11-01
+    enabled: true
+    preflight:
+      checked_on: "2026-11-02"
+      json_schema: pass
+      tool_call: pass
+      served_model: Qwen/Qwen3-4B-Instruct-2507
+      peak_memory_gb: 8.29
+      note: >-
+        Served alone on port 8081 (llama-server --jinja, 16k context). JSON schema check passed.
+        A scripted loop made prepare_data, then submit_note, then stopped. Wired memory is the
+        system figure with Muse down. Specialist roles only: the PM seat was not tested.
 
   - candidate_id: gemma-3-4b-it
     family: gemma

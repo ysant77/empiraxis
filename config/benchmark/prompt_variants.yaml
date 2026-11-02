@@ -1,0 +1,37 @@
+# Reviewed prompt variants, as data. A variant ID selects text per prompt key. A key that a
+# variant leaves out keeps the engine default. The digest of every resolved text goes to the
+# run trace. A person reviews each text before a run (see docs/benchmark-matrix-protocol.md).
+# Keys: scope, strategy, plan, data, ml, review, decide, forward.
+version: 1
+variants:
+  - id: baseline
+    description: The engine defaults. This is the state of the live round 1.
+  - id: note-close-v1
+    description: >-
+      Fixes the live defect. A specialist ran its tool and stopped with no submit_note. The
+      text names the two steps in order and says the run is not done until submit_note is called.
+    texts:
+      data: >-
+        You are the Data Scientist. Do two steps in order. Step 1: call prepare_data one time.
+        Step 2: when the tool result arrives, call submit_note with one short sentence about
+        the result. Your work is not done until you call submit_note. Never answer in plain text.
+      ml: >-
+        You are the ML/DL Engineer. Do two steps in order. Step 1: call train_models one time.
+        Step 2: when the tool result arrives, call submit_note with one short sentence about
+        the result. Your work is not done until you call submit_note. Never answer in plain text.
+  - id: note-close-reminder-v1
+    description: >-
+      The note-close-v1 texts, plus one bounded controller reminder after each tool result
+      and after a plain-text reply. The reminder adds no new authority.
+    texts:
+      data: >-
+        You are the Data Scientist. Do two steps in order. Step 1: call prepare_data one time.
+        Step 2: when the tool result arrives, call submit_note with one short sentence about
+        the result. Your work is not done until you call submit_note. Never answer in plain text.
+      ml: >-
+        You are the ML/DL Engineer. Do two steps in order. Step 1: call train_models one time.
+        Step 2: when the tool result arrives, call submit_note with one short sentence about
+        the result. Your work is not done until you call submit_note. Never answer in plain text.
+    reminders:
+      data: "The tool has run. Call submit_note now. Do not call prepare_data again."
+      ml: "The tool has run. Call submit_note now. Do not call train_models again."
