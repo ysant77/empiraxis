@@ -45,7 +45,7 @@ def _s2_data(run_dir: Path) -> list[dict[str, Any]]:
             "Digest": data["source_sha256"][:12],
             "Coverage": read(run_dir, "families-classification-evaluation.json")["split_scored"],
             "Granularity": "1 h, five regions",
-            "Availability": "; ".join(data["alignment_findings"]),
+            "Availability": "; ".join(f.split(": ")[-1] for f in data["alignment_findings"]),
         }
     ]
 
@@ -143,7 +143,8 @@ def _s2_negative(run_dir: Path) -> list[str]:
         f"region {name.split('_')[1]} {value['f1']:.3f}"
         for name, value in hybrid["subgroups"].items()
     ]
-    return [*hybrid["reasons"], "F1 of the hybrid by region: " + ", ".join(regions) + "."]
+    reasons = [f"{r[0].upper()}{r[1:]}." for r in hybrid["reasons"]]
+    return [*reasons, "F1 of the hybrid by region: " + ", ".join(regions) + "."]
 
 
 def _s3_negative(run_dir: Path) -> list[str]:

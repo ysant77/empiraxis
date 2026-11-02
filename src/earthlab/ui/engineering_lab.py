@@ -267,9 +267,8 @@ def _story(opened: Opened) -> None:
     story, run_dir = opened.story, opened.run_dir
     st.subheader(story.title)
     section("Datasets and availability")
-    rows = lab_data.data_rows(story.key, run_dir)
-    if rows:
-        story_view.table(rows)
+    for dataset in lab_data.data_rows(story.key, run_dir):
+        story_view.table([{"Field": k, "Value": v} for k, v in dataset.items()])
     section("Alternatives and execution")
     st.write(lab_data.execution(story.key, run_dir))
     rows = lab_data.alternatives(run_dir)

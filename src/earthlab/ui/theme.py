@@ -20,7 +20,8 @@ h5 {font-size: 0.95rem !important; color: #47535c; margin-top: 0.9rem;}
 [data-testid="stMetricDelta"] {font-size: 0.78rem;}
 [data-testid="stMetricDelta"] svg {display: none;}
 table[data-testid="stTableStyledTable"] {width: 100%;}
-table[data-testid="stTableStyledTable"] td, table[data-testid="stTableStyledTable"] th {
+table[data-testid="stTableStyledTable"] td, table[data-testid="stTableStyledTable"] th,
+table[data-testid="stTableStyledTable"] td *, table[data-testid="stTableStyledTable"] th * {
   overflow-wrap: anywhere; white-space: normal;
 }
 @media (max-width: 640px) {
