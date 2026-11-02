@@ -94,6 +94,110 @@
         "result.json": "3cb0c59b73b53cfcd88963c0f1f7f7f33d663f6e64cdf27d8bed13b6620cc0ad",
         "trace.jsonl": "877e55991f358c4f6a1b155b86c19843193ff204e66d3b794d52334ecd9d9ac9"
       }
+    },
+    {
+      "run": "scenario-s1-regression",
+      "scenario_id": "S1",
+      "sources": {
+        "trace.jsonl": "21dc4d673e528372d6e0b352646c46c2fe126291fd2fec8953a158701912afdd",
+        "result.json": "f7a8c665e4a84ac5c70c86732e35b9b9fd77b1782bbc600b97b89b2e8664d8ca",
+        "decision.json": "c520b3cac23af6adb6a017db5366277526963b17cbe9f5b9de2c756f7c74cdae",
+        "evaluation-plan-1.json": "32563eb9e1b4a2b2e953de64c256f11683dbd286942e2654932f8eccacb52e94",
+        "plan-1.json": "52db760b27f6a30a9c7333fba6d7cd2c7996623c6b48d5a96f0295eb6325da22",
+        "problem.json": "22072871ee2f756e4a138e6295c4b711c9a5723e8451012ae0520eae7a400905",
+        "profile.json": "6c2755cfe5ca7434d4c2a713b03d0cd0e22a2cf6f6ab1fefaf665e191a32cb70",
+        "request.json": "ec95a2e71391ccd1a84bba8bfeeffd2182d29b8588b39d9a775db675ea56a2ed",
+        "suitability.json": "8029e17f1c7eead424dd02ad9464c1cb5cf906bd13c437744d747df90682753f",
+        "readiness-02d39d3ee183.json": "fe40600831ca15ffd4a43f068309bce159d56150143858db6bb8aa1899c6038c",
+        "families-regression-evaluation.json": "6f3326ec902d50d5a8ff19faf25725e5cfa4ccba98b30e346bc40ff891b4dbb2"
+      },
+      "evidence_mode": "Real execution, recorded replay. No model in this run.",
+      "science_label": "simulated_availability_hindcast",
+      "planned": "A human decision on the model is still open.",
+      "split": "validation only; the sealed test period was not read",
+      "result_sha256": "f7a8c665e4a84ac5c70c86732e35b9b9fd77b1782bbc600b97b89b2e8664d8ca",
+      "files": {
+        "decision.json": "c520b3cac23af6adb6a017db5366277526963b17cbe9f5b9de2c756f7c74cdae",
+        "evaluation-plan-1.json": "32563eb9e1b4a2b2e953de64c256f11683dbd286942e2654932f8eccacb52e94",
+        "families-regression-evaluation.json": "6f3326ec902d50d5a8ff19faf25725e5cfa4ccba98b30e346bc40ff891b4dbb2",
+        "plan-1.json": "52db760b27f6a30a9c7333fba6d7cd2c7996623c6b48d5a96f0295eb6325da22",
+        "problem.json": "22072871ee2f756e4a138e6295c4b711c9a5723e8451012ae0520eae7a400905",
+        "profile.json": "6c2755cfe5ca7434d4c2a713b03d0cd0e22a2cf6f6ab1fefaf665e191a32cb70",
+        "readiness-02d39d3ee183.json": "fe40600831ca15ffd4a43f068309bce159d56150143858db6bb8aa1899c6038c",
+        "request.json": "ec95a2e71391ccd1a84bba8bfeeffd2182d29b8588b39d9a775db675ea56a2ed",
+        "result.json": "f7a8c665e4a84ac5c70c86732e35b9b9fd77b1782bbc600b97b89b2e8664d8ca",
+        "suitability.json": "8029e17f1c7eead424dd02ad9464c1cb5cf906bd13c437744d747df90682753f",
+        "trace.jsonl": "21dc4d673e528372d6e0b352646c46c2fe126291fd2fec8953a158701912afdd"
+      }
+    },
+    {
+      "run": "scenario-s2-encoder-reuse",
+      "scenario_id": "S2",
+      "sources": {
+        "families-classification-evaluation.json": "8bcdf31fb525e782fdcdc63b84d813f57094cbf399380373bb626c7586f29fbb",
+        "readiness-e53f6e427df8.json": "af045db95e12724189062bd0cd22a33c5ff03a77c34398c5006c50cc9b2d64dc"
+      },
+      "evidence_mode": "Real execution, recorded results. The trace records packaging only.",
+      "science_label": "simulated_availability_hindcast",
+      "planned": "None. The negative result stands.",
+      "split": "validation only; the sealed test period was not read",
+      "result_sha256": "24d6c023dad5102beb44b18d06a18373b80ae7d2cbd8fd2d6332bbaf69f10d50",
+      "files": {
+        "families-classification-evaluation.json": "8bcdf31fb525e782fdcdc63b84d813f57094cbf399380373bb626c7586f29fbb",
+        "readiness-e53f6e427df8.json": "af045db95e12724189062bd0cd22a33c5ff03a77c34398c5006c50cc9b2d64dc",
+        "result.json": "24d6c023dad5102beb44b18d06a18373b80ae7d2cbd8fd2d6332bbaf69f10d50",
+        "trace.jsonl": "be18f56922f7199fd3cd7918781aa76a21751eb8a4a41c302759dbcdfc0a66c6"
+      }
+    },
+    {
+      "run": "scenario-s3-transport",
+      "scenario_id": "S3",
+      "sources": {
+        "s3-wind-consistency-2015.json": "fbdcc091b5ac8867443a84b64912a03f40f791bd4ac2d4642fac27d65c3688b0"
+      },
+      "evidence_mode": "Retrospective reanalysis, recorded results. The trace records packaging only.",
+      "science_label": "hindsight_diagnostic",
+      "planned": "None. This is not an attribution.",
+      "split": "validation only; the sealed test period was not read",
+      "result_sha256": "ebce9c589c2a33ff1a91bc9530a5c66fdf66de273d8bafd2713ec5df8b6aa932",
+      "files": {
+        "result.json": "ebce9c589c2a33ff1a91bc9530a5c66fdf66de273d8bafd2713ec5df8b6aa932",
+        "s3-wind-consistency-2015.json": "fbdcc091b5ac8867443a84b64912a03f40f791bd4ac2d4642fac27d65c3688b0",
+        "trace.jsonl": "b256e01cb94a130d617fe694bfa9a0086fc4d4f353c9fd9a9c325e64f919324f"
+      }
+    },
+    {
+      "run": "scenario-s4-resource-request",
+      "scenario_id": "S4",
+      "sources": {
+        "trace.jsonl": "f40fb215bdb712d6f9d7a23901f56c59c72047498b42e57867ac5460fed2a1fc",
+        "result.json": "ef4fc084b6305b1a0fafbcf02a6369936824e9bcfe3abada9ccb9bea7745ea27",
+        "decision.json": "6a73deac852f6b5843bb3c53430a5e3bc4ccafa6141744b65266645eb1310184",
+        "evaluation-plan-1.json": "ccb2e810e12cea31fdf522ab37045da53b639f33425a7ff23469916d2597639e",
+        "plan-1.json": "042b0c31fff40074218d9829eed5867a778b5d8215a990811c5fe7b0bc57b4c4",
+        "problem.json": "5134edeb0460f9254077e289fc47b2bdfa6097f7e48dc829bd4adf3b136ea35b",
+        "profile.json": "44466aadfc6d6073a22643aad720e5ebc300378460e64cf0de54906f8b77b83e",
+        "request.json": "3320a0ad0e5472250c9d3d188851b00c4425b57bf1a720402285f513661a897e",
+        "suitability.json": "776131a3e824d6e210570aab9de6111466d699f1ab95ea0cf85099f54fecec8e",
+        "s4-measured-chips.json": "9fcd39ab56ffefba9b209b445c78286b2083b107e72ef5dcff658a08167a53e8"
+      },
+      "evidence_mode": "Real execution, recorded replay. No segmentation model ran.",
+      "science_label": "historical_raster_analysis",
+      "planned": "Planned work: the human decision on the request. No signed approval exists.",
+      "split": "validation only; the sealed test period was not read",
+      "result_sha256": "ef4fc084b6305b1a0fafbcf02a6369936824e9bcfe3abada9ccb9bea7745ea27",
+      "files": {
+        "decision.json": "6a73deac852f6b5843bb3c53430a5e3bc4ccafa6141744b65266645eb1310184",
+        "evaluation-plan-1.json": "ccb2e810e12cea31fdf522ab37045da53b639f33425a7ff23469916d2597639e",
+        "plan-1.json": "042b0c31fff40074218d9829eed5867a778b5d8215a990811c5fe7b0bc57b4c4",
+        "problem.json": "5134edeb0460f9254077e289fc47b2bdfa6097f7e48dc829bd4adf3b136ea35b",
+        "profile.json": "44466aadfc6d6073a22643aad720e5ebc300378460e64cf0de54906f8b77b83e",
+        "request.json": "3320a0ad0e5472250c9d3d188851b00c4425b57bf1a720402285f513661a897e",
+        "result.json": "ef4fc084b6305b1a0fafbcf02a6369936824e9bcfe3abada9ccb9bea7745ea27",
+        "s4-measured-chips.json": "9fcd39ab56ffefba9b209b445c78286b2083b107e72ef5dcff658a08167a53e8",
+        "suitability.json": "776131a3e824d6e210570aab9de6111466d699f1ab95ea0cf85099f54fecec8e",
+        "trace.jsonl": "f40fb215bdb712d6f9d7a23901f56c59c72047498b42e57867ac5460fed2a1fc"
+      }
     }
   ]
 }

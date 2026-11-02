@@ -1,0 +1,6 @@
+{
+  "constraints": [],
+  "objective": "Segment the burned area in this study window with a pretrained model.",
+  "request_id": "burned-area-segmentation",
+  "schema_version": "1"
+}

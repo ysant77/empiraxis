@@ -132,6 +132,9 @@ def run_panel(label: str, local: Path | None) -> None:
     live = entry is not None and entry.active
     title = "Run in progress" if live else "Run state"
     with common.panel(title, "experimental", "Computed from the hash-chained trace."):
+        note = common.scenario_note(label)
+        if note is not None:
+            st.caption(note)
         if local is None and entry is None:
             run_dir, _, error = common.open_run(label, None)
             if run_dir is None:

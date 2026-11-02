@@ -164,10 +164,10 @@ def open_run(label: str, local: Path | None) -> tuple[Path | None, RunEvents | N
         return None, None, f"{type(exc).__name__}: {exc}"
 
 
-def run_provenance(local: Path | None) -> str:
+def run_provenance(local: Path | None, label: str = "") -> str:
     if local is not None:
         return "Local saved run, read from its own hash-chained trace. It is not a redacted copy."
-    return replay_provenance()
+    return scenario_note(label) or replay_provenance()
 
 
 def replay_provenance() -> str:
@@ -176,6 +176,18 @@ def replay_provenance() -> str:
         return str(read_manifest(REPLAY_DIR).get("note", ""))
     except ManifestError:
         return ""
+
+
+def scenario_note(label: str) -> str | None:
+    """What a demonstration scenario really is, from its own replay entry."""
+    entry = replay_entry(label.removeprefix("replay/")) if label.startswith("replay/") else {}
+    if "evidence_mode" not in entry:
+        return None
+    return (
+        f"Scenario {entry['scenario_id']}. {entry['evidence_mode']} "
+        f"Science label: {entry['science_label']}. {entry['planned']} "
+        f"Artifact result.json {str(entry['result_sha256'])[:16]}."
+    )
 
 
 def replay_notice() -> None:

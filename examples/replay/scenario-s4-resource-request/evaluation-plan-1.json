@@ -1,0 +1,28 @@
+{
+  "evaluator": "earthlab.verify.burned_area_check",
+  "evaluator_sha256": "497eeb92ba964ba56a569af2fde5fd473d48a29d723984c60cc0cb79abc9ecc6",
+  "failures": [
+    "missing bands: blue, green, red, nir_narrow, swir1, swir2",
+    "resolution 500.0 m"
+  ],
+  "notes": [
+    "recomputed from pinned bytes by the independent verifier"
+  ],
+  "reference": "none",
+  "schema_version": "1",
+  "scores": [
+    {
+      "high": null,
+      "low": null,
+      "metrics": {},
+      "model": "segmentation_pretrained",
+      "passes": false,
+      "reasons": [
+        "incompatible_inputs: missing bands: blue, green, red, nir_narrow, swir1, swir2",
+        "incompatible_inputs: resolution 500.0 m"
+      ],
+      "subgroups": {}
+    }
+  ],
+  "split_scored": "no split"
+}

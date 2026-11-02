@@ -1,0 +1,74 @@
+{
+ "status": "awaiting_human",
+ "reason": "evidence ready for a human decision",
+ "arm": "recorded",
+ "kind": "transport_consistency",
+ "problem_id": "s3-wind-rain-fire-2015",
+ "evidence_label": "Retrospective reanalysis: perfect-weather hindsight diagnostic (ERA5 reanalysis)",
+ "limitations": [
+  "Retrospective consistency of wind and rain with transport from a box. A temporal association is not a cause. This is not a source attribution.",
+  "A single passing box still does not identify a source.",
+  "Some FIRMS detections, most in box B, carry the static land type flag: not all are fires.",
+  "The two months are haze-heavy. The result does not carry to other years."
+ ],
+ "recommendation": {
+  "outcome": "abstain",
+  "model_id": null,
+  "reason": "Overall inconclusive. Identifiable source: False."
+ },
+ "comparison": [
+  {
+   "box_id": "box-a",
+   "level": "10m",
+   "verdict": "inconsistent",
+   "base_event_rate": 0.0,
+   "base_clean_rate": 0.0,
+   "stable_share": 0.889
+  },
+  {
+   "box_id": "box-b",
+   "level": "10m",
+   "verdict": "inconclusive",
+   "base_event_rate": 0.686,
+   "base_clean_rate": 0.523,
+   "stable_share": 0.519
+  },
+  {
+   "box_id": "box-c",
+   "level": "10m",
+   "verdict": "inconclusive",
+   "base_event_rate": 0.486,
+   "base_clean_rate": 0.357,
+   "stable_share": 0.759
+  },
+  {
+   "box_id": "box-a",
+   "level": "850hPa",
+   "verdict": "inconsistent",
+   "base_event_rate": 0.231,
+   "base_clean_rate": 0.117,
+   "stable_share": 0.852
+  },
+  {
+   "box_id": "box-b",
+   "level": "850hPa",
+   "verdict": "inconclusive",
+   "base_event_rate": 0.914,
+   "base_clean_rate": 0.716,
+   "stable_share": 0.63
+  },
+  {
+   "box_id": "box-c",
+   "level": "850hPa",
+   "verdict": "inconclusive",
+   "base_event_rate": 0.595,
+   "base_clean_rate": 0.636,
+   "stable_share": 0.667
+  }
+ ],
+ "evidence": {
+  "files": {
+   "s3-wind-consistency-2015.json": "fbdcc091b5ac8867443a84b64912a03f40f791bd4ac2d4642fac27d65c3688b0"
+  }
+ }
+}

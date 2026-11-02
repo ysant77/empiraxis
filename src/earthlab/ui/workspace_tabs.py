@@ -185,7 +185,7 @@ def tab_runs() -> None:
         return
     if picked[1] is None:
         split = common.replay_entry(events.run_id).get("split", "unknown")
-        st.caption(f"Split: {split}. Provenance: {common.run_provenance(None)}")
+        st.caption(f"Split: {split}. Provenance: {common.run_provenance(None, picked[0])}")
     else:
         st.caption(f"Provenance: {common.run_provenance(picked[1])}")
     st.success(f"Trace hash chain intact ({events.trace_records} records).")

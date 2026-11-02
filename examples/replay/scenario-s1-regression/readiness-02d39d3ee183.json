@@ -1,0 +1,136 @@
+{
+  "schema_version": "1",
+  "bundle_sha256": "02d39d3ee183c4f245d3a439c71e992b62ea4581c0ca57bf4f5558b6b197705a",
+  "model_name": "s1-ridge",
+  "scientific_label": "simulated_availability_hindcast",
+  "data": {
+    "source_sha256": "2fb76e1c4e4208e92f49670602e303c86e21eaa3704651633323e50f51015de4",
+    "pinned_source": true,
+    "quality_issues": [],
+    "alignment_verdict": "aligned_with_caveats",
+    "alignment_findings": [
+      "modelled_availability: label it a simulated-availability hindcast",
+      "time_convention_unknown: run a convention sensitivity"
+    ],
+    "valid": true
+  },
+  "integrity_checks": [
+    {
+      "name": "status_log",
+      "passed": true,
+      "detail": "chain intact over 18 entries"
+    },
+    {
+      "name": "weights",
+      "passed": true,
+      "detail": "sha256 1e2738e4aac0, npz, shape fits"
+    },
+    {
+      "name": "feature_schema",
+      "passed": true,
+      "detail": "124 features in the saved order"
+    },
+    {
+      "name": "preprocessing",
+      "passed": true,
+      "detail": "2 steps over 5 columns"
+    },
+    {
+      "name": "postprocessing",
+      "passed": true,
+      "detail": "steps fit the task"
+    },
+    {
+      "name": "provenance",
+      "passed": true,
+      "detail": "source 2fb76e1c4e42, fit to row 41662"
+    },
+    {
+      "name": "method",
+      "passed": true,
+      "detail": "ridge (deterministic)"
+    },
+    {
+      "name": "limitations",
+      "passed": true,
+      "detail": "2 subgroup results match the report"
+    },
+    {
+      "name": "environment",
+      "passed": true,
+      "detail": "Python 3.12.15, 2 pinned packages"
+    },
+    {
+      "name": "readiness",
+      "passed": true,
+      "detail": "status evaluated"
+    },
+    {
+      "name": "independent_evaluation",
+      "passed": true,
+      "detail": "recomputed by earthlab.forecast.evaluator: passes=True"
+    },
+    {
+      "name": "source_file",
+      "passed": true,
+      "detail": "sha256 2fb76e1c4e42"
+    }
+  ],
+  "verification_outcome": "verified_experimental",
+  "independent_evaluation": {
+    "schema_version": "1",
+    "bundle_sha256": "02d39d3ee183c4f245d3a439c71e992b62ea4581c0ca57bf4f5558b6b197705a",
+    "model_row": "M_ridge",
+    "evaluator": "earthlab.forecast.evaluator",
+    "evaluator_sha256": "00d3df0a84da3fcb9702b0da75170853852d7568647da932ddbbb4f84b7767b1",
+    "protocol_sha256": "e2734314bc098ab40e1d2705e60e7fb1b775305210ccd89adb5c6de2c4351ffc",
+    "report_sha256": "6f3326ec902d50d5a8ff19faf25725e5cfa4ccba98b30e346bc40ff891b4dbb2",
+    "source_sha256": "2fb76e1c4e4208e92f49670602e303c86e21eaa3704651633323e50f51015de4",
+    "feature_sha256": "00d91d4b8efc3c932112ced3476024f95fc352d6487b5eb4b67cb93e67f4bd60",
+    "predictions_sha256": "6005e0ba03e49d9f7b0b1c6e8a77a87a4d01f2bed9878ba8d30812935b65f06c",
+    "split_scored": "validation",
+    "reference": "B0_persistence",
+    "reproduction": "exact",
+    "passes": true,
+    "reasons": [],
+    "metrics": {
+      "mae": 4.65,
+      "skill": 0.148,
+      "above_55_mae": 37.337
+    }
+  },
+  "inference": {
+    "state": "real_data",
+    "input_sha256": "1ef8601519fc8132948ec6d413bf4a989c751231bb971d7e9cc737bd968a6031",
+    "output_sha256": "ce9caa983f7aaaa261de16e4ae91b7ba271de0f26189a8c2473e7f70b915a06d",
+    "rows_compared": 43818,
+    "max_abs_difference": 0.0,
+    "matches_reference": true,
+    "reference_mae": 4.65,
+    "output_mae": 4.65,
+    "note": ""
+  },
+  "high_pm25": {
+    "threshold_ug_m3": 55.0,
+    "model_mae": 37.337,
+    "reference_mae": 26.324,
+    "model_recall": 0.051351351351351354,
+    "worse_than_reference": true
+  },
+  "resources": {
+    "seconds_total": 4.685,
+    "seconds_per_row": 0.000107,
+    "peak_rss_mb": 439.3,
+    "conditions": "niced to 19 beside the running benchmark with Muse loaded and swap in use; not a clean timing"
+  },
+  "missing_operational_evidence": [
+    "prospective issue-time runs with a logged available-at time for each input",
+    "monitoring of input drift and output quality in operation",
+    "a rollback drill on a live path",
+    "load and failure tests on the target hardware",
+    "a named operator and an incident path"
+  ],
+  "human_approval": "none",
+  "readiness": "research",
+  "production_ready": false
+}

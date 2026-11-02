@@ -1,0 +1,32 @@
+{
+  "availability_latency_hours": 0,
+  "bands": [
+    "burn_date",
+    "qa"
+  ],
+  "first_label": "2015-09",
+  "granularity": "monthly",
+  "label_provenance": "MCD64A1 QA flags; no reference masks",
+  "labels_present": true,
+  "last_label": "2015-10",
+  "leakage_risks": [
+    "MCD64A1 is a product, not pixel ground truth"
+  ],
+  "missing_fraction": 0.539786,
+  "positive_rate": null,
+  "resolution_m": 500.0,
+  "schema_version": "1",
+  "sources": [
+    {
+      "name": "mcd64a1_2015_09.tif",
+      "sha256": "126a6c506d0d05b7f913f36ea98925de67773c68ce19194b1759a9b9acc6bfe2"
+    },
+    {
+      "name": "mcd64a1_2015_10.tif",
+      "sha256": "daf5546584de91a14cccf6636a2c3c225575ae188471894f35460530eedd0145"
+    }
+  ],
+  "unit": "ha",
+  "usable_rows": 1000,
+  "variable": "burned_area"
+}
