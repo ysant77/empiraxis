@@ -19,10 +19,16 @@ h5 {font-size: 0.95rem !important; color: #47535c; margin-top: 0.9rem;}
 [data-testid="stMetricDelta"] > div {white-space: normal;}
 [data-testid="stMetricDelta"] {font-size: 0.78rem;}
 [data-testid="stMetricDelta"] svg {display: none;}
-[data-testid="stTable"] table {table-layout: auto; width: 100%;}
-[data-testid="stTable"] td, [data-testid="stTable"] th {overflow-wrap: anywhere;}
+table[data-testid="stTableStyledTable"] {width: 100%;}
+table[data-testid="stTableStyledTable"] td, table[data-testid="stTableStyledTable"] th {
+  overflow-wrap: anywhere; white-space: normal;
+}
 @media (max-width: 640px) {
   .block-container {padding: 1.5rem 1rem 3rem 1rem;}
+  table[data-testid="stTableStyledTable"] {table-layout: fixed; font-size: 0.75rem;}
+  table[data-testid="stTableStyledTable"] td, table[data-testid="stTableStyledTable"] th {
+    padding: 0.3rem 0.35rem;
+  }
 }
 </style>
 """
