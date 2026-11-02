@@ -45,16 +45,56 @@ Do not add secrets to the host. The app refuses to start if a credential has a v
   - Five scenario pages loaded at 390 by 844 with no overflow, no error, no action button and no text input.
   - The first start found that Streamlit sets `MAPBOX_API_KEY` to an empty value. The rule now ignores empty values.
 
-## Publish
+## Publish on Streamlit Community Cloud
 
-Publishing is an owner action. It needs the owner's approval and the owner's host account.
+Publishing is an owner action. It needs the owner's approval and the owner's account. A coding agent does not sign in or publish.
 
-1. On the host, select the repository, the release commit and the entry file `deploy/streamlit_app.py`.
-2. Set Python 3.12. Add no secrets. The host reads the dependency file in the entry file's folder first, so it installs `deploy/requirements.txt`, not `uv.lock`.
-3. Prefer viewer access by invitation until the repository is public.
-4. Open each surface at desktop and phone width. Open a direct link and refresh it.
+The host deploys a branch, not a commit. It redeploys when the branch changes. To pin the release, deploy from a release branch that points at the release commit.
 
-Rollback: on the host, deploy again from the earlier release commit. If the host fails, show the local replay and the recorded video.
+### Before
+
+1. Create a release branch at the release commit, for example `release/hackathon-2026`. Push it only after review, like any other branch.
+2. Record the commit: `git rev-parse release/hackathon-2026`.
+
+### Deploy
+
+| Setting | Value |
+|---|---|
+| Sign-in | share.streamlit.io with the owner's GitHub account. Grant access to private repositories only if the repository is still private. |
+| Repository | `ysant77/axiom-earthlab` |
+| Branch | the release branch |
+| Main file path | `deploy/streamlit_app.py` |
+| Python version (Advanced settings) | 3.12 |
+| Secrets (Advanced settings) | empty |
+| Dependencies | `deploy/requirements.txt`. The host reads the entry file's folder first, so it does not use `uv.lock`. |
+| Viewers | Invite named viewers while the repository is private. Make the app public only when the repository is public. |
+
+### Check after deploy
+
+Open each URL at desktop width and at phone width (390 px). Refresh each one.
+
+- `?view=workspace&run=replay/scenario-s1-regression`
+- `?view=lab&run=replay/scenario-s2-encoder-reuse`
+- `?view=workspace&run=replay/scenario-s3-transport`
+- `?view=control&run=replay/scenario-s4-resource-request`
+- `?view=control&run=replay/scenario-muse-team-exceedance`
+
+Each page must:
+
+- show "Replay mode";
+- show no error;
+- have no run, approve, deny, train or download button;
+- have no text input.
+
+Then reboot the app from the host menu and open one URL again.
+
+Record the URL, the commit and the date in `docs/submission.md`.
+
+### Rollback
+
+1. Point the release branch at the earlier release commit, through a reviewed change.
+2. Reboot the app.
+3. If the host fails, show the local replay and the recorded video. The local replay needs no network.
 
 ## Publication audit, 2026-11-02
 
