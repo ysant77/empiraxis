@@ -18,6 +18,15 @@ from earthlab.digest import payload_digest
 
 PROMPT_KEYS = ("scope", "strategy", "plan", "data", "ml", "review", "decide", "forward")
 BASELINE_ID = "baseline"
+PROMOTED_ID = "note-close-v1"
+PROMOTED_TEXTS = {
+    "data": "You are the Data Scientist. Do two steps in order. Step 1: call prepare_data one "
+    "time. Step 2: when the tool result arrives, call submit_note with one short sentence about "
+    "the result. Your work is not done until you call submit_note. Never answer in plain text.",
+    "ml": "You are the ML/DL Engineer. Do two steps in order. Step 1: call train_models one "
+    "time. Step 2: when the tool result arrives, call submit_note with one short sentence about "
+    "the result. Your work is not done until you call submit_note. Never answer in plain text.",
+}
 
 
 class PromptVariant(Strict):
@@ -34,6 +43,12 @@ class PromptVariant(Strict):
         if self.id == BASELINE_ID and (self.texts or self.reminders):
             raise ValueError("the baseline variant holds no text: it is the engine default")
         return self
+
+
+PROMOTED = PromptVariant(
+    id=PROMOTED_ID, description="The specialist closing fix. Text only, no reminder.",
+    texts=PROMOTED_TEXTS,
+)  # fmt: skip
 
 
 class VariantFile(Strict):

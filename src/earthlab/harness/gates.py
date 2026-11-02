@@ -35,6 +35,7 @@ class Code(StrEnum):
     UNSUPPORTED_CAUSAL = "unsupported_causal_attribution"
     UNSUPPORTED_METHOD = "unsupported_method"
     OVER_BUDGET = "over_budget"
+    METHOD_REVIEW = "method_review"
 
 
 @dataclass(frozen=True)

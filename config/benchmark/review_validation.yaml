@@ -1,0 +1,141 @@
+# Review-gate validation v1. Frozen before any live result. Protocol:
+# docs/method-review-validation-protocol.md. It reuses no benchmark arm, run or result.
+experiment: review-gate-v1
+critic_repeats: 3
+matched:
+  arm: single
+  provider: local-glimmer
+  pairs:
+    - {scenario: pm25-regression, order: [gate, plain]}
+    - {scenario: pm25-exceedance, order: [plain, gate]}
+    - {scenario: burned-area-method, order: [gate, plain]}
+cases:
+  - id: gru-no-comparison
+    truth: fault
+    stage: pre_execution
+    scenario: pm25-regression
+    strategy: small_neural
+    expected: [no_simple_comparison]
+    case:
+      hypothesis: "A GRU lowers the T+6 h MAE against persistence in all five regions."
+      proposed_method: gru
+      simplest_baseline: persistence
+      candidates:
+        - {method: gru, suitability: "Fits hourly regional sequences."}
+        - {method: tcn, suitability: "Fits hourly regional sequences."}
+      data_sufficiency: "The train years hold enough hourly rows for a small network."
+      expected_benefit: {metric: mae, minimum_gain: 0.2, reason: "A smaller gain does not repay training."}
+      leakage_risks: ["The two hour availability latency must hold for every input."]
+      compute_seconds: 120.0
+      failure_conditions: ["The lower limit of MAE skill is at or below zero.", "MAE above 55 ug/m3 is worse than persistence."]
+  - id: elevated-ignored
+    truth: fault
+    stage: pre_execution
+    scenario: pm25-regression
+    strategy: small_neural
+    expected: [elevated_not_tested]
+    case:
+      hypothesis: "A GRU lowers the T+6 h MAE against persistence and the lagged ridge."
+      proposed_method: gru
+      simplest_baseline: persistence
+      candidates:
+        - {method: gru, suitability: "Fits hourly regional sequences."}
+        - {method: ridge, suitability: "Fits lagged tabular rows."}
+      data_sufficiency: "The train years hold enough hourly rows for a small network."
+      expected_benefit: {metric: mae, minimum_gain: 0.2, reason: "A smaller gain does not repay training."}
+      leakage_risks: ["The two hour availability latency must hold for every input."]
+      compute_seconds: 120.0
+      failure_conditions: ["The lower limit of MAE skill is at or below zero."]
+  - id: elevated-hidden-result
+    truth: fault
+    stage: recommendation
+    scenario: pm25-regression
+    expected: [subgroup_failure]
+    report: earthlab-matrix-runs/decisions-v1/screen-muse/runs/20261101T142630Z-4bdffe/artifacts/evaluation-plan-1.json
+    decision: {outcome: adopt, selected: candidate-1}
+  - id: repeated-refinement
+    truth: fault
+    stage: refinement
+    scenario: pm25-exceedance
+    strategy: statistical
+    expected: [repeated_plan]
+    avoided_seconds: [145, 763]
+  - id: era5-as-forecast
+    truth: fault
+    stage: pre_execution
+    scenario: pm25-regression
+    strategy: statistical
+    expected: [hindsight_as_forecast]
+    case:
+      hypothesis: "Wind at the valid hour lowers the T+6 h MAE against persistence in all regions."
+      proposed_method: ridge
+      simplest_baseline: persistence
+      candidates:
+        - {method: ridge, suitability: "Fits lagged rows with ERA5 wind at the valid hour."}
+        - {method: climatology, suitability: "Fits calendar means alone."}
+      data_sufficiency: "ERA5 reanalysis supplies wind at the valid hour for each issue time."
+      expected_benefit: {metric: mae, minimum_gain: 0.2, reason: "A smaller gain does not repay the join."}
+      leakage_risks: ["The two hour availability latency must hold for every label."]
+      compute_seconds: 30.0
+      failure_conditions: ["The lower limit of MAE skill is at or below zero."]
+  - id: prithvi-incompatible
+    truth: fault
+    stage: pre_execution
+    scenario: burned-area-segmentation
+    strategy: pretrained_transfer
+    expected: [method_blocked]
+    case:
+      hypothesis: "A pretrained segmentation model maps the burned area better than MCD64A1."
+      proposed_method: segmentation_pretrained
+      simplest_baseline: raster_deterministic
+      candidates:
+        - {method: segmentation_pretrained, suitability: "A pretrained model segments burn scars."}
+        - {method: raster_deterministic, suitability: "A pinned product gives the area."}
+      data_sufficiency: "The pinned MCD64A1 months cover the study window at 500 m resolution."
+      expected_benefit: {metric: f1, minimum_gain: 0.05, reason: "A smaller gain does not repay inference."}
+      leakage_risks: ["The product is a monthly map, so no issue time applies."]
+      compute_seconds: 0.0
+      failure_conditions: ["F1 against reference masks is below the deterministic product."]
+  - id: hybrid-adopt
+    truth: fault
+    stage: recommendation
+    scenario: pm25-exceedance
+    expected: [adopt_without_gain]
+    report: earthlab-e1-runs/mlops-v1/s2-hybrid/families-classification-evaluation.json
+    decision: {outcome: adopt, selected: frozen_gru_logistic}
+  - id: ridge-supported
+    truth: sound
+    stage: pre_execution
+    scenario: pm25-regression
+    strategy: statistical
+    expected: []
+    case:
+      hypothesis: "A lagged ridge lowers the T+6 h MAE against persistence in all regions."
+      proposed_method: ridge
+      simplest_baseline: persistence
+      candidates:
+        - {method: ridge, suitability: "Fits lagged tabular rows."}
+        - {method: climatology, suitability: "Fits calendar means alone."}
+      data_sufficiency: "The train years hold enough hourly rows for a linear fit."
+      expected_benefit: {metric: mae, minimum_gain: 0.2, reason: "A smaller gain does not repay the pipeline."}
+      leakage_risks: ["The two hour availability latency must hold for every lag."]
+      compute_seconds: 30.0
+      failure_conditions: ["The lower limit of MAE skill is at or below zero."]
+  - id: ridge-minor-finding
+    truth: sound
+    stage: pre_execution
+    scenario: pm25-regression
+    strategy: statistical
+    expected: [latency_not_named]
+    case:
+      hypothesis: "A lagged ridge lowers the T+6 h MAE against persistence in all regions."
+      proposed_method: ridge
+      simplest_baseline: persistence
+      candidates:
+        - {method: ridge, suitability: "Fits lagged tabular rows."}
+        - {method: climatology, suitability: "Fits calendar means alone."}
+      data_sufficiency: "The train years hold enough hourly rows for a linear fit."
+      expected_benefit: {metric: mae, minimum_gain: 0.2, reason: "A smaller gain does not repay the pipeline."}
+      leakage_risks: ["Scalers are fitted on the train split alone."]
+      compute_seconds: 30.0
+      failure_conditions: ["The lower limit of MAE skill is at or below zero."]
