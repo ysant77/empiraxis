@@ -20,14 +20,14 @@ A scripted test is not a live model evaluation. A replay is not a new training r
 | 5 | Compact specialist team | Muse data and ML specialist seats in the team run | Team run trace; delegation tests | bounded | no | No software or QA seat ran live | medium |
 | 6 | Durable run harness: state, trace, budgets, recovery | Team run: 17 model calls, 4 tool calls, hash-chained trace | Budget, interruption and handoff tests | bounded | no | One process at a time; no distributed recovery | high |
 | 7 | Secure real tools | Models call fixed, allowlisted tools. Code checks each proposal. | `test_agent.py`, `test_harness_lifecycle.py` | bounded | no | No general code, shell, MCP or computer-use execution, by design | medium |
-| 8 | Independent scientific design critique | review-gate-v1 and v2, all planned runs | Seeded faults: 7 of 7 found, all by code rules | partial | no | The same-model critic added no detection. The gate stopped 2 of 3 correct live plans. It stays off. | medium |
+| 8 | Independent scientific design critique | review-gate-v1 and v2, all planned runs | Seeded faults: 7 of 7 found, all by code rules. The later contract rules, applied offline to every saved critique, refuse 8 of 8 sealed tests and 6 of 6 untyped thresholds (`docs/method-review-gate-v1.md`). | partial | no | The same-model critic added no detection. The gate stopped 2 of 3 correct live plans. It stays off. | medium |
 | 9 | Scientific provenance and data quality | NEA, ERA5, FIRMS and MCD64A1 hashes; claim verifier | `python -m earthlab.harness.audit`; verifier tests | bounded | no | ERA5, FIRMS and MCD64A1 approvals expired on 2026-10-31 and were not signed records | high |
 | 10 | Heterogeneous environmental modeling | S3: ERA5 wind at two levels, rain, FIRMS boxes, 54 settings | S3 replay | bounded | no | Retrospective only; no aligned predictive features | high |
 | 11 | Data suitability, abstention, approved acquisition | S4 names the missing imagery, masks and weights approval, and stops. | `test_segmentation_gate.py`, S4 replay | bounded | no | No acquisition ran | high |
 | 12 | Data engineering: train-only transforms, feature artifacts | `docs/mlops-results-v1.md` | `docs/model-acceptance-v1.md` | bounded | no | One tabular source | medium |
 | 13 | Method selection: deterministic, statistical, ML, DL or abstention | Five cases below | Scenario replays, seeded review cases | bounded | no | Selection thresholds such as the elevated-hour rule are exploratory | high |
 | 14 | Classical, hybrid and neural experiments | Ridge, trees, GRU, frozen-GRU hybrid | `docs/mlops-results-v1.md`, S1, S2 | bounded | no | Few families; no controlled comparison across many seeds | high |
-| 15 | Reuse, transfer, distillation, pretrained satellite models | S2: a separate frozen GRU encoder with a fitted logistic head. Distillation: 3 seeds, local records. | S2 replay | partial | no | Exact S1 checkpoint reuse is blocked (below). Prithvi did not run (below). Distillation gain was small and not consistent: paired MAE skill 0.009, 0.002 and 0.011, and the seed-11 lower limit is below zero. | medium |
+| 15 | Reuse, transfer, distillation, pretrained satellite models | S2: a separate frozen GRU encoder with a fitted logistic head. Distillation: 3 seeds, local records. | S2 replay; `docs/distillation-results-v1.md`, recomputed from saved predictions | partial | no | Exact S1 checkpoint reuse is blocked (below). Prithvi did not run (below). Distillation passed its rule for 2 of 3 seeds, with a gain of at most 0.05 µg/m³ MAE, so it is not adopted. | medium |
 | 16 | Reproducible experiments: tracking, tuning, registry | Registry, bundles, bundle verification | `docs/model-registry.md` | bounded | no | Tuning code has tests, but no real search ran | medium |
 | 17 | Independent evaluation: baselines, leakage, subgroups | Persistence baselines, elevated-hour subgroup, sealed test period | S1 elevated-hour failure; leakage tests | bounded | no | No prospective validation | high |
 | 18 | Routing, prompt and orchestration cost optimization | 48 saved runs compared by workflow; profiler; static prompt rules; router function | `docs/comparative-evidence-report.md`, `docs/efficiency-evaluation.md` | partial | no | Cost is measured, but no change showed a repeated gain, and none was promoted | low |
@@ -58,6 +58,14 @@ Inventory, 2026-11-02. No model ran. Nothing was downloaded.
 | A: one pretrained forward pass | blocked | The S4 gate needs a signed resource approval for the weights. None exists, and only the owner can sign. The local environment has no TerraTorch or raster reader. A pass on a chip would be a reproduction, not a transfer result. |
 | B: score against a baseline | blocked | The model was fine-tuned on these chips. The validation chips served the model card's own evaluation, so they are not independent. Each chip is one date, so dNBR cannot be computed. |
 | C: adaptation | not started | Levels A and B did not pass. No independent labels or compute budget are set. |
+
+Preflight facts that need no approval, checked on one extracted chip:
+
+- The image is 512 by 512 by 6, float32, with values from 0.003 to 0.514 (reflectance from 0 to 1).
+- The mask is int16, with values 0 and 1 in this chip.
+- TerraTorch 1.2.13 is on PyPI. It needs torch, torchgeo, segmentation-models-pytorch and timm. None is in an isolated environment yet.
+
+To unblock Level A, the owner approves the queued Prithvi request in the local operator UI with the operator key. A model cannot do this step.
 
 The chips cover the United States. A result on them says nothing about the Kalimantan box. S4 stays `request_resources`.
 
