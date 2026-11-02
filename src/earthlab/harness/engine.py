@@ -380,15 +380,21 @@ class Engine:
         self.plan = plan
         return self.report_for(plan)
 
-    def claims(
-        self, report: EvaluationReportV1, decision: DecisionRecordV1, used: dict[str, Any]
-    ) -> Any:
-        """The six claims for the recommended model. No role writes these."""
-        case = self.review.proposal if self.review else None
-        cost = case and CostEvidence(
-            case.expected_benefit, case.compute_seconds, float(used["training_seconds"])
-        )
-        return ladder(report, decision.selected or report.reference, None, cost or None)
+    def review_outcome(
+        self, report: EvaluationReportV1 | None, decision: DecisionRecordV1 | None,
+        used: dict[str, Any],
+    ) -> dict[str, Any]:  # fmt: skip
+        """The review record and the six claims. No role writes these."""
+        if self.review is None:
+            return {}
+        out: dict[str, Any] = {"method_review": self.review.model_dump(mode="json")}
+        if report is not None and decision is not None:
+            case, seconds = self.review.proposal, float(used["training_seconds"])
+            cost = CostEvidence(case.expected_benefit, case.compute_seconds, seconds)
+            out["claims"] = ladder(
+                report, decision.selected or report.reference, None, cost
+            ).model_dump()
+        return out
 
     def close(
         self, status: str, reason: str, decision: DecisionRecordV1 | None,
@@ -429,10 +435,7 @@ class Engine:
         outcome["prompt_variant"] = self.prompts.variant_id
         outcome["prompt_digests"] = self.prompts.digests()
         outcome["usage"] = usage(self.seats)
-        if self.review is not None:
-            outcome["method_review"] = self.review.model_dump(mode="json")
-        if self.review is not None and report is not None and decision is not None:
-            outcome["claims"] = self.claims(report, decision, outcome["usage"]).model_dump()
+        outcome |= self.review_outcome(report, decision, outcome["usage"])
         outcome["roles"] = {n: c.identity_record() for n, c in self.seats.calls.items()}
         self.seats.trace.append(
             "finish", "runtime", status=status, reason=reason, workflow=True,
