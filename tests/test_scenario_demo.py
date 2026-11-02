@@ -17,6 +17,7 @@ from earthlab.harness.credit import steps
 from earthlab.runtime import open_workspace
 from earthlab.trace import RunTrace
 from earthlab.ui import common, scenarios
+from earthlab.ui.engineering_lab import review_status
 from earthlab.verify.replay import replay_run
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -299,3 +300,10 @@ def test_the_demo_script_and_readme_quote_the_recorded_numbers() -> None:
     script = (ROOT / "docs/demo-three-minute.md").read_text("utf-8")
     assert f"{team['model_calls']} model calls" in script
     assert str(team["wall_seconds"]) in script
+
+
+def test_the_review_status_reads_its_summary_or_says_there_is_none(tmp_path: Path) -> None:
+    assert review_status(tmp_path / "absent.json") is None
+    path = tmp_path / "summary.json"
+    path.write_text('{"conclusion": "Stays off.", "measures": [{"Measure": "a"}]}', "utf-8")
+    assert review_status(path) == ("Stays off.", [{"Measure": "a"}])

@@ -18,12 +18,13 @@ import yaml
 from earthlab.events.bench import DEV_LABEL, DevBench, find_dev_benches
 from earthlab.science.burned_area import QaPolicy
 from earthlab.tools.burned_area_tools import month_report
-from earthlab.ui import board_view, common, experiments, lab_data, story_view
+from earthlab.ui import board_view, common, experiments, lab_data, provenance, story_view
 from earthlab.ui.story_view import Opened, section
 
 METHOD_FILE = Path("config/methods/mcd64a1_burned_area.yaml")
 PROTOCOL_FILE = Path("evals/heldout_v1.protocol.yaml")
 LOCK_FILE = Path("evals/heldout_v1.lock.yaml")
+REVIEW_FILE = Path("docs/evidence/review-validation.json")
 RESULTS_FILE = Path("evals/results/heldout-v1/summary.json")
 HELDOUT_STATUS = "archived; measured at an older code revision"
 HELDOUT_KEYS = ("runs", "passed", "false_verified", "errors", "median_seconds")
@@ -291,6 +292,25 @@ def _story(opened: Opened) -> None:
     story_view.identity(opened)
 
 
+def review_status(path: Path = REVIEW_FILE) -> tuple[str, list[dict[str, Any]]] | None:
+    """The review-gate validation summary. None when this build holds no result."""
+    if not path.is_file():
+        return None
+    summary = json.loads(path.read_text(encoding="utf-8"))
+    return str(summary["conclusion"]), [dict(row) for row in summary["measures"]]
+
+
+def _review() -> None:
+    with st.expander("Method-review gate: validation status"):
+        st.write(provenance.SAME_MODEL_CRITIC + " The gate stays off by default.")
+        status = review_status()
+        if status is None:
+            st.write("No validation result is in this build.")
+            return
+        st.write(status[0])
+        story_view.table(status[1])
+
+
 def _advanced() -> None:
     with st.expander("Advanced: pipeline, benchmarks and recorded run evidence"):
         _pipeline()
@@ -305,4 +325,5 @@ def render(label: str | None) -> None:
     opened = story_view.open_story(label) if label else None
     if opened is not None:
         _story(opened)
+    _review()
     _advanced()
