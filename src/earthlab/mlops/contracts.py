@@ -198,7 +198,7 @@ class SearchSpaceV1(Strict):
 class SearchResultV1(Strict):
     schema_version: Literal["1"] = "1"
     space_sha256: Sha
-    selection_split: Literal["validation"] = "validation"
+    selection_split: Literal["validation", "rolling_origin_train"] = "validation"
     trials: tuple[TrialV1, ...]
     best_trial: int | None
     stopped: Literal["finished", "budget", "interrupted"]
