@@ -18,8 +18,10 @@ The ledger issues research predictions before the observation exists, then score
 - **Issue time:** the issue time must be the system clock, within 2 minutes. Backdated and future-dated issues are refused.
 - **Inputs:** each must have been published and retrieved before the issue time.
 - **Batch quota:** a batch that would pass the activation's limit is refused whole.
-- **Digest check:** before scoring, each prediction's digest is recomputed. A changed record is recorded as `digest_mismatch`, not scored.
-- **Pending and missing:** an absent observation is `pending`, which is never written, until 24 h after the target. Only then is it recorded as missing. Repeated verification adds nothing new.
+- **Digest check:** before scoring, the digest of each prediction record is computed again. A changed record is recorded as `digest_mismatch`, not scored. This digest covers the prediction record only.
+- **Raw responses:** each observation keeps the SHA-256 of the HTTP response body it came from. The body itself is not kept, so that digest cannot be checked again later.
+- **Availability:** an observation counts only if it was retrieved at or before the check time and not before its hour. When the source gives a publication time, that time must be between the hour and the retrieval. Any other observation is ignored.
+- **Pending and missing:** an absent observation is `pending`, which is never written. After 24 h, the ledger records it as `observation_missing`. This is a policy limit. It does not show that NEA will never publish the value.
 - **Day capture:** the day capture follows the source's pagination token, up to 30 pages.
 - **Scoring:** verification uses the first published value for the same region and hour, and records its digest and the absolute error. A later correction is counted, not used. 
 - `summary()` reports the number of predictions, scored predictions and missing observations.

@@ -180,7 +180,7 @@ class Ledger:
         if payload_digest(body) != p.record_sha256:
             return VerificationV1(**base, state="digest_mismatch")
         same = [o for o in captured if o.product == "pm25" and o.place_id == p.region
-                and o.event_time == p.target_time]  # fmt: skip
+                and o.event_time == p.target_time and _available(o, now)]  # fmt: skip
         first = [o for o in same if o.kind == "first" and o.value is not None]
         if not first:
             late = now - p.target_time > MISSING_AFTER
@@ -190,6 +190,13 @@ class Ledger:
             **base, state="scored", observed=seen, observed_raw_sha256=first[0].raw_sha256,
             absolute_error=abs(p.value - seen), later_corrections=len(same) - len(first),
         )  # fmt: skip
+
+
+def _available(o: Observation, now: datetime) -> bool:
+    """Published after its hour and retrieved by the check time. Fail closed otherwise."""
+    if o.retrieved_at > now or o.retrieved_at < o.event_time:
+        return False
+    return o.issued_time is None or o.event_time <= o.issued_time <= o.retrieved_at
 
 
 def summary(ledger: Ledger) -> dict[str, int]:
