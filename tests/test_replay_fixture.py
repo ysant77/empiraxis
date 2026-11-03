@@ -24,7 +24,7 @@ from earthlab.trace import RunTrace, TraceIntegrityError
 
 ROOT = Path(__file__).resolve().parents[1]
 REPLAY = ROOT / "examples" / "replay"
-SOURCE_BENCH = ROOT.parent / "axiom-earthlab" / "runs" / "bench"
+SOURCE_BENCH = ROOT.parent / "empiraxis" / "runs" / "bench"
 SECRET = "Private reasoning that must never reach the replay"
 DRAFT = "Raw model draft text"
 

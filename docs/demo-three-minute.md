@@ -64,11 +64,11 @@ All of these are in a clone of the repository: `data/nea/`, `examples/replay/`, 
 ## Clean-clone checklist
 
 ```bash
-git clone git@github.com:ysant77/axiom-earthlab.git
+git clone git@github.com:ysant77/empiraxis.git
 ```
 
 ```bash
-cd axiom-earthlab
+cd empiraxis
 ```
 
 ```bash
