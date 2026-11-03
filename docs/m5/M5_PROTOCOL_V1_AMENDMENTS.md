@@ -28,3 +28,16 @@ are unchanged. The breakdown is exploratory. Any statement drawn from it needs a
 
 The owner registered three questions: M5-A (primary), M5-B and M5-C. See `M5_RESEARCH_QUESTIONS.md`.
 Protocol v1 serves M5-A only. M5-B and M5-C need separate protocols. No frozen text changed.
+
+## Amendment 4 (2026-11-03): definition of rung I1, written before it is run
+
+The owner approved a download of about 22 GB for IMERG Early. That covers one season (2015, 1 September
+to 31 October, 2,928 half-hour granules), not five. So I1 runs in Stage P for 2015 only. It gives no skill claim.
+
+- **Features (6):** for each H1 corridor (boxes A, B, C), the sum of IMERG Early rain over the last 6 h and the last 24 h that are
+  visible at the issue time T. A half hour is visible when its end plus 4 h is at or before T (nominal latency). Each half-hour rate
+  is the mean of valid cells in the corridor, in mm/h, times 0.5 h. A window with any missing half hour is missing.
+  Ridge takes the training mean for a missing value, as for the other rungs.
+- **Model:** ridge per region on R2 inputs plus the 6 features, same penalty search and blocks as Stage P.
+- **Comparison:** I1 against R2, and I1 against R1. Decision labels follow the protocol; Stage P adds no claim.
+- **Raw files:** each granule is read once, reduced to the three corridor means, and deleted. The receipt keeps its SHA-256 and size.
