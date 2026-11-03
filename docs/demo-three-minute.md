@@ -113,6 +113,14 @@ Check each item:
 
 Screenshots of each segment are in `docs/evidence/demo/`. Use them if the interface does not start. They were taken at 1440 by 900 from the release build. Tablet (768 by 1024) and phone (390 by 844) views of the same pages are in `docs/evidence/screens/`.
 
+## Earlier recorded scenarios
+
+These numbers are not in the three-minute script. Use them for questions, or in a longer version.
+
+- **S1:** the GRU beats persistence on validation MAE, 4.588 against 5.465 µg/m³. Above 55 µg/m³ it is worse, 28.772 against 26.324, so a code rule limits it.
+- **S2:** the frozen GRU encoder with a logistic head beat logistic regression, F1 0.255 against 0.162. It lost to the persistence alarm, 0.306, so the baseline stays.
+- **Muse team run (exceedance):** the team reached `retain_baseline`, which matches the code rule. It took 17 model calls and 2157.5 s. The deterministic pipeline reached the same outcome in 1.9 s.
+
 ## Limits and negative results
 
 - No model is production-ready. Results are on validation data, and the sealed test period was not read.
