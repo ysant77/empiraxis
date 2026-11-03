@@ -7,28 +7,29 @@ decisions:
   D4-model-selection: [pm25-method-comparison]
   D5-method-choice: [burned-area-method]
 
-# Every model arm uses the promoted prompt variant, the method review and the decision critic,
-# so the arms differ only in which checkpoint serves each seat.
+# Every model arm uses the promoted prompt variant and the decision critic, so the arms differ
+# only in which checkpoint serves each seat. Amendment 1 (2026-11-03): the method review is off.
+# See docs/m4/m4-protocol.md, Amendments.
 arms:
   - {arm_id: F, arm: fixed, note: "No model. Code preset and code rules."}
-  - {arm_id: S-M, arm: single, lead: local-glimmer, critic: local-glimmer, method_review: true,
+  - {arm_id: S-M, arm: single, lead: local-glimmer, critic: local-glimmer, method_review: false,
      decision_critic: true, muse_roles: [lead, critic],
      note: "One Muse Lead. The critic is a second pass of the same checkpoint."}
   - {arm_id: T-M, arm: team, pm: local-glimmer, lead: local-glimmer, specialist: local-glimmer,
-     critic: local-glimmer, prompt_variant: note-close-v1, method_review: true,
+     critic: local-glimmer, prompt_variant: note-close-v1, method_review: false,
      decision_critic: true, muse_roles: [pm, lead, specialist, critic],
      note: "All seats are one checkpoint (Muse). The M3 shape. The critic is the same checkpoint."}
   - {arm_id: T-Mc, arm: team, pm: local-glimmer, lead: local-glimmer, specialist: local-glimmer,
-     critic: local-llama-3-2-3b, prompt_variant: note-close-v1, method_review: true,
+     critic: local-llama-3-2-3b, prompt_variant: note-close-v1, method_review: false,
      decision_critic: true, muse_roles: [pm, lead, specialist],
      note: "Muse works. Llama 3.2 3B is the independent critic only."}
   - {arm_id: T-L, arm: team, pm: local-glimmer, lead: local-glimmer,
      specialist: local-llama-3-2-3b, critic: local-llama-3-2-3b, prompt_variant: note-close-v1,
-     method_review: true, decision_critic: true, muse_roles: [pm, lead],
+     method_review: false, decision_critic: true, muse_roles: [pm, lead],
      note: "Muse PM and Lead. Llama 3.2 3B runs both specialists and the critic."}
   - {arm_id: T-Q, arm: team, pm: local-glimmer, lead: local-glimmer,
      specialist: local-qwen3-4b-2507, critic: local-glimmer, prompt_variant: note-close-v1,
-     method_review: true, decision_critic: true, muse_roles: [pm, lead, critic],
+     method_review: false, decision_critic: true, muse_roles: [pm, lead, critic],
      note: "Muse PM, Lead and critic. Qwen3 4B Instruct 2507 runs both specialists."}
 
 stages:

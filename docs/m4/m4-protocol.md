@@ -25,7 +25,7 @@ This is a feasibility and audit question. It does not ask whether the council is
 
 ## Arms
 
-All model arms use prompt variant `note-close-v1`, the method review and the decision critic. They differ only in which checkpoint serves each seat.
+All model arms use prompt variant `note-close-v1` and the decision critic. The method review was planned for every arm and is off since Amendment 1. They differ only in which checkpoint serves each seat.
 
 | Arm | PM | Lead | Specialists | Critic | Checkpoints |
 |---|---|---|---|---|---|
@@ -90,4 +90,10 @@ A run is not valid evidence if any of these holds: the trace chain is broken; `h
 
 ## Amendments
 
-None.
+### Amendment 1 (2026-11-03): method review off
+
+- **What happened.** The first run of `m4-primary` (arm T-Mc, run `20261103T130107Z-64304d`, commit `781603d`) ended with status `refused` after 6 model calls and 1,693 s. Code blocked the Lead's method case with `unknown_method` for `ridge_lagged_log` and `tcn_small`, and with `not_in_plan`. The plan of this scenario names `persistence`, `naive`, `climatology`, `ridge` and `tcn`. No critic call was made, because the findings were blocking.
+- **Why.** The method review needs registered method names. The Lead wrote free-text names. This is a fault of the review in this scenario, not a result about the council. The review (an existing gate, off by default) does not fit the M3 scenario without a name map.
+- **Change.** `method_review` is `false` in all arms of `config/benchmark/m4-matrix.yaml`. The decision critic stays. The refused run stays in the evidence as result M4-R0. It is not counted as an arm result.
+- **Aborted run.** The next planned run (T-L) started with the same setting. It was stopped by hand after the trace showed the council records and before any model call. Its folder is kept with the prefix `ABORTED`.
+- **Reruns.** All arms run again under the amended matrix, into a new output folder `primary-b`. The stage and arm names do not change.
