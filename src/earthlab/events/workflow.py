@@ -271,7 +271,38 @@ def _artifact_stored(state: State, entry: dict[str, Any]) -> None:
     )  # fmt: skip
 
 
+def _family_comparison(state: State, entry: dict[str, Any]) -> None:
+    data = entry["data"]
+    emit(
+        state, entry, "system", "plan_reviewed", "executed",
+        f"Both families trained: {', '.join(data.get('trained', []))}. The Lead's strategy "
+        f"{data.get('lead_strategy')} is kept as the family it expects to adopt.",
+    )  # fmt: skip
+
+
+def _tuning_verified(state: State, entry: dict[str, Any]) -> None:
+    data = entry["data"]
+    emit(
+        state, entry, "verifier", "claim_verified", "completed",
+        f"Ridge penalty {data.get('alpha')} chosen on train folds; reload difference "
+        f"{data.get('reload_max_abs_difference')}.",
+    )  # fmt: skip
+
+
+def _inference_verified(state: State, entry: dict[str, Any]) -> None:
+    data = entry["data"]
+    same = bool(data.get("model_sha256_matches"))
+    emit(
+        state, entry, "verifier", "claim_verified", "completed" if same else "failed",
+        f"Model {data.get('model_id')} reloaded in isolation: hash matches {same}, "
+        f"largest difference {data.get('max_abs_difference')} over {data.get('rows')} rows.",
+    )  # fmt: skip
+
+
 WORKFLOW_HANDLERS = {
+    ("family_comparison", "runtime"): _family_comparison,
+    ("tuning_verified", "runtime"): _tuning_verified,
+    ("inference_verified", "runtime"): _inference_verified,
     ("harness_transition", "controller"): _harness_transition,
     ("harness_transition", "evaluator"): _harness_transition,
     ("harness_transition", "human"): _harness_transition,
