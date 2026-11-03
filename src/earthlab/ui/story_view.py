@@ -15,7 +15,7 @@ from earthlab.trace import RunTrace
 from earthlab.ui import common, scenarios, theme
 from earthlab.ui.scenarios import Bars, Story, Tile
 
-VALIDATION_SCORED = ("S1", "S2", "M1")
+VALIDATION_SCORED = ("S1", "S2", "M1", "M2")
 ROW_HEIGHT = 32
 AXIS_ROOM = 56
 

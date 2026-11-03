@@ -19,6 +19,8 @@ SCENARIO_RUNS = {
     "S4": "scenario-s4-resource-request",
 }
 TEAM_RUN = "scenario-muse-team-exceedance"
+TEAM_REGRESSION_RUN = "scenario-muse-team-regression"
+TEAM_RUNS = {"M1": TEAM_RUN, "M2": TEAM_REGRESSION_RUN}
 LABELS = {
     "S1": "S1 · PM2.5 regression",
     "S2": "S2 · Model reuse",
@@ -28,6 +30,7 @@ LABELS = {
 TITLES = {
     **{key: label.split(" · ")[1] for key, label in LABELS.items()},
     "M1": "Recorded Muse team run",
+    "M2": "Recorded Muse team run: regression",
 }
 OUTCOMES = {
     "adopt": "Adopt",
@@ -115,13 +118,12 @@ def plain(limits: list[str]) -> list[str]:
 def key_of(label: str) -> str | None:
     """The scenario key of a run label, or None for any other run."""
     run = label.removeprefix("replay/")
-    if run == TEAM_RUN:
-        return "M1"
-    return next((key for key, name in SCENARIO_RUNS.items() if name == run), None)
+    runs = {**SCENARIO_RUNS, **TEAM_RUNS}
+    return next((key for key, name in runs.items() if name == run), None)
 
 
 def run_of(key: str) -> str:
-    return TEAM_RUN if key == "M1" else SCENARIO_RUNS[key]
+    return {**SCENARIO_RUNS, **TEAM_RUNS}[key]
 
 
 def _rows_by_model(record: dict[str, Any]) -> dict[str, dict[str, Any]]:
@@ -393,7 +395,61 @@ def m1(run_dir: Path) -> Story:
     )  # fmt: skip
 
 
-BUILDERS = {"S1": s1, "S2": s2, "S3": s3, "S4": s4, "M1": m1}
+def refusals(run_dir: Path) -> list[str]:
+    """Each proposal that code refused, in order, from the trace."""
+    lines = (run_dir / "trace.jsonl").read_text(encoding="utf-8").splitlines()
+    out = []
+    for entry in map(json.loads, lines):
+        data = entry["data"]
+        if entry["event"] == "proposal_reviewed" and not data.get("valid", True):
+            out.append(f"{data['tool']}: {'; '.join(data.get('issues') or [])}")
+    return out
+
+
+def m2(run_dir: Path) -> Story:
+    record = record_of(run_dir)
+    usage, rows = record["usage"], _rows_by_model(record)
+    tokens = usage["prompt_tokens"] + usage["completion_tokens"]
+    refused = refusals(run_dir)
+    eligible = [c["strategy"] for c in record["suitability"]["checks"] if c["eligible"]]
+    ridge, base = rows["B4_lagged_ridge"], rows["B0_persistence"]
+    return Story(
+        key="M2", run=TEAM_REGRESSION_RUN, title=TITLES["M2"],
+        question="Can historical regional NEA PM2.5 observations predict concentration six "
+        "hours ahead more accurately than persistence?",
+        method=f"Muse Glimmer as Lead chose the strategy {record['strategy']} from the eligible "
+        f"strategies {', '.join(eligible)}. Code fitted lagged ridge and the baselines, and "
+        "separate code scored them. No neural model was trained.",
+        evidence=[
+            f"{usage['model_calls']} model calls and {usage['tool_calls']} tool calls, recorded "
+            f"in a hash-chained trace. Prompt variant {record['prompt_variant']}.",
+            "Muse Glimmer in the data and ML specialist seats called the fixed data and "
+            "training tools and wrote notes. Code ran the tools and checked each note.",
+            f"Code refused {len(refused)} proposals, and the seat answered each once: "
+            + " | ".join(refused) + ".",
+            "The refused recommendation is the deterministic critique: with no challenger "
+            "beyond the baselines, adoption was not an allowed outcome.",
+            f"Scored on {record['split_scored']}. NEA wind and rain were not used. A probe "
+            "outside this run found no wind data for a 2016 date, a full history needs many "
+            "thousands of paged requests, and no rule joins stations to the five regions. "
+            "Muse did not make that choice.",
+        ],
+        tiles=[
+            Tile("Model calls", str(usage["model_calls"]), "all on local Muse Glimmer"),
+            Tile("Tokens", f"{tokens:,}", "prompt plus completion"),
+            Tile("Wall time (s)", f"{usage['wall_seconds']:,.1f}"),
+            Tile(f"MAE above 55 {UNIT}", f"{ridge['above_55_mae']:.3f}",
+                 f"lagged ridge; persistence {base['above_55_mae']:.3f}"),
+        ],
+        rows=_regression_rows(record),
+        rows_title="Baseline comparison",
+        decision=outcome_name(record["recommendation"]["outcome"]) + ": persistence",
+        why=record["recommendation"]["reason"],
+        limits=plain(record["limitations"]),
+    )  # fmt: skip
+
+
+BUILDERS = {"S1": s1, "S2": s2, "S3": s3, "S4": s4, "M1": m1, "M2": m2}
 
 
 def story(key: str, run_dir: Path) -> Story:

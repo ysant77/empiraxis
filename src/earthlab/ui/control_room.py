@@ -335,7 +335,7 @@ def _story(opened: Opened) -> None:
     story_view.table(provenance.participants(opened.entries, record))
     st.caption(provenance.critic_note(record, opened.entries))
     _stages(opened)
-    if opened.story.key == "M1":
+    if opened.story.key in scenarios.TEAM_RUNS:
         _muse_steps(opened)
     _decisions(opened)
     story_view.identity(opened)

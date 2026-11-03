@@ -173,7 +173,7 @@ def test_recorded_run_tab_replays_both_months(offline: None) -> None:
     assert picker.options[4:] == [
         "replay/scenario-s1-regression", "replay/scenario-s2-encoder-reuse",
         "replay/scenario-s3-transport", "replay/scenario-s4-resource-request",
-        "replay/scenario-muse-team-exceedance",
+        "replay/scenario-muse-team-exceedance", "replay/scenario-muse-team-regression",
     ]  # fmt: skip
     assert any(s.value == "Trace hash chain intact (13 records)." for s in app.success)
     picker.set_value("replay/sb05b-october").run()

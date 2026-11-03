@@ -235,6 +235,37 @@
         "result.json": "2a5e7cce9d7b6e037cf92f5213a1ff9ea76c52f241cebcc42b264c29b3848fc3",
         "trace.jsonl": "958d1ab63370a8533d912481392b9445e23ac1bcede1a16b8f03e53fb3927ea1"
       }
+    },
+    {
+      "run": "scenario-muse-team-regression",
+      "scenario_id": "M2",
+      "removed_fields": [
+        "model_turn.content",
+        "model_turn.reasoning",
+        "model_turn.request_id",
+        "model_turn.tool_calls.arguments (choose_strategy)",
+        "model_turn.tool_calls.arguments (forward_decision)",
+        "model_turn.tool_calls.arguments (prepare_data)",
+        "model_turn.tool_calls.arguments (recommend)",
+        "model_turn.tool_calls.arguments (review_results)",
+        "model_turn.tool_calls.arguments (review_scope)",
+        "model_turn.tool_calls.arguments (submit_note)",
+        "model_turn.tool_calls.arguments (train_models)",
+        "tool_result.arguments and data (prepare_data)",
+        "tool_result.arguments and data (train_models)"
+      ],
+      "label": "real Muse Glimmer team run; redacted copy",
+      "source_trace_sha256": "fa7853a3c89e806bfdf24f9564f261df10f7fbf93c08079bb0e3bbaa6076bd43",
+      "evidence_mode": "Real Muse Glimmer team run, recorded replay, redacted copy.",
+      "science_label": "simulated_availability_hindcast",
+      "planned": "A human decision on the outcome is still open.",
+      "split": "validation only; the sealed test period was not read",
+      "result_sha256": "367367f1636a36bb812c87a14dc9ac74b0778da2139f90d92f10a6f187a09b2d",
+      "files": {
+        "evaluation-plan-1.json": "f1425b62b6b4452b565cd9ecdf1b4acea649286eff59627533ee63704e6db304",
+        "result.json": "367367f1636a36bb812c87a14dc9ac74b0778da2139f90d92f10a6f187a09b2d",
+        "trace.jsonl": "f8f60bd9760e5329f0cb90112ed11f3f2aeebe03fe5b545f7cd6a41781e4611a"
+      }
     }
   ]
 }
