@@ -99,7 +99,7 @@ Usage: 12 model calls, 14,428 prompt tokens, 8,088 completion tokens, 2,223 s wa
 
 ## Faults in the agents' text
 
-- **Speed claim:** the Lead said the TCN "trains fast vs GRU". This is not correct. The measured rate here is 22 s per epoch, and the GRU rate in E1 was about 4 s per epoch at window 48.
+- **Speed claim:** the Lead said the TCN "trains fast vs GRU". The code's own table gives 50 s per epoch for a TCN and 4 s for a GRU at window 48, so the claim is not correct. This TCN took 22 s per epoch at window 96.
 - **Elevated hours:** the PM note says the candidates are worse than persistence above 55 µg/m³. That is true, but B4 is worse too, and the note does not say so. The decision record does.
 - **Length limits:** two answers were refused for length and corrected on the retry.
 
