@@ -32,11 +32,16 @@ arms:
      method_review: false, decision_critic: true, muse_roles: [pm, lead, critic],
      note: "Muse PM, Lead and critic. Qwen3 4B Instruct 2507 runs both specialists."}
 
+  - {arm_id: T-Qr, arm: team, pm: local-glimmer, lead: local-glimmer,
+     specialist: local-qwen3-4b-2507, critic: local-glimmer, prompt_variant: note-close-reminder-v1,
+     method_review: false, decision_critic: true, muse_roles: [pm, lead, critic],
+     note: "T-Q with the reminder prompt variant. Added by Amendment 2 after T-Q failed."}
+
 stages:
   - stage_id: m4-primary
     purpose: "The M3 question with a council of different checkpoints. One repeat."
     cells:
-      - {scenario: pm25-method-comparison, arm_ids: [F, S-M, T-M, T-Mc, T-L, T-Q]}
+      - {scenario: pm25-method-comparison, arm_ids: [F, S-M, T-M, T-Mc, T-L, T-Q, T-Qr]}
   - stage_id: m4-secondary
     purpose: "A second, shorter scenario. Tests whether the primary result repeats."
     cells:

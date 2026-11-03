@@ -35,6 +35,7 @@ All model arms use prompt variant `note-close-v1` and the decision critic. The m
 | T-Mc | Muse | Muse | Muse | Llama 3.2 3B | 2 |
 | T-L | Muse | Muse | Llama 3.2 3B | Llama 3.2 3B | 2 |
 | T-Q | Muse | Muse | Qwen3 4B 2507 | Muse | 2 |
+| T-Qr | Muse | Muse | Qwen3 4B 2507, reminder prompt (Amendment 2) | Muse | 2 |
 
 The critic in S-M, T-M and T-Q is a second pass of the Lead's checkpoint. The record says `same_model_second_pass`. The critic in T-Mc and T-L is `independent_model`.
 
@@ -97,3 +98,9 @@ A run is not valid evidence if any of these holds: the trace chain is broken; `h
 - **Change.** `method_review` is `false` in all arms of `config/benchmark/m4-matrix.yaml`. The decision critic stays. The refused run stays in the evidence as result M4-R0. It is not counted as an arm result.
 - **Aborted run.** The next planned run (T-L) started with the same setting. It was stopped by hand after the trace showed the council records and before any model call. Its folder is kept with the prefix `ABORTED`.
 - **Reruns.** All arms run again under the amended matrix, into a new output folder `primary-b`. The stage and arm names do not change.
+
+### Amendment 2 (2026-11-04): arm T-Qr added
+
+- **What happened.** The first T-Q run (commit `c53597e`) ended `failed`: `data_specialist stopped without submit_note`. Qwen3 4B answered in plain text after `prepare_data` and did not call `submit_note`. The prompt `note-close-v1` has no reminder. The decisions-v1 report shows the same failure class for Muse under the baseline prompt.
+- **Change.** Arm `T-Qr` is T-Q with the prompt variant `note-close-reminder-v1`. This variant exists since decisions-v1 and adds a bounded reminder. T-Q stays in the matrix and its failure stays a result.
+- **Also.** Runs 2 and 3 of T-Q were not run: the retry was stopped by hand after the first failure to save time. The T-Q failure is therefore one run, not a rate.
