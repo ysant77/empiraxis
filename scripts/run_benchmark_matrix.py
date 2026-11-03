@@ -45,6 +45,7 @@ def run(args: argparse.Namespace) -> int:
             providers=load_providers(CONFIG / "providers.yaml"), bindings=bindings,
             pin=args.commit, repo=ROOT, out_dir=args.out, winner=args.winner,
             minutes_left=args.minutes_left, registry=registry, matrix_file=args.matrix,
+            only_arms=frozenset(args.arm) or None,
         )  # fmt: skip
     except Refused as exc:
         print(f"refused: {exc}", file=sys.stderr)
@@ -67,6 +68,7 @@ def main() -> int:
     go.add_argument("--block", required=True, help="none, muse, or muse+<small provider>")
     go.add_argument("--commit", required=True, help="the pinned commit, at least 12 characters")
     go.add_argument("--out", type=Path, required=True)
+    go.add_argument("--arm", action="append", default=[], help="run only this arm; repeatable")
     go.add_argument("--winner", help="the screening winner, for arms that use @winner")
     go.add_argument("--minutes-left", type=float, help="stop before a run that would overrun")
     go.set_defaults(func=run)

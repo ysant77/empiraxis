@@ -151,6 +151,7 @@ def run_stage(
     providers: Mapping[str, ProviderConfig], bindings: Bindings, pin: str, repo: Path,
     out_dir: Path, winner: str | None = None, minutes_left: float | None = None,
     registry: Mapping[str, CheckpointV1] | None = None, matrix_file: str = "matrix.yaml",
+    only_arms: frozenset[str] | None = None,
     run_one: RunOne = run_scenario, build: Callable[[ProviderConfig], ChatClient] = build_client,
     head_of: Callable[[Path], tuple[str, bool]] = git_state,
 ) -> list[dict[str, Any]]:  # fmt: skip
@@ -158,7 +159,8 @@ def run_stage(
     head, dirty = head_of(repo)
     if problems := pin_problems(pin, head, dirty):
         raise Refused("; ".join(problems))
-    todo = [r for r in expand(plan, stage_id) if r.block == block]
+    keep = only_arms or frozenset(a.arm_id for a in plan.arms)
+    todo = [r for r in expand(plan, stage_id) if r.block == block and r.arm_id in keep]
     preflight(plan, todo, variants, winner, bindings, providers)
     out_dir.mkdir(parents=True, exist_ok=True)
     manifest, seen = out_dir / "manifest.jsonl", done_keys(out_dir / "manifest.jsonl")
