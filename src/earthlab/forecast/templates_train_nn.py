@@ -184,12 +184,34 @@ def fit(data: dict[str, np.ndarray], job: dict[str, Any], out: Path) -> dict[str
     }
 
 
+def verify(data: dict[str, np.ndarray], job: dict[str, Any], out: Path) -> dict[str, Any]:
+    """Reload the saved model and predict validation again. Nothing is trained or changed."""
+    saved = json.loads((out / "training.json").read_text(encoding="utf-8"))
+    weights = (out / "model.pt").read_bytes()
+    inputs = data["series"].shape[1] * 2 + data["calendar"].shape[1]
+    make: Any = {"gru": Gru, "tcn": TemporalCnn}[job["architecture"]]
+    model: Any = make(inputs, job["hidden"], job["layers"], data["train_y"].shape[1])
+    model.load_state_dict(torch.load(out / "model.pt", weights_only=True))
+    model.eval()
+    again = predict(model, data, data["valid_issues"], job)
+    before = np.load(out / "valid_scaled.npy")
+    return {
+        "model_sha256": hashlib.sha256(weights).hexdigest(),
+        "model_sha256_matches": hashlib.sha256(weights).hexdigest() == saved["model_sha256"],
+        "rows": len(again),
+        "max_abs_difference": float(np.max(np.abs(again - before))),
+    }
+
+
 def main() -> int:
     out = Path(sys.argv[1])
     job = json.loads((out / "job.json").read_text(encoding="utf-8"))
     torch.set_num_threads(job["threads"])
     with np.load(job["data"]) as loaded:
         data = {k: loaded[k] for k in loaded.files}
+    if sys.argv[2:] == ["verify"]:
+        (out / "verify.json").write_text(json.dumps(verify(data, job, out), indent=2))
+        return 0
     report = fit(data, job, out)
     (out / "training.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
     return 0

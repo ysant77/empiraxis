@@ -15,7 +15,7 @@ from earthlab.team.resources import ResourceApprovalV1, key_matches, sign
 from earthlab.trace import RunTrace
 
 State = Literal[
-    "requested", "scoped", "profiled", "planned", "executing", "evaluated", "reviewed",
+    "requested", "scoped", "profiled", "acquired", "planned", "executing", "evaluated", "reviewed",
     "forwarded", "approved", "denied", "expired", "abstained", "refused", "failed",
 ]  # fmt: skip
 Actor = Literal["controller", "evaluator", "human"]
@@ -25,7 +25,8 @@ FINAL: frozenset[str] = ENDINGS | {"approved", "denied", "expired"}
 MOVES: dict[str, dict[str, Actor]] = {
     "requested": {"scoped": "controller"},
     "scoped": {"profiled": "controller"},
-    "profiled": {"planned": "controller"},
+    "profiled": {"planned": "controller", "acquired": "controller"},
+    "acquired": {"planned": "controller"},  # an optional, approved acquisition
     "planned": {"executing": "controller"},
     "executing": {"evaluated": "evaluator"},
     "evaluated": {"reviewed": "controller"},

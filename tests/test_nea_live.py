@@ -97,4 +97,11 @@ def test_a_day_capture_follows_pagination_to_the_end(tmp_path: Path) -> None:
     client = httpx.Client(transport=httpx.MockTransport(answer))
     out = capture(CaptureLog(tmp_path / "log.jsonl"), ("pm25",), client, lambda _: None,
                   day=date(2026, 11, 3))  # fmt: skip
-    assert asked == [None, "next"] and out["pm25"] == {"first": 5, "correction": 0, "repeat": 5}
+    assert asked == [None, "next"]
+    assert out["pm25"] | {"bytes": 0} == {
+        "first": 5,
+        "correction": 0,
+        "repeat": 5,
+        "pages": 2,
+        "bytes": 0,
+    }

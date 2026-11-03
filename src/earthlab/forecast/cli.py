@@ -9,6 +9,7 @@ from typing import Any
 
 from earthlab.forecast.experiment import run_experiment
 from earthlab.forecast.tiers import run_tiers
+from earthlab.harness.acquire_step import AcquisitionConfig
 from earthlab.harness.compare import build, load_runs, markdown
 from earthlab.harness.replay import replay_run
 from earthlab.harness.scenarios import SCENARIOS, SUMMARY, run_scenario
@@ -45,7 +46,10 @@ def cmd_harness(args: argparse.Namespace) -> int:
     if args.arm != "fixed":
         client = build_client(load_providers(args.providers)[args.provider])
     run_dir = new_run_dir(args.runs_dir)
-    done = run_scenario(args.scenario, args.arm, run_dir, client)
+    acquisition = None
+    if args.acquisition_request:
+        acquisition = AcquisitionConfig(args.acquisition_request, args.request_store.expanduser())
+    done = run_scenario(args.scenario, args.arm, run_dir, client, acquisition=acquisition)
     print(f"run: {run_dir}\nstatus: {done['status']}\nreason: {done['reason']}")
     print(json.dumps({k: done.get(k) for k in SUMMARY}, indent=2, default=str))
     return 0 if done["status"] in ("awaiting_human", "refused") else 2
@@ -76,6 +80,8 @@ def add_forecast_parsers(sub: Any) -> None:
     run.add_argument("--provider", default="local-glimmer")
     run.add_argument("--providers", type=Path, default=Path("config/providers.yaml"))
     run.add_argument("--runs-dir", type=Path, default=Path("runs"))
+    run.add_argument("--acquisition-request", help="a signed resource request for the run's data")
+    run.add_argument("--request-store", type=Path, default=Path("runs"))
     run.set_defaults(func=cmd_harness)
     tiers = sub.add_parser("e1-tiers", help="experimental: teacher and student rehearsal")
     tiers.add_argument("--no-model", action="store_true")
