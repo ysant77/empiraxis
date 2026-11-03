@@ -36,9 +36,7 @@ def _mode() -> None:
 
 
 def main() -> None:
-    st.set_page_config(
-        page_title="Empiraxis", layout="wide", initial_sidebar_state="collapsed"
-    )
+    st.set_page_config(page_title="Empiraxis", layout="wide", initial_sidebar_state="collapsed")
     theme.apply()
     st.title("Empiraxis")
     st.write(
