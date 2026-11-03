@@ -20,6 +20,7 @@ from earthlab.ui.workspace_tabs import (
 
 TAB_NAMES = ["Recorded runs", "Wildfire case", "Verifier", "Data"]
 TEAM_LABEL = f"replay/{scenarios.TEAM_RUN}"
+REGRESSION_LABEL = f"replay/{scenarios.TEAM_REGRESSION_RUN}"
 
 
 def _decision(opened: Opened) -> None:
@@ -57,13 +58,14 @@ def _story(opened: Opened) -> None:
     section("What is real here")
     story_view.table(provenance.evidence_ladder(opened.run_dir, opened.entry, opened.entries))
     story_view.identity(opened)
-    if story.key != "M1":
+    if story.key not in scenarios.TEAM_RUNS:
         section("Where the Meta model ran")
         st.write(
-            "This scenario's page is built from recorded engineering evidence. For a recorded "
-            "run where Muse Glimmer proposed the steps, open the Muse team run."
+            "This scenario's page is built from recorded engineering evidence. For recorded "
+            "runs where Muse Glimmer proposed the steps, open a Muse team run."
         )
         st.button("Open the recorded Muse team run", on_click=nav.go, args=(TEAM_LABEL,))
+        st.button("Open the Muse team regression run", on_click=nav.go, args=(REGRESSION_LABEL,))
 
 
 def _other_run(label: str) -> None:

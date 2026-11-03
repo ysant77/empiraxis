@@ -20,6 +20,7 @@ ENTRY = ROOT / "deploy" / "streamlit_app.py"
 RUNS = (
     "scenario-s1-regression", "scenario-s2-encoder-reuse", "scenario-s3-transport",
     "scenario-s4-resource-request", "scenario-muse-team-exceedance",
+    "scenario-muse-team-regression",
 )  # fmt: skip
 ACTIONS = ("Run investigation", "Approve", "Deny", "Train", "Download")
 

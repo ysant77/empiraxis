@@ -307,3 +307,14 @@ def test_the_review_status_reads_its_summary_or_says_there_is_none(tmp_path: Pat
     path = tmp_path / "summary.json"
     path.write_text('{"conclusion": "Stays off.", "measures": [{"Measure": "a"}]}', "utf-8")
     assert review_status(path) == ("Stays off.", [{"Measure": "a"}])
+
+
+def test_the_muse_regression_run_shows_the_refused_recommendation() -> None:
+    from earthlab.ui import scenarios as s
+
+    run = REPLAY / s.TEAM_REGRESSION_RUN
+    story = s.story("M2", run)
+    assert s.key_of(f"replay/{s.TEAM_REGRESSION_RUN}") == "M2"
+    assert "recommend: adopt_limited is not allowed here" in " ".join(story.evidence)
+    assert story.decision == "Keep the baseline: persistence"
+    assert "No neural model was trained" in story.method
