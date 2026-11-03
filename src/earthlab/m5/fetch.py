@@ -88,8 +88,14 @@ def download(
         raise FetchRefused(f"announced {announced} bytes exceed the cap of {byte_cap}")
     target.parent.mkdir(parents=True, exist_ok=True)
     sha, size = hashlib.sha256(), 0
-    with target.open("wb") as out:
-        size = _copy(response, out, sha, byte_cap, target)
+    part = target.with_suffix(target.suffix + ".part")
+    try:
+        with part.open("wb") as out:
+            size = _copy(response, out, sha, byte_cap, part)
+        part.replace(target)
+    except BaseException:
+        part.unlink(missing_ok=True)
+        raise
     return sha.hexdigest(), size
 
 

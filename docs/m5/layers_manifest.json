@@ -160,9 +160,9 @@
     "layer_id": "imerg-v07",
     "limits": [],
     "product": "GPM_3IMERGHH",
-    "reason": "GES DISC returned HTTP 403; the owner must authorise the NASA GESDISC DATA ARCHIVE app in Earthdata Login",
+    "reason": "pilot only: four days downloaded; ERA5 and IMERG agree on mean rain but differ in timing for one corridor; no validated layer yet",
     "source_sha256": [],
-    "state": "blocked",
+    "state": "gated_out",
     "title": "GPM IMERG rainfall",
     "unit": "mm/h",
     "version": "07"

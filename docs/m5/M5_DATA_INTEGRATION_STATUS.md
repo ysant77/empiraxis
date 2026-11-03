@@ -36,7 +36,7 @@ The 2015 negative ablation stays a separate finding.
 | ERA5 850 hPa wind | Y | Y | Y | Y | Y | P | P |
 | FIRMS MODIS_SP (AOI and boxes A, B, C) | Y | Y | Y | Y | Y | N | P |
 | MCD64A1 v6.1 (Sep, Oct 2015) | Y | Y | Y | Y | P | P | Y |
-| GPM IMERG V07 | N | N | B | N | N | N | N |
+| GPM IMERG V07 | P | Y | Y | P | P | N | N |
 | HLS L30 v2.0 | N | Y | Y | P | P | N | N |
 | HLS S30 v2.0 | N | N | N | N | N | N | N |
 | SMAP L3 SPL3SMP v009 | P | Y | Y | Y | P | N | N |
@@ -112,16 +112,16 @@ The assessment says: NEA, ERA5 wind and rain, FIRMS and MCD64A1 are in real use.
 - L6 (partial): tool, verifier and Earth Engine reference agree within set tolerances. All three read the same product.
 - L7: map and caption in the UI (`ui/common.py`, `ui/engineering_lab.py`).
 
-### GPM IMERG V07 — BLOCKED
+### GPM IMERG V07
 
-- L1: not in `config/haze/datasets.yaml` at the release. This branch adds it in the source register.
-- L2: no acquisition code at the release. This branch has a reader for the documented layout
-  (`src/earthlab/m5/imerg.py`), **tested only on a synthetic file**.
-- L3 (blocked): the Earthdata token in the owner's `.env` returned HTTP 403 for GES DISC files
-  (granule `GPM_3IMERGHH.07`, 2015-10-19). HLS (LP DAAC) and SMAP (NSIDC) accepted the same token.
-- **Owner step:** in Earthdata Login, open Applications, then Authorized Apps, and approve
-  "NASA GESDISC DATA ARCHIVE". This changes provider permissions, so I did not attempt it.
-- Catalogue facts (CMR): Early and Late V07 start 1998 and run to 2026. Final V07 stops on 2025-09-30.
+- L1: source register on this branch (not in the release `datasets.yaml`).
+- L2: `scripts/m5_acquire_imerg.py`, `src/earthlab/m5/{imerg,rain_compare}.py`.
+- L3: GES DISC returned HTTP 403 until the owner authorised "NASA GESDISC DATA ARCHIVE". Then 240 granules downloaded
+  (Final 19, 27, 30, 31 Oct 2015; Early 30 Oct), about 1.9 GB, hashes in `docs/m5/receipts/imerg_*.json`.
+- L4 (partial): reader checked on real files; fill is NaN; hourly total needs both half hours.
+- L5 (partial): descriptive ERA5-versus-IMERG comparison on three wet days (`docs/m5/qa/`). Not a model input.
+- L6, L7: none.
+- Catalogue: Early and Late V07 run 1998 to 2026. Final V07 stops on 2025-09-30.
 
 ### HLS L30 v2.0
 

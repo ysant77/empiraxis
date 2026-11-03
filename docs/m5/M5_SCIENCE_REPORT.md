@@ -14,7 +14,7 @@ Branch: `experiment/m5-multisource-environment`. No Meta model took part. All ru
   This is not a supported gain under the frozen rule. It needs its own protocol.
 - **Three of the new data layers are not fit for the model.** SMAP has no recommended-quality retrieval over
   the Kalimantan box. HLS has 2.7% clear land on both dates, with high aerosol on more than 96% of pixels.
-  IMERG is blocked by an account permission.
+  IMERG was blocked by an account permission until the owner fixed it; the pilot now ran on four days.
 - **Real data now flows through typed contracts.** Receipts carry SHA-256, caps and authority. Tests cover
   issue-time rules, units, masks, wind vectors, and the sealed period.
 
@@ -33,7 +33,7 @@ Branch: `experiment/m5-multisource-environment`. No Meta model took part. All ru
 | Experiment A, FIRMS exposures 2015 and 2016; ERA5 exposures 2015 | done |
 | Experiment A, ERA5 exposures 2016 | not run (same ERA5 download) |
 | SMAP, HLS pilots | done as feasibility and QA |
-| IMERG pilot | blocked |
+| IMERG pilot | done for four days of Final and one of Early; rung I1 not run (needs about 22 GB of Early granules for one season; ask first) |
 | MAIAC | not assessed (no HDF4 reader) |
 | Layer catalogue and readers (Phase 5, data side) | done; no viewer was built |
 
@@ -123,7 +123,8 @@ Singapore, and ERA5 rain. 58 scored days per season. 2015 has 32 tests. 2016 has
 | HLS L30 | `HLS_not_eligible`. Tile T50MKB, pair 13 Sep and 15 Oct 2015: 2.7% of box pixels are clear land on both dates. High-aerosol flag on 99.8% (13 Sep) and 96.4% (15 Oct) of pixels. | `docs/m5/qa/hls_qa.json` |
 | HLS vs MCD64A1 | Descriptive only. On the 2.7% overlap, dNBR separates mapped-burned from control cells with AUC 0.85 (439 burned and 1,308 control valid pixels). MCD64A1 is not ground truth. High aerosol means the surface reflectance is less certain. | same |
 | SMAP L3 36 km | `SMAP_unsuitable`. Kalimantan box: 78 retrieved cell-passes, 0 with recommended quality. Cells show vegetation water content 9.6 to 17.3 kg/m² and evergreen broadleaf land cover. Maritime continent: 116 of 6,392 retrieved cells recommended (1.8%). Sumatra box B: 19 of 293 (6.5%). | `docs/m5/qa/smap_qa.json` |
-| IMERG | blocked. HTTP 403 from GES DISC for the project's token. Reader exists, tested on a synthetic file only. | status doc |
+| IMERG V07 | Unblocked after the owner authorised the GES DISC app. Reader checked on real files. Final run for 19, 27, 30 and 31 Oct 2015 and Early run for 30 Oct (about 1.9 GB, 240 granules). 19 Oct was dry, so it is uninformative. | `docs/m5/qa/rain_compare_final.json`, `rain_compare_early.json` |
+| ERA5 vs IMERG hourly rain | Three wet days (27, 30, 31 Oct), 71 paired hours per corridor. Mean rain is similar (0.51 vs 0.46, 0.39 vs 0.37, 0.52 vs 0.40 mm/h for boxes A, B, C). Rank correlation: A 0.48, B 0.30, C −0.41. A shift of ERA5 by 1 to 2 hours earlier raises A to 0.56. No single shift fixes C. The two estimates are related for A and B, and disagree in timing and pattern for C. This is three days, not a validation. | same |
 | MAIAC | not assessed | status doc |
 
 The HLS tile covers only part of the box. One Landsat scene date covers a path strip. The 13 September scene of tile T49MHS has
@@ -143,7 +144,7 @@ scenes are 80 to 100% cloudy by the provider's own value.
 
 ## 6. What is not known
 
-- Whether IMERG Early rain adds issue-time information. It is blocked.
+- Whether IMERG Early rain adds issue-time information. Rung I1 is not run: a full season of Early granules is about 22 GB, over the 5 GB limit, so it needs your approval or a corridor-subset method.
 - Whether ERA5 adds hindsight association in a clean season (2016). The download is queued.
 - Whether the elevated-hour effect of FIRMS features repeats. One season shows it. A new protocol must test it with more haze seasons.
 - Whether HLS and MCD64A1 agree over the full box. Clear scenes cover too little of it.
@@ -151,7 +152,7 @@ scenes are 80 to 100% cloudy by the provider's own value.
 ## 7. Cost
 
 All fits ran on CPU in under two seconds each. Each stage run took about two minutes of wall time, with at most four threads.
-No GPU, no MPS and no model server was used. Downloads: about 0.4 GB (SMAP 249 MB, HLS 110 MB, FIRMS and ERA5 small).
+No GPU, no MPS and no model server was used. Downloads: about 2.3 GB (IMERG 1.9 GB, SMAP 249 MB, HLS 110 MB, FIRMS and ERA5 small).
 
 ## 8. Reproduce
 

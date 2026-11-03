@@ -96,9 +96,9 @@ def withheld_layers() -> list[LayerSpec]:
         ),
         LayerSpec(
             layer_id="imerg-v07", title="GPM IMERG rainfall", kind="grid_series",
-            state="blocked", product="GPM_3IMERGHH", version="07", unit="mm/h", **BASE,
-            reason="GES DISC returned HTTP 403; the owner must authorise the "
-            "NASA GESDISC DATA ARCHIVE app in Earthdata Login",
+            state="gated_out", product="GPM_3IMERGHH", version="07", unit="mm/h", **BASE,
+            reason="pilot only: four days downloaded; ERA5 and IMERG agree on mean rain but "
+            "differ in timing for one corridor; no validated layer yet",
         ),
         LayerSpec(
             layer_id="maiac-aod", title="MAIAC aerosol optical depth", kind="grid_series",

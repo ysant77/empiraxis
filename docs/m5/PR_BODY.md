@@ -20,7 +20,7 @@ runs a small issue-time ladder on real data, and records what is not usable.
   by 39% and raised the all-hours error by 13%. This is exploratory.
 - SMAP is unusable over Kalimantan (0 of 78 retrieved cell-passes have recommended quality).
 - HLS has 2.7% clear land on both dates of the pilot pair, and high aerosol on more than 96% of pixels.
-- IMERG is blocked until the owner authorises the GES DISC app in Earthdata Login.
+- IMERG pilot ran on four days; ERA5 and IMERG agree on mean rain, differ in timing for one corridor (not a validation).
 - Experiment A cannot reach `supported_association` by design (Amendment 1).
 
 ## Not in this PR
