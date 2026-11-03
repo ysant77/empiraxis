@@ -23,7 +23,7 @@ acquire = ["earthengine-api>=1.0", "cdsapi==0.7.7"]
 # GRIB reading for the haze ERA5 extract; eccodeslib bundles the ecCodes C library.
 haze = ["eccodes==2.50.0", "eccodeslib==2.50.0.33"]
 # HDF5 reading for the M5 satellite products (SMAP, IMERG, MAIAC after conversion).
-m5 = ["h5py>=3.11", "tifffile>=2024.8", "imagecodecs>=2024.6"]
+m5 = ["h5py>=3.11", "tifffile>=2024.8", "imagecodecs>=2024.6", "scikit-learn>=1.5", "scipy>=1.13"]
 # Experimental A2A adapter around the bounded engineer; see earthlab.a2a.
 a2a = ["a2a-sdk[http-server]==1.2.2", "uvicorn>=0.30"]
 
@@ -63,7 +63,7 @@ strict = true
 plugins = ["pydantic.mypy"]
 
 [[tool.mypy.overrides]]
-module = ["torch", "torch.*", "streamlit", "streamlit.*", "matplotlib", "matplotlib.*", "ee", "ee.*", "cdsapi", "cdsapi.*", "eccodes", "eccodes.*", "h5py", "h5py.*", "tifffile", "tifffile.*"]
+module = ["torch", "torch.*", "streamlit", "streamlit.*", "matplotlib", "matplotlib.*", "ee", "ee.*", "cdsapi", "cdsapi.*", "eccodes", "eccodes.*", "h5py", "h5py.*", "tifffile", "tifffile.*", "sklearn", "sklearn.*", "scipy", "scipy.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
