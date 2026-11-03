@@ -30,7 +30,7 @@ DEFAULT_LABEL = (
 )
 LABELS = {
     "M4": (
-        "real heterogeneous council run (Muse with Llama or Qwen); redacted copy",
+        "real heterogeneous council run (Muse and Llama 3.2 3B); redacted copy",
         "Real local run with different checkpoints in different seats, recorded replay, "
         "redacted copy.",
     ),

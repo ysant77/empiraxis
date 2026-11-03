@@ -109,7 +109,10 @@ def participants(entries: list[dict[str, Any]], record: dict[str, Any]) -> list[
     bound = bindings(entries)
     rows += [_seat_row(r, seat, bound.get(r)) for r, seat in (record.get("roles") or {}).items()]
     if bound:  # every row needs every column, so the table stays rectangular
-        rows = [{"Family": "", "Checkpoint": "", "SHA-256": ""} | row for row in rows]
+        rows = [
+            row | {k: "" for k in ("Family", "Checkpoint", "SHA-256") if k not in row}
+            for row in rows
+        ]
     return rows
 
 

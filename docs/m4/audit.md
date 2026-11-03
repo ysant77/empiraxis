@@ -27,3 +27,16 @@ Base: `release/hackathon-2026` at `4e4a4f1`. Scope: `src/earthlab/` and `config/
 
 - It reads code and tests. It does not prove the absence of other faults.
 - The full test suite runs in CI. See the final report for what ran locally.
+
+## Status after the M4 runs
+
+| # | Status | Where |
+|---|---|---|
+| A2, A3 | Fixed. The arm spec has `critic`, `method_review` and `decision_critic`. The runner passes them. | `src/earthlab/harness/arms.py`, `matrix_run.py` |
+| A4 | Fixed. Every run with a registry writes `role_binding` and `council_formed` records before the first model call. | `src/earthlab/harness/identity.py` |
+| A5 | Fixed for the experiment. Muse and Llama 3.2 3B are listed for the critic seat. | `config/roles/bindings.yaml` |
+| A6, A7 | Fixed. The adapter maps the new records. The pages name the checkpoints. | `src/earthlab/events/`, `src/earthlab/ui/` |
+| A8 | Resolved by the owner's ruling of 2026-11-03. One extra server ran beside Muse. Swap stayed near its limit, and no run was lost to memory. | `docs/m4/benchmark-report.md` |
+| A10 | Answered. Mixed teams ran. See the benchmark report. | `docs/m4/benchmark-report.md` |
+| New | The method review refuses free-text method names in the M3 scenario (`unknown_method`). It stays off. It needs a name map before use there. | `docs/m4/m4-protocol.md`, Amendment 1 |
+| New | The PM seat does not accept Llama 3.2 3B: it failed the PM check. | `docs/m4/evidence/pm-local-llama-3-2-3b.json` |

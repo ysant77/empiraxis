@@ -36,14 +36,27 @@ def _seat_lines(bound: dict[str, dict[str, Any]], roles: dict[str, Any]) -> list
     ]  # fmt: skip
 
 
+def _seat_groups(bound: dict[str, dict[str, Any]]) -> list[str]:
+    """Seats grouped by checkpoint, in trace order."""
+    groups: dict[str, list[str]] = {}
+    for role, b in bound.items():
+        groups.setdefault(_name(b), []).append(SEATS.get(role, role))
+    return [f"{name} served {', '.join(seats)}" for name, seats in groups.items()]
+
+
 def _critic_lines(critique: dict[str, Any] | None) -> list[str]:
     if critique is None:
         return ["No decision critic ran in this run."]
     found = critique.get("findings") or []
+    backed = sum(bool(f["backed"]) for f in found)
+    counted = (
+        f"{backed} of {len(found)} finding(s) match the evaluator's numbers"
+        if found
+        else "no finding"
+    )
     lines = [
         f"Critic ({critique['critic_source']}): state {critique['state']}, verdict "
-        f"{critique['verdict']}, {sum(bool(f['backed']) for f in found)} of {len(found)} "
-        "finding(s) match the evaluator's numbers. It is advisory and sets no score or outcome."
+        f"{critique['verdict']}, {counted}. It is advisory and sets no score or outcome."
     ]
     return lines + [f"Finding ({f['kind']}): {f['claim']}" for f in found]
 
@@ -61,11 +74,14 @@ def m4(run_dir: Path) -> S.Story:
     tile_critic = "none" if critique is None else str(critique["state"])
     return S.Story(
         key="M4", run=run_dir.name, title=S.TITLES["M4"],
-        question=method_story.QUESTION,
-        method="The seats were served by different checkpoints: " + "; ".join(
-            _seat_lines(bound, record["roles"])
-        ) + " Trusted tools trained and reloaded the models. Separate code scored every model.",
+        question="The M3 question again, ridge against neural for PM2.5 six hours ahead. "
+        "Can different model checkpoints take different seats while code still checks every "
+        "number?",
+        method=f"{len(bound)} model seats on {council['distinct_checkpoints']} checkpoint(s): "
+        + "; ".join(_seat_groups(bound))
+        + ". Trusted tools trained and reloaded the models. Separate code scored every model.",
         evidence=[
+            *_seat_lines(bound, record["roles"]),
             f"{usage['model_calls']} model calls on {council['distinct_checkpoints']} "
             f"checkpoint(s) ({', '.join(names)}) in a hash-chained trace.",
             *_critic_lines(critique),
