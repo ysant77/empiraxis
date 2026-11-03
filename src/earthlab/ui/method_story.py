@@ -49,8 +49,9 @@ def m3(run_dir: Path) -> S.Story:
         key="M3", run=RUN, title=S.TITLES["M3"],
         question="Does a compact neural model gain enough over a tuned ridge to justify its "
         "cost, for regional PM2.5 six hours ahead?",
-        method=f"Muse Glimmer as Lead expected the {family.get('lead_strategy')} family to win "
-        f"and set the {neural} configuration. Trusted tools trained both families: a ridge "
+        method=f"Muse Glimmer as Lead selected the {family.get('lead_strategy')} strategy "
+        f"and configured a {neural}. The research question required both families, so trusted "
+        "tools trained a ridge "
         f"tuned on rolling-origin train folds (penalty {tuned.get('alpha')}) and the {neural}. "
         "Separate code scored every model on the same validation rows.",
         evidence=[
@@ -58,8 +59,8 @@ def m3(run_dir: Path) -> S.Story:
             f"hash-chained trace; {usage['training_seconds']:.0f} s of neural training.",
             f"Ridge reload difference {tuned.get('reload_max_abs_difference')}; {neural} reload "
             f"difference {reload.get('max_abs_difference')} over {reload.get('rows')} rows.",
-            "Code refused " + str(len(S.refusals(run_dir))) + " proposals for length; each "
-            "seat answered once: " + " | ".join(S.refusals(run_dir)) + ".",
+            "Code refused " + str(len(S.refusals(run_dir))) + " invalid proposals; the "
+            "affected seats then corrected them: " + " | ".join(S.refusals(run_dir)) + ".",
             "The Lead read the evaluator's report and chose to finish with no revision.",
             "Validation years 2019 to 2023 were used in earlier experiments, so this is not an "
             f"independent score. The {neural} chose its best epoch on the same years.",
