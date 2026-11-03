@@ -61,7 +61,7 @@ The host deploys a branch, not a commit. It redeploys when the branch changes. T
 | Setting | Value |
 |---|---|
 | Sign-in | share.streamlit.io with the owner's GitHub account. Grant access to private repositories only if the repository is still private. |
-| Repository | `ysant77/axiom-earthlab` |
+| Repository | `ysant77/empiraxis` |
 | Branch | the release branch |
 | Main file path | `deploy/streamlit_app.py` |
 | Python version (Advanced settings) | 3.12 |

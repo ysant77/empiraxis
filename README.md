@@ -48,11 +48,11 @@ The original team run reached the same outcome as the deterministic pipeline and
 Replay needs no model, no key and no network after installation.
 
 ```bash
-git clone https://github.com/ysant77/axiom-earthlab.git
+git clone https://github.com/ysant77/empiraxis.git
 ```
 
 ```bash
-cd axiom-earthlab
+cd empiraxis
 ```
 
 ```bash
