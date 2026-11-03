@@ -14,7 +14,7 @@ A scripted test is not a live model evaluation. A replay is not a new training r
 | # | Milestone | Implementation and real run | Independent test | hackathon_demonstrated | original_scope_complete | Main blocker | Release relevance |
 |---|---|---|---|---|---|---|---|
 | 1 | Reusable engineering organization across projects | None in this repository | None | future | no | No core is extracted and no second domain ran | none |
-| 2 | Human Director: signed approvals, bounded autonomy | S4 stops at a pending human decision. Replay has no approve control. | `test_team_resources.py`: denied, edited, forged, expired and wrong-key approvals are refused. | bounded | no | No signed approval was made in a scenario run | high |
+| 2 | Human Director: signed approvals, bounded autonomy | S4 stops at a pending human decision. Replay has no approve control. | `test_team_resources.py`: denied, edited, forged, expired and wrong-key approvals are refused. | bounded | no | Signed approvals were made for the Prithvi weights and chips (2026-11-03). None was made in a scenario run. | high |
 | 3 | PM: typed requirements, constraints and acceptance tests | Muse as PM wrote the typed problem in the team run. | Contract tests; one recorded team run | bounded | no | One live task; no unseen requests | medium |
 | 4 | Engineering Lead: defensible method choices | Muse as Lead chose a strategy, asked for one refinement and recommended `retain_baseline` (team run). It wrote three method cases live in review-gate-v2. | `docs/method-review-validation-results.md` | bounded | no | In 1 of 3 live cases the Lead wrote free-text method names | high |
 | 5 | Compact specialist team | Muse data and ML specialist seats in the team run | Team run trace; delegation tests | bounded | no | No software or QA seat ran live | medium |
@@ -27,7 +27,7 @@ A scripted test is not a live model evaluation. A replay is not a new training r
 | 12 | Data engineering: train-only transforms, feature artifacts | `docs/mlops-results-v1.md` | `docs/model-acceptance-v1.md` | bounded | no | One tabular source | medium |
 | 13 | Method selection: deterministic, statistical, ML, DL or abstention | Five cases below | Scenario replays, seeded review cases | bounded | no | Selection thresholds such as the elevated-hour rule are exploratory | high |
 | 14 | Classical, hybrid and neural experiments | Ridge, trees, GRU, frozen-GRU hybrid | `docs/mlops-results-v1.md`, S1, S2 | bounded | no | Few families; no controlled comparison across many seeds | high |
-| 15 | Reuse, transfer, distillation, pretrained satellite models | S2: a separate frozen GRU encoder with a fitted logistic head. Distillation: 3 seeds, local records. | S2 replay; `docs/distillation-results-v1.md`, recomputed from saved predictions | partial | no | Exact S1 checkpoint reuse is blocked (below). Prithvi did not run (below). Distillation passed its rule for 2 of 3 seeds, with a gain of at most 0.05 µg/m³ MAE, so it is not adopted. | medium |
+| 15 | Reuse, transfer, distillation, pretrained satellite models | S2: a separate frozen GRU encoder with a fitted logistic head. Distillation: 3 seeds, local records. | S2 replay; `docs/distillation-results-v1.md`, recomputed from saved predictions | partial | no | Exact S1 checkpoint reuse is blocked (below). Prithvi ran once at Level A, a reproduction on one chip (`docs/prithvi-level-a.md`). Distillation passed its rule for 2 of 3 seeds, with a gain of at most 0.05 µg/m³ MAE, so it is not adopted. | medium |
 | 16 | Reproducible experiments: tracking, tuning, registry | Registry, bundles, bundle verification. A rolling-origin ridge search ran on the train years: 5 candidates, 3 folds. | `docs/model-registry.md`, `docs/rolling-origin-ridge-v1.md` | bounded | no | One small search; the selected penalty is at the edge of the grid | medium |
 | 17 | Independent evaluation: baselines, leakage, subgroups | Persistence baselines, elevated-hour subgroup, sealed test period | S1 elevated-hour failure; leakage tests; adversarial suite, 35 of 35 attacks refused and 20 of 20 controls allowed (`docs/adversarial-qa-v1.md`) | bounded | no | No prospective validation | high |
 | 18 | Routing, prompt and orchestration cost optimization | 48 saved runs compared by workflow; profiler; static prompt rules; router function | `docs/comparative-evidence-report.md`, `docs/efficiency-evaluation.md` | partial | no | Cost is measured, but no change showed a repeated gain, and none was promoted | low |
@@ -43,7 +43,7 @@ A scripted test is not a live model evaluation. A replay is not a new training r
 | Rolling-origin ridge search | yes | yes: train years only | no: no unused period for an independent score | none |
 | NEA live capture | yes | yes: one capture, 141 values | no | Station-to-region join: no rule written |
 | Prospective prediction ledger | yes | no: off, no prediction issued | no | Needs the owner's signed activation |
-| Prithvi Level A | no | no | no | Blocked: the requests are not signed |
+| Prithvi Level A | yes | yes: one chip, IoU 0.912, signed approvals | no: one chip from the publisher's test split | Levels B and C: no independent labels, single-date chips |
 
 Counts: 16 `bounded`, 3 `partial` (8, 15, 18), 1 `future` (1). The earlier count of 17 bounded listed milestone 18 as bounded. That row shows measurement, not an optimization gain, so it is `partial` here.
 
@@ -66,7 +66,7 @@ Inventory, 2026-11-02. No model ran. Nothing was downloaded.
 
 | Level | Status | Reason |
 |---|---|---|
-| A: one pretrained forward pass | blocked | The S4 gate needs a signed resource approval for the weights. None exists, and only the owner can sign. The local environment has no TerraTorch or raster reader. A pass on a chip would be a reproduction, not a transfer result. |
+| A: one pretrained forward pass | done, 2026-11-03 (`docs/prithvi-level-a.md`) | Signed approvals for the weights and chips. One test-split chip from an unseen tile: IoU 0.912. A reproduction, not a transfer result. |
 | B: score against a baseline | blocked | The model was fine-tuned on these chips. The validation chips served the model card's own evaluation, so they are not independent. Each chip is one date, so dNBR cannot be computed. |
 | C: adaptation | not started | Levels A and B did not pass. No independent labels or compute budget are set. |
 

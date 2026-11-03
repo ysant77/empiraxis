@@ -1,0 +1,57 @@
+{
+  "level": "A",
+  "kind": "reproduction on the publisher's test split",
+  "model": "Prithvi-EO-2.0-300M-BurnScars",
+  "weights_sha256": "0c5f9334be9a75c9006387ab8f3dc05a55ea7fb5ef7956717316be57c62954d3",
+  "config_sha256": "9b40e6d8c6369b863d29fb1d69b6185aa366f8ee4c2de955bbad28d3ee32f466",
+  "image": "subsetted_512x512_HLS.S30.T10SDH.2020248.v1.4_merged.tif",
+  "image_sha256": "256825373fd01eec0da0d341d7b3f683e03d0d71e2f3e58a69f7fc3ba6ad4348",
+  "mask_sha256": "ad8ae249875ff8db4ee9e5cfa75b1b38538eba7bfbd4489cb1f9066fd0ef2d27",
+  "input_shape": [
+    512,
+    512,
+    6
+  ],
+  "nodata_pixels": 0,
+  "bands": [
+    "BLUE",
+    "GREEN",
+    "RED",
+    "NIR_NARROW",
+    "SWIR_1",
+    "SWIR_2"
+  ],
+  "labels": {
+    "0": "not burned",
+    "1": "burn scar",
+    "-1": "no label (ignored)"
+  },
+  "logits_shape": [
+    1,
+    2,
+    512,
+    512
+  ],
+  "scores": {
+    "valid_pixels": 262140,
+    "ignored_pixels": 4,
+    "reference_burn_pixels": 207973,
+    "predicted_burn_pixels": 194593,
+    "iou_burn": 0.91230036957162,
+    "precision_burn": 0.9869419763300838,
+    "recall_burn": 0.9234467935741659,
+    "pixel_accuracy": 0.9295719844357977
+  },
+  "seconds": {
+    "load": 24.84,
+    "inference": 1.48
+  },
+  "peak_rss_mb": 3734.1,
+  "prediction_sha256": "e7b809e867027d683bf26f36da7ab9120154936d06da633a366628249c7989f8",
+  "environment": {
+    "python": "3.12.15",
+    "torch": "2.15.0",
+    "device": "cpu",
+    "machine": "arm64"
+  }
+}
