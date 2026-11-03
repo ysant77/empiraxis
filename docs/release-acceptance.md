@@ -9,6 +9,8 @@ This register uses the 20 milestone definitions of the original plan. Each row h
 
 A scripted test is not a live model evaluation. A replay is not a new training run.
 
+**Superseded on 3 November 2026.** `docs/vision-matrix-final.md` assesses each milestone again after the runs of 3 November. This register stays as the earlier record.
+
 ## Milestone register
 
 | # | Milestone | Implementation and real run | Independent test | hackathon_demonstrated | original_scope_complete | Main blocker | Release relevance |

@@ -16,7 +16,7 @@ Run identifiers:
 |---|---|---|
 | `20261103T035551Z-95e7a3` | Muse family run with a signed NEA acquisition. No neural model: the Lead chose statistical. | `docs/muse-family-comparison-run.md` |
 | `20261103T061204Z-829fed` | Muse method comparison. Tuned ridge and a TCN, both trained and reloaded. | `docs/muse-method-comparison-run.md`; replay M3 |
-| Ledger `earthlab-ledger` | 5 prospective predictions, issued 2026-11-03 02:45 UTC | `docs/prospective-verification.md` |
+| Ledger `earthlab-ledger` | 5 prospective predictions, issued 2026-11-03 02:45 UTC, scored 08:40 UTC | `docs/prospective-verification.md` |
 | 2015 ablation v2 | B0 to B3, corrected after review | `docs/haze-2015-ablation-results.md` |
 | Prithvi Level A | One pretrained forward pass on one published chip | `docs/prithvi-level-a.md` |
 
@@ -40,10 +40,10 @@ Run identifiers:
 | 14 | Classical, hybrid and neural experiments | Ridge, trees, GRU, TCN, frozen-GRU hybrid | Run 829fed: tuned ridge and TCN trained in one run on the same rows (TCN MAE 4.711, ridge 4.697, B4 4.680) | Evaluator scores; reload differences 0.0 | One seed and one configuration; reused validation years; the TCN chose its epoch on them | bounded | Several seeds; an unused evaluation period |
 | 15 | Reuse, transfer, distillation, pretrained satellite | Frozen encoder; distillation; Prithvi Level A | Prithvi: one chip, IoU 0.912. Distillation: no adopted gain. | Prithvi hash checks; distillation recomputed | One chip from the publisher's test split is a reproduction, not a transfer result | partial | Independent labels; Level B |
 | 16 | Tracking, tuning, registry | Rolling-origin search; registry; reload checks | Run 829fed: 5 penalties, 3 folds, in the run; `tuning_verified` and `inference_verified` records | Reload difference 0.0 for both families | The chosen penalty is at the edge of the grid | bounded | A wider grid |
-| 17 | Independent evaluation | Evaluator; sealed test; prospective ledger | Validation scores for every model. Prospective: see `docs/prospective-verification.md` | Leakage tests; adversarial suite; ledger availability check (#108) | Validation years reused; at most 5 prospective values | bounded | A longer prospective record |
+| 17 | Independent evaluation | Evaluator; sealed test; prospective ledger | Validation scores for every model. Prospective: 5 of 5 predictions scored at 08:40 UTC, MAE 7.2 µg/m³ (n = 5) | Leakage tests; adversarial suite; ledger availability check (#108) | Validation years reused; at most 5 prospective values | bounded | A longer prospective record |
 | 18 | Routing, prompt and cost optimization | Profiler, prompt rules, router function | 48 saved runs compared | `docs/comparative-evidence-report.md` | No change gave a repeated gain; nothing promoted | partial | Deferred, by decision |
 | 19 | Responsive UI | Workspace, Lab, Control Room | M3 added to the Workspace and Lab | UI tests; replay tests | No usability study | bounded | Usability study |
-| 20 | Deployment readiness | Bundles; hosted replay entry; ledger | 5 predictions issued from published data; scoring as recorded | Ledger digests; availability check | Not a forecast service; no monitoring | bounded | Monitoring; a longer record |
+| 20 | Deployment readiness | Bundles; hosted replay entry; ledger | 5 predictions issued from published data; all 5 scored against later published values, 0 pending | Ledger digests; availability check | Not a forecast service; no monitoring | bounded | Monitoring; a longer record |
 
 Counts: 16 bounded, 3 partial (8, 15, 18), 1 future (1). These counts are the same as before 3 November. The new runs add evidence inside rows that were already bounded. They do not complete any row.
 

@@ -39,13 +39,13 @@ Recording plan: capture the screen without sound, then record the voiceover sepa
 
 | Time | Label | Screen | Say |
 |---|---|---|---|
-| 0:00 | RECORDED REPLAY | Research Workspace, M3 | EarthLab is a scientific engineering team run by a Meta model. A person asks a research question. Muse Glimmer plans the work, trusted tools run it, separate code scores it, and a person decides. |
+| 0:00 | RECORDED REPLAY | Research Workspace, M3 | Empiraxis is a scientific engineering team run by a Meta model. A person asks a research question. Muse Glimmer plans the work, trusted tools run it, separate code scores it, and a person decides. |
 | 0:15 | RECORDED RUN | `docs/muse-family-comparison-run.md`, acquisition table | Muse, as data scientist, asked to check the local NEA file against the official API for three days. The owner signed the request. Code built every URL and enforced the limits: 14,865 bytes. 333 values matched. 17 did not, all on 15 November 2023. The new data found a data-quality problem; it did not just add rows. |
 | 0:40 | RECORDED REPLAY | Engineering Lab, M3, family table | In a second run, Muse as Lead expected a statistical model to win, and set up a compact neural model. Tools trained both: a ridge tuned on rolling train folds, and a TCN, 8 epochs in 177 seconds. Both reloaded with zero difference. |
 | 1:00 | RECORDED REPLAY | Control Room, M3, decision | The evaluator scored all models on the same rows. The TCN did not beat the ridge, and all models are worse than persistence above 55 µg/m³. The Lead kept the lagged ridge. The decision now waits for a person. |
 | 1:20 | EXPERIMENTAL RESULT | `docs/haze-2015-ablation-results.md`, scores table | For the 2015 haze, we added ERA5 wind and rain, then FIRMS fire detections, to PM2.5 history. Neither helped. A review found a scaling leak and a short fire window; we fixed both and ran it again. The result is still negative, and we report it. |
 | 1:45 | EXPERIMENTAL RESULT | `docs/evidence/prithvi-level-a.png` | With a signed approval, we ran the pretrained Prithvi burn-scar model once on one published chip. IoU 0.912. This is a reproduction, not a transfer result. |
-| 2:05 | RECORDED RUN | `docs/prospective-verification.md`, table | The owner signed a prediction ledger. Five predictions were issued before their target hour, then scored only against values NEA had published by the check time. Five values are not evidence of forecast skill. |
+| 2:05 | RECORDED RUN | `docs/prospective-verification.md`, table | The owner signed a prediction ledger. Five predictions were issued at 10:45, before their 16:00 target hour, then scored only against values NEA had published by the check time. All five were scored. The mean absolute error is 7.2 µg/m³. Five values are not evidence of forecast skill. |
 | 2:30 | RECORDED REPLAY | Control Room, M3, integrity tiles and human gate | Every step is in a hash-chained trace. On the full local run, a replay with no model scored all seven models again with zero mismatches. Nothing is adopted until a person approves it. |
 | 2:50 | LIVE | Terminal | This check runs now, with no model. It verifies the hash chain and every published file digest. |
 
@@ -89,6 +89,10 @@ uv run python scripts/demo_contributions.py examples/replay/scenario-muse-team-e
 
 ```bash
 uv run earthlab --data-dir data/nea replay examples/replay/scenario-muse-team-exceedance
+```
+
+```bash
+uv run earthlab --data-dir data/nea replay examples/replay/scenario-muse-method-comparison
 ```
 
 ```bash
