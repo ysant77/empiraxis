@@ -1,0 +1,246 @@
+{
+  "status": "awaiting_human",
+  "reason": "evidence ready for a human decision",
+  "arm": "team",
+  "kind": "regression",
+  "problem_id": "pm25-method-comparison-6h",
+  "evidence_label": "Issue-time replay with modelled availability",
+  "limitations": [
+    "Non-operational research result.",
+    "Historical evaluation. Not a forecast of any future date.",
+    "Not for health, safety or travel decisions.",
+    "PM2.5 is not PSI or AQI.",
+    "PM2.5 concentration alone does not identify wildfire haze or its cause.",
+    "Above 55 ug/m3 the MAE of B4_lagged_ridge is 30.254 against 26.324 for persistence. Do not rely on it in elevated hours."
+  ],
+  "refusal_codes": [],
+  "state": "forwarded",
+  "model_changed_the_plan": true,
+  "workflow_class": "autonomous multi-agent",
+  "split_scored": "validation",
+  "test_period": "not evaluated; it needs a lock and a human decision",
+  "artifacts": {
+    "request": "1401502015a5b929239c8b103739cb47dcae9b3a88568581f06d98366e71e7ff",
+    "problem": "dd9ddd9892d0304084d9f428bdc32669e7677d77fecc98a0b8a4994e917f83f5",
+    "profile": "6c2755cfe5ca7434d4c2a713b03d0cd0e22a2cf6f6ab1fefaf665e191a32cb70",
+    "suitability": "8029e17f1c7eead424dd02ad9464c1cb5cf906bd13c437744d747df90682753f",
+    "plan-1": "7a2762634c0f79648b7f49c43e50e57582141c987586a530325f27421a788772",
+    "task-data-plan-1": "138441b18593ee12e330024e8f1f4fe609d8a6bfdb159ed12f361568a62da958",
+    "task-ml-plan-1": "5a6c30de8614da3cae7163f148120cd4d871ef56c1e748b64fcbe943622a7b8b",
+    "evaluation-plan-1": "5d171c7fe1f280da5a2db8cc50e2fbd532d397c1e4b61bae9dd86bcb2fc2f338",
+    "decision": "beff1d943ecfc915ff01e117ec764b6ff947d700ed2b6c4ee9327a38eb3cb658"
+  },
+  "strategy": "statistical",
+  "suitability": {
+    "schema_version": "1",
+    "facts": {
+      "kind": "regression",
+      "rows": 109584,
+      "labels_with_provenance": true,
+      "positive_rate": null,
+      "availability_latency_hours": 2,
+      "training_budget_seconds": 1200.0,
+      "repeated_inference_per_day": 0,
+      "pretrained_assets_approved": [],
+      "evaluable": true
+    },
+    "checks": [
+      {
+        "strategy": "deterministic",
+        "eligible": true,
+        "reasons": []
+      },
+      {
+        "strategy": "statistical",
+        "eligible": true,
+        "reasons": []
+      },
+      {
+        "strategy": "small_neural",
+        "eligible": true,
+        "reasons": []
+      },
+      {
+        "strategy": "pretrained_transfer",
+        "eligible": false,
+        "reasons": [
+          "no approved weights",
+          "no approved pretrained model fits a tabular series"
+        ]
+      },
+      {
+        "strategy": "fine_tuning",
+        "eligible": false,
+        "reasons": [
+          "no approved weights",
+          "no approved pretrained model fits a tabular series"
+        ]
+      },
+      {
+        "strategy": "distillation",
+        "eligible": false,
+        "reasons": [
+          "no repeated inference workload declared"
+        ]
+      },
+      {
+        "strategy": "abstain_or_request",
+        "eligible": true,
+        "reasons": []
+      }
+    ]
+  },
+  "recommendation": {
+    "outcome": "retain_baseline",
+    "model_id": "B4_lagged_ridge",
+    "reason": "B4_lagged_ridge achieves the lowest MAE 4.68 and highest skill 0.1419 with lower confidence limit 0.132 above zero, and passes validation. Candidate models have slightly worse MAE and skill and remain worse than persistence above 55 ug/m3, with no clear improvement over baseline."
+  },
+  "comparison": [
+    {
+      "model": "B4_lagged_ridge",
+      "mae": 4.68,
+      "rmse": 6.385,
+      "bias": 0.518,
+      "skill": 0.1419,
+      "above_55_mae": 30.254,
+      "low": 0.13208726569484483,
+      "high": 0.15140389876301877,
+      "passes": true
+    },
+    {
+      "model": "candidate-ridge-cv",
+      "mae": 4.697,
+      "rmse": 6.381,
+      "bias": 0.653,
+      "skill": 0.1384,
+      "above_55_mae": 30.577,
+      "low": 0.12822900494344444,
+      "high": 0.14836622393766158,
+      "passes": true
+    },
+    {
+      "model": "candidate-1",
+      "mae": 4.711,
+      "rmse": 6.457,
+      "bias": 0.062,
+      "skill": 0.1357,
+      "above_55_mae": 32.433,
+      "low": 0.12348925157716598,
+      "high": 0.14765495538060042,
+      "passes": true
+    },
+    {
+      "model": "B0_persistence",
+      "mae": 5.465,
+      "rmse": 7.707,
+      "bias": 0.001,
+      "skill": 0.0,
+      "above_55_mae": 26.324,
+      "low": 0.0,
+      "high": 0.0,
+      "passes": false
+    },
+    {
+      "model": "B1_daily_naive",
+      "mae": 5.64,
+      "rmse": 8.191,
+      "bias": -0.0,
+      "skill": -0.0318,
+      "above_55_mae": 32.43,
+      "low": -0.05308750460980289,
+      "high": -0.013173477070768299,
+      "passes": false
+    },
+    {
+      "model": "B2_weekly_naive",
+      "mae": 6.515,
+      "rmse": 9.366,
+      "bias": 0.018,
+      "skill": -0.1916,
+      "above_55_mae": 41.127,
+      "low": -0.2334652138313038,
+      "high": -0.15421623353993333,
+      "passes": false
+    },
+    {
+      "model": "B3_climatology",
+      "mae": 7.788,
+      "rmse": 10.16,
+      "bias": 4.738,
+      "skill": -0.4356,
+      "above_55_mae": 45.997,
+      "low": -0.5389550333329717,
+      "high": -0.3465910640911091,
+      "passes": false
+    }
+  ],
+  "acceptance": {
+    "profile_written": true,
+    "baselines_evaluated": true,
+    "neural_model_when_chosen": true,
+    "every_model_has_predictions_hash": true,
+    "no_feature_file_reaches_test": true,
+    "elevated_hours_reported": true
+  },
+  "code_outcome": "retain_baseline",
+  "prompt_variant": "note-close-v1",
+  "prompt_digests": {
+    "scope": "deb591a50ba4bcaf200768b7357105d0eff87f4e3b915c7201339de6a21854d1",
+    "strategy": "8791d37347f9bd681f0de37c55233ffd8dc22f07cdfac9c16aaa58cdbceafef2",
+    "plan": "74b0548d49044ce59f1f820eee94ff864b44db2bd159db841d12892eb47cdd16",
+    "data": "f5a5b9014b0ac1fc757ef573faa98463cb24e0ff5ca35ff30c0c7f7cf9902d08",
+    "ml": "c7b1d356a50b3f6df0f9171e5318de07a06cbed1bbc3fa29287724a33427e1df",
+    "review": "fe133f5f47f48dcf2ca312a9b99ef0c40998fea3af0d81583e4ed43be9b863c0",
+    "decide": "870361b04cf398c4e1ecae2941566e40fcb0ebbaf6fb098757d913538bf088a0",
+    "forward": "d29d528e0d591813fc092a6807cde82a8d75ace165cfb973a6be853cee49208e"
+  },
+  "usage": {
+    "wall_seconds": 2222.7,
+    "inference_seconds": 2030.1,
+    "training_seconds": 180.1,
+    "peak_training_rss_mb": 382.7,
+    "model_calls": 12,
+    "prompt_tokens": 14428,
+    "completion_tokens": 8088,
+    "cached_tokens": "not exposed by this provider",
+    "retries": 0,
+    "provider_faults": 0,
+    "tool_calls": 2,
+    "rejected_tool_calls": 0,
+    "human_interventions": 0
+  },
+  "roles": {
+    "product_manager": {
+      "role": "product_manager",
+      "provider": "local-glimmer",
+      "model": "muse-glimmer-30B",
+      "served_model": "muse-glimmer-30B",
+      "calls": 3,
+      "kind": "live_http"
+    },
+    "geospatial_engineer": {
+      "role": "geospatial_engineer",
+      "provider": "local-glimmer",
+      "model": "muse-glimmer-30B",
+      "served_model": "muse-glimmer-30B",
+      "calls": 5,
+      "kind": "live_http"
+    },
+    "data_specialist": {
+      "role": "data_specialist",
+      "provider": "local-glimmer",
+      "model": "muse-glimmer-30B",
+      "served_model": "muse-glimmer-30B",
+      "calls": 2,
+      "kind": "live_http"
+    },
+    "ml_engineer": {
+      "role": "ml_engineer",
+      "provider": "local-glimmer",
+      "model": "muse-glimmer-30B",
+      "served_model": "muse-glimmer-30B",
+      "calls": 2,
+      "kind": "live_http"
+    }
+  }
+}
