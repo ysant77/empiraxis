@@ -1,0 +1,186 @@
+[
+  {
+    "attribution": "Contains information from Historical 1-hr PM2.5 accessed on 27 October 2026 from data.gov.sg, which is made available under the terms of the Singapore Open Data Licence version 1.0.",
+    "first_utc": "2014-03-31T17:00:00Z",
+    "hindsight": false,
+    "kind": "series",
+    "last_utc": "2023-12-31T15:00:00Z",
+    "layer_id": "nea-pm25",
+    "limits": [
+      "five regions, not stations",
+      "label start or end of hour not stated",
+      "2024 onward is sealed and not listed"
+    ],
+    "product": "NEA Historical 1-hr PM2.5",
+    "reason": null,
+    "source_sha256": [
+      "2fb76e1c4e4208e92f49670602e303c86e21eaa3704651633323e50f51015de4"
+    ],
+    "state": "available",
+    "title": "NEA regional PM2.5",
+    "unit": "ug/m3",
+    "version": "2026-10-20 snapshot"
+  },
+  {
+    "attribution": "Contains modified Copernicus Climate Change Service information (ERA5).",
+    "first_utc": "2015-09-01T00:00:00Z",
+    "hindsight": true,
+    "kind": "vector_series",
+    "last_utc": "2015-10-31T23:00:00Z",
+    "layer_id": "era5-wind-850",
+    "limits": [
+      "reanalysis made later",
+      "not the plume height",
+      "box means, not a grid"
+    ],
+    "product": "ERA5 pressure levels",
+    "reason": null,
+    "source_sha256": [
+      "6ffd4adbf55a958da91766f6957bcf1cedd076eabe73b022977a8d62dc96a070",
+      "ee5f98abec07edb4e2b9dc4752909559419554f1b6f47caab5a87c0518a79756"
+    ],
+    "state": "available",
+    "title": "ERA5 850 hPa wind (corridor means)",
+    "unit": "m/s",
+    "version": "final expver 1"
+  },
+  {
+    "attribution": "NASA Earth science data; cite the product DOI and the DAAC.",
+    "first_utc": "2015-09-01T00:00:00Z",
+    "hindsight": true,
+    "kind": "points",
+    "last_utc": "2015-10-30T00:00:00Z",
+    "layer_id": "firms-modis",
+    "limits": [
+      "thermal anomaly, not burned area or emissions",
+      "clouds and thick smoke hide fires"
+    ],
+    "product": "FIRMS MODIS_SP",
+    "reason": null,
+    "source_sha256": [
+      "75bf1fbcbc9a550a996ba00ba3262bc21a6c78f71a6ac5bbe415835449988fb8"
+    ],
+    "state": "available",
+    "title": "FIRMS MODIS active-fire detections",
+    "unit": "detection; FRP in MW",
+    "version": "Collection 6.1"
+  },
+  {
+    "attribution": "NASA Earth science data; cite the product DOI and the DAAC.",
+    "first_utc": "2015-09-01T00:00:00Z",
+    "hindsight": true,
+    "kind": "raster",
+    "last_utc": "2015-09-30T00:00:00Z",
+    "layer_id": "mcd64a1-2015-09",
+    "limits": [
+      "valid land 0.970",
+      "mapped product, not ground truth"
+    ],
+    "product": "MCD64A1",
+    "reason": null,
+    "source_sha256": [
+      "126a6c506d0d05b7f913f36ea98925de67773c68ce19194b1759a9b9acc6bfe2"
+    ],
+    "state": "available",
+    "title": "MCD64A1 burned area, September 2015",
+    "unit": "day of year",
+    "version": "6.1"
+  },
+  {
+    "attribution": "NASA Earth science data; cite the product DOI and the DAAC.",
+    "first_utc": null,
+    "hindsight": true,
+    "kind": "raster",
+    "last_utc": null,
+    "layer_id": "mcd64a1-2015-10",
+    "limits": [],
+    "product": "MCD64A1",
+    "reason": "valid land share 0.460 is below the 0.80 gate",
+    "source_sha256": [],
+    "state": "gated_out",
+    "title": "MCD64A1 burned area, October 2015",
+    "unit": "day of year",
+    "version": "6.1"
+  },
+  {
+    "attribution": "NASA Earth science data; cite the product DOI and the DAAC.",
+    "first_utc": "2015-09-13T00:00:00Z",
+    "hindsight": true,
+    "kind": "raster",
+    "last_utc": "2015-10-15T00:00:00Z",
+    "layer_id": "hls-l30",
+    "limits": [],
+    "product": "HLSL30",
+    "reason": "HLS_not_eligible: 2.7% of the box is clear land on both dates; more than 96% of pixels carry the high-aerosol flag",
+    "source_sha256": [
+      "3db06677110323845ade4a9da2fadcf3899204fbd6671a67ca9a480b24b61ce1",
+      "2ade451ced5d168be9b1d96d6162ef9eae31e2fc6ca5845cdf7205692a20c4ca",
+      "088f838b095be125534781f90b20f97d3420148446b9f3f0b923932fe0605555",
+      "fbc57aaf4a79e7775b73f6bb43ce64cfafe47e000ef625fe3fea730cca33029c",
+      "c86a7b9d9f6d7e0dfbfe64e7ed1f828b9bf16e1d22667952217aa4c6c2519d98",
+      "53d35f6dcd52aef76940cfe17f3102e5a41cec8ebe92d8176a6cb549b3f4c6a2",
+      "63cc6095b1e773b8417dd1ac7cc8d70314574ebac1af0ed48472fa97d1c0557f",
+      "4ad4f37da74680c782b4c0d7bfdb4493a2db209794004a435bbd3b37ad54fd0c",
+      "de10c4ab1673b79b5b3585ffb721bea0ae296a5aacd7b8997165cbd076f4845c",
+      "2ec1084bc6efade6fe8207314cd10e51b1c4ca87d94bbe430c7d9b862a576842",
+      "9cf628060ec2ae717b3e18c1330fea4ef96bff7a813f60ef610c6e24174b0457",
+      "226106e6e8e4cb2ce547d6015cc8b1e65b50493ed9213e08ae380522b2774c27",
+      "96bd2c6b98e1b75c27f4a94dd38728278ddaa65f7dcf7eca984a8607bcee8c9c",
+      "49295de57df4168db5655bfcc8d6eeb5e7372a14665a635f1dd0b56735c254e2",
+      "47500015cce2d713a6a2ca0290885905740275b922a1154ce832beab7610f4c4",
+      "f38bc9ef04d39c55fd65f6d8e4c7452634962581c6e32075bb593526db632656"
+    ],
+    "state": "gated_out",
+    "title": "HLS L30 surface reflectance",
+    "unit": "reflectance",
+    "version": "2.0"
+  },
+  {
+    "attribution": "NASA Earth science data; cite the product DOI and the DAAC.",
+    "first_utc": null,
+    "hindsight": true,
+    "kind": "grid_series",
+    "last_utc": null,
+    "layer_id": "smap-l3-36km",
+    "limits": [],
+    "product": "SPL3SMP",
+    "reason": "SMAP_unsuitable: no recommended-quality retrieval in the Kalimantan box (0 of 78 retrieved cell-passes)",
+    "source_sha256": [],
+    "state": "gated_out",
+    "title": "SMAP L3 soil moisture",
+    "unit": "m3/m3",
+    "version": "009"
+  },
+  {
+    "attribution": "NASA Earth science data; cite the product DOI and the DAAC.",
+    "first_utc": null,
+    "hindsight": true,
+    "kind": "grid_series",
+    "last_utc": null,
+    "layer_id": "imerg-v07",
+    "limits": [],
+    "product": "GPM_3IMERGHH",
+    "reason": "GES DISC returned HTTP 403; the owner must authorise the NASA GESDISC DATA ARCHIVE app in Earthdata Login",
+    "source_sha256": [],
+    "state": "blocked",
+    "title": "GPM IMERG rainfall",
+    "unit": "mm/h",
+    "version": "07"
+  },
+  {
+    "attribution": "NASA Earth science data; cite the product DOI and the DAAC.",
+    "first_utc": null,
+    "hindsight": true,
+    "kind": "grid_series",
+    "last_utc": null,
+    "layer_id": "maiac-aod",
+    "limits": [],
+    "product": "MCD19A2",
+    "reason": "HDF4 reader not built; AOD is a column quantity, not surface PM2.5",
+    "source_sha256": [],
+    "state": "not_assessed",
+    "title": "MAIAC aerosol optical depth",
+    "unit": "1",
+    "version": "061"
+  }
+]
