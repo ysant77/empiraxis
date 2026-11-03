@@ -14,6 +14,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
+from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Literal
@@ -28,6 +29,8 @@ from earthlab.team.resources import operator_key
 METHOD = "persistence-latest-published"
 METHOD_SHA256 = hashlib.sha256(METHOD.encode()).hexdigest()
 ACTIVATION = "activation.json"
+MAX_CLOCK_SKEW = timedelta(minutes=2)  # issue time must be now: no backdating, no future dating
+MISSING_AFTER = timedelta(hours=24)  # before this, an absent observation is pending, not missing
 
 
 class LedgerDisabled(RuntimeError):
@@ -78,7 +81,7 @@ class VerificationV1(Strict):
     prediction_id: str
     prediction_sha256: str
     checked_at: datetime
-    state: Literal["scored", "observation_missing", "not_due"]
+    state: Literal["scored", "observation_missing", "pending", "digest_mismatch"]
     observed: float | None = None
     observed_raw_sha256: str | None = None
     absolute_error: float | None = None
@@ -92,8 +95,9 @@ def _rows(path: Path) -> list[str]:
 class Ledger:
     """predictions.jsonl and verifications.jsonl in one folder, both append-only."""
 
-    def __init__(self, folder: Path):
+    def __init__(self, folder: Path, clock: Callable[[], datetime] = lambda: datetime.now(UTC)):
         self.folder = folder
+        self.clock = clock
         self.predictions = folder / "predictions.jsonl"
         self.verifications = folder / "verifications.jsonl"
 
@@ -112,15 +116,18 @@ class Ledger:
             raise LedgerDisabled("the activation has expired")
         if len(_rows(self.predictions)) >= activation.max_predictions:
             raise LedgerDisabled("the activation's prediction limit is reached")
+        if abs(now - self.clock()) > MAX_CLOCK_SKEW:
+            raise LedgerDisabled("the issue time is not now: no backdating or future dating")
         return activation
 
     def issue(
         self, latest: list[Observation], now: datetime, horizon: int = 6
     ) -> list[PredictionV1]:
         """Persistence from the newest PM2.5 value per region that was published before now."""
-        self.active(now)
+        activation = self.active(now)
         known = [o for o in latest if o.product == "pm25" and o.value is not None
-                 and o.issued_time is not None and o.issued_time <= now]  # fmt: skip
+                 and o.issued_time is not None and o.issued_time <= now
+                 and o.retrieved_at <= now]  # fmt: skip
         newest: dict[str, Observation] = {}
         for o in known:
             if o.place_id not in newest or o.event_time > newest[o.place_id].event_time:
@@ -132,6 +139,8 @@ class Ledger:
         out = [self._predict(o, now, hour + timedelta(hours=horizon), horizon)
                for o in sorted(newest.values(), key=lambda o: o.place_id)]  # fmt: skip
         out = [p for p in out if p.prediction_id not in issued]  # one prediction per target
+        if len(issued) + len(out) > activation.max_predictions:
+            raise LedgerDisabled("this batch would pass the activation's prediction limit")
         self.folder.mkdir(parents=True, exist_ok=True)
         with self.predictions.open("a", encoding="utf-8") as f:
             f.writelines(p.model_dump_json() + "\n" for p in out)
@@ -158,7 +167,7 @@ class Ledger:
             if p.prediction_id in done:
                 continue
             out.append(self._check(p, captured, now))
-        scored = [v for v in out if v.state != "not_due"]
+        scored = [v for v in out if v.state != "pending"]  # pending is never written
         with self.verifications.open("a", encoding="utf-8") as f:
             f.writelines(v.model_dump_json() + "\n" for v in scored)
         return out
@@ -167,12 +176,15 @@ class Ledger:
     def _check(p: PredictionV1, captured: list[Observation], now: datetime) -> VerificationV1:
         base = {"prediction_id": p.prediction_id, "prediction_sha256": p.record_sha256,
                 "checked_at": now}  # fmt: skip
+        body = p.model_copy(update={"record_sha256": ""}).model_dump(mode="json")
+        if payload_digest(body) != p.record_sha256:
+            return VerificationV1(**base, state="digest_mismatch")
         same = [o for o in captured if o.product == "pm25" and o.place_id == p.region
                 and o.event_time == p.target_time]  # fmt: skip
         first = [o for o in same if o.kind == "first" and o.value is not None]
         if not first:
-            late = now - p.target_time > timedelta(hours=2)
-            return VerificationV1(**base, state="observation_missing" if late else "not_due")
+            late = now - p.target_time > MISSING_AFTER
+            return VerificationV1(**base, state="observation_missing" if late else "pending")
         seen = first[0].value or 0.0
         return VerificationV1(
             **base, state="scored", observed=seen, observed_raw_sha256=first[0].raw_sha256,
@@ -186,4 +198,5 @@ def summary(ledger: Ledger) -> dict[str, int]:
         "predictions": len(_rows(ledger.predictions)),
         "scored": sum(v.state == "scored" for v in rows),
         "observation_missing": sum(v.state == "observation_missing" for v in rows),
+        "digest_mismatch": sum(v.state == "digest_mismatch" for v in rows),
     }

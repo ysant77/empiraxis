@@ -15,7 +15,13 @@ The ledger issues research predictions before the observation exists, then score
   - the method digest;
   - its own record digest.
 - **Predictions are append-only.** Verification never changes them.
-- **Scoring:** verification uses the first published value for the same region and hour, and records its digest and the absolute error. A later correction is counted, not used. If no value exists 2 h after the target, the prediction is recorded as `observation_missing`.
+- **Issue time:** the issue time must be the system clock, within 2 minutes. Backdated and future-dated issues are refused.
+- **Inputs:** each must have been published and retrieved before the issue time.
+- **Batch quota:** a batch that would pass the activation's limit is refused whole.
+- **Digest check:** before scoring, each prediction's digest is recomputed. A changed record is recorded as `digest_mismatch`, not scored.
+- **Pending and missing:** an absent observation is `pending`, which is never written, until 24 h after the target. Only then is it recorded as missing. Repeated verification adds nothing new.
+- **Day capture:** the day capture follows the source's pagination token, up to 30 pages.
+- **Scoring:** verification uses the first published value for the same region and hour, and records its digest and the absolute error. A later correction is counted, not used. 
 - `summary()` reports the number of predictions, scored predictions and missing observations.
 
 ## To activate (owner only)
