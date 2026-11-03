@@ -15,6 +15,18 @@ A dataset is not "integrated" because a YAML file lists it. Seven levels are tra
 
 Marks: **Y** met. **P** partly met (see the note). **N** not met. **B** blocked.
 
+## Registered research questions
+
+Verbatim text is in `M5_RESEARCH_QUESTIONS.md`.
+
+| ID | Short name | Stage | State |
+|---|---|---|---|
+| M5-A | Multisource T+6 PM2.5 prediction | primary, first | pilot run; no supported gain; IMERG pending |
+| M5-B | Regional transport consistency | later, own protocol | not started; no source attribution |
+| M5-C | Severe-event prediction 12 to 24 h, calibrated, with abstention | later, own protocol | not started; issue-time inputs only |
+
+The 2015 negative ablation stays a separate finding.
+
 ## Matrix
 
 | Dataset | L1 | L2 | L3 | L4 | L5 | L6 | L7 |

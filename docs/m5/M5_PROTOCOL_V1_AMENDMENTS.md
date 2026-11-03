@@ -23,3 +23,8 @@ value is then 1.0 or close to it. No test can pass the Holm rule at 0.05.
 After the first Stage T results, the summary gained an error breakdown by target band (below 25,
 25 to 55, above 55 µg/m³) and a count of elevated days. The main metrics, decision rule and labels
 are unchanged. The breakdown is exploratory. Any statement drawn from it needs a new protocol.
+
+## Amendment 3 (2026-11-03): research questions registered
+
+The owner registered three questions: M5-A (primary), M5-B and M5-C. See `M5_RESEARCH_QUESTIONS.md`.
+Protocol v1 serves M5-A only. M5-B and M5-C need separate protocols. No frozen text changed.
