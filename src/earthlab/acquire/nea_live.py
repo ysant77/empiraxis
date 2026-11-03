@@ -27,6 +27,7 @@ from earthlab.contracts import Strict
 
 BASE = "https://api-open.data.gov.sg/v2/real-time/api/"
 MIN_INTERVAL_SECONDS = 2.0
+MAX_PAGES = 30  # a day of hourly PM2.5 is one page; more pages than this is refused
 Product = Literal["pm25", "wind-speed", "wind-direction", "rainfall", "relative-humidity"]
 
 
@@ -149,6 +150,30 @@ class CaptureLog:
         return counts
 
 
+def _pages(
+    client: httpx.Client,
+    url: str,
+    params: dict[str, str],
+    product: str,
+    log: CaptureLog,
+    sleep: Callable[[float], None],
+) -> dict[str, int]:
+    """Every page of one request, following the source's pagination token."""
+    totals = {"first": 0, "correction": 0, "repeat": 0}
+    for page in range(MAX_PAGES):
+        if page:
+            sleep(MIN_INTERVAL_SECONDS)
+        response = client.get(url, params=params or None)
+        response.raise_for_status()
+        for kind, n in log.append(parse(product, response.content, datetime.now(UTC), url)).items():
+            totals[kind] += n
+        token = (json.loads(response.content).get("data") or {}).get("paginationToken")
+        if not token:
+            return totals
+        params = {**params, "paginationToken": token}
+    raise ValueError(f"{product}: more than {MAX_PAGES} pages")
+
+
 def capture(
     log: CaptureLog,
     products: tuple[str, ...] = tuple(CATALOGUE),
@@ -171,10 +196,8 @@ def capture(
             if i:
                 sleep(MIN_INTERVAL_SECONDS)
             url = BASE + CATALOGUE[product].product
-            response = client.get(url, params={"date": day.isoformat()} if day else None)
-            response.raise_for_status()
-            rows = parse(product, response.content, datetime.now(UTC), url)
-            out[product] = log.append(rows)
+            params = {"date": day.isoformat()} if day else {}
+            out[product] = _pages(client, url, params, product, log, sleep)
     finally:
         if own:
             client.close()

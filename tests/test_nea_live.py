@@ -83,3 +83,18 @@ def test_a_day_capture_asks_for_that_date_and_only_for_pm25(tmp_path: Path) -> N
     assert seen == ["2026-11-03"]
     with pytest.raises(ValueError, match="pm25 only"):
         capture(log, ("pm25", "rainfall"), client, day=date(2026, 11, 3))
+
+
+def test_a_day_capture_follows_pagination_to_the_end(tmp_path: Path) -> None:
+    body = json.loads(raw("pm25"))
+    pages = [dict(body, data=dict(body["data"], paginationToken="next")), body]
+    asked: list[str | None] = []
+
+    def answer(request: httpx.Request) -> httpx.Response:
+        asked.append(request.url.params.get("paginationToken"))
+        return httpx.Response(200, content=json.dumps(pages[len(asked) - 1]).encode())
+
+    client = httpx.Client(transport=httpx.MockTransport(answer))
+    out = capture(CaptureLog(tmp_path / "log.jsonl"), ("pm25",), client, lambda _: None,
+                  day=date(2026, 11, 3))  # fmt: skip
+    assert asked == [None, "next"] and out["pm25"] == {"first": 5, "correction": 0, "repeat": 5}
