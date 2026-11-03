@@ -22,7 +22,8 @@ Muse Glimmer 30B ran locally, served by llama-server. It did the steps below, an
 | Scores and comparison tables | Independent evaluator code |
 | S1 to S4 evidence in this script | Deterministic code. No Meta model ran in these four runs. |
 | Safety screening of investigation answers | Llama Guard 3 8B, in the investigation path only. It did not run in these harness runs. |
-| Approval | A human. No decision is recorded in these runs. |
+| Signed approvals | The owner, with the operator key: the NEA acquisition, the Prithvi weights and chips, and the prediction ledger |
+| Model adoption | A human. The decisions of the team runs are still pending. |
 
 Print the credit table from the trace of the team run:
 
@@ -34,23 +35,27 @@ uv run python scripts/demo_contributions.py examples/replay/scenario-muse-team-e
 
 Open the app before recording. Keep one browser tab. The surface control and the scenario pills change the page, and the URL keeps the selection.
 
+Recording plan: capture the screen without sound, then record the voiceover separately. Each segment uses the existing Research Workspace, Engineering Lab or Control Room.
+
 | Time | Label | Screen | Say |
 |---|---|---|---|
-| 0:00 | RECORDED REPLAY | Research Workspace, S1 | EarthLab is an auditable scientific engineering system. A person asks a research question. The system can train a model, reuse one, reject one or ask for evidence. Everything on screen is recorded, and the page says so. |
-| 0:20 | RECORDED REPLAY | Control Room, the Muse team run: open it from the Workspace button | Here the local Meta model did the planning. Muse, as PM, checked the scope. Muse, as Lead, chose a statistical method and said why. Code ran the work, and separate code scored it. This table comes from the trace, so a step is credited to Muse only when the trace records it. |
-| 0:50 | RECORDED REPLAY | Workspace, Recorded Muse team run: regression (M2), Evidence | In a second Muse run, the Lead first recommended adopting ridge with limits. Code refused it: no model beyond the baselines existed to adopt. The Lead then kept persistence, which matches the code rule. The optional same-model critic stays off, because in live tests it found no fault that code had not found. |
-| 1:05 | EXPERIMENTAL RESULT | Research Workspace, S1, the charts | S1 is a real experiment on validation years, not a forecast. The GRU beats persistence on MAE, 4.588 against 5.465 µg/m³. Above 55 µg/m³ it is worse, 28.772 against 26.324, so a code rule limits it. |
-| 1:30 | EXPERIMENTAL RESULT | Research Workspace, S2 | S2 reused a GRU encoder, trained earlier with the S1 settings and then frozen. Only a logistic head was fitted. Reuse beat logistic regression, 0.255 against 0.162. It lost to the persistence alarm, 0.306. So the system keeps persistence. That rejection is the correct result. |
-| 1:50 | EXPERIMENTAL RESULT | Research Workspace, S3, the box table | S3 tests wind, rain and fire with ERA5 hindsight data. No box and level reached consistent, 0 of 6. The evidence is inconclusive, so we name no source. |
-| 2:10 | RECORDED REPLAY | Control Room, S4, the human gate | S4 asks for segmentation. The imagery and masks do not fit the study box, so nothing ran and no score exists. The system requests the missing inputs. The gate is pending: no signed approval exists, and nothing can be approved in replay. |
-| 2:30 | RECORDED REPLAY | Control Room, the Muse team run, integrity tiles | The trace is hash-chained. The Muse team reached `retain_baseline`, and this matches the code rule. It took 17 model calls and 2157.5 s. In the benchmark, the deterministic pipeline reached the same outcome on this task in 1.9 s, so the simpler path stays preferred. |
-| 2:50 | LIVE | Terminal | This replay runs now, with no model. It checks the hash chain and recomputes the verified values. |
+| 0:00 | RECORDED REPLAY | Research Workspace, M3 | EarthLab is a scientific engineering team run by a Meta model. A person asks a research question. Muse Glimmer plans the work, trusted tools run it, separate code scores it, and a person decides. |
+| 0:15 | RECORDED RUN | `docs/muse-family-comparison-run.md`, acquisition table | Muse, as data scientist, asked to check the local NEA file against the official API for three days. The owner signed the request. Code built every URL and enforced the limits: 14,865 bytes. 333 values matched. 17 did not, all on 15 November 2023. The new data found a data-quality problem; it did not just add rows. |
+| 0:40 | RECORDED REPLAY | Engineering Lab, M3, family table | In a second run, Muse as Lead expected a statistical model to win, and set up a compact neural model. Tools trained both: a ridge tuned on rolling train folds, and a TCN, 8 epochs in 177 seconds. Both reloaded with zero difference. |
+| 1:00 | RECORDED REPLAY | Control Room, M3, decision | The evaluator scored all models on the same rows. The TCN did not beat the ridge, and all models are worse than persistence above 55 µg/m³. The Lead kept the lagged ridge. The decision now waits for a person. |
+| 1:20 | EXPERIMENTAL RESULT | `docs/haze-2015-ablation-results.md`, scores table | For the 2015 haze, we added ERA5 wind and rain, then FIRMS fire detections, to PM2.5 history. Neither helped. A review found a scaling leak and a short fire window; we fixed both and ran it again. The result is still negative, and we report it. |
+| 1:45 | EXPERIMENTAL RESULT | `docs/evidence/prithvi-level-a.png` | With a signed approval, we ran the pretrained Prithvi burn-scar model once on one published chip. IoU 0.912. This is a reproduction, not a transfer result. |
+| 2:05 | RECORDED RUN | `docs/prospective-verification.md`, table | The owner signed a prediction ledger. Five predictions were issued before their target hour, then scored only against values NEA had published by the check time. Five values are not evidence of forecast skill. |
+| 2:30 | RECORDED REPLAY | Control Room, M3, integrity tiles and human gate | Every step is in a hash-chained trace. On the full local run, a replay with no model scored all seven models again with zero mismatches. Nothing is adopted until a person approves it. |
+| 2:50 | LIVE | Terminal | This check runs now, with no model. It verifies the hash chain and every published file digest. |
 
 The LIVE command takes about 10 s. Start it at 2:45, or show the recorded output at 2:50:
 
 ```bash
-uv run earthlab --data-dir data/nea replay examples/replay/live-september-verified
+uv run earthlab --data-dir data/nea replay examples/replay/scenario-muse-method-comparison
 ```
+
+The published copy leaves out 8 files, so this command checks digests and does not score again. The full run folder is local; `earthlab harness-replay <run folder>` scores it again.
 
 ## Required local assets
 
