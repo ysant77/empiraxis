@@ -1,6 +1,6 @@
 # Prospective prediction ledger (EXPERIMENTAL)
 
-Status: implemented and tested. It is off. No prediction has been issued.
+Status: implemented and tested. The owner activated it on 2026-11-03 for 20 predictions within 30 hours. Five predictions were issued at 02:00 UTC for 08:00 UTC.
 
 The ledger issues research predictions before the observation exists, then scores them when NEA publishes the value. It is separate from the public replay app and from every historical evaluation. It is not a forecast service, a health warning or evidence of haze-forecast skill.
 
@@ -21,3 +21,7 @@ The ledger issues research predictions before the observation exists, then score
 ## To activate (owner only)
 
 Choose the limit and the expiry. Sign the activation in your own shell, with the operator key loaded. Then capture NEA data and issue. A few predictions on a clean day show nothing about haze events.
+
+## To score
+
+`uv run python scripts/verify_ledger.py <ledger folder> <capture log>` needs no key. It captures each target day's published PM2.5 by date, so the time of the check does not matter. Then it appends one verification per due prediction.

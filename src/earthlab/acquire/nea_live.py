@@ -16,7 +16,7 @@ import hashlib
 import json
 import time
 from collections.abc import Callable, Iterator
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any, Literal
 
@@ -154,8 +154,15 @@ def capture(
     products: tuple[str, ...] = tuple(CATALOGUE),
     client: httpx.Client | None = None,
     sleep: Callable[[float], None] = time.sleep,
+    day: date | None = None,
 ) -> dict[str, dict[str, int]]:
-    """One request per product, at least MIN_INTERVAL_SECONDS apart. Nothing is retried."""
+    """One request per product, at least MIN_INTERVAL_SECONDS apart. Nothing is retried.
+
+    With a day, PM2.5 returns every hour published for that Singapore date, each with its own
+    publication time. Only PM2.5 takes a day: the station products page through minutes.
+    """
+    if day is not None and products != ("pm25",):
+        raise ValueError("a day is allowed for pm25 only")
     own = client is None
     client = client or httpx.Client(timeout=20.0)
     out: dict[str, dict[str, int]] = {}
@@ -164,7 +171,7 @@ def capture(
             if i:
                 sleep(MIN_INTERVAL_SECONDS)
             url = BASE + CATALOGUE[product].product
-            response = client.get(url)
+            response = client.get(url, params={"date": day.isoformat()} if day else None)
             response.raise_for_status()
             rows = parse(product, response.content, datetime.now(UTC), url)
             out[product] = log.append(rows)

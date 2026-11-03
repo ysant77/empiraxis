@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 import httpx
@@ -68,3 +68,18 @@ def test_capture_waits_between_requests_and_never_retries(tmp_path: Path) -> Non
     with pytest.raises(httpx.HTTPStatusError):
         capture(log, ("rainfall",), client, waits.append)
     assert calls == ["pm25", "wind-speed", "rainfall"]
+
+
+def test_a_day_capture_asks_for_that_date_and_only_for_pm25(tmp_path: Path) -> None:
+    seen: list[str] = []
+
+    def answer(request: httpx.Request) -> httpx.Response:
+        seen.append(str(request.url.params.get("date")))
+        return httpx.Response(200, content=raw("pm25"))
+
+    client = httpx.Client(transport=httpx.MockTransport(answer))
+    log = CaptureLog(tmp_path / "log.jsonl")
+    capture(log, ("pm25",), client, day=date(2026, 11, 3))
+    assert seen == ["2026-11-03"]
+    with pytest.raises(ValueError, match="pm25 only"):
+        capture(log, ("pm25", "rainfall"), client, day=date(2026, 11, 3))
