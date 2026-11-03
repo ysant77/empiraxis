@@ -21,7 +21,7 @@ import httpx
 import numpy as np
 from pydantic import Field
 
-from earthlab.acquire.nea_live import BASE, CaptureLog, Observation, capture
+from earthlab.acquire.nea_live import BASE, Budget, BudgetExceeded, CaptureLog, Observation, capture
 from earthlab.contracts import Strict
 from earthlab.digest import file_digest
 from earthlab.forecast.dataset import REGIONS, SPLITS, Grid, index_of
@@ -126,28 +126,49 @@ def execute(
     proposal: AcquisitionProposal, config: AcquisitionConfig, folder: Path, truth: Grid,
     clock: Callable[[], float] = time.monotonic,
 ) -> AcquisitionReceiptV1:  # fmt: skip
-    """Run an approved proposal within the limits, then compare it with the source."""
+    """Run an approved proposal within the limits, then compare it with the source.
+
+    The capture goes to a staging log. Only a capture that stays inside every limit becomes
+    the run's log; one that passes a limit is kept under another name and is refused.
+    """
     base = {"operation": proposal.operation, "dates": proposal.dates,
             "request_id": config.request_id}  # fmt: skip
-    why = _permit(config)
-    if why is not None:
+    why = "; ".join(check(proposal)) or _permit(config)
+    if proposal.operation != "capture_nea_day":
+        why = why or "operation none runs nothing"
+    if why:
         return AcquisitionReceiptV1(**base, state="refused", reason=why)
-    log, started, begin = CaptureLog(folder / "nea-pm25.jsonl"), datetime.now(UTC), clock()
-    requests = size = 0
-    for day in proposal.dates:
-        if size > MAX_BYTES or clock() - begin > MAX_SECONDS:
-            return AcquisitionReceiptV1(**base, state="refused", reason="a limit was reached")
-        counts = capture(log, ("pm25",), config.client, day=day)["pm25"]
-        requests, size = requests + counts["pages"], size + counts["bytes"]
-    rows = [Observation.model_validate_json(x) for x in log.path.read_text().splitlines()]
+    folder.mkdir(parents=True, exist_ok=True)
+    staging, final = folder / "nea-pm25.staging.jsonl", folder / "nea-pm25.jsonl"
+    staging.touch()
+    log, started = CaptureLog(staging), datetime.now(UTC)
+    budget = Budget(MAX_BYTES, MAX_SECONDS, clock)
+    try:
+        for day in proposal.dates:
+            capture(log, ("pm25",), config.client, day=day, budget=budget)
+        budget.left()
+    except BudgetExceeded as exc:
+        staging.replace(folder / "nea-pm25.over-limit.jsonl")
+        return AcquisitionReceiptV1(**base, state="refused", reason=str(exc), started_at=started,
+                                    finished_at=datetime.now(UTC), requests=budget.requests,
+                                    bytes=budget.used)  # fmt: skip
+    staging.replace(final)
+    return _acquired(base, config, final, budget, started, truth)
+
+
+def _acquired(
+    base: dict[str, Any], config: AcquisitionConfig, log: Path, budget: Budget,
+    started: datetime, truth: Grid,
+) -> AcquisitionReceiptV1:  # fmt: skip
+    rows = [Observation.model_validate_json(x) for x in log.read_text().splitlines()]
     ResourceDesk(config.desk_root).record_fetch(
-        config.request_id, operation=OPERATION, dates=[d.isoformat() for d in proposal.dates],
-        bytes=size, log_sha256=file_digest(log.path),
+        config.request_id, operation=OPERATION, dates=[d.isoformat() for d in base["dates"]],
+        bytes=budget.used, log_sha256=file_digest(log),
     )  # fmt: skip
     return AcquisitionReceiptV1(
         **base, state="acquired", reason="approved and run within the limits",
-        started_at=started, finished_at=datetime.now(UTC), requests=requests, bytes=size,
-        log_sha256=file_digest(log.path), values=len(rows), **compare(rows, truth),
+        started_at=started, finished_at=datetime.now(UTC), requests=budget.requests,
+        bytes=budget.used, log_sha256=file_digest(log), values=len(rows), **compare(rows, truth),
     )  # fmt: skip
 
 
