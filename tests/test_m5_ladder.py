@@ -76,3 +76,14 @@ def test_stage_p_runs_on_a_synthetic_season() -> None:
     out = L.stage_p(s)
     assert out["scored_rows"] > 0 and set(out["mae"]) == set(L.RUNGS)
     assert L.stage_p(s, run_tree=False)["mae"].keys() == {"R0", "R1", "R2"}
+
+
+def test_stage_p_i1_runs_with_rain_features() -> None:
+    from earthlab.m5.ladder_i1 import stage_p_i1
+
+    s = season(400, 5)
+    rain = np.random.default_rng(2).gamma(1.0, 1.0, (400, 6))
+    rain[:5] = np.nan
+    out = stage_p_i1(s, rain)
+    assert out["scored_rows"] > 0 and set(out["mae"]) == {"R0", "R1", "R2", "I1"}
+    assert 0 < out["rain_features_missing_share"] < 0.05 and "I1_vs_R2" in out["paired"]
