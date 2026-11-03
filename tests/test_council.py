@@ -302,3 +302,19 @@ def test_the_m4_report_lists_every_attempt_and_the_critic_state(tmp_path: Path) 
     assert [r["status"] for r in got] == ["awaiting_human", "crashed"]
     assert got[0]["critic"] == "usable/indep/1 backed" and got[0]["tokens"] == 15
     assert got[1]["calls"] == "-" and "crashed" in table(got)
+
+
+def test_the_pm_check_scores_typed_answers_against_the_scope_labels(tmp_path: Path) -> None:
+    from earthlab.harness import pm_check
+
+    answers = [
+        call("review_scope", in_scope=True, note="Within the problem."),
+        call("review_scope", in_scope=False, note="Health advice is out of scope."),
+        call("review_scope", in_scope=True, note="Fine."),  # wrong label for the cause case
+        call("forward_decision", forward_to_human=True, note="Matches the report."),
+        say("no tool"), say("no tool"),
+    ]  # fmt: skip
+    rows = pm_check.run(ScriptedClient(answers, FAKE_CONFIG), REPORT, tmp_path)
+    assert [r["state"] for r in rows] == ["usable"] * 4 + ["unusable"]
+    assert [r.get("match") for r in rows[:3]] == [True, True, False]
+    assert pm_check.passed(rows) is False
