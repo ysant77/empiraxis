@@ -273,3 +273,32 @@ def test_every_m4_arm_passes_the_binding_gates_with_the_real_config() -> None:
     plan = load_plan(config / "benchmark" / "m4-matrix.yaml")
     for arm in plan.arms:
         assert gate_blockers(arm, bindings, providers) == [], arm.arm_id
+
+
+def test_the_m4_report_lists_every_attempt_and_the_critic_state(tmp_path: Path) -> None:
+    import json
+
+    from earthlab.harness.m4_report import collect, table
+
+    run = tmp_path / "runs" / "r1"
+    run.mkdir(parents=True)
+    result = {
+        "usage": {"model_calls": 3, "prompt_tokens": 10, "completion_tokens": 5},
+        "recommendation": {"outcome": "retain_baseline", "model_id": "B4"},
+        "code_outcome": "retain_baseline", "council": {"distinct_checkpoints": 2},
+        "decision_critique": {"state": "usable", "critic_source": "independent_model",
+                              "findings": [{"backed": True}, {"backed": False}]},
+    }  # fmt: skip
+    (run / "result.json").write_text(json.dumps(result), encoding="utf-8")
+    rows = [
+        {"arm_id": "T-L", "status": "awaiting_human", "wall": 5.0, "scenario": "s",
+         "run": str(run)},
+        {"arm_id": "T-L", "status": "crashed", "wall": 1.0, "scenario": "s",
+         "run": str(tmp_path), "err": "boom"},
+        {"header": "x"},
+    ]  # fmt: skip
+    (tmp_path / "manifest.jsonl").write_text("\n".join(map(json.dumps, rows)), encoding="utf-8")
+    got = collect([tmp_path, tmp_path / "missing"])
+    assert [r["status"] for r in got] == ["awaiting_human", "crashed"]
+    assert got[0]["critic"] == "usable/indep/1 backed" and got[0]["tokens"] == 15
+    assert got[1]["calls"] == "-" and "crashed" in table(got)
