@@ -1,0 +1,719 @@
+{
+ "20151016": {
+  "kalimantan_study_box": [
+   {
+    "cells_in_box": 7,
+    "flag_values": {
+     "9": 7
+    },
+    "pass": "AM",
+    "recommended_quality": 0,
+    "retrieved": 7,
+    "vegetation_water_content_mean_kg_m2": 13.988216536385673
+   },
+   {
+    "cells_in_box": 0,
+    "flag_values": {},
+    "pass": "PM",
+    "recommended_quality": 0,
+    "retrieved": 0,
+    "vegetation_water_content_mean_kg_m2": null
+   }
+  ],
+  "kalimantan_wide": [
+   {
+    "cells_in_box": 70,
+    "flag_values": {
+     "9": 49
+    },
+    "pass": "AM",
+    "recommended_quality": 0,
+    "retrieved": 49,
+    "vegetation_water_content_mean_kg_m2": 13.852118618634282
+   },
+   {
+    "cells_in_box": 0,
+    "flag_values": {},
+    "pass": "PM",
+    "recommended_quality": 0,
+    "retrieved": 0,
+    "vegetation_water_content_mean_kg_m2": null
+   }
+  ],
+  "maritime_continent": [
+   {
+    "cells_in_box": 1874,
+    "flag_values": {
+     "13": 21,
+     "8": 2,
+     "9": 397
+    },
+    "pass": "AM",
+    "recommended_quality": 2,
+    "retrieved": 420,
+    "vegetation_water_content_mean_kg_m2": 14.30244277885982
+   },
+   {
+    "cells_in_box": 140,
+    "flag_values": {
+     "13": 7,
+     "9": 8
+    },
+    "pass": "PM",
+    "recommended_quality": 0,
+    "retrieved": 15,
+    "vegetation_water_content_mean_kg_m2": 15.827012062072754
+   }
+  ],
+  "sumatra_box_b": [
+   {
+    "cells_in_box": 0,
+    "flag_values": {},
+    "pass": "AM",
+    "recommended_quality": 0,
+    "retrieved": 0,
+    "vegetation_water_content_mean_kg_m2": null
+   },
+   {
+    "cells_in_box": 0,
+    "flag_values": {},
+    "pass": "PM",
+    "recommended_quality": 0,
+    "retrieved": 0,
+    "vegetation_water_content_mean_kg_m2": null
+   }
+  ]
+ },
+ "20151019": {
+  "kalimantan_study_box": [
+   {
+    "cells_in_box": 8,
+    "flag_values": {
+     "9": 8
+    },
+    "pass": "AM",
+    "recommended_quality": 0,
+    "retrieved": 8,
+    "vegetation_water_content_mean_kg_m2": 14.17729663848877
+   },
+   {
+    "cells_in_box": 0,
+    "flag_values": {},
+    "pass": "PM",
+    "recommended_quality": 0,
+    "retrieved": 0,
+    "vegetation_water_content_mean_kg_m2": null
+   }
+  ],
+  "kalimantan_wide": [
+   {
+    "cells_in_box": 129,
+    "flag_values": {
+     "13": 1,
+     "9": 88
+    },
+    "pass": "AM",
+    "recommended_quality": 0,
+    "retrieved": 89,
+    "vegetation_water_content_mean_kg_m2": 14.158107527186361
+   },
+   {
+    "cells_in_box": 0,
+    "flag_values": {},
+    "pass": "PM",
+    "recommended_quality": 0,
+    "retrieved": 0,
+    "vegetation_water_content_mean_kg_m2": null
+   }
+  ],
+  "maritime_continent": [
+   {
+    "cells_in_box": 1857,
+    "flag_values": {
+     "13": 22,
+     "8": 11,
+     "9": 527
+    },
+    "pass": "AM",
+    "recommended_quality": 11,
+    "retrieved": 560,
+    "vegetation_water_content_mean_kg_m2": 14.914820499931063
+   },
+   {
+    "cells_in_box": 1815,
+    "flag_values": {
+     "13": 22,
+     "9": 317
+    },
+    "pass": "PM",
+    "recommended_quality": 0,
+    "retrieved": 339,
+    "vegetation_water_content_mean_kg_m2": 14.907424128512718
+   }
+  ],
+  "sumatra_box_b": [
+   {
+    "cells_in_box": 0,
+    "flag_values": {},
+    "pass": "AM",
+    "recommended_quality": 0,
+    "retrieved": 0,
+    "vegetation_water_content_mean_kg_m2": null
+   },
+   {
+    "cells_in_box": 0,
+    "flag_values": {},
+    "pass": "PM",
+    "recommended_quality": 0,
+    "retrieved": 0,
+    "vegetation_water_content_mean_kg_m2": null
+   }
+  ]
+ },
+ "20151022": {
+  "kalimantan_study_box": [
+   {
+    "cells_in_box": 8,
+    "flag_values": {
+     "9": 8
+    },
+    "pass": "AM",
+    "recommended_quality": 0,
+    "retrieved": 8,
+    "vegetation_water_content_mean_kg_m2": 14.176018595695496
+   },
+   {
+    "cells_in_box": 8,
+    "flag_values": {
+     "9": 8
+    },
+    "pass": "PM",
+    "recommended_quality": 0,
+    "retrieved": 8,
+    "vegetation_water_content_mean_kg_m2": 14.176018595695496
+   }
+  ],
+  "kalimantan_wide": [
+   {
+    "cells_in_box": 132,
+    "flag_values": {
+     "9": 92
+    },
+    "pass": "AM",
+    "recommended_quality": 0,
+    "retrieved": 92,
+    "vegetation_water_content_mean_kg_m2": 14.077470038248146
+   },
+   {
+    "cells_in_box": 80,
+    "flag_values": {
+     "9": 63
+    },
+    "pass": "PM",
+    "recommended_quality": 0,
+    "retrieved": 63,
+    "vegetation_water_content_mean_kg_m2": 14.260085340530154
+   }
+  ],
+  "maritime_continent": [
+   {
+    "cells_in_box": 1795,
+    "flag_values": {
+     "13": 22,
+     "8": 10,
+     "9": 573
+    },
+    "pass": "AM",
+    "recommended_quality": 10,
+    "retrieved": 605,
+    "vegetation_water_content_mean_kg_m2": 14.77983820359569
+   },
+   {
+    "cells_in_box": 1818,
+    "flag_values": {
+     "13": 14,
+     "9": 397
+    },
+    "pass": "PM",
+    "recommended_quality": 0,
+    "retrieved": 411,
+    "vegetation_water_content_mean_kg_m2": 15.751678314232189
+   }
+  ],
+  "sumatra_box_b": [
+   {
+    "cells_in_box": 0,
+    "flag_values": {},
+    "pass": "AM",
+    "recommended_quality": 0,
+    "retrieved": 0,
+    "vegetation_water_content_mean_kg_m2": null
+   },
+   {
+    "cells_in_box": 0,
+    "flag_values": {},
+    "pass": "PM",
+    "recommended_quality": 0,
+    "retrieved": 0,
+    "vegetation_water_content_mean_kg_m2": null
+   }
+  ]
+ },
+ "20151025": {
+  "kalimantan_study_box": [
+   {
+    "cells_in_box": 5,
+    "flag_values": {
+     "9": 5
+    },
+    "pass": "AM",
+    "recommended_quality": 0,
+    "retrieved": 5,
+    "vegetation_water_content_mean_kg_m2": 15.372771644592286
+   },
+   {
+    "cells_in_box": 8,
+    "flag_values": {
+     "9": 8
+    },
+    "pass": "PM",
+    "recommended_quality": 0,
+    "retrieved": 8,
+    "vegetation_water_content_mean_kg_m2": 14.174959659576416
+   }
+  ],
+  "kalimantan_wide": [
+   {
+    "cells_in_box": 74,
+    "flag_values": {
+     "9": 49
+    },
+    "pass": "AM",
+    "recommended_quality": 0,
+    "retrieved": 49,
+    "vegetation_water_content_mean_kg_m2": 14.495966522061096
+   },
+   {
+    "cells_in_box": 132,
+    "flag_values": {
+     "9": 91
+    },
+    "pass": "PM",
+    "recommended_quality": 0,
+    "retrieved": 91,
+    "vegetation_water_content_mean_kg_m2": 14.090217244494092
+   }
+  ],
+  "maritime_continent": [
+   {
+    "cells_in_box": 1795,
+    "flag_values": {
+     "13": 34,
+     "8": 18,
+     "9": 397
+    },
+    "pass": "AM",
+    "recommended_quality": 18,
+    "retrieved": 449,
+    "vegetation_water_content_mean_kg_m2": 13.69507572831449
+   },
+   {
+    "cells_in_box": 1782,
+    "flag_values": {
+     "13": 42,
+     "8": 4,
+     "9": 515
+    },
+    "pass": "PM",
+    "recommended_quality": 4,
+    "retrieved": 561,
+    "vegetation_water_content_mean_kg_m2": 15.247411153108253
+   }
+  ],
+  "sumatra_box_b": [
+   {
+    "cells_in_box": 54,
+    "flag_values": {
+     "8": 4,
+     "9": 25
+    },
+    "pass": "AM",
+    "recommended_quality": 4,
+    "retrieved": 29,
+    "vegetation_water_content_mean_kg_m2": 9.928140303184247
+   },
+   {
+    "cells_in_box": 0,
+    "flag_values": {},
+    "pass": "PM",
+    "recommended_quality": 0,
+    "retrieved": 0,
+    "vegetation_water_content_mean_kg_m2": null
+   }
+  ]
+ },
+ "20161016": {
+  "kalimantan_study_box": [
+   {
+    "cells_in_box": 8,
+    "flag_values": {
+     "13": 2,
+     "9": 6
+    },
+    "pass": "AM",
+    "recommended_quality": 0,
+    "retrieved": 8,
+    "vegetation_water_content_mean_kg_m2": 14.178288221359253
+   },
+   {
+    "cells_in_box": 8,
+    "flag_values": {
+     "9": 8
+    },
+    "pass": "PM",
+    "recommended_quality": 0,
+    "retrieved": 8,
+    "vegetation_water_content_mean_kg_m2": 14.178288221359253
+   }
+  ],
+  "kalimantan_wide": [
+   {
+    "cells_in_box": 131,
+    "flag_values": {
+     "13": 5,
+     "9": 87
+    },
+    "pass": "AM",
+    "recommended_quality": 0,
+    "retrieved": 92,
+    "vegetation_water_content_mean_kg_m2": 14.076790845912436
+   },
+   {
+    "cells_in_box": 77,
+    "flag_values": {
+     "13": 3,
+     "9": 57
+    },
+    "pass": "PM",
+    "recommended_quality": 0,
+    "retrieved": 60,
+    "vegetation_water_content_mean_kg_m2": 14.30129567782084
+   }
+  ],
+  "maritime_continent": [
+   {
+    "cells_in_box": 1791,
+    "flag_values": {
+     "13": 64,
+     "8": 11,
+     "9": 535
+    },
+    "pass": "AM",
+    "recommended_quality": 11,
+    "retrieved": 610,
+    "vegetation_water_content_mean_kg_m2": 14.720025120797704
+   },
+   {
+    "cells_in_box": 1810,
+    "flag_values": {
+     "13": 28,
+     "9": 385
+    },
+    "pass": "PM",
+    "recommended_quality": 0,
+    "retrieved": 413,
+    "vegetation_water_content_mean_kg_m2": 15.807272430770912
+   }
+  ],
+  "sumatra_box_b": [
+   {
+    "cells_in_box": 0,
+    "flag_values": {},
+    "pass": "AM",
+    "recommended_quality": 0,
+    "retrieved": 0,
+    "vegetation_water_content_mean_kg_m2": null
+   },
+   {
+    "cells_in_box": 0,
+    "flag_values": {},
+    "pass": "PM",
+    "recommended_quality": 0,
+    "retrieved": 0,
+    "vegetation_water_content_mean_kg_m2": null
+   }
+  ]
+ },
+ "20161019": {
+  "kalimantan_study_box": [
+   {
+    "cells_in_box": 7,
+    "flag_values": {
+     "13": 1,
+     "9": 6
+    },
+    "pass": "AM",
+    "recommended_quality": 0,
+    "retrieved": 7,
+    "vegetation_water_content_mean_kg_m2": 14.829490252903529
+   },
+   {
+    "cells_in_box": 0,
+    "flag_values": {},
+    "pass": "PM",
+    "recommended_quality": 0,
+    "retrieved": 0,
+    "vegetation_water_content_mean_kg_m2": null
+   }
+  ],
+  "kalimantan_wide": [
+   {
+    "cells_in_box": 78,
+    "flag_values": {
+     "13": 6,
+     "9": 46
+    },
+    "pass": "AM",
+    "recommended_quality": 0,
+    "retrieved": 52,
+    "vegetation_water_content_mean_kg_m2": 14.52292853135329
+   },
+   {
+    "cells_in_box": 0,
+    "flag_values": {},
+    "pass": "PM",
+    "recommended_quality": 0,
+    "retrieved": 0,
+    "vegetation_water_content_mean_kg_m2": null
+   }
+  ],
+  "maritime_continent": [
+   {
+    "cells_in_box": 1791,
+    "flag_values": {
+     "13": 39,
+     "8": 20,
+     "9": 390
+    },
+    "pass": "AM",
+    "recommended_quality": 20,
+    "retrieved": 449,
+    "vegetation_water_content_mean_kg_m2": 13.833834328736389
+   },
+   {
+    "cells_in_box": 120,
+    "flag_values": {},
+    "pass": "PM",
+    "recommended_quality": 0,
+    "retrieved": 0,
+    "vegetation_water_content_mean_kg_m2": null
+   }
+  ],
+  "sumatra_box_b": [
+   {
+    "cells_in_box": 50,
+    "flag_values": {
+     "8": 4,
+     "9": 24
+    },
+    "pass": "AM",
+    "recommended_quality": 4,
+    "retrieved": 28,
+    "vegetation_water_content_mean_kg_m2": 10.428575541291918
+   },
+   {
+    "cells_in_box": 0,
+    "flag_values": {},
+    "pass": "PM",
+    "recommended_quality": 0,
+    "retrieved": 0,
+    "vegetation_water_content_mean_kg_m2": null
+   }
+  ]
+ },
+ "20161022": {
+  "kalimantan_study_box": [
+   {
+    "cells_in_box": 0,
+    "flag_values": {},
+    "pass": "AM",
+    "recommended_quality": 0,
+    "retrieved": 0,
+    "vegetation_water_content_mean_kg_m2": null
+   },
+   {
+    "cells_in_box": 8,
+    "flag_values": {
+     "13": 3,
+     "9": 5
+    },
+    "pass": "PM",
+    "recommended_quality": 0,
+    "retrieved": 8,
+    "vegetation_water_content_mean_kg_m2": 14.175633788108826
+   }
+  ],
+  "kalimantan_wide": [
+   {
+    "cells_in_box": 0,
+    "flag_values": {},
+    "pass": "AM",
+    "recommended_quality": 0,
+    "retrieved": 0,
+    "vegetation_water_content_mean_kg_m2": null
+   },
+   {
+    "cells_in_box": 130,
+    "flag_values": {
+     "13": 14,
+     "9": 75
+    },
+    "pass": "PM",
+    "recommended_quality": 0,
+    "retrieved": 89,
+    "vegetation_water_content_mean_kg_m2": 14.238162265734726
+   }
+  ],
+  "maritime_continent": [
+   {
+    "cells_in_box": 1798,
+    "flag_values": {
+     "13": 38,
+     "8": 6,
+     "9": 296
+    },
+    "pass": "AM",
+    "recommended_quality": 6,
+    "retrieved": 340,
+    "vegetation_water_content_mean_kg_m2": 12.450689140838735
+   },
+   {
+    "cells_in_box": 1702,
+    "flag_values": {
+     "13": 49,
+     "8": 11,
+     "9": 416
+    },
+    "pass": "PM",
+    "recommended_quality": 11,
+    "retrieved": 476,
+    "vegetation_water_content_mean_kg_m2": 14.36294694783307
+   }
+  ],
+  "sumatra_box_b": [
+   {
+    "cells_in_box": 130,
+    "flag_values": {
+     "13": 4,
+     "8": 3,
+     "9": 96
+    },
+    "pass": "AM",
+    "recommended_quality": 3,
+    "retrieved": 103,
+    "vegetation_water_content_mean_kg_m2": 11.99548960657953
+   },
+   {
+    "cells_in_box": 0,
+    "flag_values": {},
+    "pass": "PM",
+    "recommended_quality": 0,
+    "retrieved": 0,
+    "vegetation_water_content_mean_kg_m2": null
+   }
+  ]
+ },
+ "20161025": {
+  "kalimantan_study_box": [
+   {
+    "cells_in_box": 0,
+    "flag_values": {},
+    "pass": "AM",
+    "recommended_quality": 0,
+    "retrieved": 0,
+    "vegetation_water_content_mean_kg_m2": null
+   },
+   {
+    "cells_in_box": 3,
+    "flag_values": {
+     "9": 3
+    },
+    "pass": "PM",
+    "recommended_quality": 0,
+    "retrieved": 3,
+    "vegetation_water_content_mean_kg_m2": 14.70773696899414
+   }
+  ],
+  "kalimantan_wide": [
+   {
+    "cells_in_box": 0,
+    "flag_values": {},
+    "pass": "AM",
+    "recommended_quality": 0,
+    "retrieved": 0,
+    "vegetation_water_content_mean_kg_m2": null
+   },
+   {
+    "cells_in_box": 70,
+    "flag_values": {
+     "9": 42
+    },
+    "pass": "PM",
+    "recommended_quality": 0,
+    "retrieved": 42,
+    "vegetation_water_content_mean_kg_m2": 14.220410789762225
+   }
+  ],
+  "maritime_continent": [
+   {
+    "cells_in_box": 1808,
+    "flag_values": {
+     "13": 34,
+     "8": 8,
+     "9": 344
+    },
+    "pass": "AM",
+    "recommended_quality": 8,
+    "retrieved": 386,
+    "vegetation_water_content_mean_kg_m2": 12.75291239906469
+   },
+   {
+    "cells_in_box": 1729,
+    "flag_values": {
+     "13": 43,
+     "8": 15,
+     "9": 300
+    },
+    "pass": "PM",
+    "recommended_quality": 15,
+    "retrieved": 358,
+    "vegetation_water_content_mean_kg_m2": 12.49410528244253
+   }
+  ],
+  "sumatra_box_b": [
+   {
+    "cells_in_box": 131,
+    "flag_values": {
+     "13": 10,
+     "8": 6,
+     "9": 87
+    },
+    "pass": "AM",
+    "recommended_quality": 6,
+    "retrieved": 103,
+    "vegetation_water_content_mean_kg_m2": 12.007406704634139
+   },
+   {
+    "cells_in_box": 57,
+    "flag_values": {
+     "8": 2,
+     "9": 28
+    },
+    "pass": "PM",
+    "recommended_quality": 2,
+    "retrieved": 30,
+    "vegetation_water_content_mean_kg_m2": 10.785749046007792
+   }
+  ]
+ }
+}
