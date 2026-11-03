@@ -1,12 +1,14 @@
-# Axiom EarthLab
+# Empiraxis
 
-Axiom EarthLab is a human-supervised geospatial engineering system. A local Meta open-weight model can plan a study and propose a method. Deterministic code runs the work, independent code scores it, and a person holds the final decision. A run succeeds when it reaches a defensible engineering decision and verifies it. That decision can be to train a model, keep a baseline, reject a neural model or ask for evidence.
+**AI-directed scientific engineering. Evidence before conclusions.**
+
+Empiraxis (formerly Axiom EarthLab) is a human-supervised scientific engineering research prototype, demonstrated on environmental data. Meta open-weight models propose studies and methods; authorized tools acquire data and execute experiments; independent code evaluates the evidence; and a person controls consequential approvals and final decisions. The correct outcome may be to train a model, retain a baseline, refuse unsupported work, or request better evidence. The existing Python package and CLI remain `earthlab` for compatibility.
 
 > Research prototype. Not health advice, not a forecast and not a hazard warning. No model here is production-ready.
 
-## Four recorded decisions
+## Four foundational scientific scenarios
 
-The demonstration has four scenarios on the 2015 haze and the Kalimantan fires, in `examples/replay/`. Every number below comes from a saved file.
+The recorded demonstration includes four foundational scenarios on the 2015 haze and Kalimantan burned-area research, plus separate real Muse team runs in `examples/replay/`. Every number below is supported by recorded evidence.
 
 | Scenario | Question | Decision | Why |
 |---|---|---|---|
@@ -15,11 +17,11 @@ The demonstration has four scenarios on the 2015 haze and the Kalimantan fires, 
 | S3, transport diagnostic | Do wind and rain support transport from one fire box? | Abstain: inconclusive | No box and level reached consistent, 0 of 6. ERA5 is hindsight data. No source can be named. |
 | S4, satellite method | Can a pretrained model segment the burned area? | Request resources | The imagery and masks do not fit the study box. No segmentation ran, so no score exists. |
 
-S1 and S2 are simulated-availability hindcasts on validation years. The sealed test period was not read. S3 is a hindsight diagnostic. S4 waits for a human decision, and no signed approval exists.
+S1 and S2 are simulated-availability hindcasts on validation years. The sealed test period was not read. S3 is a hindsight diagnostic. **S4 is an immutable earlier replay** of a request that remained pending in that run; a *separate later experiment* received signed approval and performed one pretrained Prithvi BurnScars inference on a published HLS chip (`docs/prithvi-level-a.md`). That is not a Kalimantan transfer result.
 
 ## What the Meta model did
 
-Muse Glimmer 30B ran locally through llama-server. The four scenario pages are engineering evidence, and no LLM ran in those runs. The recorded Muse team run, `examples/replay/scenario-muse-team-exceedance`, shows the model's part:
+Muse Glimmer 30B ran locally through llama-server. The four foundational scenario pages package scientific engineering evidence, not four fresh Muse calls. Separately recorded Muse team runs, including `examples/replay/scenario-muse-team-exceedance`, show what the model actually proposed:
 
 | Step | Done by |
 |---|---|
@@ -28,10 +30,18 @@ Muse Glimmer 30B ran locally through llama-server. The four scenario pages are e
 | Calls to the fixed data and training tools, short notes | Muse Glimmer, data and ML specialist seats |
 | Data preparation, training, baselines | Deterministic code |
 | Scores and comparison tables | Independent evaluator code |
-| Safety screening of investigation answers | Llama Guard 3 8B, in the investigation path only |
+| Safety screening of investigation answers | Llama Guard 3 8B, in the separate investigation path only; not in these harness runs |
 | Final decision | A person. No decision is recorded in these runs. |
 
-The team reached the same outcome as the deterministic pipeline and cost more. See `docs/comparative-evidence-report.md`: no agent workflow showed a benefit on the tested tasks, so the simpler strategy stays preferred.
+The original team run reached the same outcome as the deterministic pipeline and cost more. See `docs/comparative-evidence-report.md`: the tested multi-agent configuration did not establish an advantage over simpler workflows. Later team experiments add signed acquisition, statistical training and a compact neural-family comparison without claiming that multi-agent orchestration is generally superior.
+
+### New bounded scientific engineering evidence
+
+- **M2:** a real Muse-directed statistical PM2.5 run; independent evaluation forced an unsupported recommendation to change.
+- **Signed acquisition:** a later Muse team run requested three official NEA historical days, receiving 14,865 bytes. It found 17 discrepancies against the local historical archive among 350 comparable region-hour values; the cause remains unresolved (`docs/muse-family-comparison-run.md`). Those downloaded dates were used for QA, not as new training features.
+- **M3:** a real Muse-directed comparison trained a tuned ridge and a compact TCN under one protocol. Saved models were reloaded and independently scored (`docs/muse-method-comparison-run.md`). The already-used 2019–2023 validation period does not provide an independent generalization estimate.
+- **Historical wind, rain and wildfire:** a separate deterministic 2015 feature ablation used ERA5 and FIRMS, found no gain over persistence, and is retrospective rather than a live weather forecast (`docs/haze-2015-ablation-results.md`).
+- **Prospective research:** an experimental signed ledger issued five T+6-hour regional PM2.5 predictions. These are not an operational forecast; scoring requires later publication of actual observations (`docs/prediction-ledger.md`).
 
 ## Run the demonstration
 
@@ -74,12 +84,12 @@ The demonstration script is in [docs/demo-three-minute.md](docs/demo-three-minut
 | Model bundles and inference verification | Experimental | S1 ridge bundle verified; hybrid refused |
 | Replay-only hosted entry | Implemented, not published | `deploy/streamlit_app.py`, `docs/hosted-replay.md` |
 | Teacher-to-student distillation | Experimental, not adopted | `docs/distillation-results-v1.md`: the rule passed for 2 of 3 seeds |
-| Prithvi burned-area inference | Not run: no signed approval | `docs/release-acceptance.md`, satellite feasibility |
+| Prithvi burned-area inference | One signed Level A pretrained chip inference; no transfer validation | `docs/prithvi-level-a.md` |
 | Operational forecast or public service | Not built | None |
 
 ## Known limitations
 
-- Nothing was evaluated on the sealed test period, and no prospective run exists.
+- Nothing was evaluated on the sealed test period. Five research predictions have been issued prospectively, but their small sample cannot establish operational forecasting skill.
 - The NEA file has no available-at time, so availability is modelled.
 - The GRU is worse than persistence in elevated hours, and the elevated-hour rule is exploratory.
 - S2 and S3 traces record packaging of saved results. They are not the traces of the original jobs.
