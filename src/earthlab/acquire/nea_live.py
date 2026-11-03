@@ -16,6 +16,7 @@ import hashlib
 import json
 import time
 from collections.abc import Callable, Iterator
+from dataclasses import dataclass, field
 from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any, Literal
@@ -150,6 +151,53 @@ class CaptureLog:
         return counts
 
 
+class BudgetExceeded(RuntimeError):
+    """A byte or time limit was reached. Nothing from the response that reached it is kept."""
+
+
+@dataclass
+class Budget:
+    """Byte and time limits for one capture, checked during each response and after it."""
+
+    max_bytes: int
+    max_seconds: float
+    clock: Callable[[], float] = time.monotonic
+    requests: int = 0
+    used: int = 0
+    start: float = field(init=False)
+
+    def __post_init__(self) -> None:
+        self.start = self.clock()
+
+    def left(self) -> float:
+        """Seconds left. Raises when none are left."""
+        left = self.max_seconds - (self.clock() - self.start)
+        if left <= 0:
+            raise BudgetExceeded("the time limit was reached")
+        return left
+
+    def take(self, size: int) -> None:
+        self.used += size
+        if self.used > self.max_bytes:
+            raise BudgetExceeded("the byte limit was reached")
+
+
+def _get(client: httpx.Client, url: str, params: dict[str, str], budget: Budget | None) -> bytes:
+    """One response body. With a budget, it stops as soon as a limit is passed."""
+    timeout = httpx.USE_CLIENT_DEFAULT if budget is None else min(20.0, budget.left())
+    with client.stream("GET", url, params=params or None, timeout=timeout) as response:
+        response.raise_for_status()
+        if budget is not None:
+            budget.requests += 1
+        chunks = []
+        for chunk in response.iter_bytes():
+            if budget is not None:
+                budget.take(len(chunk))
+                budget.left()
+            chunks.append(chunk)
+    return b"".join(chunks)
+
+
 def _pages(
     client: httpx.Client,
     url: str,
@@ -157,19 +205,19 @@ def _pages(
     product: str,
     log: CaptureLog,
     sleep: Callable[[float], None],
+    budget: Budget | None = None,
 ) -> dict[str, int]:
     """Every page of one request, following the source's pagination token."""
     totals = {"first": 0, "correction": 0, "repeat": 0, "pages": 0, "bytes": 0}
     for page in range(MAX_PAGES):
         if page:
             sleep(MIN_INTERVAL_SECONDS)
-        response = client.get(url, params=params or None)
-        response.raise_for_status()
+        body = _get(client, url, params, budget)
         totals["pages"] += 1
-        totals["bytes"] += len(response.content)
-        for kind, n in log.append(parse(product, response.content, datetime.now(UTC), url)).items():
+        totals["bytes"] += len(body)
+        for kind, n in log.append(parse(product, body, datetime.now(UTC), url)).items():
             totals[kind] += n
-        token = (json.loads(response.content).get("data") or {}).get("paginationToken")
+        token = (json.loads(body).get("data") or {}).get("paginationToken")
         if not token:
             return totals
         params = {**params, "paginationToken": token}
@@ -182,6 +230,7 @@ def capture(
     client: httpx.Client | None = None,
     sleep: Callable[[float], None] = time.sleep,
     day: date | None = None,
+    budget: Budget | None = None,
 ) -> dict[str, dict[str, int]]:
     """One request per product, at least MIN_INTERVAL_SECONDS apart. Nothing is retried.
 
@@ -199,7 +248,7 @@ def capture(
                 sleep(MIN_INTERVAL_SECONDS)
             url = BASE + CATALOGUE[product].product
             params = {"date": day.isoformat()} if day else {}
-            out[product] = _pages(client, url, params, product, log, sleep)
+            out[product] = _pages(client, url, params, product, log, sleep, budget)
     finally:
         if own:
             client.close()

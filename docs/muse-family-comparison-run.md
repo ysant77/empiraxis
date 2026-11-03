@@ -16,7 +16,7 @@ Run `20261103T035551Z-95e7a3`, scenario `pm25-family-comparison`, team arm, prov
 | Training | Muse, ML seat, then tool | `train_models` ran the five baselines and the tuned ridge. No GRU, because the strategy was not `small_neural`. | `rolling-origin-ridge.json`, `weights-candidate-ridge-cv.npz` |
 | Scoring | Evaluator (code) | Validation years 2019 to 2023 only. The test period was not read. | `artifacts/evaluation-plan-1.json` |
 | Critique | Muse, Lead seat | `finish`: no revision asked. | `review_results` record |
-| Decision | Muse, Lead seat | `retain_baseline`, model `B4_lagged_ridge` | `artifacts/decision.json` |
+| Decision | Muse, Lead seat | `retain_baseline` with model `B4_lagged_ridge`: keep the existing lagged-ridge baseline. It does not mean persistence. | `artifacts/decision.json` |
 | Forward | Muse, PM seat | First note refused: over 300 characters. Corrected: forward to a human. The note says that no neural model was compared. | `forward_decision` record |
 | Human | Owner | Pending | `human_status: pending` |
 
@@ -30,6 +30,18 @@ Usage: 12 model calls, 13,661 prompt tokens, 7,458 completion tokens, 1,830 s wa
 - **Licence:** Singapore Open Data Licence v1.0.
 - **Comparison with the local history file:** 333 region-hours match and 17 do not. All 17 are on 2023-11-15, and 10 of them are in the east region. The largest difference is 9 µg/m³ (east at 17:00 and 20:00).
 - **Meaning:** the published API and the downloaded history file disagree on one day. The cause is not known. A later revision of the API data is one possible cause. The run did not change the history file.
+
+## Limit enforcement after review
+
+The review of #106 found that the run checked the byte and time limits only before each day's capture. A last day or a later page could pass a limit and still be recorded as acquired. The code now:
+
+- checks the byte limit during each response and stops at the first chunk that passes it;
+- checks the time limit before each request, during each response and after the last day;
+- gives each request a timeout no longer than the time left;
+- writes to a staging log and keeps it as the run's log only when every limit holds;
+- checks the proposal again at the execution step, not only in the model seat.
+
+This run stayed inside the limits: 14,865 bytes of 1,000,000, and 0.38 s of 120 s. The new checks would not change its result. The run was not repeated. The 17 differences on 2023-11-15 stay open.
 
 ## Tuning
 

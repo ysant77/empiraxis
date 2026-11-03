@@ -9,11 +9,14 @@ from pathlib import Path
 import httpx
 import pytest
 
+from earthlab.acquire import nea_live
 from earthlab.forecast.dataset import load_grid
+from earthlab.harness import acquire_step as step_module
 from earthlab.harness.acquire_step import (
     ENDPOINT,
     AcquisitionConfig,
     AcquisitionProposal,
+    AcquisitionReceiptV1,
     check,
     execute,
 )
@@ -99,3 +102,78 @@ def test_acquired_is_an_optional_state_between_profiled_and_planned(tmp_path: Pa
     for state in ("scoped", "profiled", "acquired", "planned"):
         life.move(state, "controller")
     assert life.state == "planned"
+
+
+SIZE = len(json.dumps(DAY).encode())
+
+
+def paged() -> httpx.Client:
+    """The first page names a next page; the second does not."""
+    first = {"code": 0, "data": {**DAY["data"], "paginationToken": "next"}}  # type: ignore[dict-item]
+
+    def reply(request: httpx.Request) -> httpx.Response:
+        body = DAY if "paginationToken" in request.url.params else first
+        return httpx.Response(200, content=json.dumps(body).encode())
+
+    return httpx.Client(transport=httpx.MockTransport(reply))
+
+
+@pytest.fixture
+def approved(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    monkeypatch.setenv(res.OPERATOR_KEY_ENV, KEY)
+    monkeypatch.setattr(nea_live, "MIN_INTERVAL_SECONDS", 0.0)
+    approved_store(tmp_path / "store")
+    return tmp_path
+
+
+def refused_over_limit(root: Path, receipt: AcquisitionReceiptV1, why: str) -> None:
+    assert receipt.state == "refused" and why in receipt.reason
+    assert not (root / "out" / "nea-pm25.jsonl").exists()
+    assert (root / "out" / "nea-pm25.over-limit.jsonl").exists()
+    assert res.ResourceDesk(root / "store").view("nea-qa-1").fetched is None
+
+
+def test_a_capture_at_the_byte_limit_is_acquired(
+    approved: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(step_module, "MAX_BYTES", SIZE)
+    config = AcquisitionConfig("nea-qa-1", approved / "store", client())
+    receipt = execute(proposal(date(2019, 6, 1)), config, approved / "out", GRID)
+    assert receipt.state == "acquired" and receipt.bytes == SIZE
+
+
+def test_the_last_day_over_the_byte_limit_is_refused(
+    approved: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(step_module, "MAX_BYTES", SIZE + SIZE // 2)
+    config = AcquisitionConfig("nea-qa-1", approved / "store", client())
+    days = proposal(date(2019, 6, 1), date(2019, 6, 2))
+    refused_over_limit(approved, execute(days, config, approved / "out", GRID), "byte limit")
+
+
+def test_a_page_over_the_byte_limit_is_refused(
+    approved: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(step_module, "MAX_BYTES", SIZE + SIZE // 2)
+    config = AcquisitionConfig("nea-qa-1", approved / "store", paged())
+    receipt = execute(proposal(date(2019, 6, 1)), config, approved / "out", GRID)
+    refused_over_limit(approved, receipt, "byte limit")
+    assert receipt.requests == 2
+
+
+def test_a_capture_past_the_time_limit_is_refused(approved: Path) -> None:
+    ticks = iter(range(0, 10_000, 50))
+    config = AcquisitionConfig("nea-qa-1", approved / "store", client())
+    days = proposal(date(2019, 6, 1), date(2019, 6, 2), date(2019, 6, 3))
+    receipt = execute(days, config, approved / "out", GRID, clock=lambda: float(next(ticks)))
+    refused_over_limit(approved, receipt, "time limit")
+
+
+def test_the_trusted_boundary_checks_the_proposal_again(approved: Path) -> None:
+    config = AcquisitionConfig("nea-qa-1", approved / "store", client())
+    for bad in (proposal(date(2024, 1, 2)), proposal()):
+        receipt = execute(bad, config, approved / "out", GRID)
+        assert receipt.state == "refused" and receipt.requests == 0
+    none = AcquisitionProposal(operation="none", reason="Nothing to check.")
+    assert execute(none, config, approved / "out", GRID).state == "refused"
+    assert not (approved / "out").exists()
