@@ -12,19 +12,9 @@ from datetime import date
 from pathlib import Path
 
 from earthlab.m5 import acquire as A
-from earthlab.m5.contracts import DataRole, ProductPin
+from earthlab.m5.imerg import RUNS, pin
 
-RUNS = {"final": "GPM_3IMERGHH", "early": "GPM_3IMERGHHE", "late": "GPM_3IMERGHHL"}
 CAP = 15_000_000
-
-
-def pin(run: str) -> ProductPin:
-    return ProductPin(
-        dataset_id=f"imerg-v07-{run}", product=RUNS[run], version="07", run=run,
-        provider="NASA GES DISC", licence="NASA Earth science data, no restrictions on use",
-        licence_url="https://www.earthdata.nasa.gov/engage/open-data-services-software-policies/data-use-guidance",
-        role=DataRole.ESTIMATE,
-    )  # fmt: skip
 
 
 def main() -> int:

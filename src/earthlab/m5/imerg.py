@@ -19,6 +19,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from earthlab.cases.models import BoundingBox
+from earthlab.m5.contracts import DataRole, ProductPin
 from earthlab.m5.units import hourly_from_half_hourly
 
 FILL = -9999.9
@@ -67,3 +68,18 @@ def box_mean_rate(grid: RainGrid) -> float:
 def hour_total_mm(first: RainGrid, second: RainGrid) -> float:
     """Box-mean rain for one hour from two consecutive half-hour grids (mm)."""
     return hourly_from_half_hourly([box_mean_rate(first), box_mean_rate(second)])
+
+
+RUNS = {"final": "GPM_3IMERGHH", "early": "GPM_3IMERGHHE", "late": "GPM_3IMERGHHL"}
+_TERMS = (
+    "https://www.earthdata.nasa.gov/engage/open-data-services-software-policies/data-use-guidance"
+)
+
+
+def pin(run: str) -> ProductPin:
+    """Product pin for one IMERG V07 run (final, early or late)."""
+    return ProductPin(
+        dataset_id=f"imerg-v07-{run}", product=RUNS[run], version="07", run=run,
+        provider="NASA GES DISC", licence="NASA Earth science data, no restrictions on use",
+        licence_url=_TERMS, role=DataRole.ESTIMATE,
+    )  # fmt: skip
