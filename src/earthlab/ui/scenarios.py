@@ -21,7 +21,10 @@ SCENARIO_RUNS = {
 TEAM_RUN = "scenario-muse-team-exceedance"
 TEAM_REGRESSION_RUN = "scenario-muse-team-regression"
 METHOD_RUN = "scenario-muse-method-comparison"
-TEAM_RUNS = {"M1": TEAM_RUN, "M2": TEAM_REGRESSION_RUN, "M3": METHOD_RUN}
+COUNCIL_RUN = "scenario-m4-heterogeneous-council"
+TEAM_RUNS = {
+    "M1": TEAM_RUN, "M2": TEAM_REGRESSION_RUN, "M3": METHOD_RUN, "M4": COUNCIL_RUN,
+}  # fmt: skip
 LABELS = {
     "S1": "S1 · PM2.5 regression",
     "S2": "S2 · Model reuse",
@@ -33,6 +36,7 @@ TITLES = {
     "M1": "Recorded Muse team run",
     "M2": "Recorded Muse team run: regression",
     "M3": "Recorded Muse team run: ridge against neural",
+    "M4": "Recorded council run: different checkpoints in different seats",
 }
 OUTCOMES = {
     "adopt": "Adopt",
@@ -459,4 +463,8 @@ def story(key: str, run_dir: Path) -> Story:
         from earthlab.ui.method_story import m3
 
         return m3(run_dir)
+    if key == "M4":
+        from earthlab.ui.council_story import m4
+
+        return m4(run_dir)
     return BUILDERS[key](run_dir)

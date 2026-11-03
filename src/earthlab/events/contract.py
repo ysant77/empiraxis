@@ -60,6 +60,8 @@ EventType = Literal[
     "task_handoff_created",
     "verified_result_delivered",
     "pm_report_issued",
+    "role_bound",
+    "critique_recorded",
 ]
 EventStatus = Literal[
     "proposed", "pending", "approved", "rejected", "executed", "blocked", "failed", "completed"

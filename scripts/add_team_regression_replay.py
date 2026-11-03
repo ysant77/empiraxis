@@ -1,4 +1,4 @@
-"""Add a recorded Muse team regression run (M2, or M3 with --key M3) to the replay folder.
+"""Add a recorded team run (M2, M3 or the M4 council run, with --key) to the replay folder.
 
 Only the new folder and its manifest entry are written. Other runs are not touched.
 Model text and reasoning are removed; typed choices and code's checks stay.
@@ -19,7 +19,22 @@ from earthlab.events.manifest import listed_runs, read_manifest, write_manifest
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "examples" / "replay"
-RUNS = {"M2": "scenario-muse-team-regression", "M3": "scenario-muse-method-comparison"}
+RUNS = {
+    "M2": "scenario-muse-team-regression",
+    "M3": "scenario-muse-method-comparison",
+    "M4": "scenario-m4-heterogeneous-council",
+}
+DEFAULT_LABEL = (
+    "real Muse Glimmer team run; redacted copy",
+    "Real Muse Glimmer team run, recorded replay, redacted copy.",
+)
+LABELS = {
+    "M4": (
+        "real heterogeneous council run (Muse with Llama or Qwen); redacted copy",
+        "Real local run with different checkpoints in different seats, recorded replay, "
+        "redacted copy.",
+    ),
+}
 
 
 def main() -> int:
@@ -38,9 +53,9 @@ def main() -> int:
         shutil.copyfile(evaluation, run_dir / evaluation.name)
     entry = {
         "run": RUN, "scenario_id": key, "removed_fields": sorted(removed),
-        "label": "real Muse Glimmer team run; redacted copy",
+        "label": LABELS.get(key, DEFAULT_LABEL)[0],
         "source_trace_sha256": file_digest(source / "trace.jsonl"),
-        "evidence_mode": "Real Muse Glimmer team run, recorded replay, redacted copy.",
+        "evidence_mode": LABELS.get(key, DEFAULT_LABEL)[1],
         "science_label": "simulated_availability_hindcast",
         "planned": "A human decision on the outcome is still open.",
         "split": "validation only; the sealed test period was not read",
