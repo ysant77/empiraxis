@@ -19,7 +19,10 @@ from earthlab.llm.client import ChatClient, build_client
 from earthlab.llm.providers import ProviderConfig
 
 MUSE_PROVIDER = "local-glimmer"
-ROLE_NAMES: dict[str, tuple[str, ...]] = {"pm": (PM,), "lead": (LEAD,), "specialist": (DATA, ML)}
+CRITIC = "method_critic"
+ROLE_NAMES: dict[str, tuple[str, ...]] = {
+    "pm": (PM,), "lead": (LEAD,), "specialist": (DATA, ML), "critic": (CRITIC,),
+}  # fmt: skip
 
 
 class ArmSpec(Strict):
@@ -31,7 +34,10 @@ class ArmSpec(Strict):
     pm: str | None = None
     lead: str | None = None
     specialist: str | None = None
-    muse_roles: tuple[Literal["pm", "lead", "specialist"], ...] = ()
+    critic: str | None = None
+    method_review: bool = False
+    decision_critic: bool = False
+    muse_roles: tuple[Literal["pm", "lead", "specialist", "critic"], ...] = ()
     ranked: bool = True
     lead_gate_waived: bool = False
     note: str = ""
@@ -39,13 +45,18 @@ class ArmSpec(Strict):
     @model_validator(mode="after")
     def _roles_fit_the_arm(self) -> Self:
         named = {k for k in ROLE_NAMES if getattr(self, k) is not None}
+        if self.critic is None and (self.method_review or self.decision_critic):
+            raise ValueError(f"{self.arm_id}: a critic step needs a critic provider")
+        named -= {"critic"}
         need = {"fixed": set(), "single": {"lead"}, "team": {"pm", "lead", "specialist"}}[self.arm]
         if named != need:
             raise ValueError(f"{self.arm_id}: the {self.arm} arm names roles {sorted(need)}")
         if self.lead_gate_waived and (self.ranked or self.arm != "single"):
             raise ValueError(f"{self.arm_id}: a waived Lead gate needs a single, unranked arm")
-        if not set(self.muse_roles) <= named:
+        if not set(self.muse_roles) <= named | {"critic"}:
             raise ValueError(f"{self.arm_id}: a Muse role must be a named role")
+        if len({n for n in self.providers().values() if n != MUSE_PROVIDER}) > 1:
+            raise ValueError(f"{self.arm_id}: at most one non-Muse model server may run")
         return self
 
     def providers(self) -> dict[str, str]:
@@ -95,7 +106,7 @@ def gate_blockers(
 def role_for(role: str) -> BindableRole:
     known: dict[str, BindableRole] = {
         PM: "product_manager", LEAD: "geospatial_engineer", DATA: "data_specialist",
-        ML: "ml_engineer",
+        ML: "ml_engineer", CRITIC: "qa_reviewer",
     }  # fmt: skip
     return known[role]
 

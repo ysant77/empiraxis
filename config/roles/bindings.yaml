@@ -14,7 +14,7 @@ roles:
   data_specialist:   {families: [meta-muse, meta-llama, qwen, gemma], status: experimental}
   ml_engineer:       {families: [meta-muse, meta-llama, qwen, gemma], status: experimental}
   implementor:       {families: [meta-muse, meta-llama, qwen, gemma, mistral, deepseek], status: planned}
-  qa_reviewer:       {families: [meta-muse, meta-llama], status: planned}
+  qa_reviewer:       {families: [meta-muse, meta-llama], status: experimental}
 
 candidates:
   - candidate_id: muse-glimmer

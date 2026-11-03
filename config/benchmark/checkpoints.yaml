@@ -1,0 +1,31 @@
+# Model checkpoints that serve roles in a council run. One entry per provider in
+# config/providers.yaml. The run records the entry in each `role_binding` trace record.
+# `sha256` is the digest of the GGUF file. `scripts/m4_preflight.py` recomputes it and
+# reads the file name that the running llama-server reports at /props.
+schema_version: "1"
+checkpoints:
+  - provider: local-glimmer
+    family: meta-muse
+    file: Muse-Glimmer-30B-KQuant-17GB-Q4_K_M.gguf
+    sha256: 4cc57c0f51040a226e5a72cc47b7613f7772950e460a665f7083de89f183f60e
+    size_bytes: 16756683904
+    quantization: Q4_K_M
+    licence: Apache-2.0
+    source: "meta-models/Muse-Glimmer-30B-GGUF"
+    serving_note: "Served with a drafter model, dflash-Muse-Glimmer-30B-Q4_K_M.gguf (speculative decoding). Drafter SHA-256 b2e808bf656086fe86bd0d0bd990f01d33e377537a07c02d45371517c8b264ef."
+  - provider: local-llama-3-2-3b
+    family: meta-llama
+    file: Llama-3.2-3B-Instruct-Q4_K_M.gguf
+    sha256: 6c1a2b41161032677be168d354123594c0e6e67d2b9227c84f296ad037c728ff
+    size_bytes: 2019377696
+    quantization: Q4_K_M
+    licence: Llama 3.2 Community License
+    source: "bartowski/Llama-3.2-3B-Instruct-GGUF@5ab33fa94d1d04e903623ae72c95d1696f09f9e8"
+  - provider: local-qwen3-4b-2507
+    family: qwen
+    file: Qwen3-4B-Instruct-2507-Q4_K_M.gguf
+    sha256: 3605803b982cb64aead44f6c1b2ae36e3acdb41d8e46c8a94c6533bc4c67e597
+    size_bytes: 2497281120
+    quantization: Q4_K_M
+    licence: Apache-2.0
+    source: "not recorded on disk; the download has no provenance file"

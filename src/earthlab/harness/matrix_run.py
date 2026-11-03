@@ -17,6 +17,8 @@ from typing import Any
 
 from earthlab.digest import file_digest
 from earthlab.harness.arms import ArmSpec, build_role_clients, gate_blockers
+from earthlab.harness.council import CouncilOptions
+from earthlab.harness.identity import CheckpointV1
 from earthlab.harness.matrix import WINNER, MatrixPlan, PlannedRun, expand, run_minutes
 from earthlab.harness.scenarios import run_scenario
 from earthlab.harness.variants import PromptVariant, VariantFile
@@ -99,9 +101,20 @@ def append(manifest: Path, row: dict[str, Any]) -> None:
         out.write(json.dumps(row, default=str) + "\n")
 
 
+def _council_kwargs(spec: ArmSpec, registry: Mapping[str, CheckpointV1] | None) -> dict[str, Any]:
+    """Extra run options. An arm that asks for none adds none, so older arms run as before."""
+    if not (spec.method_review or spec.decision_critic or registry):
+        return {}
+    return {
+        "method_review": spec.method_review,
+        "options": CouncilOptions(registry, spec.decision_critic),
+    }
+
+
 def one_run(
     spec: ArmSpec, run: PlannedRun, variant: PromptVariant, providers: Mapping[str, ProviderConfig],
     runs_dir: Path, run_one: RunOne, build: Callable[[ProviderConfig], ChatClient],
+    registry: Mapping[str, CheckpointV1] | None = None,
 ) -> dict[str, Any]:  # fmt: skip
     """One run and its manifest row. A crash becomes a row, not an exception."""
     run_dir, began = new_run_dir(runs_dir), time.perf_counter()
@@ -114,7 +127,13 @@ def one_run(
     try:
         client, per_role = build_role_clients(spec, providers, build)
         done = run_one(
-            run.scenario, spec.arm, run_dir, client, role_clients=per_role, variant=variant
+            run.scenario,
+            spec.arm,
+            run_dir,
+            client,
+            role_clients=per_role,
+            variant=variant,
+            **_council_kwargs(spec, registry),
         )
         row |= {
             "status": done["status"],
@@ -131,6 +150,7 @@ def run_stage(
     plan: MatrixPlan, stage_id: str, block: str, *, variants: VariantFile,
     providers: Mapping[str, ProviderConfig], bindings: Bindings, pin: str, repo: Path,
     out_dir: Path, winner: str | None = None, minutes_left: float | None = None,
+    registry: Mapping[str, CheckpointV1] | None = None, matrix_file: str = "matrix.yaml",
     run_one: RunOne = run_scenario, build: Callable[[ProviderConfig], ChatClient] = build_client,
     head_of: Callable[[Path], tuple[str, bool]] = git_state,
 ) -> list[dict[str, Any]]:  # fmt: skip
@@ -143,7 +163,7 @@ def run_stage(
     out_dir.mkdir(parents=True, exist_ok=True)
     manifest, seen = out_dir / "manifest.jsonl", done_keys(out_dir / "manifest.jsonl")
     if not manifest.is_file():
-        digest = file_digest(repo / "config" / "benchmark" / "matrix.yaml")
+        digest = file_digest(repo / "config" / "benchmark" / matrix_file)
         append(manifest, {"header": plan.matrix_id, "commit": head, "matrix_sha256": digest})
     rows: list[dict[str, Any]] = []
     for run in (r for r in todo if _key(r.model_dump()) not in seen):
@@ -153,7 +173,7 @@ def run_stage(
             break
         spec = plan.arm(run.arm_id)
         row = one_run(spec, run, variant_for(spec, variants, winner), providers, out_dir / "runs",
-                      run_one, build) | {"commit": head}  # fmt: skip
+                      run_one, build, registry) | {"commit": head}  # fmt: skip
         append(manifest, row)
         rows.append(row)
         minutes_left = None if minutes_left is None else minutes_left - row["wall"] / 60
