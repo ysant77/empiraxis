@@ -84,7 +84,10 @@ def test_verification_appends_and_never_changes_a_prediction(
     made = ledger.issue(observed(), NOW)
     before = ledger.predictions.read_bytes()
     target = made[0].target_time
-    truth = [o.model_copy(update={"event_time": target, "value": 40.0}) for o in observed()]
+    published = {"issued_time": target + timedelta(minutes=30),
+                 "retrieved_at": target + timedelta(minutes=40)}  # fmt: skip
+    truth = [o.model_copy(update={"event_time": target, "value": 40.0, **published})
+             for o in observed()]  # fmt: skip
     same = next(o for o in truth if o.place_id == made[0].region)
     fixed = same.model_copy(update={"value": 41.0, "kind": "correction"})
     assert {v.state for v in ledger.verify([], target)} == {"pending"}
@@ -100,6 +103,29 @@ def test_verification_appends_and_never_changes_a_prediction(
         "digest_mismatch": 0,
     }
     assert ledger.verify([fixed, *truth], target + timedelta(hours=2)) == []  # idempotent
+
+
+def test_only_values_published_and_retrieved_by_the_check_time_are_scored(
+    tmp_path: Path, operator: None
+) -> None:
+    activate(tmp_path)
+    ledger = Ledger(tmp_path, clock=lambda: NOW)
+    target = ledger.issue(observed(), NOW)[0].target_time
+    check = target + timedelta(hours=1)
+    base = {"event_time": target, "value": 40.0}
+    bad: list[tuple[int | None, int]] = [  # minutes after the target hour
+        (65, 66),  # published after the check
+        (30, 61),  # retrieved after the check
+        (-60, 5),  # published before its own hour
+        (None, -1),  # retrieved before its own hour
+        (50, 40),  # published after it was retrieved
+    ]
+    for published, retrieved in bad:
+        issued = None if published is None else target + timedelta(minutes=published)
+        when = {"issued_time": issued, "retrieved_at": target + timedelta(minutes=retrieved)}
+        rows = [o.model_copy(update={**base, **when}) for o in observed()]
+        assert {v.state for v in ledger.verify(rows, check)} == {"pending"}
+    assert ledger.verifications.read_text() == ""
 
 
 def test_a_missing_observation_is_recorded_as_missing(tmp_path: Path, operator: None) -> None:
