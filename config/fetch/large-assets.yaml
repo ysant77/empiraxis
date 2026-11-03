@@ -17,3 +17,11 @@ assets:
     sha256: 4e6f99a75cb2c500547b20662a15cbd531dc421376f815e91846ea542798e8e6
     content_types: [application/gzip, application/octet-stream]
     license_terms: CC-BY-4.0, as stated on the dataset card at this revision
+  nea-pm25-history:
+    need: Up to three days of official NEA hourly PM2.5 from the data.gov.sg API, to check the local historical file and its clock labels before modelling. Dates come from the run and stay before the sealed test period.
+    asset: NEA hourly regional PM2.5, data.gov.sg API
+    url: https://api-open.data.gov.sg/v2/real-time/api/pm25
+    max_bytes: 1000000
+    sha256: null
+    content_types: [application/json]
+    license_terms: Singapore Open Data Licence v1.0

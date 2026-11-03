@@ -159,12 +159,14 @@ def _pages(
     sleep: Callable[[float], None],
 ) -> dict[str, int]:
     """Every page of one request, following the source's pagination token."""
-    totals = {"first": 0, "correction": 0, "repeat": 0}
+    totals = {"first": 0, "correction": 0, "repeat": 0, "pages": 0, "bytes": 0}
     for page in range(MAX_PAGES):
         if page:
             sleep(MIN_INTERVAL_SECONDS)
         response = client.get(url, params=params or None)
         response.raise_for_status()
+        totals["pages"] += 1
+        totals["bytes"] += len(response.content)
         for kind, n in log.append(parse(product, response.content, datetime.now(UTC), url)).items():
             totals[kind] += n
         token = (json.loads(response.content).get("data") or {}).get("paginationToken")

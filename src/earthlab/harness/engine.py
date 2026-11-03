@@ -22,7 +22,7 @@ from earthlab.contracts import Strict
 from earthlab.digest import payload_digest
 from earthlab.forecast.contracts import PmDecision
 from earthlab.forecast.gate import unbacked_numbers
-from earthlab.harness import gates
+from earthlab.harness import acquire_step, gates
 from earthlab.harness import method_review as review
 from earthlab.harness.artifacts import ArtifactStore, MissingArtifact
 from earthlab.harness.claims import CostEvidence, ladder
@@ -339,6 +339,7 @@ class Engine:
         self.life.move("profiled", "controller")
         self.suits = assess(problem, profile, BUDGET_SECONDS, adapter.pretrained)
         self.keep("suitability", self.suits, seats.root)
+        acquire_step.step(self)
         strategy = self.pick_strategy(self.suits)
         if strategy == "abstain_or_request" and not adapter.can_request:
             self.life.move("abstained", "controller", strategy=strategy)
