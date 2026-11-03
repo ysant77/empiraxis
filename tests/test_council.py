@@ -256,3 +256,20 @@ def test_without_options_a_run_has_no_council_records(tmp_path: Path) -> None:
     )  # fmt: skip
     assert "council" not in done and "decision_critique" not in done
     assert "role_binding" not in {e["event"] for e in RunTrace(path / "trace.jsonl").records()}
+
+
+def test_every_m4_arm_passes_the_binding_gates_with_the_real_config() -> None:
+    import yaml
+
+    from earthlab.harness.arms import gate_blockers
+    from earthlab.implement.bindings import Bindings
+    from earthlab.llm.providers import load_providers
+
+    config = ROOT / "config"
+    bindings = Bindings.model_validate(
+        yaml.safe_load((config / "roles" / "bindings.yaml").read_text(encoding="utf-8"))
+    )
+    providers = load_providers(config / "providers.yaml")
+    plan = load_plan(config / "benchmark" / "m4-matrix.yaml")
+    for arm in plan.arms:
+        assert gate_blockers(arm, bindings, providers) == [], arm.arm_id
