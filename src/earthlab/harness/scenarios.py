@@ -13,6 +13,8 @@ from earthlab.harness.engine import Adapter, Arm, run_harness
 from earthlab.harness.raster import BURN_PROBLEM, RasterAdapter, segmentation_request
 from earthlab.harness.regression import PM25_PROBLEM, RegressionAdapter
 from earthlab.harness.regression_families import FAMILY_PROBLEM, OBJECTIVE, family_adapter
+from earthlab.harness.regression_methods import METHOD_PROBLEM, method_adapter
+from earthlab.harness.regression_methods import OBJECTIVE as METHOD_OBJECTIVE
 from earthlab.harness.variants import PROMOTED, PromptVariant
 from earthlab.llm.client import ChatClient
 
@@ -41,6 +43,7 @@ SCENARIOS: dict[str, Scenario] = {
         RasterAdapter,
     ),
     "pm25-family-comparison": (OBJECTIVE, FAMILY_PROBLEM, family_adapter),
+    "pm25-method-comparison": (METHOD_OBJECTIVE, METHOD_PROBLEM, method_adapter),
     "burned-area-segmentation": (
         "Segment the burned area in this study window with a pretrained model.",
         BURN_PROBLEM,

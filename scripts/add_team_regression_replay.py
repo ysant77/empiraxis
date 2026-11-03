@@ -1,9 +1,9 @@
-"""Add the recorded Muse team regression run (M2) to the replay folder.
+"""Add a recorded Muse team regression run (M2, or M3 with --key M3) to the replay folder.
 
-Only the new folder and its manifest entry are written. S1 to S4 and M1 are not touched.
+Only the new folder and its manifest entry are written. Other runs are not touched.
 Model text and reasoning are removed; typed choices and code's checks stay.
 
-Run with:  uv run python scripts/add_team_regression_replay.py <run folder>
+Run with:  uv run python scripts/add_team_regression_replay.py <run folder> [--key M3]
 """
 
 from __future__ import annotations
@@ -19,13 +19,16 @@ from earthlab.events.manifest import listed_runs, read_manifest, write_manifest
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "examples" / "replay"
-RUN = "scenario-muse-team-regression"
+RUNS = {"M2": "scenario-muse-team-regression", "M3": "scenario-muse-method-comparison"}
 
 
 def main() -> int:
     top = argparse.ArgumentParser(description=__doc__)
     top.add_argument("source", type=Path)
-    source = top.parse_args().source.resolve()
+    top.add_argument("--key", choices=sorted(RUNS), default="M2")
+    args = top.parse_args()
+    source, key = args.source.resolve(), args.key
+    RUN = RUNS[key]
     kept = [r for r in listed_runs(OUT) if r["run"] != RUN]
     run_dir = OUT / RUN
     if run_dir.exists():
@@ -34,7 +37,7 @@ def main() -> int:
     for evaluation in sorted((source / "artifacts").glob("evaluation-*.json")):
         shutil.copyfile(evaluation, run_dir / evaluation.name)
     entry = {
-        "run": RUN, "scenario_id": "M2", "removed_fields": sorted(removed),
+        "run": RUN, "scenario_id": key, "removed_fields": sorted(removed),
         "label": "real Muse Glimmer team run; redacted copy",
         "source_trace_sha256": file_digest(source / "trace.jsonl"),
         "evidence_mode": "Real Muse Glimmer team run, recorded replay, redacted copy.",

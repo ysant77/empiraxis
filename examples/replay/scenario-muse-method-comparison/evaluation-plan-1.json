@@ -1,0 +1,164 @@
+{
+  "evaluator": "earthlab.forecast.evaluator",
+  "evaluator_sha256": "00d3df0a84da3fcb9702b0da75170853852d7568647da932ddbbb4f84b7767b1",
+  "failures": [],
+  "notes": [
+    "the test period was not read"
+  ],
+  "reference": "B0_persistence",
+  "schema_version": "1",
+  "scores": [
+    {
+      "high": 0.15140389876301877,
+      "low": 0.13208726569484483,
+      "metrics": {
+        "above_55_mae": 30.254,
+        "bias": 0.518,
+        "mae": 4.68,
+        "rmse": 6.385,
+        "skill": 0.1419
+      },
+      "model": "B4_lagged_ridge",
+      "passes": true,
+      "reasons": [],
+      "subgroups": {
+        "elevated": {
+          "mae": 30.254,
+          "recall": 0.2472972972972973
+        }
+      }
+    },
+    {
+      "high": 0.14836622393766158,
+      "low": 0.12822900494344444,
+      "metrics": {
+        "above_55_mae": 30.577,
+        "bias": 0.653,
+        "mae": 4.697,
+        "rmse": 6.381,
+        "skill": 0.1384
+      },
+      "model": "candidate-ridge-cv",
+      "passes": true,
+      "reasons": [],
+      "subgroups": {
+        "elevated": {
+          "mae": 30.577,
+          "recall": 0.24594594594594596
+        }
+      }
+    },
+    {
+      "high": 0.14765495538060042,
+      "low": 0.12348925157716598,
+      "metrics": {
+        "above_55_mae": 32.433,
+        "bias": 0.062,
+        "mae": 4.711,
+        "rmse": 6.457,
+        "skill": 0.1357
+      },
+      "model": "candidate-1",
+      "passes": true,
+      "reasons": [],
+      "subgroups": {
+        "elevated": {
+          "mae": 32.433,
+          "recall": 0.1972972972972973
+        }
+      }
+    },
+    {
+      "high": 0.0,
+      "low": 0.0,
+      "metrics": {
+        "above_55_mae": 26.324,
+        "bias": 0.001,
+        "mae": 5.465,
+        "rmse": 7.707,
+        "skill": 0.0
+      },
+      "model": "B0_persistence",
+      "passes": false,
+      "reasons": [
+        "the lower limit of mean skill is not above zero"
+      ],
+      "subgroups": {
+        "elevated": {
+          "mae": 26.324,
+          "recall": 0.4297297297297297
+        }
+      }
+    },
+    {
+      "high": -0.013173477070768299,
+      "low": -0.05308750460980289,
+      "metrics": {
+        "above_55_mae": 32.43,
+        "bias": -0.0,
+        "mae": 5.64,
+        "rmse": 8.191,
+        "skill": -0.0318
+      },
+      "model": "B1_daily_naive",
+      "passes": false,
+      "reasons": [
+        "the lower limit of mean skill is not above zero",
+        "a region has a clear loss against persistence"
+      ],
+      "subgroups": {
+        "elevated": {
+          "mae": 32.43,
+          "recall": 0.31486486486486487
+        }
+      }
+    },
+    {
+      "high": -0.15421623353993333,
+      "low": -0.2334652138313038,
+      "metrics": {
+        "above_55_mae": 41.127,
+        "bias": 0.018,
+        "mae": 6.515,
+        "rmse": 9.366,
+        "skill": -0.1916
+      },
+      "model": "B2_weekly_naive",
+      "passes": false,
+      "reasons": [
+        "the lower limit of mean skill is not above zero",
+        "a region has a clear loss against persistence"
+      ],
+      "subgroups": {
+        "elevated": {
+          "mae": 41.127,
+          "recall": 0.07837837837837838
+        }
+      }
+    },
+    {
+      "high": -0.3465910640911091,
+      "low": -0.5389550333329717,
+      "metrics": {
+        "above_55_mae": 45.997,
+        "bias": 4.738,
+        "mae": 7.788,
+        "rmse": 10.16,
+        "skill": -0.4356
+      },
+      "model": "B3_climatology",
+      "passes": false,
+      "reasons": [
+        "the lower limit of mean skill is not above zero",
+        "a region has a clear loss against persistence"
+      ],
+      "subgroups": {
+        "elevated": {
+          "mae": 45.997,
+          "recall": 0.0
+        }
+      }
+    }
+  ],
+  "split_scored": "validation"
+}

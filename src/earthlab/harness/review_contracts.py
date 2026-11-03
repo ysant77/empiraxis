@@ -44,6 +44,7 @@ SEALED_SPANS: dict[str, tuple[datetime, datetime] | None] = {
     "pm25-regression-6h": SPLITS["test"],
     "pm25-exceedance-6h": SPLITS["test"],
     "pm25-regression-families-6h": SPLITS["test"],
+    "pm25-method-comparison-6h": SPLITS["test"],
     "burned-area-method": None,
 }
 SKILL_METRICS = frozenset({"skill", "skill_against_persistence"})

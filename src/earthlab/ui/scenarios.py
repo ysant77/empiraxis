@@ -20,7 +20,8 @@ SCENARIO_RUNS = {
 }
 TEAM_RUN = "scenario-muse-team-exceedance"
 TEAM_REGRESSION_RUN = "scenario-muse-team-regression"
-TEAM_RUNS = {"M1": TEAM_RUN, "M2": TEAM_REGRESSION_RUN}
+METHOD_RUN = "scenario-muse-method-comparison"
+TEAM_RUNS = {"M1": TEAM_RUN, "M2": TEAM_REGRESSION_RUN, "M3": METHOD_RUN}
 LABELS = {
     "S1": "S1 · PM2.5 regression",
     "S2": "S2 · Model reuse",
@@ -31,6 +32,7 @@ TITLES = {
     **{key: label.split(" · ")[1] for key, label in LABELS.items()},
     "M1": "Recorded Muse team run",
     "M2": "Recorded Muse team run: regression",
+    "M3": "Recorded Muse team run: ridge against neural",
 }
 OUTCOMES = {
     "adopt": "Adopt",
@@ -453,4 +455,8 @@ BUILDERS = {"S1": s1, "S2": s2, "S3": s3, "S4": s4, "M1": m1, "M2": m2}
 
 
 def story(key: str, run_dir: Path) -> Story:
+    if key == "M3":
+        from earthlab.ui.method_story import m3
+
+        return m3(run_dir)
     return BUILDERS[key](run_dir)
