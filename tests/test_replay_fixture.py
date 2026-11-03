@@ -259,3 +259,9 @@ def test_a_wrong_workflow_source_is_refused(
     source = write_workflow_run(tmp_path / folder, status, kind)
     with pytest.raises(FixtureSourceError, match=reason):
         copy_redacted_workflow(source, tmp_path / "copy", "WD-01", "verified", "abc")
+
+
+@pytest.mark.parametrize("run", sorted(p.name for p in REPLAY.iterdir() if p.is_dir()))
+def test_every_published_run_loads_in_the_ui_event_adapter(run: str) -> None:
+    events = load_run(REPLAY / run)
+    assert events.trace_records > 0 and events.events
