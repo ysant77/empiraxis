@@ -53,3 +53,13 @@ Each model is compared only with the one before it: B1 with B0, B2 with B1, B3 w
 - **Hindsight data:** ERA5 is reanalysis, so a gain from B2 is not a forecast gain.
 - **FIRMS delay:** the 3 h delay is an assumption. The standard product was not published in real time.
 - **Window already studied:** S3 used the same window.
+
+## Amendment 1, after the first results and an independent review
+
+The text above is unchanged. These points correct it:
+
+- **FIRMS windows:** "the last 24 h" means passes in (T-27h, T-3h]: 24 h of passes that are visible at T. The same rule gives (T-75h, T-3h] for 72 h. The first code used (T-24h, T-3h], which is 21 h.
+- **Penalty search:** the scaler for the inner holdout is fitted on inner-train rows only.
+- **ERA5:** the T-1 h limit is an index rule. ERA5 values were not available at T.
+
+The amendment came after the first results were known. Version 1 of the results stays in the Git history.

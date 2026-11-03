@@ -2,7 +2,8 @@
 
 Protocol: docs/haze-2015-ablation-protocol.md, frozen before any fit. Each model is compared
 with the one before it on the same scored rows. Scaling and the ridge penalty come from each
-fold's train rows only. This is an exploratory retrospective comparison, not a forecast.
+fold's train rows only. The penalty's inner holdout is scaled with inner-train statistics.
+This is an exploratory retrospective comparison, not a forecast.
 """
 
 from __future__ import annotations
@@ -49,12 +50,21 @@ def _scale(train: np.ndarray, other: np.ndarray) -> tuple[np.ndarray, np.ndarray
     return (np.nan_to_num((train - mean) / std), np.nan_to_num((other - mean) / std))
 
 
-def _alpha(x: np.ndarray, y: np.ndarray, rows: np.ndarray) -> float:
-    """The penalty with the least MAE on the last 20 percent of train rows, by time."""
+def inner_split(
+    x: np.ndarray, rows: np.ndarray
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Scaled inner-train and inner-holdout rows, and their masks. The holdout is the last 20
+    percent of train rows by time. Its scaler sees inner-train rows only."""
     cut = rows[int(len(rows) * 0.8)]
-    inner = rows + F.HORIZON < cut
-    held = rows >= cut
-    scores = {a: float(np.mean(np.abs(_apply(x[held], _fit(x[inner], y[inner], a)) - y[held])))
+    inner, held = rows + F.HORIZON < cut, rows >= cut
+    x_in, x_held = _scale(x[inner], x[held])
+    return x_in, x_held, inner, held
+
+
+def _alpha(x: np.ndarray, y: np.ndarray, rows: np.ndarray) -> float:
+    """The penalty with the least MAE on the inner holdout. x is not scaled."""
+    x_in, x_held, inner, held = inner_split(x, rows)
+    scores = {a: float(np.mean(np.abs(_apply(x_held, _fit(x_in, y[inner], a)) - y[held])))
               for a in ALPHAS}  # fmt: skip
     return min(scores, key=lambda a: scores[a])
 
@@ -62,12 +72,12 @@ def _alpha(x: np.ndarray, y: np.ndarray, rows: np.ndarray) -> float:
 def predict(
     x_all: np.ndarray, y: np.ndarray, train: np.ndarray, test: np.ndarray, rows: np.ndarray
 ) -> tuple[np.ndarray, float]:
-    """Fit on train rows with a target; predict test rows."""
+    """Choose the penalty inside the train rows, then refit scaling and weights on all of them."""
     pos = {r: i for i, r in enumerate(rows)}
     tr = np.array([pos[r] for r in train if not np.isnan(y[pos[r]])])
     te = np.array([pos[r] for r in test])
+    alpha = _alpha(x_all[tr], y[tr], rows[tr])
     x_tr, x_te = _scale(x_all[tr], x_all[te])
-    alpha = _alpha(x_tr, y[tr], rows[tr])
     return _apply(x_te, _fit(x_tr, y[tr], alpha)), alpha
 
 

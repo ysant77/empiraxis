@@ -1,9 +1,9 @@
-"""Feature groups for the 2015 haze ablation, each known at the issue time.
+"""Feature groups for the 2015 haze ablation, indexed so none reads a time after its limit.
 
 Protocol: docs/haze-2015-ablation-protocol.md. PM2.5 lags are per region. ERA5 and FIRMS values
-are one shared context per box, never joined to a region. Each feature reads only values that
-exist at the issue time under the protocol's rules: PM2.5 to T-2 h, ERA5 to T-1 h UTC, FIRMS
-when the pass time plus 3 h is at or before T.
+are one shared context per box, never joined to a region. Time limits: PM2.5 to T-2 h, ERA5 to
+T-1 h UTC, FIRMS when the pass time plus 3 h is at or before T. ERA5 is a reanalysis made later
+with hindsight, so its values were not available at T even though their times are before T.
 """
 
 from __future__ import annotations
@@ -93,16 +93,19 @@ def load_firms(folder: Path) -> dict[str, np.ndarray]:
 
 
 def fire_features(rows: np.ndarray, firms: dict[str, np.ndarray]) -> np.ndarray:
-    """Per box: detections in the last 24 h and 72 h, and FRP in the last 24 h, if available."""
+    """Per box: detection counts over 24 h and 72 h of pass times, and FRP over 24 h.
+
+    Each window holds passes in (T-3h-W, T-3h]: W hours of passes that are visible at T.
+    """
     cols = []
     for box in BOXES:
         t, frp = firms[f"{box}/t"], firms[f"{box}/frp"]
         visible = np.array([(utc_of(i) - FIRMS_DELAY).timestamp() for i in rows])
         for hours in (24, 72):
-            low = visible - hours * 3600 + FIRMS_DELAY.total_seconds()
+            low = visible - hours * 3600
             counts = np.searchsorted(t, visible, "right") - np.searchsorted(t, low, "right")
             cols.append(counts.astype(float))
-        low = visible - 24 * 3600 + FIRMS_DELAY.total_seconds()
+        low = visible - 24 * 3600
         cum = np.concatenate([[0.0], np.cumsum(frp)])
         hi, lo = np.searchsorted(t, visible, "right"), np.searchsorted(t, low, "right")
         cols.append(cum[hi] - cum[lo])

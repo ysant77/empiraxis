@@ -55,3 +55,29 @@ def test_paired_skill_is_zero_for_identical_errors() -> None:
     err = np.array([1.0, -2.0, 3.0, -1.0])
     out = A.paired(err, err, np.array(["d1", "d1", "d2", "d2"]))
     assert out == {"skill": 0.0, "low": 0.0, "high": 0.0}
+
+
+def test_the_inner_scaler_ignores_the_inner_holdout() -> None:
+    rows = np.arange(200, dtype=np.int64)
+    x = np.random.default_rng(0).normal(size=(200, 3))
+    x_in, _, _, held = A.inner_split(x, rows)
+    shifted = x.copy()
+    shifted[held] += 1000.0
+    again, x_held, _, _ = A.inner_split(shifted, rows)
+    assert np.array_equal(x_in, again)
+    assert x_held.mean() > 100  # the holdout is scaled with inner-train statistics only
+
+
+def test_a_fire_window_holds_exactly_its_hours_of_visible_passes() -> None:
+    row = F.issues()[100:101]
+    issue = F.utc_of(int(row[0]))
+    minute = timedelta(minutes=1)
+    inside = [issue - timedelta(hours=3), issue - timedelta(hours=27) + minute]
+    outside = [issue - timedelta(hours=3) + minute, issue - timedelta(hours=27)]
+    times = sorted(t.timestamp() for t in inside + outside)
+    firms = {}
+    for box in F.BOXES:
+        firms[f"{box}/t"] = np.array(times)
+        firms[f"{box}/frp"] = np.ones(4)
+    counts = F.fire_features(row, firms)[0]
+    assert list(counts[:3]) == [2.0, 3.0, 2.0]  # 24 h, 72 h, FRP over 24 h for box a
