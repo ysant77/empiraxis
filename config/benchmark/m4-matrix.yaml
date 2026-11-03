@@ -1,0 +1,55 @@
+# M4 matrix: does a council of different checkpoints change the result of one workflow?
+# Written and committed before any M4 result exists. Do not edit a stage after its first run.
+# Rationale and rules: docs/m4/m4-protocol.md. Experiment ID: m4-het-v1.
+version: 1
+matrix_id: m4-het-v1
+decisions:
+  D4-model-selection: [pm25-method-comparison]
+  D5-method-choice: [burned-area-method]
+
+# Every model arm uses the promoted prompt variant, the method review and the decision critic,
+# so the arms differ only in which checkpoint serves each seat.
+arms:
+  - {arm_id: F, arm: fixed, note: "No model. Code preset and code rules."}
+  - {arm_id: S-M, arm: single, lead: local-glimmer, critic: local-glimmer, method_review: true,
+     decision_critic: true, muse_roles: [lead, critic],
+     note: "One Muse Lead. The critic is a second pass of the same checkpoint."}
+  - {arm_id: T-M, arm: team, pm: local-glimmer, lead: local-glimmer, specialist: local-glimmer,
+     critic: local-glimmer, prompt_variant: note-close-v1, method_review: true,
+     decision_critic: true, muse_roles: [pm, lead, specialist, critic],
+     note: "All seats are one checkpoint (Muse). The M3 shape. The critic is the same checkpoint."}
+  - {arm_id: T-Mc, arm: team, pm: local-glimmer, lead: local-glimmer, specialist: local-glimmer,
+     critic: local-llama-3-2-3b, prompt_variant: note-close-v1, method_review: true,
+     decision_critic: true, muse_roles: [pm, lead, specialist],
+     note: "Muse works. Llama 3.2 3B is the independent critic only."}
+  - {arm_id: T-L, arm: team, pm: local-glimmer, lead: local-glimmer,
+     specialist: local-llama-3-2-3b, critic: local-llama-3-2-3b, prompt_variant: note-close-v1,
+     method_review: true, decision_critic: true, muse_roles: [pm, lead],
+     note: "Muse PM and Lead. Llama 3.2 3B runs both specialists and the critic."}
+  - {arm_id: T-Q, arm: team, pm: local-glimmer, lead: local-glimmer,
+     specialist: local-qwen3-4b-2507, critic: local-glimmer, prompt_variant: note-close-v1,
+     method_review: true, decision_critic: true, muse_roles: [pm, lead, critic],
+     note: "Muse PM, Lead and critic. Qwen3 4B Instruct 2507 runs both specialists."}
+
+stages:
+  - stage_id: m4-primary
+    purpose: "The M3 question with a council of different checkpoints. One repeat."
+    cells:
+      - {scenario: pm25-method-comparison, arm_ids: [F, S-M, T-M, T-Mc, T-L, T-Q]}
+  - stage_id: m4-secondary
+    purpose: "A second, shorter scenario. Tests whether the primary result repeats."
+    cells:
+      - {scenario: burned-area-method, arm_ids: [F, T-M, T-L, T-Q]}
+
+default_path: [m4-primary, m4-secondary]
+
+budget:
+  total_hours: 8.0
+  preflight_minutes: 20
+  switch_minutes: 4
+  # Minutes per run. Team values are the M3 and decisions-v1 wall times, rounded up, plus the
+  # method review and critic calls. They are estimates, not measurements.
+  minutes:
+    fixed: {pm25-method-comparison: 1, burned-area-method: 0.5}
+    single: {pm25-method-comparison: 25, burned-area-method: 15}
+    team: {pm25-method-comparison: 45, burned-area-method: 25}
