@@ -1,0 +1,56 @@
+{
+ "code": 0,
+ "data": {
+  "stations": [
+   {
+    "id": "S218",
+    "deviceId": "S218",
+    "name": "Bukit Batok Street 34",
+    "location": {
+     "latitude": 1.36491,
+     "longitude": 103.75065
+    }
+   },
+   {
+    "id": "S219",
+    "deviceId": "S219",
+    "name": "Yio Chu Kang Road",
+    "location": {
+     "latitude": 1.37998,
+     "longitude": 103.87639
+    }
+   },
+   {
+    "id": "S216",
+    "deviceId": "S216",
+    "name": "Ang Mo Kio Avenue 10",
+    "location": {
+     "latitude": 1.36019,
+     "longitude": 103.85335
+    }
+   }
+  ],
+  "readings": [
+   {
+    "timestamp": "2026-11-03T00:35:00+08:00",
+    "data": [
+     {
+      "stationId": "S218",
+      "value": 0
+     },
+     {
+      "stationId": "S219",
+      "value": 0
+     },
+     {
+      "stationId": "S216",
+      "value": 0
+     }
+    ]
+   }
+  ],
+  "readingType": "TB1 Rainfall 5 Minute Total F",
+  "readingUnit": "mm"
+ },
+ "errorMsg": ""
+}

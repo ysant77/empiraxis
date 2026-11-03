@@ -1,0 +1,56 @@
+{
+ "code": 0,
+ "data": {
+  "stations": [
+   {
+    "id": "S108",
+    "deviceId": "S108",
+    "name": "Marina Barrage",
+    "location": {
+     "latitude": 1.2799,
+     "longitude": 103.8703
+    }
+   },
+   {
+    "id": "S109",
+    "deviceId": "S109",
+    "name": "Ang Mo Kio Avenue 5",
+    "location": {
+     "latitude": 1.3793,
+     "longitude": 103.85
+    }
+   },
+   {
+    "id": "S106",
+    "deviceId": "S106",
+    "name": "Jalan Noordin (Pulau Ubin)",
+    "location": {
+     "latitude": 1.4168,
+     "longitude": 103.9673
+    }
+   }
+  ],
+  "readings": [
+   {
+    "timestamp": "2026-11-03T00:38:00+08:00",
+    "data": [
+     {
+      "stationId": "S108",
+      "value": 0.9
+     },
+     {
+      "stationId": "S109",
+      "value": 1
+     },
+     {
+      "stationId": "S106",
+      "value": 0.8
+     }
+    ]
+   }
+  ],
+  "readingType": "Wind Speed AVG(S)10M M1M",
+  "readingUnit": "knots"
+ },
+ "errorMsg": ""
+}
