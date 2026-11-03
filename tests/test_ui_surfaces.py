@@ -63,7 +63,7 @@ def page_text(app: AppTest) -> str:
 def test_each_route_opens_on_the_first_scenario_in_replay_mode(offline: None, view: str) -> None:
     app = open_view(view)
     assert not app.exception and not app.error
-    assert app.title[0].value == "Axiom EarthLab"
+    assert app.title[0].value == "Empiraxis"
     assert app.subheader[0].value == "PM2.5 regression"
     assert any("Replay mode" in c.value for c in app.caption)
 

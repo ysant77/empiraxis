@@ -36,11 +36,9 @@ def _mode() -> None:
 
 
 def main() -> None:
-    st.set_page_config(
-        page_title="Axiom EarthLab", layout="wide", initial_sidebar_state="collapsed"
-    )
+    st.set_page_config(page_title="Empiraxis", layout="wide", initial_sidebar_state="collapsed")
     theme.apply()
-    st.title("Axiom EarthLab")
+    st.title("Empiraxis")
     st.write(
         "Human-supervised geospatial engineering: the system can train, reuse, reject a model "
         "or ask for evidence. Research prototype: not health advice, not a forecast."

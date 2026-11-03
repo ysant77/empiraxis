@@ -17,7 +17,7 @@ def test_app_renders_and_verifier_tab_rejects_a_false_claim(
     monkeypatch.chdir(APP.parents[3])
     app = AppTest.from_file(str(APP), default_timeout=60).run()
     assert not app.exception
-    assert app.title[0].value == "Axiom EarthLab"
+    assert app.title[0].value == "Empiraxis"
     region = next(s for s in app.selectbox if s.label == "Region")
     region.set_value("central").run()
     next(b for b in app.button if b.label == "Verify claim").click().run()
