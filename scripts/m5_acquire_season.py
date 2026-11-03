@@ -1,6 +1,6 @@
 """Fetch ERA5 (10 m, 850 hPa) and FIRMS MODIS_SP boxes A, B, C for one Sep-Oct season.
 
-Usage: FIRMS_API_KEY=... uv run python scripts/m5_acquire_season.py DATA_ROOT YEAR
+Usage: FIRMS_API_KEY=... uv run python scripts/m5_acquire_season.py DATA_ROOT YEAR [firms-only]
 Credentials come from ~/.cdsapirc (cdsapi) and the FIRMS_API_KEY variable. Caps: 60 MB per
 ERA5 single-level month, 30 MB per pressure-level month, 15 MB per FIRMS box. Receipts are
 written under DATA_ROOT/receipts. The layout matches runs/haze-2015 so the haze extract
@@ -73,8 +73,13 @@ def main() -> int:
     year = int(sys.argv[2])
     receipts: list[dict[str, object]] = []
     fetch_firms(root, year, receipts)
-    fetch_era5(root, year, receipts)
-    out = Path(sys.argv[1]).expanduser() / "receipts" / f"season_{year}.json"
+    if "firms-only" not in sys.argv[3:]:
+        fetch_era5(root, year, receipts)
+    out = (
+        Path(sys.argv[1]).expanduser()
+        / "receipts"
+        / f"season_{year}{'_firms' if 'firms-only' in sys.argv[3:] else ''}.json"
+    )
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps({"authority": AUTHORITY, "files": receipts}, indent=2) + "\n")
     return 0
