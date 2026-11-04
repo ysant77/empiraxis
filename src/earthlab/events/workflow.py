@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from earthlab.events.contract import ActorRole
-from earthlab.events.emit import State, UnknownEventError, emit, question_event
+from earthlab.events.emit import ROLE_ALIASES, State, UnknownEventError, emit, question_event
 
 
 def _workflow_start(state: State, entry: dict[str, Any]) -> None:
@@ -299,7 +299,50 @@ def _inference_verified(state: State, entry: dict[str, Any]) -> None:
     )  # fmt: skip
 
 
+def _role_binding(state: State, entry: dict[str, Any]) -> None:
+    d = entry["data"]
+    emit(
+        state, entry, "system", "role_bound", "executed",
+        f"Seat {d.get('role')} served by {d.get('family')} {d.get('logical_model')}: checkpoint "
+        f"{d.get('checkpoint_file')}, sha256 {str(d.get('checkpoint_sha256'))[:12]}, "
+        f"{d.get('quantization')}.",
+        receiver_role=_receiver(d.get("role")),
+    )  # fmt: skip
+
+
+def _receiver(role: Any) -> ActorRole | None:
+    name = ROLE_ALIASES.get(str(role), str(role))
+    return name if name in _ROLES or name == "qa_reviewer" else None  # type: ignore[return-value]
+
+
+def _council_formed(state: State, entry: dict[str, Any]) -> None:
+    d = entry["data"]
+    kind = "heterogeneous" if d.get("heterogeneous") else "single-checkpoint"
+    emit(
+        state, entry, "system", "role_bound", "executed",
+        f"Council formed ({kind}): {d.get('seats')} model seats, {d.get('distinct_checkpoints')} "
+        f"distinct checkpoint(s), families {', '.join(d.get('families', []))}.",
+    )  # fmt: skip
+
+
+def _decision_critique(state: State, entry: dict[str, Any]) -> None:
+    d = entry["data"]
+    found = d.get("findings") or []
+    backed = sum(bool(f.get("backed")) for f in found)
+    usable = d.get("state") == "usable"
+    emit(
+        state, entry, "qa_reviewer", "critique_recorded", "completed" if usable else "failed",
+        f"Critic ({d.get('critic_source')}) state {d.get('state')}: verdict {d.get('verdict')}, "
+        f"{backed} of {len(found)} finding(s) match the evaluator. Advisory only; it sets no "
+        "score, outcome or approval.",
+        receiver_role="human_director",
+    )  # fmt: skip
+
+
 WORKFLOW_HANDLERS = {
+    ("role_binding", "runtime"): _role_binding,
+    ("council_formed", "runtime"): _council_formed,
+    ("decision_critique", "runtime"): _decision_critique,
     ("family_comparison", "runtime"): _family_comparison,
     ("tuning_verified", "runtime"): _tuning_verified,
     ("inference_verified", "runtime"): _inference_verified,

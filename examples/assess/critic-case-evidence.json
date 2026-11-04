@@ -1,0 +1,19 @@
+{
+ "schema_version": "1",
+ "protocol": "m41-v2",
+ "note": "Written before any rescoring under m41-v2. For each seeded fault case, the package ids that the seeded fault concerns. A detection counts only when a finding has the seeded fault class, passes the code check, and cites at least one of these ids. Clean cases have none. No critic sees this file.",
+ "cases": {
+  "A-f1": ["tcn.mae", "tcn.skill", "tcn.skill_low", "tcn.params", "b4.mae"],
+  "A-f2": ["gru.mae_gt55", "b4.mae_gt55", "persist.mae_gt55", "gru.mae", "b4.mae", "val.years"],
+  "A-f3": ["b4.rmse", "ridgecv.rmse", "b4.mae", "ridgecv.mae"],
+  "B-f1": ["nea.mismatched", "nea.mm_days", "nea_file", "nea_api", "nea_acq"],
+  "B-f2": ["nea.mismatched", "nea.matched", "nea.compared", "nea.mm_days", "nea.mm_max_abs"],
+  "B-f3": ["nea.mm_east", "nea.mm_south", "nea.mm_west", "nea.mm_central", "nea.mismatched"],
+  "C-f1": ["era5"],
+  "C-f2": ["firms", "abl.B3.mae", "abl.B2.mae", "abl.B3_vs_B2.skill", "abl.B3_vs_B2.high"],
+  "C-f3": ["abl.days", "abl.rows", "abl.B3.mae", "abl.B0.mae", "abl.B3_vs_B2.skill", "abl.B3_vs_B2.high", "abl.elev_rows"],
+  "D-f1": ["imerg_final"],
+  "D-f2": ["smap", "smap.rq", "m5_smap"],
+  "D-f3": ["t19.R2.mae", "t19.R1.mae", "t19.R2_vs_R1.skill", "t19.R2_vs_R1.high", "t19.R2.bias", "t19.R2.mae_gt55", "t19.R1.mae_gt55"]
+ }
+}

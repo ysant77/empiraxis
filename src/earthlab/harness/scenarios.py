@@ -9,6 +9,7 @@ from typing import Any
 from earthlab.harness.acquire_step import AcquisitionConfig
 from earthlab.harness.classify import EXCEED_PROBLEM, ClassificationAdapter
 from earthlab.harness.contracts import ProblemSpecV1, ResearchRequestV1
+from earthlab.harness.council import CouncilOptions
 from earthlab.harness.engine import Adapter, Arm, run_harness
 from earthlab.harness.raster import BURN_PROBLEM, RasterAdapter, segmentation_request
 from earthlab.harness.regression import PM25_PROBLEM, RegressionAdapter
@@ -56,6 +57,7 @@ def run_scenario(
     name: str, arm: Arm, run_dir: Path, client: ChatClient | None, *,
     role_clients: Mapping[str, ChatClient] | None = None, variant: PromptVariant = PROMOTED,
     method_review: bool = False, acquisition: AcquisitionConfig | None = None,
+    options: CouncilOptions | None = None,
 ) -> dict[str, Any]:  # fmt: skip
     objective, problem, make = SCENARIOS[name]
     request = ResearchRequestV1(request_id=name, objective=objective)
@@ -67,4 +69,5 @@ def run_scenario(
     return run_harness(
         arm, request, problem, adapter, run_dir, client,
         role_clients=role_clients, variant=variant, method_review=method_review,
+        options=options,
     )  # fmt: skip

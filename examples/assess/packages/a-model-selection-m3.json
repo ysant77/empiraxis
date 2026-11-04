@@ -1,0 +1,223 @@
+{
+ "schema_version": "1",
+ "package_id": "a-model-selection-m3",
+ "scenario": "model_selection",
+ "question": "Should the PM2.5 T+6 baseline (lagged ridge B4) be retained, should a more complex candidate be adopted for a limited purpose, or is more validation needed?",
+ "study_area": "Singapore, five NEA regions",
+ "interval": "validation 2019 to 2023",
+ "target": "hourly PM2.5, T+1 to T+6, ug/m3",
+ "acceptance_criteria": [
+  "The decision follows the evaluator numbers, not agent text.",
+  "Elevated hours (PM2.5 above 55) are considered separately.",
+  "Reuse of validation years is stated."
+ ],
+ "sources": [
+  {
+   "id": "m3_eval",
+   "dataset": "M3 evaluator report",
+   "role": "evaluation",
+   "availability": "hindsight",
+   "latency_hours": null,
+   "sha256": "5962b783537653dd2912e05c64f2fc055aeb581e759f960aab7005b7cc01f4c5",
+   "origin": "earthlab-e2e-runs/20261103T061204Z-829fed/result.json"
+  },
+  {
+   "id": "m3_profile",
+   "dataset": "M3 data profile",
+   "role": "derived",
+   "availability": "hindsight",
+   "latency_hours": null,
+   "sha256": "1cdfc02c210238a3f98577ca7d916aae00408f065e7ab2d4d9e638d1c0e20503",
+   "origin": "earthlab-e2e-runs/20261103T061204Z-829fed/data_profile.json"
+  },
+  {
+   "id": "m4_tl_eval",
+   "dataset": "M4 T-L evaluator report",
+   "role": "evaluation",
+   "availability": "hindsight",
+   "latency_hours": null,
+   "sha256": "905b00fe2332a5345f693d03ebef0ef4aa72493320340ec7e2e1a870da42970e",
+   "origin": "m4-runs/primary-c/runs/20261103T140243Z-40d596/result.json"
+  }
+ ],
+ "facts": [
+  {
+   "id": "b4.mae",
+   "statement": "B4_lagged_ridge validation MAE, all hours",
+   "value": 4.68,
+   "unit": "ug/m3",
+   "source": "m3_eval"
+  },
+  {
+   "id": "b4.rmse",
+   "statement": "B4_lagged_ridge validation RMSE",
+   "value": 6.385,
+   "unit": "ug/m3",
+   "source": "m3_eval"
+  },
+  {
+   "id": "b4.mae_gt55",
+   "statement": "B4_lagged_ridge MAE when PM2.5 is above 55",
+   "value": 30.254,
+   "unit": "ug/m3",
+   "source": "m3_eval"
+  },
+  {
+   "id": "b4.skill",
+   "statement": "B4_lagged_ridge MAE skill against persistence",
+   "value": 0.1419,
+   "unit": "",
+   "source": "m3_eval"
+  },
+  {
+   "id": "b4.skill_low",
+   "statement": "B4_lagged_ridge skill, lower 95% bound",
+   "value": 0.1321,
+   "unit": "",
+   "source": "m3_eval"
+  },
+  {
+   "id": "ridgecv.mae",
+   "statement": "candidate-ridge-cv validation MAE, all hours",
+   "value": 4.697,
+   "unit": "ug/m3",
+   "source": "m3_eval"
+  },
+  {
+   "id": "ridgecv.rmse",
+   "statement": "candidate-ridge-cv validation RMSE",
+   "value": 6.381,
+   "unit": "ug/m3",
+   "source": "m3_eval"
+  },
+  {
+   "id": "ridgecv.mae_gt55",
+   "statement": "candidate-ridge-cv MAE when PM2.5 is above 55",
+   "value": 30.577,
+   "unit": "ug/m3",
+   "source": "m3_eval"
+  },
+  {
+   "id": "ridgecv.skill",
+   "statement": "candidate-ridge-cv MAE skill against persistence",
+   "value": 0.1384,
+   "unit": "",
+   "source": "m3_eval"
+  },
+  {
+   "id": "ridgecv.skill_low",
+   "statement": "candidate-ridge-cv skill, lower 95% bound",
+   "value": 0.1282,
+   "unit": "",
+   "source": "m3_eval"
+  },
+  {
+   "id": "tcn.mae",
+   "statement": "candidate-1 validation MAE, all hours",
+   "value": 4.711,
+   "unit": "ug/m3",
+   "source": "m3_eval"
+  },
+  {
+   "id": "tcn.rmse",
+   "statement": "candidate-1 validation RMSE",
+   "value": 6.457,
+   "unit": "ug/m3",
+   "source": "m3_eval"
+  },
+  {
+   "id": "tcn.mae_gt55",
+   "statement": "candidate-1 MAE when PM2.5 is above 55",
+   "value": 32.433,
+   "unit": "ug/m3",
+   "source": "m3_eval"
+  },
+  {
+   "id": "tcn.skill",
+   "statement": "candidate-1 MAE skill against persistence",
+   "value": 0.1357,
+   "unit": "",
+   "source": "m3_eval"
+  },
+  {
+   "id": "tcn.skill_low",
+   "statement": "candidate-1 skill, lower 95% bound",
+   "value": 0.1235,
+   "unit": "",
+   "source": "m3_eval"
+  },
+  {
+   "id": "persist.mae",
+   "statement": "B0_persistence validation MAE, all hours",
+   "value": 5.465,
+   "unit": "ug/m3",
+   "source": "m3_eval"
+  },
+  {
+   "id": "persist.rmse",
+   "statement": "B0_persistence validation RMSE",
+   "value": 7.707,
+   "unit": "ug/m3",
+   "source": "m3_eval"
+  },
+  {
+   "id": "persist.mae_gt55",
+   "statement": "B0_persistence MAE when PM2.5 is above 55",
+   "value": 26.324,
+   "unit": "ug/m3",
+   "source": "m3_eval"
+  },
+  {
+   "id": "val.years",
+   "statement": "Validation covers 2019 to 2023; the same years chose the candidate configuration",
+   "value": 5.0,
+   "unit": "years",
+   "source": "m3_profile"
+  },
+  {
+   "id": "val.gt55_hours",
+   "statement": "Validation hours with PM2.5 above 55",
+   "value": 273.0,
+   "unit": "hours",
+   "source": "m3_profile"
+  },
+  {
+   "id": "tcn.params",
+   "statement": "TCN candidate trainable parameters",
+   "value": 10287.0,
+   "unit": "",
+   "source": "m3_eval"
+  },
+  {
+   "id": "gru.mae",
+   "statement": "GRU candidate from a later run (M4 T-L) on the same validation years",
+   "value": 4.575,
+   "unit": "ug/m3",
+   "source": "m4_tl_eval"
+  },
+  {
+   "id": "gru.mae_gt55",
+   "statement": "GRU candidate MAE when PM2.5 is above 55",
+   "value": 29.104,
+   "unit": "ug/m3",
+   "source": "m4_tl_eval"
+  }
+ ],
+ "limitations": [
+  "Historical validation only. Not a forecast of any future date.",
+  "Not for health, safety or travel decisions.",
+  "PM2.5 alone does not identify the cause of haze."
+ ],
+ "missing_inputs": [
+  "No paired interval between a candidate and B4.",
+  "No untouched test period was read; it is sealed."
+ ],
+ "allowed_decisions": [
+  "retain_baseline",
+  "adopt_limited",
+  "adopt",
+  "request_validation",
+  "abstain"
+ ],
+ "fixture": false
+}

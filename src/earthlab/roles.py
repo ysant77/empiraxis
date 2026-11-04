@@ -28,7 +28,7 @@ RoleId = Literal[
 ]
 
 # Roles that recorded artifacts produce today. The scientific critic is deterministic code
-# (earthlab.planning.critic), not a model.
+# (earthlab.planning.critic), not a model. The optional model critic is the qa_reviewer role.
 IMPLEMENTED_ROLES: frozenset[RoleId] = frozenset(
     {
         "human_director",
@@ -41,12 +41,15 @@ IMPLEMENTED_ROLES: frozenset[RoleId] = frozenset(
     }
 )
 EXPERIMENTAL_ROLES: frozenset[RoleId] = frozenset(
-    {"product_manager", "geospatial_engineer", "data_specialist", "ml_engineer"}
+    {"product_manager", "geospatial_engineer", "data_specialist", "ml_engineer", "qa_reviewer"}
 )
-PLANNED_ROLES: frozenset[RoleId] = frozenset({"implementor", "qa_reviewer"})
+PLANNED_ROLES: frozenset[RoleId] = frozenset({"implementor"})
 MODEL_AGENT_ROLES: frozenset[RoleId] = frozenset(
-    {"orchestrator", "product_manager", "geospatial_engineer", "data_specialist", "ml_engineer"}
-)
+    {
+        "orchestrator", "product_manager", "geospatial_engineer", "data_specialist", "ml_engineer",
+        "qa_reviewer",
+    }
+)  # fmt: skip
 # Roles that may write an investigation plan. Code components and the critic never do;
 # the product manager only proposes a question.
 PLAN_AUTHOR_ROLES: frozenset[RoleId] = frozenset(
@@ -60,7 +63,7 @@ ROLE_LABELS: dict[str, str] = {
     "data_specialist": "Data specialist (one read-only tool on one ticket; code recomputes it)",
     "ml_engineer": "ML/DL engineer (runs approved templates only; never writes code)",
     "implementor": "Implementation worker (Meta or non-Meta model; proposes patches only)",
-    "qa_reviewer": "Model reviewer (findings only; cannot override tests or the verifier)",
+    "qa_reviewer": "Model critic (optional, advisory; findings only; cannot override the verifier)",
     "scientific_critic": "Scientific critic (deterministic plan rules, code, not a model)",
     "verifier": "Deterministic verifier (code, not a model)",
     "safety_gate": "Safety gate (scope rules and optional Llama Guard)",

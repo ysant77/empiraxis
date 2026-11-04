@@ -22,10 +22,10 @@ from earthlab.contracts import Strict
 from earthlab.digest import payload_digest
 from earthlab.forecast.contracts import PmDecision
 from earthlab.forecast.gate import unbacked_numbers
-from earthlab.harness import acquire_step, gates
+from earthlab.harness import acquire_step, council, gates
 from earthlab.harness import method_review as review
 from earthlab.harness.artifacts import ArtifactStore, MissingArtifact
-from earthlab.harness.claims import CostEvidence, ladder
+from earthlab.harness.claims import ladder
 from earthlab.harness.contracts import (
     DatasetProfileV1,
     DecisionRecordV1,
@@ -132,7 +132,7 @@ class Engine:
         self, arm: Arm, request: ResearchRequestV1, problem: ProblemSpecV1, adapter: Adapter,
         run_dir: Path, client: ChatClient | None, *,
         role_clients: Mapping[str, ChatClient] | None = None, variant: PromptVariant = PROMOTED,
-        method_review: bool = False,
+        method_review: bool = False, options: council.CouncilOptions | None = None,
     ):  # fmt: skip
         if (client is None) != (arm == "fixed"):
             raise ValueError("the fixed arm has no model and the other arms have one")
@@ -149,6 +149,7 @@ class Engine:
         self.method_review = method_review and arm != "fixed"
         self.review: review.MethodReviewRecordV1 | None = None
         self.held: list[review.ReviewFinding] = []
+        self.record = council.CouncilRecord(options or council.CouncilOptions())
 
     def keep(self, name: str, record: BaseModel, task: str) -> None:
         self.digests[name] = self.store.put(name, record, task)
@@ -323,6 +324,7 @@ class Engine:
             evidence_label=adapter.label, prompt_variant=self.prompts.variant_id,
             prompt_digests=self.prompts.digests(),
         )  # fmt: skip
+        self.record.open(seats, self.arm, self.method_review)
         self.keep("request", self.request, seats.root)
         self.keep("problem", problem, seats.root)
         found = gates.check_request(self.request)
@@ -359,6 +361,7 @@ class Engine:
         report = self.report_for(plan)
         report = self.maybe_refine(profile, report, strategy)
         decision = self.checked(self.recommend(report), report)
+        self.record.critique(seats, report, decision, problem.problem_id)
         self.keep("decision", decision, seats.root)
         self.life.move("reviewed", "controller", outcome=decision.outcome)
         return self.forward(decision, report)
@@ -411,22 +414,6 @@ class Engine:
         self.plan = plan
         return self.report_for(plan)
 
-    def review_outcome(
-        self, report: EvaluationReportV1 | None, decision: DecisionRecordV1 | None,
-        used: dict[str, Any],
-    ) -> dict[str, Any]:  # fmt: skip
-        """The review record and the six claims. No role writes these."""
-        if self.review is None:
-            return {}
-        out: dict[str, Any] = {"method_review": self.review.model_dump(mode="json")}
-        if report is not None and decision is not None:
-            case, seconds = self.review.proposal, float(used["training_seconds"])
-            cost = CostEvidence(case.expected_benefit, case.compute_seconds, seconds)
-            out["claims"] = ladder(
-                report, decision.selected or report.reference, None, cost
-            ).model_dump()
-        return out
-
     def close(
         self, status: str, reason: str, decision: DecisionRecordV1 | None,
         report: EvaluationReportV1 | None, codes: list[str],
@@ -466,7 +453,8 @@ class Engine:
         outcome["prompt_variant"] = self.prompts.variant_id
         outcome["prompt_digests"] = self.prompts.digests()
         outcome["usage"] = usage(self.seats)
-        outcome |= self.review_outcome(report, decision, outcome["usage"])
+        outcome |= council.review_outcome(self.review, report, decision, outcome["usage"])
+        outcome |= self.record.fields()
         outcome["roles"] = {n: c.identity_record() for n, c in self.seats.calls.items()}
         self.seats.trace.append(
             "finish", "runtime", status=status, reason=reason, workflow=True,
@@ -481,12 +469,12 @@ def run_harness(
     arm: Arm, request: ResearchRequestV1, problem: ProblemSpecV1, adapter: Adapter,
     run_dir: Path, client: ChatClient | None = None, *,
     role_clients: Mapping[str, ChatClient] | None = None, variant: PromptVariant = PROMOTED,
-    method_review: bool = False,
+    method_review: bool = False, options: council.CouncilOptions | None = None,
 ) -> dict[str, Any]:  # fmt: skip
     """One run to a result, a refusal, or a clear failure state."""
     engine = Engine(
         arm, request, problem, adapter, run_dir, client, role_clients=role_clients,
-        variant=variant, method_review=method_review,
+        variant=variant, method_review=method_review, options=options,
     )  # fmt: skip
     try:
         return engine.run()

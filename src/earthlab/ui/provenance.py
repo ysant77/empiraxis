@@ -23,10 +23,15 @@ MODEL_SEATS = {
     "data_specialist": "Data specialist",
     "ml_engineer": "ML engineer",
     "scientific_critic": "Reviewer",
+    "method_critic": "Critic",
 }
 SAME_MODEL_CRITIC = (
     "The method critic is a same-model second pass: Muse Glimmer reads Muse Glimmer's plan. "
     "It is not an independently served reviewer."
+)
+INDEPENDENT_CRITIC = (
+    "The critic ran on a different checkpoint from the Lead. Its findings are advisory. "
+    "Code checks every number it cites. It sets no score, outcome or approval."
 )
 NO_CRITIC = (
     "No critic took part in this run. The method-review gate is off by default. "
@@ -70,6 +75,27 @@ def human_gate(run_dir: Path, entry: dict[str, Any]) -> HumanGate:
     return HumanGate(True, "Human decision pending", "No signed approval is recorded in this run.")
 
 
+def bindings(entries: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    """The recorded checkpoint of each seat, by role. Empty for a run without bindings."""
+    return {e["data"]["role"]: e["data"] for e in entries if e["event"] == "role_binding"}
+
+
+def _seat_row(role: str, seat: dict[str, Any], bound: dict[str, Any] | None) -> dict[str, Any]:
+    row = {
+        "Role": MODEL_SEATS.get(role, role),
+        "Kind": f"model: {seat.get('served_model', 'unknown')}",
+        "Work": f"{seat.get('calls', 0)} model calls",
+        "Trace records": seat.get("calls", 0),
+    }
+    if bound is not None:
+        row |= {
+            "Family": bound["family"],
+            "Checkpoint": bound["checkpoint_file"],
+            "SHA-256": str(bound["checkpoint_sha256"])[:12],
+        }
+    return row
+
+
 def participants(entries: list[dict[str, Any]], record: dict[str, Any]) -> list[dict[str, Any]]:
     """Only actors the trace holds, plus model seats with recorded calls."""
     counts: dict[str, int] = {}
@@ -80,15 +106,13 @@ def participants(entries: list[dict[str, Any]], record: dict[str, Any]) -> list[
         for actor, (name, work) in CODE_ACTORS.items()
         if actor in counts
     ]
-    for role, seat in (record.get("roles") or {}).items():
-        rows.append(
-            {
-                "Role": MODEL_SEATS.get(role, role),
-                "Kind": f"model: {seat.get('served_model', 'unknown')}",
-                "Work": f"{seat.get('calls', 0)} model calls",
-                "Trace records": seat.get("calls", 0),
-            }
-        )
+    bound = bindings(entries)
+    rows += [_seat_row(r, seat, bound.get(r)) for r, seat in (record.get("roles") or {}).items()]
+    if bound:  # every row needs every column, so the table stays rectangular
+        rows = [
+            row | {k: "" for k in ("Family", "Checkpoint", "SHA-256") if k not in row}
+            for row in rows
+        ]
     return rows
 
 
@@ -106,6 +130,9 @@ def stages(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 def critic_note(record: dict[str, Any], entries: list[dict[str, Any]]) -> str:
+    critique = next((e["data"] for e in entries if e["event"] == "decision_critique"), None)
+    if critique is not None and critique.get("critic_source") == "independent_model":
+        return INDEPENDENT_CRITIC
     ran = any("critique" in str(e["event"]) for e in entries) or record.get("review")
     return SAME_MODEL_CRITIC if ran else NO_CRITIC
 
@@ -119,6 +146,7 @@ def evidence_ladder(
     usage = record.get("usage") or {}
     calls = usage.get("model_calls")
     gate = human_gate(run_dir, entry)
+    models = _model_sentence(record, bindings(entries), calls)
     return [
         {"Kind": "Original real execution", "In this scenario": str(entry["evidence_mode"])},
         {
@@ -137,9 +165,19 @@ def evidence_ladder(
         },
         {
             "Kind": "Model-assisted decisions",
-            "In this scenario": f"Yes. {calls} Muse Glimmer calls. Code checked each proposal."
-            if calls
-            else "None. No Muse call is recorded in this run.",
+            "In this scenario": models if calls else "None. No Muse call is recorded in this run.",
         },
         {"Kind": "Human action", "In this scenario": f"{gate.state}. {gate.detail}"},
     ]
+
+
+def _model_sentence(record: dict[str, Any], bound: dict[str, dict[str, Any]], calls: Any) -> str:
+    """Who made the model calls. A run with recorded bindings names every checkpoint."""
+    if not bound:
+        return f"Yes. {calls} Muse Glimmer calls. Code checked each proposal."
+    per: dict[str, int] = {}
+    for role, seat in (record.get("roles") or {}).items():
+        name = bound[role]["logical_model"] if role in bound else "unrecorded"
+        per[name] = per.get(name, 0) + int(seat.get("calls", 0))
+    parts = ", ".join(f"{n}: {c}" for n, c in sorted(per.items()))
+    return f"Yes. {calls} model calls on {len(per)} model(s) ({parts}). Code checked each proposal."

@@ -1,0 +1,37 @@
+{
+ "box-a": {
+  "era5_mean_mm_h": 0.5762321608407156,
+  "era5_wet_share": 0.8333333333333334,
+  "hours_paired": 24,
+  "hours_total": 24,
+  "imerg_mean_mm_h": 0.26617086745122487,
+  "imerg_wet_share": 0.7083333333333334,
+  "mean_abs_difference_mm": 0.514278864051247,
+  "spearman": -0.3913043478260869
+ },
+ "box-b": {
+  "era5_mean_mm_h": 0.4192596987674111,
+  "era5_wet_share": 0.9583333333333334,
+  "hours_paired": 24,
+  "hours_total": 24,
+  "imerg_mean_mm_h": 0.5839560556797433,
+  "imerg_wet_share": 0.6666666666666666,
+  "mean_abs_difference_mm": 0.6595552781110576,
+  "spearman": -0.5278260869565217
+ },
+ "box-c": {
+  "era5_mean_mm_h": 0.5939453615502175,
+  "era5_wet_share": 1.0,
+  "hours_paired": 24,
+  "hours_total": 24,
+  "imerg_mean_mm_h": 0.5418700274926687,
+  "imerg_wet_share": 1.0,
+  "mean_abs_difference_mm": 0.4849836448316986,
+  "spearman": -0.7834782608695651
+ },
+ "days": [
+  "2015-10-30"
+ ],
+ "granules": 48,
+ "run": "early"
+}

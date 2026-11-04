@@ -1,0 +1,34 @@
+{
+ "status": "exploratory_post_hoc_amendment_C3",
+ "primary_run_commit": "a7a3c14",
+ "bands": {
+  "C2": {
+   "0.1-0.9": {
+    "coverage": 0.1976911976911977,
+    "error_rate": 0.06204379562043796,
+    "random_error_rate": 0.14994525547445256,
+    "calibration_gap": 0.10284565218083007
+   },
+   "0.3-0.7": {
+    "coverage": 0.8008658008658008,
+    "error_rate": 0.09099099099099099,
+    "random_error_rate": 0.14824324324324326,
+    "calibration_gap": 0.08331597960918405
+   }
+  },
+  "C3": {
+   "0.1-0.9": {
+    "coverage": 0.17243867243867245,
+    "error_rate": 0.06276150627615062,
+    "random_error_rate": 0.1305020920502092,
+    "calibration_gap": 0.06663875293424708
+   },
+   "0.3-0.7": {
+    "coverage": 0.7828282828282829,
+    "error_rate": 0.059907834101382486,
+    "random_error_rate": 0.1324331797235023,
+    "calibration_gap": 0.10653151110414759
+   }
+  }
+ }
+}

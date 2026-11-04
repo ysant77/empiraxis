@@ -14,15 +14,15 @@ roles:
   data_specialist:   {families: [meta-muse, meta-llama, qwen, gemma], status: experimental}
   ml_engineer:       {families: [meta-muse, meta-llama, qwen, gemma], status: experimental}
   implementor:       {families: [meta-muse, meta-llama, qwen, gemma, mistral, deepseek], status: planned}
-  qa_reviewer:       {families: [meta-muse, meta-llama], status: planned}
+  qa_reviewer:       {families: [meta-muse, meta-llama], status: experimental}
 
 candidates:
   - candidate_id: muse-glimmer
     family: meta-muse
     model_id: muse-glimmer-30B
     provider_id: local-glimmer
-    roles: [orchestrator, product_manager, geospatial_engineer, data_specialist, ml_engineer]
-    planned_roles: [implementor, qa_reviewer]
+    roles: [orchestrator, product_manager, geospatial_engineer, data_specialist, ml_engineer, qa_reviewer]
+    planned_roles: [implementor]
     license: Apache-2.0
     license_checked: true
     enabled: true
@@ -40,7 +40,7 @@ candidates:
     family: meta-llama
     model_id: meta-llama/Llama-3.2-3B-Instruct
     provider_id: local-llama-3-2-3b
-    roles: [data_specialist, ml_engineer]
+    roles: [data_specialist, ml_engineer, qa_reviewer]
     planned_roles: [product_manager]
     license: Llama 3.2 Community License
     license_checked: true  # owner accepted the licence in chat, 2026-11-01
@@ -55,6 +55,9 @@ candidates:
         Served alone on port 8081 (llama-server --jinja, 16k context). JSON schema check passed.
         A scripted loop made prepare_data, then submit_note, then stopped. Wired memory is the
         system figure with Muse down. Specialist roles only: the PM seat was not tested.
+        Critic seat (qa_reviewer, M4, 2026-11-03): listed for the experiment m4-het-v1 only. The
+        seeded-fault test shows a weak critic: 4 of 10 cases usable, 0 of 5 faults detected,
+        6 cases unusable after the schema correction. Its findings are advisory.
 
   - candidate_id: llama-3-1-8b
     family: meta-llama

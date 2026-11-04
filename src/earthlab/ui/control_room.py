@@ -28,6 +28,7 @@ from earthlab.events.workflow_view import ROLE_NAMES, WorkflowView, load_workflo
 from earthlab.harness.credit import steps
 from earthlab.ui import (
     approvals,
+    assessment,
     board_view,
     common,
     experiments,
@@ -107,7 +108,9 @@ def _cards(run: RunEvents | None, error: str | None) -> None:
     with cols[0], common.panel("Runtime", "implemented"):
         st.write("The Muse investigator with deterministic tools. The PM path adds model roles.")
     with cols[1], common.panel("Plan critic", "implemented"):
-        st.write("Deterministic plan rules, code, not a model. A model critic is not built.")
+        st.write(
+            "Deterministic plan rules, code, not a model. An optional model critic is advisory."
+        )
     with cols[2], common.panel("Trace integrity", "implemented" if run else "unavailable"):
         if run is not None:
             st.write(f"SHA-256 chain verified: {run.trace_records} records.")
@@ -367,6 +370,8 @@ def _classic(picked: tuple[str, Path | None] | None) -> None:
 
 def render(label: str | None) -> None:
     st.caption("Who took part, what state the run is in, and what still needs a person.")
+    with st.expander("Scientific council investigations (M4.1, recorded)", expanded=label is None):
+        assessment.render()
     opened = story_view.open_story(label) if label else None
     if opened is not None:
         _story(opened)

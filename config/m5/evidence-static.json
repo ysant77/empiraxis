@@ -1,0 +1,93 @@
+{
+  "modalities": [
+    {
+      "source": "nea_pm25",
+      "status": "used",
+      "reason": "target and lag features; sealed period removed"
+    },
+    {
+      "source": "firms_modis_sp",
+      "status": "used",
+      "reason": "fire counts and FRP, issue-time with +3 h"
+    },
+    {
+      "source": "imerg_early",
+      "status": "used",
+      "reason": "rung I1, 2015 only; no gain"
+    },
+    {
+      "source": "era5",
+      "status": "used",
+      "reason": "retrospective association only"
+    },
+    {
+      "source": "smap_l3",
+      "status": "gated_out",
+      "reason": "no recommended-quality retrieval in the study box"
+    },
+    {
+      "source": "hls_archive",
+      "status": "gated_out",
+      "reason": "2.7% clear land on both pilot dates; aerosol flag on most pixels"
+    },
+    {
+      "source": "mcd64a1",
+      "status": "gated_out",
+      "reason": "October 2015 valid-land share 0.460 below the 0.80 gate; not a feature"
+    },
+    {
+      "source": "maiac_061",
+      "status": "not_assessed",
+      "reason": "HDF4 files; no reader in this branch"
+    },
+    {
+      "source": "imerg_late",
+      "status": "not_assessed",
+      "reason": "not downloaded"
+    }
+  ],
+  "features": [
+    {
+      "name": "pm25_lag_1..24",
+      "source": "nea_pm25",
+      "definition": "regional PM2.5, newest value at issue time minus 2 h, 24 hourly lags",
+      "unit": "ug/m3",
+      "input_class": "issue_time_valid"
+    },
+    {
+      "name": "fire_count_box_{a,b,c}",
+      "source": "firms_modis_sp",
+      "definition": "MODIS detections in the source box over the hours visible at issue time minus 3 h",
+      "unit": "count",
+      "input_class": "issue_time_valid"
+    },
+    {
+      "name": "rain_{6,24}h_box_{a,b,c}",
+      "source": "imerg_early",
+      "definition": "sum of IMERG Early rain over the last 6 and 24 h; any missing half hour gives missing; latency 4 h",
+      "unit": "mm",
+      "input_class": "issue_time_valid"
+    },
+    {
+      "name": "era5_wind_rain_blh",
+      "source": "era5",
+      "definition": "corridor-mean 10 m wind, 850 hPa wind, total precipitation; reanalysis",
+      "unit": "m/s, mm",
+      "input_class": "retrospective_only"
+    }
+  ],
+  "limitations": [
+    "Singapore PM2.5 is five NEA regions, not stations; the label start or end of hour is not stated.",
+    "Stage P results come from blocked folds inside one season and carry no skill claim.",
+    "The shift null in Experiment A has 31 shifts; no test can reach supported_association (Amendment 1).",
+    "Latencies for FIRMS, IMERG and SMAP are nominal values, not measured per file.",
+    "I1 ran on the 2015 season only. Other seasons of IMERG Early were not downloaded.",
+    "The 2015 negative ablation (30.76, 32.10, 36.73, 41.75) is a separate result and is not mixed with M5 numbers."
+  ],
+  "claims_not_made": [
+    "No causal attribution of Singapore PM2.5 to specific fires.",
+    "No operational forecast and no health advice.",
+    "No sealed NEA data (from 2024-01-01) was read."
+  ],
+  "period": "2015-09-01 to 2015-10-31 (haze, main); 2016 clean season; 2019 held-out haze season; NEA before 2024-01-01"
+}

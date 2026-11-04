@@ -1,0 +1,12 @@
+{
+  "frozen_at_utc": "2026-11-04T01:44:30+00:00",
+  "note": "Frozen before any M5-B or M5-C run. Editing either file breaks tests/test_m5_protocol_freeze.py.",
+  "protocol_ids": [
+    "m5-protocol-b-1",
+    "m5-protocol-c-1"
+  ],
+  "sha256": {
+    "docs/m5/M5_PROTOCOL_B_V1.md": "8e8a6163a6b65ab1c4ea53621180b664dba6b5c5c25ee736d96f6e6892e8096b",
+    "docs/m5/M5_PROTOCOL_C_V1.md": "f60056224f359586ef322e8e5b250b2441816a318289aa14f225740e35412ad1"
+  }
+}

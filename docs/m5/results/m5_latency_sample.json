@@ -1,0 +1,35 @@
+{
+  "measured_at_utc": "2026-11-04T02:01:01+00:00",
+  "scope": "latest 40 granules of the current service; not the 2015 archive",
+  "runs": {
+    "imerg_early": {
+      "short_name": "GPM_3IMERGHHE",
+      "granules": 40,
+      "production_minus_end_h": {
+        "min": 4.085833611111111,
+        "median": 4.331666944444445,
+        "max": 4.577778055555555
+      },
+      "insert_minus_end_h": {
+        "min": 4.366389166666667,
+        "median": 4.6672225,
+        "max": 4.968055833333334
+      }
+    },
+    "imerg_late": {
+      "short_name": "GPM_3IMERGHHL",
+      "granules": 40,
+      "production_minus_end_h": {
+        "min": 14.180000277777777,
+        "median": 14.425000277777777,
+        "max": 14.669722499999999
+      },
+      "insert_minus_end_h": {
+        "min": 14.369166944444444,
+        "median": 14.670000277777778,
+        "max": 14.97083361111111
+      }
+    }
+  },
+  "firms_note": "MODIS_SP is standard processing. The +3 h rule is an NRT assumption. Not measured."
+}
