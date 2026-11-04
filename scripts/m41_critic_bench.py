@@ -115,6 +115,7 @@ def main() -> None:
                 side.stop()
         body = {
             "critic": tag,
+            "scoring": "m41-v2",
             "summary": totals,
             "cases": [s.model_dump(mode="json") for s in scores],
         }

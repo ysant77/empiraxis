@@ -30,6 +30,8 @@ def test_replay_helpers_read_a_recorded_run(tmp_path: Path) -> None:
     assert rows[0]["code check"] == "backed"
     assert assessment.answers(result, "lead", "dispositions")[0]["answer"] == "accept"
     assert {r["role"] for r in assessment.usage(records)} >= {"Engineering Lead"}
+    assert {r["ran in this run"] for r in assessment.roster(records)} == {"yes"}
+    assert assessment.independent(records) is None
 
 
 def test_broken_chain_is_reported(tmp_path: Path) -> None:

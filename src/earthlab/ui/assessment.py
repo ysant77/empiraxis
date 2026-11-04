@@ -62,6 +62,15 @@ def roster(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
     ]
 
 
+def independent(records: list[dict[str, Any]]) -> bool | None:
+    """True or False when the run had a critic; None when it had none."""
+    formed: dict[str, Any] = next(
+        (r["data"] for r in records if r["event"] == "council_formed"), {}
+    )
+    value = formed.get("critic_independent_checkpoint")
+    return value if isinstance(value, bool) else None
+
+
 def usage(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
     rows = []
     for r in records:
@@ -149,9 +158,17 @@ def render(root: Path = REPLAY) -> None:
     name = st.selectbox("Recorded investigation", names)
     result, records, integrity = load(name, root)
     _header(result, integrity)
-    st.markdown("**Who took part** (checkpoint read from the trace)")
+    st.markdown("**Council roles** (checkpoint read from the trace)")
     st.dataframe(roster(records), hide_index=True, width="stretch")
+    if independent(records) is False:
+        st.caption(
+            "The reviewer runs on the Lead's checkpoint: a separate review role, "
+            "not an independent model."
+        )
     _role_sections(result)
+    st.markdown("**Escalated to the human director** (listed by code)")
+    items = result.get("escalations") or []
+    st.write(items if items else "No unresolved material issue.")
     final = result.get("final", {})
     st.markdown("**Final plan sent to the human director**")
     st.write(final.get("plan", ""))

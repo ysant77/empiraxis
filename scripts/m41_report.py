@@ -1,6 +1,8 @@
 """Summarise M4.1 council runs and critic results into one evidence file.
 
-Usage: python scripts/m41_report.py --runs DIR [DIR ...] --critic DIR --out FILE
+Usage: python scripts/m41_report.py --runs DIR [DIR ...] --critic DIR [DIR ...] --out FILE
+
+Critic results: only files scored under m41-v2 count ("scoring": "m41-v2").
 """
 
 from __future__ import annotations
@@ -12,7 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from earthlab.assess.contracts import EvidencePackageV1
-from earthlab.assess.critic_bench import choose_critic, passes_gates
+from earthlab.assess.critic_bench import passes_gates
 from earthlab.assess.score import load_keys, score_run
 from earthlab.trace import RunTrace
 
@@ -59,6 +61,10 @@ def council_rows(folders: list[Path]) -> list[dict[str, Any]]:
             "trace_entries": trace.verify(),
             **costs(trace),
         }
+        formed = next(r["data"] for r in trace.records() if r["event"] == "council_formed")
+        row["critic_independent_checkpoint"] = formed.get("critic_independent_checkpoint")
+        row["participation"] = result.get("participation")
+        row["escalations"] = result.get("escalations", [])
         if result["status"] == "failed":
             row.update({"status": "failed", "reason": result.get("reason")})
         else:
@@ -67,27 +73,28 @@ def council_rows(folders: list[Path]) -> list[dict[str, Any]]:
     return rows
 
 
-def critic_rows(folder: Path) -> dict[str, Any]:
-    found = {
-        json.loads(p.read_text())["critic"]: json.loads(p.read_text())["summary"]
-        for p in folder.glob("critic-*.json")
-    }
+def critic_rows(folders: list[Path]) -> dict[str, Any]:
+    found = {}
+    for folder in folders:
+        for p in folder.glob("critic-*.json"):
+            body = json.loads(p.read_text())
+            if body.get("scoring") == "m41-v2":
+                found[body["critic"]] = body["summary"]
     rules = found.get("rules")
     gates = {k: passes_gates(v, rules) for k, v in found.items()} if rules else {}
-    chosen, passed = choose_critic(found, "local-glimmer") if rules else (None, False)
-    return {"summaries": found, "gates": gates, "chosen": chosen, "chosen_passed": passed}
+    return {"scoring": "m41-v2", "summaries": found, "gates": gates}
 
 
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--runs", type=Path, nargs="*", default=[])
-    ap.add_argument("--critic", type=Path, required=True)
+    ap.add_argument("--critic", type=Path, nargs="+", required=True)
     ap.add_argument("--out", type=Path, required=True)
     a = ap.parse_args()
     folders = sorted(f for root in a.runs for f in root.iterdir() if (f / "result.json").exists())
-    body = {"protocol": "m41-v1", "critic": critic_rows(a.critic), "runs": council_rows(folders)}
+    body = {"protocol": "m41-v2", "critic": critic_rows(a.critic), "runs": council_rows(folders)}
     a.out.write_text(json.dumps(body, indent=1) + "\n")
-    print(json.dumps(body["critic"]["chosen"]), len(body["runs"]), "runs")
+    print(len(body["critic"]["summaries"]), "critics,", len(body["runs"]), "runs")
 
 
 if __name__ == "__main__":
