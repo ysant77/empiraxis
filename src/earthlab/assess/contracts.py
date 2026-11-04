@@ -50,6 +50,9 @@ class FaultClass(StrEnum):
     NON_INDEPENDENT_EVIDENCE = "non_independent_evidence"
     INSUFFICIENT_EVIDENCE = "insufficient_evidence"
     NUMERIC_MISSTATEMENT = "numeric_misstatement"
+    # m41-v3: all-hour performance worse, even when one subgroup improves. Protocol m41-v2
+    # used subgroup_deterioration for this case; its keys and results stay as recorded.
+    OVERALL_DETERIORATION = "overall_deterioration"
 
 
 class Action(StrEnum):

@@ -1,4 +1,4 @@
-"""Decision policy m41-v2: the code rule for each scenario.
+"""Decision policy m41-v3: the code rule for each scenario.
 
 The rule reads package facts only. It returns the decisions that the evidence allows and the
 rule flags that support them. The flags map to fault classes, so the rule is also the
@@ -7,6 +7,10 @@ deterministic critic (arm F). It does not read any model text.
 m41-v2 (correction of m41-v1): a value of 0 is a value, not a missing fact. A fact that is
 absent or null goes to `missing_facts` and raises no flag. A flag cites only ids that exist
 in the package.
+
+m41-v3 (prospective, after the m41-v2 runs): in the design scenario, worse all-hour skill with
+an elevated-hour gain is `overall_deterioration`, not `subgroup_deterioration`. Recorded m41-v2
+results and keys are not changed.
 """
 
 from __future__ import annotations
@@ -39,7 +43,7 @@ class FlagV1(Strict):
 
 
 class PolicyResultV1(Strict):
-    policy: str = "m41-v2"
+    policy: str = "m41-v3"
     allowed: list[Decision]
     preferred: Decision
     flags: list[FlagV1]
@@ -193,9 +197,9 @@ def _design(pkg: EvidencePackageV1) -> tuple[list[Decision], list[FlagV1]]:
     if high is not None and high < 0:
         flags.append(
             FlagV1(
-                fault_class=FaultClass.SUBGROUP_DETERIORATION,
+                fault_class=FaultClass.OVERALL_DETERIORATION,
                 evidence=["t19.R2_vs_R1.skill", "t19.R2_vs_R1.high"],
-                note="Fire inputs help elevated hours and hurt all hours.",
+                note="Fire inputs make all-hour MAE worse; the elevated-hour gain is exploratory.",
             )
         )
     return [Decision.PROCEED_WITH_LIMITS, Decision.REQUEST_VALIDATION], flags

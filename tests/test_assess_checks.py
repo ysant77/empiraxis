@@ -116,7 +116,12 @@ def test_rule_critic_on_the_frozen_cases() -> None:
     seeded = load_seeded(Path(ROOT / "examples" / "assess" / "critic-case-evidence.json"))
     pkgs = {p: package(p) for p in "abcd"}
     scores, totals = run_bench(cases, pkgs, lambda c, pkg: rule_critique(c.plan, pkg), seeded)
-    assert totals["faults_detected_raw"] == 6 and totals["clean_with_high_finding"] == 0
+    # m41-v3 policy on the frozen m41-v2 labels: 5 of 12. Case D-f3 is labelled with the m41-v2
+    # class subgroup_deterioration; the m41-v3 rule raises overall_deterioration there. The
+    # recorded m41-v2 rule result (6 of 12) is unchanged.
+    assert totals["faults_detected_raw"] == 5 and totals["clean_with_high_finding"] == 0
+    d_f3 = next(s for s in scores if s.case == "D-f3")
+    assert not d_f3.detected_raw
     assert totals["faults_detected"] <= totals["faults_detected_raw"]
     assert totals["unsupported_findings"] == 0
     unusable = run_bench(cases[:2], pkgs, lambda c, pkg: None, seeded)[1]

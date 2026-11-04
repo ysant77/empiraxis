@@ -10,7 +10,7 @@ from __future__ import annotations
 import re
 from collections.abc import Iterable
 
-from earthlab.assess import policy
+from earthlab.assess import numbers, policy
 from earthlab.assess.contracts import (
     Availability,
     CheckReportV1,
@@ -20,7 +20,7 @@ from earthlab.assess.contracts import (
     FindingV1,
 )
 
-TOLERANCE = 0.005
+TOLERANCE = numbers.TOLERANCE
 PROCEEDS = {Decision.ADOPT, Decision.ADOPT_LIMITED, Decision.PROCEED_WITH_LIMITS}
 INPUT_ROLES = {"observation", "estimate", "reanalysis"}
 FORBIDDEN = {
@@ -34,28 +34,28 @@ FORBIDDEN = {
     "sealed": re.compile(r"\btest[- ](period|set) (mae|scores?|skill|results?)\b", re.I),
     "certainty": re.compile(r"\b(proves?|guarantees?|definitively)\b", re.I),
 }
-_DECIMAL = re.compile(r"(?<![\w.])-?\d+\.\d+(?![\w.])")
 
 
 def ids_of(pkg: EvidencePackageV1) -> set[str]:
     return {f.id for f in pkg.facts} | {s.id for s in pkg.sources}
 
 
-def _close(a: float, b: float) -> bool:
-    return abs(a - b) <= max(TOLERANCE * abs(b), 0.001)
-
-
-def grounded_number(text: str, values: Iterable[float]) -> bool:
-    """A decimal in text is grounded when some package value rounds to it."""
-    number = float(text)
-    places = len(text.split(".")[1])
-    return any(round(v, places) == number or _close(number, v) for v in values)
+_close = numbers.close
 
 
 def ungrounded_numbers(texts: Iterable[str], pkg: EvidencePackageV1) -> list[str]:
-    values = [f.value for f in pkg.facts if f.value is not None]
-    found = [m for t in texts for m in _DECIMAL.findall(t)]
-    return [n for n in found if not grounded_number(n, values)]
+    """Decimals and (rule m41-v3) integer measurements that no package value supports.
+
+    Package values are fact values, source latencies and cutoffs, and every number written in
+    the package text (question, criteria, limitations, fact statements).
+    """
+    values = [float(f.value) for f in pkg.facts if f.value is not None]
+    values += [float(h) for s in pkg.sources for h in (s.latency_hours, s.input_cutoff_hours) if h]
+    text = [pkg.question, pkg.target, pkg.interval, *pkg.acceptance_criteria, *pkg.limitations]
+    text += pkg.missing_inputs
+    text += [f.statement for f in pkg.facts]
+    values += [float(n) for t in text for n in numbers.NUMBER.findall(t)]
+    return numbers.ungrounded(texts, values)
 
 
 def forbidden_phrases(texts: Iterable[str]) -> list[str]:
@@ -117,7 +117,7 @@ def plan_report(
     unknown = [i for i in inputs_used + excluded if i not in sources]
     forecasting = pkg.scenario in ("sufficiency", "design")
     late = unavailable_inputs(inputs_used, pkg) if forecasting and decision in PROCEEDS else []
-    numbers = ungrounded_numbers(texts, pkg)
+    loose = ungrounded_numbers(texts, pkg)
     words = forbidden_phrases(texts)
     checks = [
         CheckV1(
@@ -125,7 +125,7 @@ def plan_report(
         ),
         CheckV1(name="inputs_known", passed=not unknown, detail=", ".join(unknown)),
         CheckV1(name="issue_time_inputs", passed=not late, detail=", ".join(late)),
-        CheckV1(name="numbers_grounded", passed=not numbers, detail=", ".join(numbers)),
+        CheckV1(name="numbers_grounded", passed=not loose, detail=", ".join(loose)),
         CheckV1(name="no_forbidden_claims", passed=not words, detail=", ".join(words)),
     ]
     return CheckReportV1(subject=subject, checks=checks)
