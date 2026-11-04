@@ -72,7 +72,7 @@ Left to right: a research question goes to the safety gate. The Muse PM seat sco
 | NEA historical 1-hour PM2.5 | Singapore Open Data Licence v1.0 |
 | NASA FIRMS MODIS, MCD64A1, HLS, SMAP, IMERG | NASA Earthdata terms; see `docs/m5/M5_SOURCE_AND_LICENCE_REGISTER.md` |
 | ERA5 | Copernicus licence (C3S) |
-| Muse Glimmer 30B | Apache-2.0 and the Meta usage policy |
+| Muse Glimmer 30B | Apache-2.0 (model card; see `LICENSING.md` for the source of each licence) |
 | Llama 3.2 3B Instruct | Llama 3.2 Community License |
 | Llama Guard 3 8B | Llama 3.1 Community License |
 | Qwen3 4B Instruct 2507 (non-Meta, M4.1 ML specialist seat) | Apache-2.0, as stated on the model card |

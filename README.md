@@ -517,8 +517,10 @@ Each run writes `results.jsonl` (one row per scenario, arm and repeat, with code
 | Component | Source | Licence |
 | --- | --- | --- |
 | NEA Historical 1-hr PM2.5 | https://data.gov.sg/datasets/d_6c0d5fc34838b12472475fdb73c0af29/view | Singapore Open Data Licence v1.0 (see `data/nea/DATA_CARD.md`) |
-| Muse Glimmer 30B (GGUF) | https://huggingface.co/meta-models/Muse-Glimmer-30B-GGUF | Apache 2.0 and the Meta usage policy |
-| Muse Spark Open (hosted) | Baseten, Fireworks or Modal | Provider terms and the Meta licence |
+| Muse Glimmer 30B (GGUF) | https://huggingface.co/meta-models/Muse-Glimmer-30B-GGUF | Apache-2.0 (model card) |
+| Muse Spark Open (hosted) | Baseten, Fireworks or Modal | Licence not verified; configured only, not used in a recorded run |
 | Python libraries | `uv.lock` | Each package's own licence |
+
+The full list, with the source of each licence statement, is in [LICENSING.md](LICENSING.md).
 
 The repository was created on 27 October 2026, inside the Meta Global AI Developer Hackathon build window. The design builds on ideas from the author's earlier private work on policy-gated, verified agents.

@@ -21,6 +21,11 @@ Three runs on 3 November add to these:
 
 The negative results are the point. In a comparison of 48 saved runs, a Muse team reached the same decision as the deterministic pipeline, at higher cost. So Empiraxis keeps the simpler path. An optional critic by the same model found no fault that code rules had not found, so it stays off.
 
+Two later stages add to these:
+
+- M4 put different Meta checkpoints in different seats: Muse Glimmer 30B for the PM and Lead, Llama 3.2 3B Instruct for the specialists and an advisory critic. The recorded run made 13 model calls on 2 checkpoints. Code reached the same outcome. M4.1 (PR #117, in review) critiques the frozen M5 evidence. Its benchmark results are not final yet.
+- M5 tested fire, wind and rain data with deterministic CPU models and no Meta model. No addition gave a supported gain over PM2.5 history on the held-out 2019 season. FIRMS latency is nominal and assumed. M5-B has no result.
+
 Research prototype. It is not a forecast, a health warning or a source attribution. It was built with AI-assisted engineering; the README says so.
 
 ## Evidence references
@@ -40,6 +45,10 @@ Research prototype. It is not a forecast, a health warning or a source attributi
 | Five prospective predictions, all scored | `docs/prospective-verification.md` |
 | The 20-milestone matrix: 16 bounded, 3 partial, 1 future | `docs/vision-matrix-final.md` |
 | The hosted entry is replay-only | `docs/hosted-replay.md`, `tests/test_hosted_replay.py` |
+| M4: 13 model calls on 2 checkpoints, each named by file and SHA-256 | `examples/replay/scenario-m4-heterogeneous-council/trace.jsonl`, `docs/m4/benchmark-report.md` |
+| M5: no supported gain from fire, wind or rain data | `docs/m5/M5_SCIENCE_REPORT.md`, `docs/m5/results/` |
+| Each headline value matches its artifact | `docs/release/source_to_screen.csv` |
+| Licences and their sources | `LICENSE`, `LICENSING.md` |
 
 ## Reproduce
 
@@ -60,7 +69,7 @@ uv sync --all-extras
 Check each published run against its manifest and hash chain. Each command exits 0. A changed or missing file exits 1.
 
 ```bash
-for r in sb05-september sb05b-october live-september-verified live-october-abstained scenario-s1-regression scenario-s2-encoder-reuse scenario-s3-transport scenario-s4-resource-request scenario-muse-team-exceedance scenario-muse-team-regression scenario-muse-method-comparison; do uv run earthlab --data-dir data/nea replay examples/replay/$r || echo "FAILED $r"; done
+for r in sb05-september sb05b-october live-september-verified live-october-abstained scenario-s1-regression scenario-s2-encoder-reuse scenario-s3-transport scenario-s4-resource-request scenario-muse-team-exceedance scenario-muse-team-regression scenario-muse-method-comparison scenario-m4-heterogeneous-council; do uv run earthlab --data-dir data/nea replay examples/replay/$r || echo "FAILED $r"; done
 ```
 
 Print the credit table of the Muse team run:
@@ -83,12 +92,13 @@ uv run ruff check . && uv run ruff format --check . && uv run mypy && uv run pyt
 
 ## Release checklist
 
-| Item | State on 2026-11-03 | Owner action |
+| Item | State on 2026-11-04 | Owner action |
 |---|---|---|
-| Release commit | The head of `release/hackathon-2026`. All 11 published runs replay with exit 0 on a clean clone of `ysant77/empiraxis`. | none |
-| Licence | Draft PR #91 proposes Apache-2.0 for the original software. Data and models keep their own terms. | Confirm the licence and the right to grant it, then merge #91. |
-| Repository visibility | Private | Make it public when the rules require it. |
-| Hosted replay | Not published | Follow `docs/hosted-replay.md`, then share the URL for verification. |
-| Prithvi Level A | Blocked: no signed approval | Optional. Approve the queued request in the local operator UI. |
-| Video | Not recorded | Record from `docs/demo-three-minute.md`. |
-| Deadline | The internal target is 4 November, 22:00 to 23:00 SGT. | Confirm the official deadline on the portal. |
+| Release commit | `main`. CI passes on `35de956` (M5, PR #118). All 12 published runs replay with exit 0 on a clean checkout. | Confirm the final commit after the open PRs. |
+| Open PRs | #117 (M4.1 council, draft) and #116 (film production kit). | Merge only with green CI. |
+| Licence | Apache-2.0 for the project code and documents. Data and models keep their own terms (`LICENSING.md`). | none |
+| Repository visibility | Public | none |
+| Hosted replay | Not published | Optional. Follow `docs/hosted-replay.md`. |
+| Video | V1.1 exists. Its music bed is CC-BY-NC, so the release cut must use voice only or a track with a verified licence. Video 2.0 is in progress. | Pick the film and check its SHA-256. |
+| Deadline | Planning documents give 4 November 21:00 ET (5 November 10:00 SGT). | Confirm the deadline on the portal. |
+| Submission | Not submitted | Submit and keep the receipt. |
