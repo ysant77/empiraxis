@@ -142,5 +142,27 @@ their m41-v2 scores. An offline re-check of the 25 main runs with the m41-v3 rul
 
 ## 10. Demonstration run (outside the benchmark)
 
-PENDING: arm HC on `e-m5-demo-v3` (merged `m5-evidence-4` @ `35de956` plus M5-C), rule m41-v3.
-It has no answer key and no score.
+Arm HC on `e-m5-demo-v3` (merged `m5-evidence-4` @ `35de956` plus the M5-C result), rule
+m41-v3, temperature 0. It is outside the benchmark. It has no answer key and no score. Replay:
+`examples/assess/replay/20261104T124522Z-HC-e-m5-demo-v3-r1` (30 trace entries, verifies offline).
+
+Question (M5-A): can historical wind, rain, fire activity, imagery and soil moisture improve
+Singapore's six-hour PM2.5 predictions beyond PM2.5-only baselines?
+
+- **Code rule (m41-v3).** Allowed: `proceed_with_limits`, `request_validation`. Eligible inputs:
+  NEA PM2.5 and IMERG Early. Flags: hindsight inputs (IMERG Final, SMAP, ERA5), unknown
+  availability (FIRMS standard processing, IMERG Late) and `overall_deterioration` (fire inputs
+  make all-hour MAE worse). Missing facts: HLS clear fraction, SMAP retrieval quality.
+- **Council.** Llama (data) made 5 findings and Qwen (ML) made 5. The Lead chose `abstain`
+  and did not answer four Qwen findings (`answers_cover_findings` failed). The Muse critic raised
+  one high finding: NEA and IMERG Early availability rests on a nominal latency, not a verified
+  publication time. It cited only the package id. The Lead accepted it, excluded every input and
+  changed the decision to `request_data`. The PM asked for a revision.
+- **Outcome.** `request_data` is outside the code rule. The run escalated 7 issues and stopped
+  at the human gate. No decision is recorded. Wall time 1,617 s.
+
+The critic repeated the availability correction that the package states as a limit. It did
+not find a new fault. Its action (exclude NEA PM2.5 as well) goes further than the evidence:
+the M5 result for a PM2.5-lag baseline does not depend on real-time publication of other sources.
+This run shows the same pattern as `e-m5-handoff-v2`: the mixed council leaves the code rule
+when the Lead does not answer the specialist findings.
