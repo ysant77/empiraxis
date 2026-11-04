@@ -162,7 +162,7 @@ Singapore's six-hour PM2.5 predictions beyond PM2.5-only baselines?
   at the human gate. No decision is recorded. Wall time 1,617 s.
 
 The critic repeated the availability correction that the package states as a limit. It did
-not find a new fault. Its action (exclude NEA PM2.5 as well) goes further than the evidence:
-the M5 result for a PM2.5-lag baseline does not depend on real-time publication of other sources.
+not find a new fault. After it, the Lead excluded every input, NEA PM2.5 included. The code
+rule keeps NEA PM2.5 and IMERG Early eligible under the nominal-latency rule.
 This run shows the same pattern as `e-m5-handoff-v2`: the mixed council leaves the code rule
 when the Lead does not answer the specialist findings.
