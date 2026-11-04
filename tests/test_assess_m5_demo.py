@@ -61,3 +61,9 @@ def test_frozen_benchmark_package_is_separate() -> None:
     assert frozen.package_id == PACKAGE_ID
     assert all("m5@458f297" in s.origin for s in frozen.sources if s.id.startswith("m5_"))
     assert all("m5@35de956" in s.origin for s in demo.sources if s.id.startswith("m5_"))
+
+
+def test_the_demo_states_the_m5_availability_correction() -> None:
+    pkg = build(_demo_m5(hashlib.sha256(M5C).hexdigest()), FILES.__getitem__, "35de956ff")
+    note = [x for x in pkg.limitations if x.startswith("Correction: M5 later")]
+    assert len(note) == 1 and "not verified" in note[0] and "m5-evidence-5" in note[0]

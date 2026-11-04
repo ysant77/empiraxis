@@ -29,6 +29,9 @@ DEMO_LIMITS = [
     "in the study box. M5 gated out both.",
     "2019 is the test season of both Stage T and M5-C. It was reused and is not an "
     "independent test. M5-C holds one 2019 episode.",
+    "Correction: M5 later replaced its issue_time_valid label (m5-evidence-5). No M5 source has "
+    "a verified publication time per observation. NEA and IMERG Early availability is a nominal "
+    "latency assumption, not verified.",
 ]
 
 
