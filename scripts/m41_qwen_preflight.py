@@ -101,7 +101,7 @@ def schema_runs(client: HttpStructuredClient, pkgs: list[EvidencePackageV1]) -> 
                 client,
                 messages_for("ml_engineer", pkg, {}),
                 Sampling(seed=seed, max_tokens=2000),
-                lambda e, d: log.append(d),
+                lambda e, d, log=log: log.append(d),
             )
             rows.append(
                 {

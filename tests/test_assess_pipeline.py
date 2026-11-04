@@ -6,7 +6,6 @@ from typing import Any
 
 import httpx
 import pytest
-
 from assess_fakes import (
     ROOT,
     FakeSide,
@@ -17,6 +16,7 @@ from assess_fakes import (
     lead_plan,
     package,
 )
+
 from earthlab.assess import serving
 from earthlab.assess.council import Council, arm_of, load_spec
 from earthlab.assess.llm import HttpStructuredClient, Sampling, parse_reply, payload

@@ -3,8 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-
 from assess_fakes import ROOT, finding, package
+
 from earthlab.assess import checks, policy
 from earthlab.assess.contracts import Decision, FindingV1
 from earthlab.assess.critic_bench import load_cases, rule_critique, run_bench, summary
@@ -33,7 +33,7 @@ def test_policy_keys_agree_with_the_code_rule() -> None:
 def test_policy_needs_its_facts() -> None:
     pkg = package("a")
     broken = pkg.model_copy(update={"facts": [f for f in pkg.facts if f.id != "b4.mae"]})
-    with pytest.raises(KeyError, match="b4.mae"):
+    with pytest.raises(KeyError, match=r"b4\.mae"):
         policy.decide(broken)
 
 
