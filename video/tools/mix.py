@@ -1,6 +1,7 @@
 """Mix narration and music under the silent film. Music ducks under the voice.
 
-Usage: python video/tools/mix.py SILENT.mp4 OUT.mp4
+Usage: python video/tools/mix.py SILENT.mp4 OUT.mp4 [--no-music]
+--no-music mixes the narration over silence (no MusicGen bed is read).
 Needs: $VIDEO_WORK/music/intro.wav and main.wav (V1.1: Meta MusicGen-medium, local, CC-BY-NC
 weights), and the narration from tts.py. Loudness: -15 LUFS, true peak -1.5 dBTP.
 """
@@ -68,14 +69,16 @@ def main() -> None:
         voice[i : i + len(a)] += a
     (WORK / "out").mkdir(parents=True, exist_ok=True)
     sf.write(WORK / "out/voice.wav", voice, SR)
-    sf.write(WORK / "out/music.wav", music_bed(tl, len(voice)) * 0.8, SR)
+    no_music = "--no-music" in sys.argv[3:]
+    bed = np.zeros_like(voice) if no_music else music_bed(tl, len(voice)) * 0.8
+    sf.write(WORK / "out/music.wav", bed, SR)
     ffmpeg = shutil.which("ffmpeg") or "ffmpeg"
     cmd = [ffmpeg, "-v", "error", "-y", "-i", sys.argv[1], "-i", str(WORK / "out/music.wav")]
     cmd += ["-i", str(WORK / "out/voice.wav"), "-filter_complex", FILTER, "-map", "0:v"]
     cmd += ["-map", "[a]", "-c:v", "copy", "-c:a", "aac", "-b:a", "256k", "-ar", "48000"]
     cmd += ["-t", f"{tl['total']:.3f}", "-movflags", "+faststart", sys.argv[2]]
     subprocess.run(cmd, check=True)  # noqa: S603 - fixed ffmpeg command
-    print("mixed", sys.argv[2])
+    print("mixed", sys.argv[2], "without music" if no_music else "with music")
 
 
 if __name__ == "__main__":

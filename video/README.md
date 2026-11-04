@@ -1,7 +1,8 @@
 # Video production kit
 
-This folder holds everything that is needed to rebuild the Empiraxis film and to make the next
-version. Any developer or agent can use it. It needs no access to the original machine.
+This folder holds the code, data and narration that are needed to rebuild the Empiraxis film
+and to make the next version. Section 4 says which steps work from this repository alone and
+which steps need external files.
 
 The film is a **recorded replay**. It calls no model, trains nothing and changes no evidence.
 Every number on screen comes from a file that a real run wrote.
@@ -45,6 +46,24 @@ Every number on screen comes from a file that a real run wrote.
 - A TrueType font for burned captions: set `CAPTION_FONT`.
 
 ## 4. Build the film
+
+### What this repository alone reproduces
+
+| Step | From the committed files only? | External needs |
+|---|---|---|
+| Replay page, scrubbing and stills | Yes | Chromium (Playwright) and network access to the MapLibre CDN |
+| Silent film (`render.py`) | Yes, frame for frame | Same as above, plus ffmpeg with libx264 |
+| Narration (`tts.py`) | No | Kokoro v1.0 weights (Apache-2.0), placed by hand |
+| Music (`music.py`) | No, and not bit for bit | MusicGen-medium weights (CC-BY-NC 4.0), torch; output changes by machine |
+| Mix, captions, ASR check | No | The narration and music above, a TrueType font, faster-whisper |
+| Data bundle (`build_data.py`) | No | Release `4e4a4f1` and the original run folders (section 5) |
+
+The released films (section 7) are the reference. A rebuild with other weights, fonts or
+library versions gives a different audio track.
+
+`render.py` exits with status 2 and deletes the partial film when the page does not load,
+the page reports an error or a failed request, or ffmpeg fails.
+`video/tests/test_render.py` covers this without a browser.
 
 Run these from the repository root.
 
@@ -132,6 +151,17 @@ To add a scene:
 The committed `tools/vo.json`, `tools/vo_timings.json`, `tools/timeline.json` and
 `replay/timeline.js` are the V1.1 versions.
 
-## 8. Next version
+## 8. Music licence
+
+The MusicGen-medium weights are released under CC-BY-NC 4.0 (see the publisher's model card).
+A licence check of the generated beds was not done. Before the film is used in public or for a
+prize, the owner must do one of these:
+
+1. Confirm that the intended use is non-commercial and keep the credit "Music: Meta
+   MusicGen-medium (CC-BY-NC 4.0)" in the closing credits.
+2. Replace the beds with music that has a suitable licence, and update the credits.
+3. Mix the film without music: `python video/tools/mix.py SILENT.mp4 OUT.mp4 --no-music`.
+
+## 9. Next version
 
 See `docs/video-2-plan.md`. It is a plan only. It waits for owner approval.
