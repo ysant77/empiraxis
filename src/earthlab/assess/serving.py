@@ -66,9 +66,15 @@ def verify_file(path: Path, ckpt: CheckpointV1) -> dict[str, object]:
     }
 
 
-def verify_served(base_url: str, ckpt: CheckpointV1) -> dict[str, object]:
-    """For a server that is already running: hash the file it reports in `/props`."""
-    return verify_file(served_path(base_url), ckpt)
+def verify_served(base_url: str, ckpt: CheckpointV1, root: Path) -> dict[str, object]:
+    """For a server that is already running: hash the file it reports in `/props`.
+
+    llama-server reports the path as it was given; a relative path is resolved in `root`.
+    """
+    path = served_path(base_url)
+    if not path.is_absolute():
+        path = root / path
+    return verify_file(path, ckpt)
 
 
 def verify_identity(base_url: str, ckpt: CheckpointV1, client: httpx.Client | None = None) -> str:

@@ -62,7 +62,9 @@ def model_critic(provider: str, a: argparse.Namespace, trace: RunTrace) -> Any:
         cfg = cfg.model_copy(update={"base_url": side.base_url})
     else:
         trace.append(
-            "checkpoint_verified", "runtime", **verify_served(cfg.base_url, registry[provider])
+            "checkpoint_verified",
+            "runtime",
+            **verify_served(cfg.base_url, registry[provider], a.main_models_dir),
         )
     verify_identity(cfg.base_url, registry[provider])
     client = HttpStructuredClient(cfg)
@@ -91,6 +93,7 @@ def main() -> None:
     ap.add_argument("--critics", required=True)
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--models-dir", type=Path, required=True)
+    ap.add_argument("--main-models-dir", type=Path, required=True)
     ap.add_argument("--contract", choices=["v1", "v2"], default="v1")
     a = ap.parse_args()
     cases = load_cases(Path("examples/assess/critic-cases.json"))

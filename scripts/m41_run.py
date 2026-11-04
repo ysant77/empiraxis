@@ -57,6 +57,7 @@ def main() -> None:
     ap.add_argument("--packages", required=True)
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--models-dir", type=Path, required=True)
+    ap.add_argument("--main-models-dir", type=Path, required=True)
     ap.add_argument("--critic", default=None)
     ap.add_argument("--repeat", type=int, default=1)
     ap.add_argument("--temperature", type=float, default=None)
@@ -76,7 +77,10 @@ def main() -> None:
     )
     clients = _clients(spec, providers, registry, side.base_url)
     verify_identity(providers["local-glimmer"].base_url, registry["local-glimmer"])
-    verified = {p: verify_served(providers[p].base_url, registry[p]) for p in spec.main_providers}
+    verified = {
+        p: verify_served(providers[p].base_url, registry[p], a.main_models_dir)
+        for p in spec.main_providers
+    }
     print("main checkpoints verified", verified, flush=True)
     try:
         for rep in range(a.repeat):
