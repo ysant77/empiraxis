@@ -67,7 +67,7 @@ def main() -> None:
     try:
         for rep in range(a.repeat):
             for arm_name in a.arms.split(","):
-                over = {"critic": a.critic} if a.critic and arm_name == "HC" else {}
+                over = {"critic": a.critic} if a.critic and arm_name == "HC8" else {}
                 arm = arm_of(spec, arm_name, **over)
                 for prefix in a.packages.split(","):
                     pkg = package(prefix)

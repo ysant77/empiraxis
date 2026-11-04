@@ -119,5 +119,11 @@ class Council:
             "heterogeneous": len(by_sha) > 1,
             "seats_per_checkpoint": {k[:12]: v for k, v in by_sha.items()},
         }
+        if "critic" in self.arm.roles:
+            # Amendment 3: a critic on the Lead's checkpoint is a separate role, not an
+            # independent model. The record says which one ran.
+            critic_sha = self.registry[self.arm.roles["critic"]].sha256
+            lead_sha = self.registry[self.arm.roles["lead"]].sha256
+            summary["critic_independent_checkpoint"] = critic_sha != lead_sha
         trace.append("council_formed", "runtime", **summary)
         return summary

@@ -156,12 +156,52 @@ def critique(run: Run, plan: LeadPlanV1) -> RebuttalV1 | LeadPlanV1:
     return reb
 
 
+MATERIAL = ("medium", "high")
+PLAN_CHECKS = ("lead", "rebuttal")
+
+
+def _verdicts(output: dict[str, Any] | None, key: str) -> dict[str, str]:
+    return {r["finding_id"]: r["verdict"] for r in (output or {}).get(key, [])}
+
+
+def escalations(out: dict[str, Any], allowed: list[str]) -> list[str]:
+    """Unresolved material issues that go to the human director (Amendment 3).
+
+    Code lists them. A model cannot remove one. The list does not change the decision.
+    """
+    roles = out["roles"]
+    items = [f"role {r} failed" for r, v in roles.items() if v["state"] == "failed"]
+    if out["decision"] not in allowed:
+        items.append(f"decision {out['decision']} is outside the code rule {allowed}")
+    for name in PLAN_CHECKS:
+        for c in out["checks"].get(name, {}).get("checks", []):
+            if not c["passed"]:
+                items.append(f"{name} check failed: {c['name']}")
+    lead = (roles.get("lead") or {}).get("output")
+    answers = {
+        "data_specialist": _verdicts(lead, "dispositions"),
+        "ml_engineer": _verdicts(lead, "dispositions"),
+        "critic": _verdicts((roles.get("rebuttal") or {}).get("output"), "responses"),
+    }
+    for role, verdicts in answers.items():
+        for f in ((roles.get(role) or {}).get("output") or {}).get("findings", []):
+            verdict = verdicts.get(f["id"], "unanswered")
+            if f["severity"] in MATERIAL and verdict != "accept":
+                items.append(f"{f['severity']} {role} finding {f['id']}: {verdict}")
+    items += [f"Lead left unresolved: {u}" for u in (lead or {}).get("unresolved", [])]
+    pm = (roles.get("pm") or {}).get("output")
+    if pm and pm["action"] != "forward":
+        items.append(f"PM asks to {pm['action']}: {pm['note']}")
+    return items
+
+
 def gate(run: Run, final: BaseModel, rule: policy.PolicyResultV1) -> dict[str, Any]:
     decision = getattr(final, "decision", rule.preferred)
     run.out["final"] = final.model_dump(mode="json")
     run.out["decision"] = decision.value
     run.out["code_rule"] = rule.model_dump(mode="json")
     run.out["agrees_with_code_rule"] = decision in rule.allowed
+    run.out["escalations"] = escalations(run.out, [d.value for d in rule.allowed])
     run.out["status"] = "awaiting_human"
     run.record(
         "human_gate",
@@ -170,6 +210,7 @@ def gate(run: Run, final: BaseModel, rule: policy.PolicyResultV1) -> dict[str, A
             "state": "awaiting_human",
             "decision": decision.value,
             "agrees_with_code_rule": decision in rule.allowed,
+            "escalations": run.out["escalations"],
         },
     )
     return run.finish()

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 import pytest
 from assess_fakes import ROOT, finding, package
@@ -60,7 +61,7 @@ def test_backed_finding_passes() -> None:
         ({"claim": "Haze is caused by the Kalimantan fires."}, "forbidden causal"),
     ],
 )
-def test_forged_findings_fail(kw: dict, problem: str) -> None:
+def test_forged_findings_fail(kw: dict[str, Any], problem: str) -> None:
     evidence = kw.pop("evidence", ["b4.mae"])
     f = FindingV1.model_validate(finding("c1", "numeric_misstatement", evidence, **kw))
     assert any(problem in p for p in checks.finding_problems(f, package("a")))
@@ -113,7 +114,9 @@ def test_rule_critic_on_the_frozen_cases() -> None:
     assert unusable["usable"] == 0 and summary(scores)["cases"] == 24
 
 
-def _s(usable: int, detected: int, high: int, findings: int = 10, unsupported: int = 0) -> dict:
+def _s(
+    usable: int, detected: int, high: int, findings: int = 10, unsupported: int = 0
+) -> dict[str, Any]:
     return {
         "usable": usable,
         "faults_detected": detected,

@@ -172,3 +172,41 @@ is reported, with a proposal to remove it or call it only when needed.
   equal the `feeeef9` build; only the M5 version and package hash differ.
 - **Runs.** Arms F, H and HC on package E, after the main matrix. The answer key for E is in
   `config/assess/answer-keys.yaml`, written before the first run on E.
+
+### Amendment 3 (2026-11-04): owner role assignment and escalation to the human
+
+Written before the first council run. The owner set these role targets.
+
+| Role | Checkpoint |
+|---|---|
+| Product Manager | Muse Glimmer 30B |
+| Engineering Lead | Muse Glimmer 30B |
+| Data Specialist | Llama 3.2 3B Instruct |
+| ML Specialist | Qwen3 4B Instruct 2507 |
+| Scientific Critic (default, arm HC) | Muse Glimmer 30B, separate review role and prompt |
+| Alternative Meta critic (arm HC8) | Llama 3.1 8B Instruct, only after it passes all section 5 gates |
+| Numerical checks and enforcement | code |
+| Final adoption | human director |
+
+- **Independence.** A Muse critic runs on the Lead's checkpoint. It is a separate role, not an
+  independent model. `council_formed` records `critic_independent_checkpoint`. A report claims
+  an independent-model critique only for a run where that field is true.
+- **Alternative critic.** Llama 3.1 8B runs as critic only if it passes all four section 5
+  gates (V1 or V2 contract) on the same 24 cases as Muse. Membership in the Meta family is not
+  a reason to pick a critic. All earlier critic results stay in the record and are counted,
+  including the Llama and Qwen critics with zero detections and the M4 Qwen failures.
+- **This replaces the section 5 rule for arm HC.** The section 5 gates still apply and are
+  reported for every critic, Muse included. A Muse critic that fails a gate stays the default,
+  and the report says that it failed.
+- **Authority.** The critic raises findings with evidence ids. The Lead answers each one. Code
+  checks numbers and mandatory constraints. No model approves an experiment, changes a number,
+  skips a provenance check or overrides the human.
+- **Escalation.** At the human gate, code lists unresolved material issues
+  (`escalations` in `result.json` and the `human_gate` record): a failed role; a decision
+  outside the code rule; a failed Lead or rebuttal plan check; a medium or high finding that the
+  Lead did not accept; items the Lead marks unresolved; a PM action other than forward. The list
+  does not change the decision. The human gate stays mandatory.
+- **Order of runs.** Main matrix (F, S, H, HC, T on A to D), HC8 if it passes, package E
+  (F, H, HC, and HC8 if it passes), repeat, stochastic.
+- **Out of scope.** Dynamic routing is deferred. It will be tested later, on its own, against
+  fixed routing and a simple cost-aware rule router.

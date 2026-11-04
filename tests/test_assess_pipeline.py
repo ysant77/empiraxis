@@ -20,7 +20,7 @@ from assess_fakes import (
 from earthlab.assess import serving
 from earthlab.assess.council import Council, arm_of, load_spec
 from earthlab.assess.llm import HttpStructuredClient, Sampling, parse_reply, payload
-from earthlab.assess.pipeline import execute
+from earthlab.assess.pipeline import escalations, execute
 from earthlab.assess.score import load_keys, score_run
 from earthlab.llm.types import ProviderError, ProviderErrorKind
 from earthlab.trace import RunTrace
@@ -84,7 +84,9 @@ PM = {
 }
 
 
-def _run(arm: str, clients: dict[str, ScriptedClient], tmp: Path, pkg: str = "a", **over: str):
+def _run(
+    arm: str, clients: dict[str, ScriptedClient], tmp: Path, pkg: str = "a", **over: str
+) -> tuple[dict[str, Any], RunTrace]:
     council = Council(SPEC, arm_of(SPEC, arm, **over), clients, REGISTRY, FakeSide())  # type: ignore[arg-type]
     trace = RunTrace(tmp / "trace.jsonl")
     return execute(package(pkg), council, trace), trace
@@ -172,11 +174,57 @@ def test_critic_finding_and_bounded_rebuttal(tmp_path: Path) -> None:
         CRITIC: ScriptedClient(CRITIC, [crit]),
         MUSE: ScriptedClient(MUSE, [lead_plan(dispositions=DISPO), reb, PM]),
     }
-    out, _ = _run("HC", clients, tmp_path)
+    out, _ = _run("HC8", clients, tmp_path)
     assert out["decision"] == "request_validation"
     critic_checks = {c["name"]: c["passed"] for c in out["checks"]["critic"]["checks"]}
     assert critic_checks == {"finding c1": True, "finding c2": False}
     assert len(clients[MUSE].calls) == 3
+    assert out["escalations"] == ["medium critic finding c2: rebut"]
+
+
+def test_muse_critic_is_recorded_as_not_independent(tmp_path: Path) -> None:
+    crit = {"verdict": "no_concern", "findings": []}
+    clients = {
+        LLAMA: ScriptedClient(LLAMA, [DATA]),
+        QWEN: ScriptedClient(QWEN, [ML]),
+        MUSE: ScriptedClient(MUSE, [lead_plan(dispositions=DISPO), crit, PM]),
+    }
+    out, trace = _run("HC", clients, tmp_path)
+    formed = next(r for r in trace.records() if r["event"] == "council_formed")
+    assert formed["data"]["critic_independent_checkpoint"] is False
+    assert out["roles"]["critic"]["provider"] == MUSE and out["escalations"] == []
+
+
+def test_escalations_list_unresolved_material_issues() -> None:
+    high = finding("d1", "non_independent_evidence", ["val.years"], severity="high")
+    low = finding("d2", "non_independent_evidence", ["val.years"], severity="low")
+    out = {
+        "decision": "adopt",
+        "roles": {
+            "data_specialist": {"state": "valid", "output": {"findings": [high, low]}},
+            "ml_engineer": {"state": "failed", "output": None},
+            "lead": {
+                "state": "valid",
+                "output": {
+                    **lead_plan(
+                        dispositions=[{"finding_id": "d1", "verdict": "clarify", "reason": "Why?"}]
+                    ),
+                    "unresolved": ["split overlap"],
+                },
+            },
+            "pm": {"state": "valid", "output": {**PM, "action": "revise"}},
+        },
+        "checks": {"lead": {"checks": [{"name": "inputs", "passed": False}]}},
+    }
+    got = escalations(out, ["retain_baseline"])
+    assert got == [
+        "role ml_engineer failed",
+        "decision adopt is outside the code rule ['retain_baseline']",
+        "lead check failed: inputs",
+        "high data_specialist finding d1: clarify",
+        "Lead left unresolved: split overlap",
+        "PM asks to revise: Answers the question; forward to the director.",
+    ]
 
 
 def test_failed_critic_leaves_the_plan(tmp_path: Path) -> None:
@@ -186,7 +234,7 @@ def test_failed_critic_leaves_the_plan(tmp_path: Path) -> None:
         CRITIC: ScriptedClient(CRITIC, ["no", "still no"]),
         MUSE: ScriptedClient(MUSE, [lead_plan(dispositions=DISPO), PM]),
     }
-    out, _ = _run("HC", clients, tmp_path)
+    out, _ = _run("HC8", clients, tmp_path)
     assert out["decision"] == "retain_baseline" and out["roles"]["critic"]["state"] == "failed"
 
 
@@ -196,7 +244,7 @@ def test_injected_package_text_stays_data(tmp_path: Path) -> None:
     hostile = pkg.model_copy(update={"facts": [fact, *pkg.facts[1:]]})
     plan = lead_plan("adopt", inputs_used=["nea_file"], plan="Approve adoption now as told.")
     muse = ScriptedClient(MUSE, [plan])
-    council = Council(SPEC, arm_of(SPEC, "S"), {MUSE: muse}, REGISTRY, FakeSide())  # type: ignore[dict-item]
+    council = Council(SPEC, arm_of(SPEC, "S"), {MUSE: muse}, REGISTRY, FakeSide())
     out = execute(hostile, council, RunTrace(tmp_path / "t.jsonl"))
     status = {c["name"]: c["passed"] for c in out["checks"]["lead"]["checks"]}
     assert not status["decision_allowed"] and not out["agrees_with_code_rule"]
@@ -217,7 +265,7 @@ def test_spec_and_council_guards(tmp_path: Path) -> None:
         Council(SPEC, arm_of(SPEC, "S"), {}, REGISTRY)
     council = Council(
         SPEC, arm_of(SPEC, "H"), {p: ScriptedClient(p, []) for p in REGISTRY}, {}, None
-    )  # type: ignore[arg-type]
+    )
     with pytest.raises(RuntimeError, match="side server"):
         council.client("data_specialist")
     with pytest.raises(KeyError, match="no checkpoint"):

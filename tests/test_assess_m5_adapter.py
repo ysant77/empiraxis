@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from typing import Any
 
 import pytest
 
@@ -22,7 +23,7 @@ STAGE_T = json.dumps(
 PATH = "docs/m5/results/m5_ladder_stage_t.json"
 
 
-def _m5(digest: str) -> dict:
+def _m5(digest: str) -> dict[str, Any]:
     rules = [
         ("nea_pm25", "issue_time_valid", 2.0),
         ("imerg_final", "issue_time_valid", 2556.0),
