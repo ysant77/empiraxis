@@ -13,7 +13,7 @@ runs a small issue-time ladder on real data, and records what is not usable.
 - Daily association test (Experiment A) with a circular-shift null.
 - Layer catalogue for a viewer, with explicit state and reason for each layer.
 - Frozen protocols `m5-protocol-b-1` (M5-B) and `m5-protocol-c-1` (M5-C), with a hash check and an append-only amendments file.
-- Event-rate count, M5-B and M5-C runners, and an immutable evidence package (`m5-evidence-2`) for M4.
+- Event-rate count, M5-B and M5-C runners, and a versioned evidence package for M4 (current: `m5-evidence-4`).
 
 ## Findings
 
