@@ -44,6 +44,14 @@ runs a small issue-time ladder on real data, and records what is not usable.
 - Status: BLOCKED. The protocol is frozen, and the runner and tests are in this PR. The run needs ERA5 for 2017 to 2019.
   The Copernicus queue had not delivered those files at push time. No M5-B number exists.
 
+## Owner review corrections (2026-11-04)
+
+- Strict JSON: `m5_c_v1.json` (nine NaN tokens) is unchanged. `m5_c_v1.strict_v1.json` is the valid-JSON export with null and a reason for each missing value.
+  All M5 writers reject NaN and Infinity. A test parses every published `docs/m5` and `config/m5` JSON file strictly.
+- Coverage-aware event labels (Amendment C4): a negative needs complete window coverage. No saved 2015 to 2019 score changes (rerun: 0 differences).
+- Evidence package `m5-evidence-3` (new version). `m5-evidence-2` at commit `458f297` is untouched.
+- Limits: latencies are nominal, 2019 is a reused test season, no causal attribution.
+
 ## Not in this PR
 
 Raw data (kept outside Git), the sealed NEA period, M3 evidence, a viewer, a neural model, IMERG beyond 2015, a MAIAC reader.

@@ -191,6 +191,19 @@ Headline: the skill comes from the PM2.5 lags. A FIRMS increment is not supporte
 Reading: for this one held-out episode, a lag-based model with Platt calibration and abstention predicts the event much better than the training base rate and better than 0/1 persistence.
 FIRMS adds little. The frozen rule gives `useful_signal` for C3 but the label does not survive two sensitivity checks. Claim no operational forecast.
 
+### 2d. Corrections after owner review of PR 118 (2026-11-04)
+
+- **Strict JSON.** `m5_c_v1.json` holds nine literal `NaN` tokens. They are the abstention rates of three rungs that had no issue outside
+  the band (coverage 0). The file stays byte-identical (SHA-256 `7ec0a05e...`). The standard-compliant export is `m5_c_v1.strict_v1.json`:
+  same numbers, `null` for each missing value, and a `missing_value_reasons` list with the path and reason of all nine. Every M5 writer now
+  rejects NaN and Infinity (`src/earthlab/m5/strict_json.py`). A test parses every published `docs/m5` and `config/m5` JSON file with a strict parser.
+- **Coverage-aware labels (Amendment C4).** The old rule scored an issue when one hour of its window was observed. That can create a false
+  negative. The new rule keeps a positive if one exceedance is observed, and keeps a negative only if every region is observed in all 12 hours.
+  Result: all 1,386 issues in each of 2015 to 2019 have complete windows, so no label changes. A full M5-C rerun with the new code matches the
+  primary record in every number (0 differences). The event-rate file is also unchanged. No versioned recomputation of the scores is needed.
+- **Wording limits.** The latencies in this report are nominal catalogue values. They do not show issue-time-valid forecasting. The 2019 season is the
+  test season of both the T+6 ladder (Stage T) and M5-C. It was reused and was not an independent test of generalisation. No result here is causal source attribution.
+
 ## 3. Experiment A: retrospective association (hindsight allowed)
 
 Daily Singapore mean PM2.5 against lagged FIRMS counts (boxes A, B, C and sum), ERA5 850 hPa wind component toward

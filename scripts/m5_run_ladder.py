@@ -7,7 +7,6 @@ NEA labels from 2024 on are removed on load. The record carries every input dige
 
 from __future__ import annotations
 
-import json
 import sys
 import time
 from datetime import UTC, datetime
@@ -18,6 +17,7 @@ import numpy as np
 
 from earthlab.digest import file_digest
 from earthlab.m5 import ladder as L
+from earthlab.m5 import strict_json as sj
 from earthlab.m5.ladder_data import Season, build_season, load_open_grid
 
 NEA = Path("data/nea/Historical1hrPM2.5.csv")
@@ -62,7 +62,7 @@ def main() -> int:
                                     for k, v in paired.items()}  # fmt: skip
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / f"m5_ladder_stage_{stage}.json").write_text(
-        json.dumps(
+        sj.dumps(
             record,
             indent=2,
             sort_keys=True,
@@ -71,7 +71,7 @@ def main() -> int:
         + "\n"
     )
     print(
-        json.dumps(
+        sj.dumps(
             {k: record[k] for k in record if k.isdigit()}, indent=1, sort_keys=True, default=str
         )[:6000]
     )

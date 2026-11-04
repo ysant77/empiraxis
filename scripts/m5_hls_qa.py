@@ -6,7 +6,6 @@ Output: docs/m5/qa/hls_qa.json
 
 from __future__ import annotations
 
-import json
 import sys
 from pathlib import Path
 from typing import Any
@@ -16,6 +15,7 @@ import numpy as np
 from earthlab.cases.models import BoundingBox
 from earthlab.data.mcd64a1 import load_month
 from earthlab.m5 import masks
+from earthlab.m5 import strict_json as sj
 from earthlab.m5.contrast import burn_contrast
 from earthlab.m5.hls import FMASK_FILL, read_fmask, read_reflectance
 from earthlab.science.burned_area import classify
@@ -77,8 +77,8 @@ def main() -> int:
         "Provider cloud_cover does not measure smoke haze; Fmask is used here.",
     ]
     dest = Path("docs/m5/qa/hls_qa.json")
-    dest.write_text(json.dumps(out, indent=1, sort_keys=True) + "\n", encoding="utf-8")
-    print(json.dumps(out, indent=1, sort_keys=True))
+    dest.write_text(sj.dumps(out, indent=1, sort_keys=True) + "\n", encoding="utf-8")
+    print(sj.dumps(out, indent=1, sort_keys=True))
     return 0
 
 

@@ -6,11 +6,11 @@ Output: docs/m5/results/m5_event_rates.json
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 import numpy as np
 
+from earthlab.m5 import strict_json as sj
 from earthlab.m5.ladder import HIGH
 from earthlab.m5.ladder_data import load_open_grid, season_rows
 
@@ -41,8 +41,8 @@ def main() -> int:
         "threshold_ugm3": HIGH,
         "years": {str(y): season_counts(grid.values, y) for y in YEARS},
     }
-    Path("docs/m5/results/m5_event_rates.json").write_text(json.dumps(out, indent=2) + "\n")
-    print(json.dumps(out, indent=1))
+    Path("docs/m5/results/m5_event_rates.json").write_text(sj.dumps(out, indent=2) + "\n")
+    print(sj.dumps(out, indent=1))
     return 0
 
 

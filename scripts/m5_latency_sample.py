@@ -14,6 +14,8 @@ import urllib.request
 from datetime import UTC, datetime
 from pathlib import Path
 
+from earthlab.m5 import strict_json as sj
+
 CMR = "https://cmr.earthdata.nasa.gov/search/granules.umm_json"
 RUNS = {"imerg_early": "GPM_3IMERGHHE", "imerg_late": "GPM_3IMERGHHL"}
 
@@ -51,8 +53,8 @@ def main() -> int:
             "MODIS_SP is standard processing. The +3 h rule is an NRT assumption. Not measured."
         ),
     }
-    Path("docs/m5/results/m5_latency_sample.json").write_text(json.dumps(record, indent=2) + "\n")
-    print(json.dumps(record, indent=1))
+    Path("docs/m5/results/m5_latency_sample.json").write_text(sj.dumps(record, indent=2) + "\n")
+    print(sj.dumps(record, indent=1))
     return 0
 
 

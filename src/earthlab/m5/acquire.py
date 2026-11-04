@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from earthlab.m5 import fetch
+from earthlab.m5 import strict_json as sj
 from earthlab.m5.catalogue import CMR
 from earthlab.m5.contracts import AcquisitionReceipt, ProductPin
 
@@ -68,4 +69,4 @@ def write_receipts(receipts: list[AcquisitionReceipt], path: Path) -> None:
     """Write receipts as sorted, indented JSON. Local paths are made relative to the data root."""
     payload = [json.loads(r.model_dump_json()) for r in receipts]
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    path.write_text(sj.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")

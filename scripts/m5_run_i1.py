@@ -6,13 +6,13 @@ Output: docs/m5/results/m5_i1_stage_p_2015.json, or ..._latency<H>h.json for a l
 
 from __future__ import annotations
 
-import json
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
 from earthlab.digest import file_digest
 from earthlab.m5 import imerg_series as S
+from earthlab.m5 import strict_json as sj
 from earthlab.m5.ladder_data import build_season, load_open_grid
 from earthlab.m5.ladder_i1 import rain_matrix, stage_p_i1
 
@@ -32,10 +32,8 @@ def main() -> int:
     out["inputs"] = {"imerg_early_corridors.csv": file_digest(csv_path)}
     tag = "" if latency == 4.0 else f"_latency{latency:g}h"
     dest = Path(f"docs/m5/results/m5_i1_stage_p_2015{tag}.json")
-    dest.write_text(json.dumps(out, indent=2, sort_keys=True, default=float) + "\n")
-    print(
-        json.dumps({k: out[k] for k in ("scored_rows", "mae", "paired")}, indent=1, default=float)
-    )
+    dest.write_text(sj.dumps(out, indent=2, sort_keys=True, default=float) + "\n")
+    print(sj.dumps({k: out[k] for k in ("scored_rows", "mae", "paired")}, indent=1, default=float))
     return 0
 
 

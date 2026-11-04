@@ -16,6 +16,7 @@ import numpy as np
 
 from earthlab.haze.geometry import H1_SOURCE_BOXES, corridor
 from earthlab.m5 import imerg
+from earthlab.m5 import strict_json as sj
 from earthlab.m5.rain_compare import compare, imerg_hour_ending, lag_profile
 
 
@@ -52,8 +53,8 @@ def main() -> int:
         out[src.box_id] = compare(a, b)
         out[src.box_id]["lag_profile_era5_shift_hours"] = lag_profile(era, ends, b)  # type: ignore[index]
     dest = Path(f"docs/m5/qa/rain_compare_{run}.json")
-    dest.write_text(json.dumps(out, indent=1, sort_keys=True) + "\n", encoding="utf-8")
-    print(json.dumps(out, indent=1, sort_keys=True))
+    dest.write_text(sj.dumps(out, indent=1, sort_keys=True) + "\n", encoding="utf-8")
+    print(sj.dumps(out, indent=1, sort_keys=True))
     return 0
 
 

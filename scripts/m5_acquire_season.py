@@ -10,7 +10,6 @@ commands read it unchanged.
 
 from __future__ import annotations
 
-import json
 import os
 import sys
 from datetime import UTC, date, datetime
@@ -21,6 +20,7 @@ import httpx
 from earthlab.acquire import era5, firms
 from earthlab.cases.models import BoundingBox
 from earthlab.digest import file_digest
+from earthlab.m5 import strict_json as sj
 from earthlab.m5.acquire import AUTHORITY
 
 BOXES = {
@@ -83,7 +83,7 @@ def main() -> int:
         fetch_era5(root, year, receipts)
     out = Path(sys.argv[1]).expanduser() / "receipts" / f"season_{year}{_suffix(sys.argv[3:])}.json"
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps({"authority": AUTHORITY, "files": receipts}, indent=2) + "\n")
+    out.write_text(sj.dumps({"authority": AUTHORITY, "files": receipts}, indent=2) + "\n")
     return 0
 
 

@@ -6,7 +6,6 @@ Needs FIRMS and ERA5 extracts for 2015 to 2019. A season with missing inputs sto
 
 from __future__ import annotations
 
-import json
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
@@ -16,6 +15,7 @@ import numpy as np
 
 from earthlab.haze import ablation_features as F
 from earthlab.m5 import assoc_data as D
+from earthlab.m5 import strict_json as sj
 from earthlab.m5 import transport_b as T
 from earthlab.m5.assoc import holm
 from earthlab.m5.ladder_data import load_open_grid
@@ -91,8 +91,10 @@ def main() -> int:
     record = {"protocol_id": "m5-protocol-b-1", "seasons": list(YEARS), "draws": DRAWS,
               "resamples": RESAMPLES, "tests": results,
               "computed_at_utc": datetime.now(UTC).isoformat(timespec="seconds")}  # fmt: skip
+    clean, missing = sj.sanitize(record)
+    clean["missing_value_reasons"] = missing
     Path("docs/m5/results/m5_b_v1.json").write_text(
-        json.dumps(record, indent=1, sort_keys=True, default=float) + "\n"
+        sj.dumps(clean, indent=1, sort_keys=True) + "\n"
     )
     for b, r in results.items():
         print(b, round(r["rho"], 3), r["ci"], "p", r["p_shift"], "holm", r["p_holm"], r["label"])

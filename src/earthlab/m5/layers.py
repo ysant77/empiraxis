@@ -18,6 +18,7 @@ from typing import Literal
 from pydantic import Field
 
 from earthlab.contracts import Strict
+from earthlab.m5 import strict_json as sj
 
 State = Literal["available", "gated_out", "blocked", "not_assessed"]
 Kind = Literal["points", "vector_series", "grid_series", "raster", "series"]
@@ -86,5 +87,5 @@ def read_wind_vector(extract: Path, box_id: str, when: datetime) -> tuple[float,
 
 
 def catalogue_json(layers: list[LayerSpec]) -> str:
-    return json.dumps([json.loads(layer.model_dump_json()) for layer in layers], indent=2,
+    return sj.dumps([json.loads(layer.model_dump_json()) for layer in layers], indent=2,
                       sort_keys=True) + "\n"  # fmt: skip

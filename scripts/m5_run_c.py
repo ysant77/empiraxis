@@ -8,7 +8,6 @@ and leaves m5_c_v1.json unchanged.
 
 from __future__ import annotations
 
-import json
 import sys
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -19,6 +18,7 @@ from sklearn.ensemble import HistGradientBoostingClassifier
 
 from earthlab.haze import ablation_features as F
 from earthlab.m5 import event_c as E
+from earthlab.m5 import strict_json as sj
 from earthlab.m5.ladder import TREE
 from earthlab.m5.ladder_data import load_open_grid
 
@@ -92,6 +92,10 @@ def blocks(grid: Any, data: Path, haze: Path, years: tuple[int, ...]) -> dict[in
     return {y: E.build_block(grid, y, firms_dir(data, haze, y)) for y in years}
 
 
+REASONS = {k: "no issue outside the abstention band (coverage 0): rate undefined"
+           for k in ("error_rate", "random_error_rate", "calibration_gap")}  # fmt: skip
+
+
 def rank_within(block: E.Block) -> E.Block:
     order = block.fire.argsort(axis=0).argsort(axis=0) / max(len(block.fire) - 1, 1)
     return E.Block(block.year, block.lags, order, block.y, block.weeks, block.days)
@@ -117,9 +121,9 @@ def main() -> int:
         rows = {"status": "exploratory_post_hoc_amendment_C3", "primary_run_commit": "a7a3c14",
                 "bands": post_hoc_bands(train, test)}  # fmt: skip
         Path("docs/m5/results/m5_c_v1_post_hoc_bands.json").write_text(
-            json.dumps(rows, indent=1) + "\n"
+            sj.dumps(rows, indent=1) + "\n"
         )
-        print(json.dumps(rows, indent=1))
+        print(sj.dumps(rows, indent=1))
         return 0
     record: dict[str, Any] = {"protocol_id": "m5-protocol-c-1", "main": evaluate(train, test)}
     F.FIRMS_DELAY = timedelta(hours=24)
@@ -131,8 +135,10 @@ def main() -> int:
     )
     record["control_lags_only_without_2015"] = evaluate([b[2016], b[2017]], test, False)
     record["computed_at_utc"] = datetime.now(UTC).isoformat(timespec="seconds")
+    clean, missing = sj.sanitize(record, REASONS)
+    clean["missing_value_reasons"] = missing
     Path("docs/m5/results/m5_c_v1.json").write_text(
-        json.dumps(record, indent=1, sort_keys=True, default=float) + "\n"
+        sj.dumps(clean, indent=1, sort_keys=True) + "\n"
     )
     for name in ("main", "sensitivity_firms_delay_24h", "diagnostic_season_rank_hindsight",
                  "control_lags_only_without_2015"):  # fmt: skip

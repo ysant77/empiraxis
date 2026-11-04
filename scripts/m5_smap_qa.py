@@ -6,12 +6,12 @@ Output: docs/m5/qa/smap_qa.json. Reads local files only.
 
 from __future__ import annotations
 
-import json
 import re
 import sys
 from pathlib import Path
 
 from earthlab.cases.models import BoundingBox
+from earthlab.m5 import strict_json as sj
 from earthlab.m5.smap import granule_stats
 
 BOXES = {
@@ -32,7 +32,7 @@ def main() -> int:
                              for name, box in BOXES.items()}  # fmt: skip
     dest = Path("docs/m5/qa/smap_qa.json")
     dest.parent.mkdir(parents=True, exist_ok=True)
-    dest.write_text(json.dumps(out, indent=1, sort_keys=True) + "\n", encoding="utf-8")
+    dest.write_text(sj.dumps(out, indent=1, sort_keys=True) + "\n", encoding="utf-8")
     print(f"{len(out)} granules")
     return 0
 

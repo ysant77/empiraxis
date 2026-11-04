@@ -7,7 +7,6 @@ scripts/m5_era5_extract.py). Output: docs/m5/results/m5_assoc_v1.json
 
 from __future__ import annotations
 
-import json
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
@@ -19,6 +18,7 @@ import yaml
 from earthlab.haze import ablation_features as F
 from earthlab.m5 import assoc
 from earthlab.m5 import assoc_data as D
+from earthlab.m5 import strict_json as sj
 from earthlab.m5.ladder_data import load_open_grid
 
 CFG = yaml.safe_load(Path("config/m5/protocol-v1.yaml").read_text())["experiment_a"]
@@ -76,7 +76,7 @@ def main() -> int:
         else:
             record[str(year)] = {"status": "BLOCKED_missing_inputs"}
     out = Path("docs/m5/results/m5_assoc_v1.json")
-    out.write_text(json.dumps(record, indent=1, sort_keys=True, default=float) + "\n")
+    out.write_text(sj.dumps(record, indent=1, sort_keys=True, default=float) + "\n")
     for year in CFG["seasons"]:
         tests = record[str(year)].get("tests", {})
         sup = [k for k, v in tests.items() if v["label"] == "supported_association"]

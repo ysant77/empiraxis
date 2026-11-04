@@ -8,13 +8,13 @@ Raw GRIB files stay outside Git.
 
 from __future__ import annotations
 
-import json
 import sys
 from pathlib import Path
 
 from earthlab.digest import file_digest
 from earthlab.haze.cli import build_extract
 from earthlab.haze.grib import load_decoder
+from earthlab.m5 import strict_json as sj
 
 LEVELS = (("sl", "10m", "extract_10m.json"), ("pl", "850hPa", "extract_850hpa.json"))
 
@@ -25,7 +25,7 @@ def write_manifest(folder: Path, kind: str, year: int) -> Path:
         raise SystemExit(f"no era5_{kind}_{year}_*.grib in {folder}")
     entries = [{"file": f.name, "sha256": file_digest(f), "bytes": f.stat().st_size} for f in files]
     path = folder / f"era5-{kind}-season-{year}.manifest.json"
-    path.write_text(json.dumps({"asset_id": f"era5-{kind}-season-{year}", "files": entries}))
+    path.write_text(sj.dumps({"asset_id": f"era5-{kind}-season-{year}", "files": entries}))
     return path
 
 
@@ -36,7 +36,7 @@ def main(root: Path, year: int) -> None:
         manifest = write_manifest(folder, kind, year)
         series = build_extract(manifest, level, decoder)
         out = root / "season" / str(year) / name
-        out.write_text(json.dumps({"series": [s.model_dump(mode="json") for s in series]}))
+        out.write_text(sj.dumps({"series": [s.model_dump(mode="json") for s in series]}))
         print(f"{level}: {len(series)} boxes -> {out}")
 
 

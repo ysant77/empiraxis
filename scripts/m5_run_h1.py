@@ -6,13 +6,13 @@ Output: docs/m5/results/m5_h1_stage_p.json
 
 from __future__ import annotations
 
-import json
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
 from earthlab.digest import file_digest
 from earthlab.haze import ablation_features as F
+from earthlab.m5 import strict_json as sj
 from earthlab.m5.ladder_data import build_season, load_open_grid
 from earthlab.m5.ladder_h1 import stage_p_h1
 
@@ -34,7 +34,7 @@ def main() -> int:
     out["inputs"] = inputs
     out["computed_at_utc"] = datetime.now(UTC).isoformat(timespec="seconds")
     dest = Path("docs/m5/results/m5_h1_stage_p.json")
-    dest.write_text(json.dumps(out, indent=2, sort_keys=True, default=float) + "\n")
+    dest.write_text(sj.dumps(out, indent=2, sort_keys=True, default=float) + "\n")
     for year in ("2015", "2016"):
         r = out[year]
         print(year, r["scored_rows"], r["mae"], r["paired"])  # type: ignore[index]
