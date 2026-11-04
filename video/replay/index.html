@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>Empiraxis Mission Control</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://unpkg.com/maplibre-gl@5.6.1/dist/maplibre-gl.css" rel="stylesheet">
+<script src="https://unpkg.com/maplibre-gl@5.6.1/dist/maplibre-gl.js"></script>
+<script src="data.js"></script><script src="timeline.js"></script>
+<link rel="stylesheet" href="style.css">
+</head><body>
+<div id="stage">
+  <div id="map"></div>
+  <div id="mapshade"></div>
+  <div id="hudgrid"></div>
+
+  <!-- EARTH overlays -->
+  <div class="layer" id="L-earth">
+    <div class="maplabel" id="lbl-a">STUDY BOX A · Sumatra</div>
+    <div class="maplabel" id="lbl-b">STUDY BOX B · Sumatra</div>
+    <div class="maplabel" id="lbl-c">STUDY BOX C · Kalimantan</div>
+    <div class="maplabel sg" id="lbl-sg">SINGAPORE · 5 NEA regions</div>
+    <div class="legend" id="legend">
+      <div><i style="background:#ff9a3c"></i>NASA FIRMS MODIS fire detections · 25 Aug – 31 Oct 2015 · <b id="firms-n"></b> in 3 study boxes</div>
+      <div><i style="background:none;border:2px solid #f5b942"></i>Study boxes used in the 2015 analysis (FIRMS manifests)</div>
+      <div><i style="background:#5eead4"></i>NEA PM2.5 regions (published station coordinates)</div>
+      <div class="fine">Basemap: NASA Blue Marble (modern composite, not 2015 imagery) · context only, not smoke-source attribution</div>
+    </div>
+    <div class="peak" id="peak"><div class="pk-n">471 <span>µg/m³</span></div><div class="pk-d">hourly PM2.5 · 19 Oct 2015 · highest of 5 NEA regions</div></div>
+  </div>
+
+  <!-- QUESTION over the globe -->
+  <div class="layer" id="L-question"><div class="chal" id="chal"><div class="ph">SCIENTIFIC CHALLENGE</div>
+    <div class="cq">Can <b>wind</b>, <b>rainfall</b> and <em>regional fires</em> help us understand and predict Singapore's haze episodes?</div></div></div>
+
+  <!-- 2015 ABLATION: real, completed, deterministic -->
+  <div class="layer" id="L-ablation"><div class="panel" id="abl">
+    <div class="ph">2015 HAZE STUDY · T+6 h PM2.5 · MAE µg/m³ · LOWER IS BETTER <span class="badge green" style="margin-left:12px">REAL RESULT · COMPLETED</span></div>
+    <div id="abars"></div>
+    <div class="anote" id="anote">5,195 region-hours · 18 Sep – 31 Oct 2015 · deterministic study, no AI model · ERA5 is reanalysis made later: association, not issue-time skill · separate from the experiment that follows</div></div></div>
+
+  <!-- PROBLEM kinetic type -->
+  <div class="layer" id="L-problem"><div class="kt" id="kt0">What if more data makes it <em class="r">worse?</em></div>
+    <div class="kt" id="kt1">Training a model takes <em>minutes.</em></div><div class="kt" id="kt2">Knowing whether to trust it takes <em>evidence.</em></div></div>
+
+  <!-- PRODUCT -->
+  <div class="layer" id="L-product"><div id="logo"></div><div id="logo-sub">EVIDENCE BEFORE COMPLEXITY</div></div>
+
+  <!-- MISSION CONTROL chrome (council + evidence) -->
+  <div class="layer" id="L-mc">
+    <div id="topbar"><div class="brand">EMPIRAXIS <span>MISSION CONTROL</span></div>
+      <div class="runinfo">RUN 20261103T061204Z-829fed · RELEASE 4e4a4f1 · <b>RECORDED REPLAY · NOT LIVE</b></div></div>
+    <div id="stepper"></div>
+  </div>
+
+  <!-- COUNCIL -->
+  <div class="layer" id="L-council">
+    <div class="panel" id="q-card"><div class="ph">QUESTION · FROM A PERSON</div>
+      <div class="qtext">Does a compact neural model gain enough over a tuned ridge to justify its cost, for regional PM2.5 six hours ahead?</div>
+      <div class="qmeta">NEA hourly PM2.5 · 5 regions · 109,584 rows · 2014–2023</div></div>
+    <div class="panel" id="m-card"><div class="ph">MODEL</div>
+      <div class="mname">Meta Muse Glimmer 30B</div><div class="qmeta">Q4_K_M GGUF · llama.cpp · runs locally</div>
+      <div class="mstats"><div><b id="st-calls">0</b><span>model calls</span></div><div><b id="st-tok">0</b><span>tokens</span></div></div></div>
+    <svg id="wires" width="1920" height="1080"></svg>
+    <div id="roles-label">FOUR ROLES · ONE LOCAL MODEL <span>— not four independent models</span></div>
+    <div id="roles"></div>
+    <div class="col" id="codecol">
+      <div class="cnode" id="cn-gate"><div class="ct">CODE GATE</div><div class="cd">trusted controller · typed checks</div><div class="cc"><span class="ok" id="gate-ok">0 valid</span><span class="bad" id="gate-bad">0 refused</span></div></div>
+      <div class="cnode" id="cn-tools"><div class="ct">TRUSTED TOOLS</div><div class="cd">fixed, allow-listed code</div><div class="tl" id="tl-prep">prepare_data</div><div class="tl" id="tl-train">train_models</div></div>
+      <div class="cnode" id="cn-eval"><div class="ct">INDEPENDENT EVALUATOR</div><div class="cd">code · same rows · same metrics</div></div>
+      <div class="cnode" id="cn-human"><div class="ct">PERSON</div><div class="cd">signed approval</div><div class="pend" id="human-st">waiting</div></div>
+    </div>
+    <div class="pop" id="pop"></div>
+    <div id="feed"><div class="fh">TRACE · 52 RECORDS · HASH-CHAINED</div><div id="feedrows"></div></div>
+  </div>
+
+  <!-- TRAINING: recorded artifacts of run 829fed -->
+  <div class="layer" id="L-train">
+    <div class="panel" id="tr-cv"><div class="ph">RIDGE · ROLLING-ORIGIN CROSS-VALIDATION <span class="badge green">CODE EXECUTION</span></div><div id="cvrows"></div>
+      <div class="tn" id="cvnote">MAE µg/m³ at the selected penalty vs persistence, per yearly fold · train on all earlier hours, validate on the next year</div></div>
+    <div class="panel" id="tr-pen"><div class="ph">PENALTY SEARCH · MEAN FOLD MAE µg/m³ · trace #32</div><svg id="pensvg" width="800" height="230"></svg></div>
+    <div class="panel" id="tr-arch"><div class="ph">TCN · PROPOSED BY THE LEAD (trace #16) · TRAINED BY CODE</div>
+      <div class="arch"><div class="ab">INPUT<b>96 h window</b><small>log PM2.5</small></div><i></i><div class="ab hi">TCN<b>1 layer × 32</b><small>Huber loss</small></div><i></i><div class="ab">OUTPUT<b>PM2.5 · T+6 h</b><small>per region</small></div></div>
+      <div class="chips" id="tchips"></div></div>
+    <div class="panel" id="tr-loss"><div class="ph">TRAINING · HUBER LOSS (SCALED) PER EPOCH <span class="lg"><i style="background:#60a5fa"></i>train <i style="background:#f5b942"></i>validation</span></div><svg id="losssvg" width="830" height="300"></svg></div>
+    <div id="tr-ver"></div>
+  </div>
+
+  <!-- EVIDENCE -->
+  <div class="layer" id="L-evidence">
+    <div class="panel chart" id="ch-all"><div class="ph">MAE · ALL VALIDATION HOURS · µg/m³ <span class="badge amber">HISTORICAL VALIDATION 2019–2023 · REUSED YEARS</span></div><div id="bars-all"></div>
+      <div class="axis" id="ax-all"></div><div class="note" id="d-note">Lagged ridge vs TCN: <b>0.031 µg/m³</b> apart. The neural model did not win.</div></div>
+    <div class="panel chart" id="ch-55"><div class="ph">MAE · ELEVATED HOURS, ABOVE 55 µg/m³</div><div id="bars-55"></div>
+      <div class="note red" id="n55">Every learned model is worse than persistence here.</div></div>
+    <div class="tiles" id="vtiles">
+      <div class="tile"><span class="badge green">CODE EXECUTION</span><b>0.0</b><small>ridge reload difference</small></div>
+      <div class="tile"><span class="badge green">CODE EXECUTION</span><b>0.0</b><small>TCN reload difference · 43,818 rows · hash ✓</small></div>
+      <div class="tile"><span class="badge green">CODE EXECUTION</span><b>10,287</b><small>TCN parameters · 8 epochs · 180 s total training</small></div>
+      <div class="tile"><span class="badge amber">HISTORICAL VALIDATION</span><b>0.142</b><small>skill vs persistence · 95% [0.132, 0.151]</small></div>
+    </div>
+    <div class="panel" id="rec"><div class="ph"><span class="badge cyan">MODEL PROPOSAL</span> LEAD · recommend · trace #42</div>
+      <div class="rec-o">retain_baseline → <b>lagged ridge (B4)</b></div>
+      <div class="rec-q" id="rec-q"></div>
+      <div class="rec-f"><span class="badge green">CODE RULE: retain_baseline ✓ matches</span><span class="badge pend">HUMAN APPROVAL PENDING</span></div></div>
+  </div>
+
+  <!-- GATE: authentic UI capture -->
+  <div class="layer" id="L-gate"><div id="browser"><div id="bbar"><i></i><i></i><i></i><div id="burl">empiraxis · control room · replay mode</div></div>
+    <div id="vp"><img id="crimg" src="img/cr.png"><div id="crhl"></div></div></div>
+    <div class="lock" id="lock"><div class="lk">🔒</div><div>Approval needs the operator's signed key.<small>Replay mode cannot approve anything.</small></div></div></div>
+
+  <!-- DATA -->
+  <div class="layer" id="L-data"><div class="cnode big" id="api"><div class="ct">NEA OFFICIAL API</div><div class="cd">3 days requested by Muse (data role)<br>URLs built by code</div></div>
+    <div class="stamp" id="signed">SIGNED BY OWNER</div><div class="cd" id="limits">14,865 bytes · byte and time limits enforced per chunk</div>
+    <div id="grid"></div><div class="cnt" id="c-ok">333<small>OF 350 MATCH THE ARCHIVE</small></div><div class="cnt red" id="c-bad">17<small>DISAGREE · ALL 15 NOV 2023 · KEPT</small></div></div>
+
+  <!-- NO -->
+  <div class="layer" id="L-no">
+    <div class="ncard" id="nc0"><div class="h r">REJECT</div><div class="im" style="background-image:url(img/s2_dec.png)"></div><div class="c">Reused neural encoder lost to a persistence alarm. Baseline stays.</div></div>
+    <div class="ncard" id="nc1"><div class="h a">ABSTAIN</div><div class="im" style="background-image:url(img/s3_dec.png)"></div><div class="c">Wind and rain cannot name one fire source. No attribution.</div></div>
+    <div class="ncard" id="nc2"><div class="h b">REQUEST</div><div class="im" style="background-image:url(img/s4_dec.png)"></div><div class="c">Imagery does not cover the study area. Ask a person.</div></div></div>
+
+  <!-- PROOF -->
+  <div class="layer" id="L-proof"><div id="chain"></div><div class="okline" id="chainok">✓ 52 records · hash chain intact · replay needs no model and no key</div>
+    <div class="ph abs" id="pt">5 REAL PREDICTIONS · ISSUED 02:45 UTC · TARGET 08:00 UTC · SCORED AGAINST LATER NEA DATA · µg/m³</div><div id="prows"></div>
+    <div class="cd abs" id="plegend"><span style="color:#f5b942">●</span> predicted &nbsp; <span style="color:#5eead4">●</span> observed &nbsp; · MAE 7.2 · n = 5 · not evidence of forecast skill</div></div>
+
+  <!-- NEXT: proposed research, no results -->
+  <div class="layer" id="L-next"><div id="nx-h">PROPOSED RESEARCH · NOT YET RUN · NO RESULTS</div>
+    <div class="nq" id="nq0"><div class="nid">M5-A · FIRST</div><div class="nt">Do wind, rain, fire, satellite and soil-moisture data improve six-hour PM2.5 predictions beyond PM2.5 history, especially in severe haze?</div></div>
+    <div class="nq" id="nq1"><div class="nid">M5-B · LATER</div><div class="nt">Which upwind fire regions show transport conditions consistent with later PM2.5 rises? Suggestive evidence, not source attribution.</div></div>
+    <div class="nq" id="nq2"><div class="nid">M5-C · LATER</div><div class="nt">Can severe episodes be predicted 12–24 h ahead with issue-time inputs, calibrated uncertainty and abstention?</div></div>
+    <div id="nx-f">A null or negative result is an acceptable outcome. No causal attribution. No operational forecast.</div></div>
+
+  <!-- CLOSE + CREDITS -->
+  <div class="layer" id="L-close"><div id="logo2">Empi<span>raxis</span></div><div id="tagl"><span>Not more autonomy.</span> <b>Better evidence.</b></div></div>
+  <div class="layer" id="L-credits"><div id="cred">
+    <div class="ck">WHAT RAN</div>
+    <div class="row"><b>AI ROLES</b><span>Product manager · Engineering lead · Data specialist · ML specialist — one local model: <i>Meta Muse Glimmer 30B</i> (llama.cpp)</span></div>
+    <div class="row"><b>CODE</b><span>Trusted controller · fixed tools · independent evaluator · hash-chained trace · signed approvals</span></div>
+    <div class="row"><b>MODELS TRAINED</b><span>Lagged ridge · tuned ridge · TCN (this run) · GRU · frozen-GRU hybrid (earlier studies)</span></div>
+    <div class="row"><b>ALSO USED</b><span>Prithvi-EO-2.0 300M (NASA/IBM), one signed run · Llama Guard 3 8B (Meta), investigation mode</span></div>
+    <div class="row"><b>DATA</b><span>NEA PM2.5 · NASA FIRMS · ERA5 (2015 ablation, deterministic, no AI model) · NASA Blue Marble basemap</span></div>
+    <div class="row"><b>THIS FILM</b><span>Recorded replays and real artifacts, not live · music: Meta MusicGen (CC-BY-NC) · voice: Kokoro (local)</span></div>
+    <div class="gh">github.com/ysant77/empiraxis</div><div class="cd">Research prototype · not a forecast service, health advice or source attribution</div></div></div>
+
+  <!-- global -->
+  <div id="lower"><div id="kicker"></div><div id="headline"></div></div>
+  <div id="tag"></div>
+  <svg id="cursor" viewBox="0 0 24 24"><path d="M3 2l17 9-7 2-3 7z" fill="#fff" stroke="#000" stroke-width="1.2"/></svg>
+  <div class="vignette"></div>
+</div>
+<div id="controls"><button id="play">▶</button><input id="scrub" type="range" min="0" max="1000" value="0"><span id="clock">0:00</span><audio id="audio" src="audio/mix.m4a" preload="auto"></audio></div>
+<script src="app.js"></script>
+</body></html>
