@@ -36,11 +36,15 @@ class Block:
 
 
 def event_labels(values: np.ndarray, rows: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    """Event flag and a mask of issues whose window has at least one observed hour."""
+    """Event flag and a mask of scorable issues (coverage rule, Amendment C4).
+
+    A positive needs one observed exceedance. A negative needs every region observed in
+    every hour of the window; a partly observed window without an exceedance is excluded.
+    """
     win = np.stack([values[rows + h] for h in WINDOW])
-    scored = ~np.isnan(win).all(axis=(0, 2))
     flag = (np.nan_to_num(win, nan=0.0) > HIGH).any(axis=(0, 2))
-    return flag.astype(float), scored
+    complete = (~np.isnan(win)).all(axis=(0, 2))
+    return flag.astype(float), flag | complete
 
 
 def lag_matrix(values: np.ndarray, rows: np.ndarray) -> np.ndarray:

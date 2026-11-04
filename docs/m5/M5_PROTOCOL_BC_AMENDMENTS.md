@@ -47,3 +47,18 @@ The owner approved the post-hoc rows (relayed by the main session): "add the 0.1
 - The first version of Amendment C3 also put the rows into `m5_c_v1.json` (commit `81883e9`). This correction removes them from that file.
 - The rows now live only in `docs/m5/results/m5_c_v1_post_hoc_bands.json`, made with `scripts/m5_run_c.py ... post-hoc-bands`. The model, features, folds and seeds are the same.
 - The rows are outside the label decision and outside the headline.
+
+## Amendment C4 (2026-11-04): coverage-aware event labels, found in owner review of PR 118
+
+The frozen text says an issue is scored when at least one hour of its event window is observed. That rule can label a window
+"no event" when only part of the target was observed. The missing hours could hold the exceedance. This is a false-negative risk.
+
+- **New rule, in `event_labels()`.** A window with one observed exceedance is a positive. A negative needs every region observed
+  in every hour of the window (12 hours). A partly observed window without an observed exceedance is excluded from scoring.
+- **Test.** `tests/test_m5_event_c.py::test_partial_window_negative_is_excluded_but_observed_positive_is_kept`.
+- **Effect on saved results.** The rule was checked on all five seasons, 2015 to 2019. In each season all 1,386 issues have
+  complete windows, so no issue is excluded and no label changes. Events per season stay 1,173, 130, 104, 0 and 349.
+  Therefore no saved 2015 to 2019 score changes. A full M5-C rerun with the new code is compared with the primary file in the science report (section 2c).
+- **Evidence.** The primary result `m5_c_v1.json` and the post-hoc bands file stay unchanged. No versioned recomputation is needed,
+  because no number changes. The rule applies to every future run.
+- The text "Scored issues" in the Amendment C1 list above describes the earlier rule. Amendment C4 replaces it from now on.

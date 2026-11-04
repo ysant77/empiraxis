@@ -16,6 +16,17 @@ def test_event_labels_use_the_12_to_24_hour_window() -> None:
     assert not scored[0]
 
 
+def test_partial_window_negative_is_excluded_but_observed_positive_is_kept() -> None:
+    values = np.full((130, 5), 10.0)
+    values[40 + 13 : 40 + 25, 3] = np.nan  # one region missing for the whole window
+    values[60 + 13 : 60 + 25, 3] = np.nan
+    values[60 + 20, 1] = 80.0  # an observed exceedance in the same partial window
+    values[80 + 15, :] = np.nan  # one hour missing in every region
+    y, scored = E.event_labels(values, np.array([40, 60, 80, 20]))
+    assert scored.tolist() == [False, True, False, True]
+    assert y[1] == 1.0 and y[3] == 0.0
+
+
 def test_lag_matrix_has_max_and_mean_per_lag() -> None:
     values = np.arange(50 * 5, dtype=float).reshape(50, 5)
     m = E.lag_matrix(values, np.array([30]))
