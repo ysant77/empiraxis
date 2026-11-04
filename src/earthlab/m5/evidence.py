@@ -20,7 +20,13 @@ from earthlab.m5.availability import RULES
 
 PACKAGE_VERSION = "m5-evidence-1"
 RECEIPT_DIR = "docs/m5/receipts"
-RESULT_FILES = ("m5_ladder_stage_p", "m5_ladder_stage_t", "m5_i1_stage_p_2015", "m5_assoc_v1")
+RESULT_FILES = (
+    "m5_ladder_stage_p",
+    "m5_ladder_stage_t",
+    "m5_i1_stage_p_2015",
+    "m5_h1_stage_p",
+    "m5_assoc_v1",
+)
 
 
 class Frozen(Strict):

@@ -87,3 +87,22 @@ def test_stage_p_i1_runs_with_rain_features() -> None:
     out = stage_p_i1(s, rain)
     assert out["scored_rows"] > 0 and set(out["mae"]) == {"R0", "R1", "R2", "I1"}
     assert 0 < out["rain_features_missing_share"] < 0.05 and "I1_vs_R2" in out["paired"]
+
+
+def test_stage_p_h1_runs_with_era5_features() -> None:
+    from datetime import timedelta
+
+    from earthlab.haze import ablation_features as F
+    from earthlab.m5.ladder_h1 import stage_p_h1
+
+    s = season()
+    rng = np.random.default_rng(3)
+    start = F.utc_of(int(s.rows[0])) - timedelta(hours=12)
+    met = {}
+    for box in F.BOXES:
+        for level in F.LEVELS:
+            for part in ("u_ms", "v_ms"):
+                met[f"{box}/{level}/{part}"] = rng.normal(size=400)
+        met[f"{box}/10m/precip_mm"] = rng.random(400)
+    out = stage_p_h1(s, start, met)
+    assert set(out["mae"]) == {"R0", "R1", "R2", "H1"} and "H1_vs_R2" in out["paired"]

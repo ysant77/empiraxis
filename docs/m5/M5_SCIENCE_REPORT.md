@@ -27,7 +27,7 @@ Branch: `experiment/m5-multisource-environment`. No Meta model took part. All ru
 | Protocol v1 frozen, hash-checked | done |
 | 2015 baseline reproduction | done |
 | Experiment B, Stage P (2015, 2016) and Stage T (train 2015 to 2018, score 2019) | done for R0 to R3 |
-| Experiment B, rung H1 (ERA5, hindsight) for 2016 | not run; ERA5 2016 is now downloaded and extracted, but the H1 feature builder of the 2015 ablation is not yet adapted to 2016 |
+| Experiment B, rung H1 (ERA5, hindsight), Stage P 2015 and 2016 | done (Amendment 5); no gain (section 2b) |
 | Experiment B, rung I1 (IMERG Early), Stage P 2015 | done; no gain (see section 2a) |
 | Experiment B, rung R4 (neural) | not run; the gate in the protocol was not met |
 | Experiment A, FIRMS and ERA5 exposures 2015 and 2016 | done |
@@ -126,6 +126,25 @@ Stage P makes no skill claim, and this is one season and one model class. Do not
 It says only that these rain sums, added to a 24-lag ridge, gave no gain. This result is separate from the 2015 negative ablation (30.76, 32.10, 36.73, 41.75) and from M3 numbers.
 R0 and R1 equal the reproduced baseline values.
 
+### 2b. Rung H1: ERA5 hindsight diagnostic, Stage P (Amendment 5)
+
+ERA5 (10 m and 850 hPa wind, 10 m rain; 30 columns) added to the R2 ridge. Hindsight only: never an issue-time claim.
+Result file: `docs/m5/results/m5_h1_stage_p.json`. 5,195 scored rows per season.
+
+| Season | R0 | R1 | R2 | H1 |
+|---|---|---|---|---|
+| 2015 (haze) | 30.76 | 32.10 | 34.11 | 41.75 |
+| 2016 (clean) | 8.62 | 7.10 | 7.39 | 7.57 |
+
+| Pair | 2015 skill (95% interval) | 2016 skill (95% interval) |
+|---|---|---|
+| H1 vs R2 | -0.224 (-0.366, -0.102) | -0.024 (-0.092, 0.039) |
+| H1 vs R1 | -0.301 (-0.459, -0.167) | -0.066 (-0.137, -0.005) |
+
+Finding: ERA5 made the ridge worse in the haze season, and did not help in the clean season. The 2015 H1 value of 41.75 equals the
+published 2015 ablation figure for ERA5 plus FIRMS, so the new code agrees with the release code. This is one model class
+with 24 lags plus 39 extra columns; overfitting is a likely reason, and it was not tested. No skill claim.
+
 ## 3. Experiment A: retrospective association (hindsight allowed)
 
 Daily Singapore mean PM2.5 against lagged FIRMS counts (boxes A, B, C and sum), ERA5 850 hPa wind component toward
@@ -170,7 +189,7 @@ scenes are 80 to 100% cloudy by the provider's own value.
 ## 6. What is not known
 
 - Whether IMERG Early rain adds issue-time information in other seasons. Rung I1 ran on 2015 only (Stage P). Other seasons were not downloaded.
-- Whether ERA5 adds to the hindsight ridge (rung H1) in 2016. The data is ready. The feature builder needs an adapter.
+- Whether ERA5 helps a model other than a 24-lag ridge. H1 used one model class.
 - Whether the elevated-hour effect of FIRMS features repeats. One season shows it. A new protocol must test it with more haze seasons.
 - Whether HLS and MCD64A1 agree over the full box. Clear scenes cover too little of it.
 

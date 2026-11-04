@@ -41,3 +41,15 @@ to 31 October, 2,928 half-hour granules), not five. So I1 runs in Stage P for 20
 - **Model:** ridge per region on R2 inputs plus the 6 features, same penalty search and blocks as Stage P.
 - **Comparison:** I1 against R2, and I1 against R1. Decision labels follow the protocol; Stage P adds no claim.
 - **Raw files:** each granule is read once, reduced to the three corridor means, and deleted. The receipt keeps its SHA-256 and size.
+
+## Amendment 5 (2026-11-04): definition of rung H1 for 2015 and 2016, written before it is run
+
+ERA5 for 2016 is now extracted. Rung H1 runs in Stage P for both seasons. It is a hindsight diagnostic.
+It is never an issue-time claim, because ERA5 is a reanalysis made later.
+
+- **Features:** the ERA5 features of the 2015 ablation (`haze/ablation_features.met_features`): per box A, B, C, the 10 m and 850 hPa u and v
+  at T-1 h and their 6 h means, plus 10 m rain at T-1 h and its 6 h sum (30 columns).
+- **Model:** ridge per region on R2 inputs plus the ERA5 columns. Same penalty search, blocks and bootstrap as Stage P.
+- **Comparison:** H1 against R2, and H1 against R1.
+- **Reading:** 2015 is the haze season. 2016 is the clean season with 14 elevated hours, so its elevated results carry no weight.
+  No skill claim. The 2015 negative ablation stays a separate result.
