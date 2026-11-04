@@ -1,0 +1,56 @@
+{
+ "audit": "m5-c-onset-audit-1 (post hoc, exploratory)",
+ "season": 2019,
+ "scored_issues": 1386,
+ "events": 349,
+ "m5_episode_count_by_day": 1,
+ "by_state": {
+  "ongoing": {
+   "issues": 418,
+   "events": 279
+  },
+  "onset": {
+   "issues": 968,
+   "events": 70
+  },
+  "unclear": {
+   "issues": 0,
+   "events": 0
+  }
+ },
+ "base_rate": {
+  "ongoing": 0.6674641148325359,
+  "onset": 0.07231404958677685,
+  "unclear": null
+ },
+ "exceedance_episodes_in_season": [
+  {
+   "start": "2019-09-09 00:00",
+   "end": "2019-09-10 16:00",
+   "hours": 41
+  },
+  {
+   "start": "2019-09-12 10:00",
+   "end": "2019-09-19 05:00",
+   "hours": 164
+  },
+  {
+   "start": "2019-09-20 16:00",
+   "end": "2019-09-24 15:00",
+   "hours": 96
+  },
+  {
+   "start": "2019-09-26 17:00",
+   "end": "2019-09-26 17:00",
+   "hours": 1
+  },
+  {
+   "start": "2019-09-28 15:00",
+   "end": "2019-09-28 15:00",
+   "hours": 1
+  }
+ ],
+ "independent_onsets": 4,
+ "threshold_declared": 10,
+ "verdict": "insufficient independent onsets"
+}
