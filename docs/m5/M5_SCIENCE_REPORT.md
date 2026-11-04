@@ -126,6 +126,11 @@ Stage P makes no skill claim, and this is one season and one model class. Do not
 It says only that these rain sums, added to a 24-lag ridge, gave no gain. This result is separate from the 2015 negative ablation (30.76, 32.10, 36.73, 41.75) and from M3 numbers.
 R0 and R1 equal the reproduced baseline values.
 
+Latency check (`scripts/m5_latency_sample.py`, `docs/m5/results/m5_latency_sample.json`): the latest 40 IMERG Early granules of today's
+service were produced 4.1 to 4.6 h after their end (median 4.3 h) and inserted 4.4 to 5.0 h after (median 4.7 h). Late: 14.2 to 14.7 h produced.
+So the 4 h rule is slightly early. Rung I1 re-run with 5 h (`m5_i1_stage_p_2015_latency5h.json`): I1 MAE 35.94 against 34.11 for R2.
+The result is unchanged. This sample is the current service, not the 2015 archive. The I1 result covers the 2015 season only; it does not generalise.
+
 ### 2b. Rung H1: ERA5 hindsight diagnostic, Stage P (Amendment 5)
 
 ERA5 (10 m and 850 hPa wind, 10 m rain; 30 columns) added to the R2 ridge. Hindsight only: never an issue-time claim.
