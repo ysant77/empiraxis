@@ -1,0 +1,168 @@
+{
+ "schema_version": "1",
+ "package_id": "b-nea-provenance",
+ "scenario": "provenance",
+ "question": "What is known and what is inconsistent about the NEA PM2.5 values, and what must not be inferred from the 17 disagreements?",
+ "study_area": "Singapore, five NEA regions",
+ "interval": "2014-04 to 2026-10; checks on three days in 2023",
+ "target": "hourly PM2.5, ug/m3",
+ "acceptance_criteria": [
+  "Known facts and inconsistencies are kept apart.",
+  "No cause of the disagreements is asserted without evidence.",
+  "A next check or a limit of use is stated."
+ ],
+ "sources": [
+  {
+   "id": "nea_api",
+   "dataset": "data.gov.sg real-time PM2.5 API",
+   "role": "observation",
+   "availability": "issue_time_valid",
+   "latency_hours": 1.0,
+   "sha256": null,
+   "origin": "https://api-open.data.gov.sg/v2/real-time/api/pm25"
+  },
+  {
+   "id": "nea_file",
+   "dataset": "NEA Historical1hrPM2.5.csv",
+   "role": "observation",
+   "availability": "hindsight",
+   "latency_hours": null,
+   "sha256": "2fb76e1c4e4208e92f49670602e303c86e21eaa3704651633323e50f51015de4",
+   "origin": "data.gov.sg historical file"
+  },
+  {
+   "id": "nea_acq",
+   "dataset": "Acquisition receipt nea-pm25-qa-1",
+   "role": "derived",
+   "availability": "hindsight",
+   "latency_hours": null,
+   "sha256": "29d3120b13e1bf15e3d28418049b80afea687fae30daa6a3680e5fef22a7d309",
+   "origin": "earthlab-e2e-runs/20261103T035551Z-95e7a3/artifacts/acquisition.json"
+  },
+  {
+   "id": "nea_profile",
+   "dataset": "Data profile of the historical file",
+   "role": "derived",
+   "availability": "hindsight",
+   "latency_hours": null,
+   "sha256": "1cdfc02c210238a3f98577ca7d916aae00408f065e7ab2d4d9e638d1c0e20503",
+   "origin": "earthlab-e2e-runs/20261103T035551Z-95e7a3/data_profile.json"
+  }
+ ],
+ "facts": [
+  {
+   "id": "nea.compared",
+   "statement": "Hourly values compared between the live API and the file",
+   "value": 350.0,
+   "unit": "",
+   "source": "nea_acq"
+  },
+  {
+   "id": "nea.matched",
+   "statement": "Values that agree",
+   "value": 333.0,
+   "unit": "",
+   "source": "nea_acq"
+  },
+  {
+   "id": "nea.mismatched",
+   "statement": "Values that disagree",
+   "value": 17.0,
+   "unit": "",
+   "source": "nea_acq"
+  },
+  {
+   "id": "nea.days_checked",
+   "statement": "Days checked: 2023-02-15, 2023-07-15, 2023-11-15",
+   "value": 3.0,
+   "unit": "",
+   "source": "nea_acq"
+  },
+  {
+   "id": "file.duplicates",
+   "statement": "Duplicate time labels in the historical file",
+   "value": 3.0,
+   "unit": "",
+   "source": "nea_profile"
+  },
+  {
+   "id": "file.conflicts",
+   "statement": "Duplicate labels with conflicting values",
+   "value": 3.0,
+   "unit": "",
+   "source": "nea_profile"
+  },
+  {
+   "id": "file.unparsed",
+   "statement": "Unparsed time labels (for example '2016-04-04 010:00:00')",
+   "value": 1.0,
+   "unit": "",
+   "source": "nea_profile"
+  },
+  {
+   "id": "file.missing_region",
+   "statement": "Missing hours per region in the file",
+   "value": 8.0,
+   "unit": "hours",
+   "source": "nea_profile"
+  },
+  {
+   "id": "nea.mm_central",
+   "statement": "Disagreements in region central",
+   "value": 1.0,
+   "unit": "hours",
+   "source": "nea_acq"
+  },
+  {
+   "id": "nea.mm_east",
+   "statement": "Disagreements in region east",
+   "value": 10.0,
+   "unit": "hours",
+   "source": "nea_acq"
+  },
+  {
+   "id": "nea.mm_south",
+   "statement": "Disagreements in region south",
+   "value": 5.0,
+   "unit": "hours",
+   "source": "nea_acq"
+  },
+  {
+   "id": "nea.mm_west",
+   "statement": "Disagreements in region west",
+   "value": 1.0,
+   "unit": "hours",
+   "source": "nea_acq"
+  },
+  {
+   "id": "nea.mm_max_abs",
+   "statement": "Largest API minus file difference",
+   "value": 9.0,
+   "unit": "ug/m3",
+   "source": "nea_acq"
+  },
+  {
+   "id": "nea.mm_days",
+   "statement": "Days with any disagreement (2023-11-15 only)",
+   "value": 1.0,
+   "unit": "days",
+   "source": "nea_acq"
+  }
+ ],
+ "limitations": [
+  "Historical validation only. Not a forecast of any future date.",
+  "Not for health, safety or travel decisions.",
+  "PM2.5 alone does not identify the cause of haze."
+ ],
+ "missing_inputs": [
+  "No NEA statement on revisions or quality control of the file.",
+  "Only three days were compared."
+ ],
+ "allowed_decisions": [
+  "proceed_with_limits",
+  "request_data",
+  "request_validation",
+  "abstain"
+ ],
+ "fixture": false
+}

@@ -1,0 +1,124 @@
+{
+ "package_id": "e-m5-handoff-v2",
+ "arm": "F",
+ "status": "awaiting_human",
+ "roles": {},
+ "checks": {},
+ "final": {
+  "policy": "m41-v2",
+  "allowed": [
+   "proceed_with_limits",
+   "request_validation"
+  ],
+  "preferred": "proceed_with_limits",
+  "flags": [
+   {
+    "fault_class": "hindsight_as_forecast",
+    "evidence": [
+     "imerg_final",
+     "smap_l3",
+     "era5"
+    ],
+    "note": "Not available at issue time."
+   },
+   {
+    "fault_class": "missing_observations",
+    "evidence": [
+     "firms_modis_sp",
+     "imerg_late"
+    ],
+    "note": "When these values become available is not established."
+   },
+   {
+    "fault_class": "subgroup_deterioration",
+    "evidence": [
+     "t19.R2_vs_R1.skill",
+     "t19.R2_vs_R1.high"
+    ],
+    "note": "Fire inputs help elevated hours and hurt all hours."
+   }
+  ],
+  "eligible_inputs": [
+   "nea_pm25",
+   "imerg_early"
+  ],
+  "excluded_inputs": [
+   "era5",
+   "firms_modis_sp",
+   "hls_archive",
+   "imerg_final",
+   "imerg_late",
+   "maiac_061",
+   "mcd64a1",
+   "smap_l3"
+  ],
+  "missing_facts": [
+   "hls.clear",
+   "smap.rq"
+  ]
+ },
+ "decision": "proceed_with_limits",
+ "code_rule": {
+  "policy": "m41-v2",
+  "allowed": [
+   "proceed_with_limits",
+   "request_validation"
+  ],
+  "preferred": "proceed_with_limits",
+  "flags": [
+   {
+    "fault_class": "hindsight_as_forecast",
+    "evidence": [
+     "imerg_final",
+     "smap_l3",
+     "era5"
+    ],
+    "note": "Not available at issue time."
+   },
+   {
+    "fault_class": "missing_observations",
+    "evidence": [
+     "firms_modis_sp",
+     "imerg_late"
+    ],
+    "note": "When these values become available is not established."
+   },
+   {
+    "fault_class": "subgroup_deterioration",
+    "evidence": [
+     "t19.R2_vs_R1.skill",
+     "t19.R2_vs_R1.high"
+    ],
+    "note": "Fire inputs help elevated hours and hurt all hours."
+   }
+  ],
+  "eligible_inputs": [
+   "nea_pm25",
+   "imerg_early"
+  ],
+  "excluded_inputs": [
+   "era5",
+   "firms_modis_sp",
+   "hls_archive",
+   "imerg_final",
+   "imerg_late",
+   "maiac_061",
+   "mcd64a1",
+   "smap_l3"
+  ],
+  "missing_facts": [
+   "hls.clear",
+   "smap.rq"
+  ]
+ },
+ "agrees_with_code_rule": true,
+ "escalations": [],
+ "participation": {
+  "executed": {},
+  "executed_checkpoints": [],
+  "configured_not_run": []
+ },
+ "wall_seconds": 0.0,
+ "trace_entries": 5,
+ "temperature": 0.0
+}

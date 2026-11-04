@@ -1,0 +1,79 @@
+# M4.1 answer keys. Written and committed before any M4.1 model run (protocol m41-v1).
+# No model sees this file. Code uses it to score runs.
+#
+# acceptable: decisions that the evidence supports.
+# known_faults: faults that a careful reviewer should raise. A finding detects a fault when its
+#   fault_class matches and it cites at least one of the listed evidence ids.
+# must_exclude: sources that must not be an input when the decision proceeds or adopts.
+schema_version: "1"
+keys:
+  a-model-selection-m3:
+    acceptable: [retain_baseline, request_validation]
+    known_faults:
+      - fault_class: subgroup_deterioration
+        evidence: [b4.mae_gt55, tcn.mae_gt55, ridgecv.mae_gt55, gru.mae_gt55, persist.mae_gt55]
+      - fault_class: non_independent_evidence
+        evidence: [val.years, gru.mae]
+      - fault_class: neural_unjustified
+        evidence: [tcn.mae, tcn.skill, tcn.params, b4.mae]
+    must_exclude: []
+  b-nea-provenance:
+    acceptable: [proceed_with_limits, request_data, request_validation]
+    known_faults:
+      - fault_class: provenance_conflict
+        evidence: [nea.mismatched, nea.mm_east, nea.mm_max_abs, nea.mm_days]
+      - fault_class: missing_observations
+        evidence: [file.missing_region, file.unparsed, file.duplicates, file.conflicts]
+    must_exclude: []
+  c-fire-weather-sufficiency:
+    acceptable: [abstain, request_data]
+    known_faults:
+      - fault_class: hindsight_as_forecast
+        evidence: [era5, abl.B2.mae]
+      - fault_class: insufficient_evidence
+        evidence: [abl.days, abl.rows, abl.B3.mae, abl.B3_vs_B2.skill, abl.B2_vs_B1.skill]
+      - fault_class: unsupported_causality
+        evidence: [firms, abl.B3.mae]
+    must_exclude: [era5]
+  d-multisource-design-m5:
+    acceptable: [proceed_with_limits, request_validation]
+    known_faults:
+      - fault_class: hindsight_as_forecast
+        evidence: [era5, imerg_final]
+      - fault_class: missing_observations
+        evidence: [hls.clear, hls.aerosol3, smap.rq, hls, smap]
+      - fault_class: subgroup_deterioration
+        evidence: [t19.R2_vs_R1.skill, t19.R2_vs_R1.high, t19.R2.bias, t19.R2.mae]
+      - fault_class: insufficient_evidence
+        evidence: [t19.elev_days, t19.R3a.mae_gt55]
+    must_exclude: [era5, imerg_final, hls, smap]
+  # Amendment 2 (2026-11-04): package E is built from the M5 package (m5-evidence-2, commit
+  # 458f297) by assess/m5_adapter.py. Key written before any run on package E.
+  e-m5-handoff:
+    acceptable: [proceed_with_limits, request_validation]
+    known_faults:
+      - fault_class: hindsight_as_forecast
+        evidence: [era5, imerg_final, mcd64a1, hls_archive, maiac_061]
+      - fault_class: missing_observations
+        evidence: [smap_l3, hls_archive, mcd64a1, maiac_061, imerg_late]
+      - fault_class: subgroup_deterioration
+        evidence: [t19.R2_vs_R1.high, t19.R2.mae, t19.R2.mae_gt55, t19.R1.mae]
+      - fault_class: insufficient_evidence
+        evidence: [t19.elev_days, p15.I1, p15.R2, p15.R0]
+    must_exclude: [era5, imerg_final, mcd64a1, hls_archive, maiac_061, smap_l3, imerg_late]
+  # Protocol m41-v2 (2026-11-04): package E version 2, built from the same M5 package
+  # (m5-evidence-2, commit 458f297) with the m41-v2 availability rule. Written before any run on it.
+  # The FIRMS standard-product archive is not the product published at issue time, so it is
+  # excluded from a proceeding plan.
+  e-m5-handoff-v2:
+    acceptable: [proceed_with_limits, request_validation]
+    known_faults:
+      - fault_class: hindsight_as_forecast
+        evidence: [era5, imerg_final, smap_l3, mcd64a1, hls_archive, maiac_061]
+      - fault_class: missing_observations
+        evidence: [firms_modis_sp, imerg_late, smap_l3, hls_archive, mcd64a1, maiac_061]
+      - fault_class: subgroup_deterioration
+        evidence: [t19.R2_vs_R1.skill, t19.R2_vs_R1.high, t19.R2.mae, t19.R2.mae_gt55, t19.R1.mae]
+      - fault_class: insufficient_evidence
+        evidence: [t19.elev_days, p15.I1, p15.R2, p15.R0]
+    must_exclude: [era5, imerg_final, mcd64a1, hls_archive, maiac_061, smap_l3, imerg_late, firms_modis_sp]
