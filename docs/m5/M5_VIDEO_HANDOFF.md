@@ -29,7 +29,7 @@ Use `earthlab.m5.layers.read_fire_points` and `read_wind_vector` to pull exact v
 |---|---|
 | HLS L30 imagery | 2.7% clear land on both dates; high-aerosol flag on more than 96% of pixels |
 | SMAP soil moisture | no recommended-quality retrieval over the Kalimantan box |
-| IMERG rainfall | blocked: the owner must authorise the GES DISC app in Earthdata Login |
+| IMERG rainfall | authorised and acquired; Early rain for 2015 tested as a model input (rung I1): no gain, MAE 36.11 vs 34.11 |
 | MAIAC aerosol | not assessed |
 | MCD64A1 October 2015 | fails the 0.80 valid-land gate |
 | Prithvi BurnScars chip | a US scene; says nothing about Kalimantan |

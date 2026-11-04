@@ -21,7 +21,7 @@ Verbatim text is in `M5_RESEARCH_QUESTIONS.md`.
 
 | ID | Short name | Stage | State |
 |---|---|---|---|
-| M5-A | Multisource T+6 PM2.5 prediction | primary, first | pilot run; no supported gain; IMERG pending |
+| M5-A | Multisource T+6 PM2.5 prediction | primary, first | pilot run; no supported gain; IMERG Early rung I1 run, no gain |
 | M5-B | Regional transport consistency | later, own protocol | not started; no source attribution |
 | M5-C | Severe-event prediction 12 to 24 h, calibrated, with abstention | later, own protocol | not started; issue-time inputs only |
 
@@ -119,7 +119,7 @@ The assessment says: NEA, ERA5 wind and rain, FIRMS and MCD64A1 are in real use.
 - L3: GES DISC returned HTTP 403 until the owner authorised "NASA GESDISC DATA ARCHIVE". Then 240 granules downloaded
   (Final 19, 27, 30, 31 Oct 2015; Early 30 Oct), about 1.9 GB, hashes in `docs/m5/receipts/imerg_*.json`.
 - L4 (partial): reader checked on real files; fill is NaN; hourly total needs both half hours.
-- L5 (partial): descriptive ERA5-versus-IMERG comparison on three wet days (`docs/m5/qa/`). Not a model input.
+- L5: descriptive ERA5-versus-IMERG comparison on three wet days (`docs/m5/qa/`). Rung I1 (Early, 2015 Stage P, 2,976 granules, 22.8 GB, corridor means kept, raw deleted) made T+6 MAE worse: 36.11 against 34.11 for R2 (`docs/m5/results/m5_i1_stage_p_2015.json`).
 - L6, L7: none.
 - Catalogue: Early and Late V07 run 1998 to 2026. Final V07 stops on 2025-09-30.
 

@@ -28,12 +28,12 @@ Branch: `experiment/m5-multisource-environment`. No Meta model took part. All ru
 | 2015 baseline reproduction | done |
 | Experiment B, Stage P (2015, 2016) and Stage T (train 2015 to 2018, score 2019) | done for R0 to R3 |
 | Experiment B, rung H1 (ERA5, hindsight) for 2016 | not run; ERA5 2016 download still queued at the time of writing |
-| Experiment B, rung I1 (IMERG Early) | **blocked** (owner step) |
+| Experiment B, rung I1 (IMERG Early), Stage P 2015 | done; no gain (see section 2a) |
 | Experiment B, rung R4 (neural) | not run; the gate in the protocol was not met |
 | Experiment A, FIRMS exposures 2015 and 2016; ERA5 exposures 2015 | done |
 | Experiment A, ERA5 exposures 2016 | not run (same ERA5 download) |
 | SMAP, HLS pilots | done as feasibility and QA |
-| IMERG pilot | done for four days of Final and one of Early; rung I1 not run (needs about 22 GB of Early granules for one season; ask first) |
+| IMERG pilot and Early season | pilot on four days of Final and one of Early; then 2,976 Early granules (31 Aug to 31 Oct 2015, 22.8 GB, owner approved) reduced to corridor means; raw files deleted; receipts in `docs/m5/receipts/` |
 | MAIAC | not assessed (no HDF4 reader) |
 | Layer catalogue and readers (Phase 5, data side) | done; no viewer was built |
 
@@ -100,6 +100,32 @@ The 2016 season has 14 elevated hours (7 days). Its elevated results carry no we
   and from 9.7 to 12.1 between 25 and 55. It fell from 28.2 to 17.3 above 55.
 - The elevated result rests on 17 days of one season. A new protocol with more haze seasons is needed before any claim.
 
+### 2a. Rung I1: IMERG Early rain, 2015, Stage P (Amendment 4)
+
+IMERG Early rain (6 h and 24 h sums per corridor, issue-time latency 4 h) was added to the ridge model.
+Result file: `docs/m5/results/m5_i1_stage_p_2015.json`. 5,195 scored rows.
+
+| Rung | MAE (ug/m3) |
+|---|---|
+| R0 persistence | 30.76 |
+| R1 ridge, lags | 32.10 |
+| R2 ridge + FIRMS | 34.11 |
+| I1 ridge + FIRMS + IMERG Early | 36.11 |
+
+Paired skill, whole-day bootstrap (2,000 resamples). Negative means the first rung is worse.
+
+| Pair | Skill | 95% interval |
+|---|---|---|
+| R1 vs R0 | -0.043 | -0.211 to 0.085 |
+| R2 vs R1 | -0.063 | -0.103 to -0.027 |
+| I1 vs R2 | -0.059 | -0.131 to -0.005 |
+| I1 vs R1 | -0.125 | -0.220 to -0.051 |
+
+Finding: in this scheme IMERG Early rain did not improve T+6 prediction. It made the ridge model worse, and the interval excludes zero.
+Stage P makes no skill claim, and this is one season and one model class. Do not read it as "rain does not matter".
+It says only that these rain sums, added to a 24-lag ridge, gave no gain. This result is separate from the 2015 negative ablation (30.76, 32.10, 36.73, 41.75) and from M3 numbers.
+R0 and R1 equal the reproduced baseline values.
+
 ## 3. Experiment A: retrospective association (hindsight allowed)
 
 Daily Singapore mean PM2.5 against lagged FIRMS counts (boxes A, B, C and sum), ERA5 850 hPa wind component toward
@@ -144,7 +170,7 @@ scenes are 80 to 100% cloudy by the provider's own value.
 
 ## 6. What is not known
 
-- Whether IMERG Early rain adds issue-time information. Rung I1 is not run: a full season of Early granules is about 22 GB, over the 5 GB limit, so it needs your approval or a corridor-subset method.
+- Whether IMERG Early rain adds issue-time information in other seasons. Rung I1 ran on 2015 only (Stage P). Other seasons were not downloaded.
 - Whether ERA5 adds hindsight association in a clean season (2016). The download is queued.
 - Whether the elevated-hour effect of FIRMS features repeats. One season shows it. A new protocol must test it with more haze seasons.
 - Whether HLS and MCD64A1 agree over the full box. Clear scenes cover too little of it.
@@ -152,7 +178,7 @@ scenes are 80 to 100% cloudy by the provider's own value.
 ## 7. Cost
 
 All fits ran on CPU in under two seconds each. Each stage run took about two minutes of wall time, with at most four threads.
-No GPU, no MPS and no model server was used. Downloads: about 2.3 GB (IMERG 1.9 GB, SMAP 249 MB, HLS 110 MB, FIRMS and ERA5 small).
+No GPU, no MPS and no model server was used. Downloads: about 25 GB (IMERG 22.8 GB Early season plus 1.9 GB pilot, SMAP 249 MB, HLS 110 MB, FIRMS and ERA5 small).
 
 ## 8. Reproduce
 

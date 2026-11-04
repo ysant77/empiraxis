@@ -20,12 +20,13 @@ runs a small issue-time ladder on real data, and records what is not usable.
   by 39% and raised the all-hours error by 13%. This is exploratory.
 - SMAP is unusable over Kalimantan (0 of 78 retrieved cell-passes have recommended quality).
 - HLS has 2.7% clear land on both dates of the pilot pair, and high aerosol on more than 96% of pixels.
+- Rung I1 (IMERG Early, 2015, Stage P): MAE 36.11 against 34.11 (R2) and 32.10 (R1). No gain; paired skill vs R2 -0.059 (-0.131, -0.005).
 - IMERG pilot ran on four days; ERA5 and IMERG agree on mean rain, differ in timing for one corridor (not a validation).
 - Experiment A cannot reach `supported_association` by design (Amendment 1).
 
 ## Not in this PR
 
-Raw data (kept outside Git), the sealed NEA period, M3 evidence, a viewer, a neural model, ERA5 for 2016 (queued), IMERG.
+Raw data (kept outside Git), the sealed NEA period, M3 evidence, a viewer, a neural model, ERA5 for 2016 (queued), IMERG beyond 2015.
 
 ## Checks
 
