@@ -1,0 +1,32 @@
+# M4.1 council (protocol m41-v1). Frozen before the first benchmark run.
+# Muse stays loaded on port 8080. One small model at a time runs on port 8081 (SideServer).
+# The critic of arm HC is set by the critic test (docs/m41/m41-protocol.md, section 5).
+protocol: m41-v1
+sampling:
+  temperature: 0.0
+  seed: 20261104
+  max_tokens: 2000
+template_kwargs:
+  local-glimmer: {reasoning_effort: low}
+main_providers: [local-glimmer]
+arms:
+  F: {}
+  S:
+    lead: local-glimmer
+  T:
+    data_specialist: local-glimmer
+    ml_engineer: local-glimmer
+    lead: local-glimmer
+    pm: local-glimmer
+  H:
+    data_specialist: local-llama-3-2-3b
+    ml_engineer: local-qwen3-4b-2507
+    lead: local-glimmer
+    pm: local-glimmer
+  HC:
+    data_specialist: local-llama-3-2-3b
+    ml_engineer: local-qwen3-4b-2507
+    lead: local-glimmer
+    critic: local-llama-3-1-8b
+    rebuttal: local-glimmer
+    pm: local-glimmer

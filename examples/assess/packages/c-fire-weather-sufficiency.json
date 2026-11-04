@@ -1,0 +1,161 @@
+{
+ "schema_version": "1",
+ "package_id": "c-fire-weather-sufficiency",
+ "scenario": "sufficiency",
+ "question": "Does this fire and weather evidence justify a claim that wind and fire inputs improve Singapore PM2.5 prediction at T+6, or should we request more or abstain?",
+ "study_area": "Singapore and upwind study boxes",
+ "interval": "18 Sep to 31 Oct 2015",
+ "target": "hourly PM2.5 at T+6, ug/m3",
+ "acceptance_criteria": [
+  "The answer states whether each input is available at issue time.",
+  "No cause of haze is asserted from PM2.5 association.",
+  "The answer says what more evidence would be needed."
+ ],
+ "sources": [
+  {
+   "id": "nea_pm25",
+   "dataset": "NEA hourly PM2.5",
+   "role": "observation",
+   "availability": "issue_time_valid",
+   "latency_hours": 2.0,
+   "sha256": "2fb76e1c4e4208e92f49670602e303c86e21eaa3704651633323e50f51015de4",
+   "origin": "Historical1hrPM2.5.csv"
+  },
+  {
+   "id": "era5",
+   "dataset": "ERA5 reanalysis 10 m and 850 hPa wind",
+   "role": "reanalysis",
+   "availability": "hindsight",
+   "latency_hours": null,
+   "sha256": "5852b5f347601965831c1ee35c52ba46af49c55fc3ac4fafe3dfafb59d71ad77",
+   "origin": "extract_10m.json, extract_850hpa.json"
+  },
+  {
+   "id": "firms",
+   "dataset": "FIRMS MODIS standard product fire counts",
+   "role": "observation",
+   "availability": "issue_time_valid",
+   "latency_hours": 3.0,
+   "sha256": "ae040d7ce6b309e77de392f2e5daba37f9afc96707a675a0e17e7802dce46df3",
+   "origin": "firms_modis_sp_2015_08_2015_11.csv"
+  },
+  {
+   "id": "abl",
+   "dataset": "2015 ablation result",
+   "role": "evaluation",
+   "availability": "hindsight",
+   "latency_hours": null,
+   "sha256": "f1d5a7c6452e75180f2b94dfadf2b9f61d472a920106fad6196984a6c7ce3c02",
+   "origin": "docs/evidence/haze-2015-ablation.json"
+  }
+ ],
+ "facts": [
+  {
+   "id": "abl.B0.mae",
+   "statement": "B0 persistence: MAE, T+6",
+   "value": 30.76,
+   "unit": "ug/m3",
+   "source": "abl"
+  },
+  {
+   "id": "abl.B1.mae",
+   "statement": "B1 ridge on PM2.5 lags: MAE, T+6",
+   "value": 32.1,
+   "unit": "ug/m3",
+   "source": "abl"
+  },
+  {
+   "id": "abl.B2.mae",
+   "statement": "B2 B1 plus ERA5 weather: MAE, T+6",
+   "value": 36.73,
+   "unit": "ug/m3",
+   "source": "abl"
+  },
+  {
+   "id": "abl.B3.mae",
+   "statement": "B3 B2 plus FIRMS fire counts: MAE, T+6",
+   "value": 41.75,
+   "unit": "ug/m3",
+   "source": "abl"
+  },
+  {
+   "id": "abl.B1_vs_B0.skill",
+   "statement": "Paired skill B1_vs_B0",
+   "value": -0.043,
+   "unit": "",
+   "source": "abl"
+  },
+  {
+   "id": "abl.B1_vs_B0.high",
+   "statement": "Paired skill B1_vs_B0, upper 95% bound",
+   "value": 0.085,
+   "unit": "",
+   "source": "abl"
+  },
+  {
+   "id": "abl.B2_vs_B1.skill",
+   "statement": "Paired skill B2_vs_B1",
+   "value": -0.144,
+   "unit": "",
+   "source": "abl"
+  },
+  {
+   "id": "abl.B2_vs_B1.high",
+   "statement": "Paired skill B2_vs_B1, upper 95% bound",
+   "value": -0.067,
+   "unit": "",
+   "source": "abl"
+  },
+  {
+   "id": "abl.B3_vs_B2.skill",
+   "statement": "Paired skill B3_vs_B2",
+   "value": -0.137,
+   "unit": "",
+   "source": "abl"
+  },
+  {
+   "id": "abl.B3_vs_B2.high",
+   "statement": "Paired skill B3_vs_B2, upper 95% bound",
+   "value": -0.07,
+   "unit": "",
+   "source": "abl"
+  },
+  {
+   "id": "abl.rows",
+   "statement": "Scored region-hours, 18 Sep to 31 Oct 2015",
+   "value": 5195.0,
+   "unit": "",
+   "source": "abl"
+  },
+  {
+   "id": "abl.days",
+   "statement": "Scored days, one haze season",
+   "value": 44.0,
+   "unit": "days",
+   "source": "abl"
+  },
+  {
+   "id": "abl.elev_rows",
+   "statement": "Scored rows with PM2.5 above 55",
+   "value": 2710.0,
+   "unit": "",
+   "source": "abl"
+  }
+ ],
+ "limitations": [
+  "Historical validation only. Not a forecast of any future date.",
+  "Not for health, safety or travel decisions.",
+  "PM2.5 alone does not identify the cause of haze."
+ ],
+ "missing_inputs": [
+  "No second haze season in this package.",
+  "No satellite aerosol (MAIAC) or rainfall layer."
+ ],
+ "allowed_decisions": [
+  "proceed_with_limits",
+  "request_data",
+  "abstain",
+  "adopt"
+ ],
+ "fixture": false
+}
