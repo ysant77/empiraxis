@@ -154,3 +154,33 @@ def run_bench(
 ) -> tuple[list[CaseScoreV1], dict[str, Any]]:
     scores = [score(c, critic(c, packages[c.package]), packages[c.package]) for c in cases]
     return scores, summary(scores)
+
+
+def passes_gates(s: dict[str, Any], rules: dict[str, Any]) -> dict[str, bool]:
+    """Engineering gates of protocol m41-v1, section 5."""
+    findings = max(s["findings"], 1)
+    return {
+        "usable": s["usable"] >= 22,
+        "detected": s["faults_detected"] >= 6 and s["faults_detected"] > rules["faults_detected"],
+        "clean": s["clean_with_high_finding"] <= 3,
+        "supported": s["unsupported_findings"] / findings <= 0.2,
+    }
+
+
+def choose_critic(summaries: dict[str, dict[str, Any]], muse: str) -> tuple[str | None, bool]:
+    """The HC critic: best non-Muse model by the rule in the protocol. True when it passed."""
+    rules = summaries["rules"]
+    models = {k: v for k, v in summaries.items() if k not in ("rules", muse)}
+    if not models:
+        return None, False
+
+    def rank(name: str) -> tuple[int, int]:
+        s = models[name]
+        return (s["faults_detected"], -s["unsupported_findings"])
+
+    eligible = [
+        k for k, v in models.items() if (g := passes_gates(v, rules))["usable"] and g["clean"]
+    ]
+    if eligible:
+        return max(eligible, key=rank), True
+    return max(models, key=rank), False

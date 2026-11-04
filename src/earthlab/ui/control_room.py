@@ -28,6 +28,7 @@ from earthlab.events.workflow_view import ROLE_NAMES, WorkflowView, load_workflo
 from earthlab.harness.credit import steps
 from earthlab.ui import (
     approvals,
+    assessment,
     board_view,
     common,
     experiments,
@@ -369,6 +370,8 @@ def _classic(picked: tuple[str, Path | None] | None) -> None:
 
 def render(label: str | None) -> None:
     st.caption("Who took part, what state the run is in, and what still needs a person.")
+    with st.expander("Scientific council investigations (M4.1, recorded)", expanded=label is None):
+        assessment.render()
     opened = story_view.open_story(label) if label else None
     if opened is not None:
         _story(opened)
