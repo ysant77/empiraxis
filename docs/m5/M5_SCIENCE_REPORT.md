@@ -164,6 +164,15 @@ Brier skill is against the constant training base rate (C0, Brier 0.196). Interv
 | C3 lags + FIRMS | 0.103 | 0.474 | 0.267 to 0.643 | 0.915 | 0.58 / 0.047 | 0.093 | useful_signal |
 | C4 trees (gate met) | 0.114 | 0.419 | -0.056 to 0.733 | 0.941 | 0.65 / 0.064 | 0.087 | not labelled (interval includes 0) |
 
+Exploratory bands (Amendment C3, post hoc, no label decision), coverage / error / calibration gap:
+
+| Rung | 0.1 to 0.9 | 0.3 to 0.7 |
+|---|---|---|
+| C2 | 0.20 / 0.062 / 0.103 | 0.80 / 0.091 / 0.083 |
+| C3 | 0.17 / 0.063 / 0.067 | 0.78 / 0.060 / 0.107 |
+
+The band choice moves the calibration gap across the 0.1 limit for both rungs. This is a second reason the C3 label is fragile.
+
 Random abstention at equal coverage has an error of about 0.13 to 0.15, so the abstention band selects easier issues, as intended.
 
 How far to trust it (Amendment C1 checks, same 2019 data):

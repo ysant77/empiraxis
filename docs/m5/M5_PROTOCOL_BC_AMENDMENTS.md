@@ -26,3 +26,15 @@ The frozen text leaves hyperparameters open. They are fixed here, with no tuning
 - **Random abstention.** 200 random subsets with the same coverage; the mean error rate is reported.
 - **Scored issues.** An issue is scored when at least one hour of its event window is observed.
 - **Season-rank diagnostic (Amendment C1).** Within-season ranks use the whole season, so they use later values. This run is a diagnostic only. It is never an issue-time result.
+
+## Amendment C3 (2026-11-04): exploratory abstention bands, written AFTER the first M5-C run
+
+The first M5-C run (`m5_c_v1.json`) used the frozen band 0.2 to 0.8 only. It ran on the owner's direct instruction to go ahead,
+before the main-session advice to add other bands reached this session. This amendment is therefore post hoc.
+
+- The primary rule stays the frozen band 0.2 to 0.8. No label uses another band.
+- Two secondary rows are added and labelled **exploratory, post hoc**: 0.1 to 0.9 and 0.3 to 0.7. Each gives coverage, error rate, random-abstention error and calibration gap.
+- The run is repeated once with these rows. Model, features, folds and seeds are unchanged, so every other number stays the same. The check is that they do.
+- The owner decided (relayed by the main session, 2026-11-04): keep 0.2 to 0.8 as the frozen primary rule and add 0.1 to 0.9 and 0.3 to 0.7 as exploratory secondary rows. The two rows carry no label decision.
+- The decision reached this session after the first run. The order the owner asked for (amendment before any run) was not kept. The rerun shows that all primary numbers are identical.
+- The owner may still change the primary band. That would need a new amendment and a new run.

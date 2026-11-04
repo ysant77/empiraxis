@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -33,3 +34,10 @@ def test_transport_and_event_protocols_match_the_freeze_record() -> None:
     assert record["protocol_ids"] == ["m5-protocol-b-1", "m5-protocol-c-1"]
     for name, digest in record["sha256"].items():
         assert file_digest(Path(name)) == digest, f"{name} changed after the freeze"
+
+
+def test_amendments_file_is_append_only() -> None:
+    record = json.loads(Path("docs/m5/protocol-bc.amendments.json").read_text(encoding="utf-8"))
+    data = Path(record["file"]).read_bytes()[: record["bytes"]]
+    assert len(data) == record["bytes"]
+    assert hashlib.sha256(data).hexdigest() == record["sha256"]

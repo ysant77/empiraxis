@@ -22,6 +22,7 @@ from earthlab.m5.ladder_data import season_rows
 WINDOW = range(13, 25)
 LOW_BAND, HIGH_BAND = 0.2, 0.8
 BINS = 10
+EXPLORATORY_BANDS = ((0.1, 0.9), (0.3, 0.7))  # post hoc, Amendment C3
 
 
 @dataclass(frozen=True)
@@ -131,9 +132,11 @@ def reliability(p: np.ndarray, y: np.ndarray) -> list[dict[str, float]]:
     return rows
 
 
-def covered_error(p: np.ndarray, y: np.ndarray, seed: int = 7) -> dict[str, float]:
+def covered_error(
+    p: np.ndarray, y: np.ndarray, seed: int = 7, band: tuple[float, float] = (LOW_BAND, HIGH_BAND)
+) -> dict[str, float]:
     """Coverage, error rate and calibration gap on issues outside the abstention band."""
-    cover = (p < LOW_BAND) | (p > HIGH_BAND)
+    cover = (p < band[0]) | (p > band[1])
     n = int(cover.sum())
     if n == 0:
         return {"coverage": 0.0, "error_rate": float("nan"), "random_error_rate": float("nan"),
@@ -182,6 +185,9 @@ def score_rung(p: np.ndarray, y: np.ndarray, base_brier: float) -> dict[str, Any
         "roc_auc": float(roc_auc_score(y, p)) if both else float("nan"),
         "reliability": reliability(p, y),
         "abstention": covered_error(p, y),
+        "abstention_post_hoc_bands": {
+            f"{lo}-{hi}": covered_error(p, y, band=(lo, hi)) for lo, hi in EXPLORATORY_BANDS
+        },
     }
 
 

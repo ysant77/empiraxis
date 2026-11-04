@@ -1,5 +1,5 @@
 {
- "computed_at_utc": "2026-11-04T02:05:51+00:00",
+ "computed_at_utc": "2026-11-04T02:09:45+00:00",
  "control_lags_only_without_2015": {
   "C0": {
    "abstention": {
@@ -7,6 +7,20 @@
     "coverage": 1.0,
     "error_rate": 0.2518037518037518,
     "random_error_rate": 0.25180375180375186
+   },
+   "abstention_post_hoc_bands": {
+    "0.1-0.9": {
+     "calibration_gap": 0.16738816738816742,
+     "coverage": 1.0,
+     "error_rate": 0.2518037518037518,
+     "random_error_rate": 0.25180375180375186
+    },
+    "0.3-0.7": {
+     "calibration_gap": 0.16738816738816742,
+     "coverage": 1.0,
+     "error_rate": 0.2518037518037518,
+     "random_error_rate": 0.25180375180375186
+    }
    },
    "brier": 0.2164174209628755,
    "brier_skill": 0.0,
@@ -26,6 +40,20 @@
     "coverage": 1.0,
     "error_rate": 0.1681096681096681,
     "random_error_rate": 0.1681096681096681
+   },
+   "abstention_post_hoc_bands": {
+    "0.1-0.9": {
+     "calibration_gap": 0.1681096681096681,
+     "coverage": 1.0,
+     "error_rate": 0.1681096681096681,
+     "random_error_rate": 0.1681096681096681
+    },
+    "0.3-0.7": {
+     "calibration_gap": 0.1681096681096681,
+     "coverage": 1.0,
+     "error_rate": 0.1681096681096681,
+     "random_error_rate": 0.1681096681096681
+    }
    },
    "brier": 0.1681096681096681,
    "brier_skill": 0.22321563873314143,
@@ -56,6 +84,20 @@
     "coverage": 0.7366522366522367,
     "error_rate": 0.06856023506366307,
     "random_error_rate": 0.17231635651322233
+   },
+   "abstention_post_hoc_bands": {
+    "0.1-0.9": {
+     "calibration_gap": 0.0804959972560871,
+     "coverage": 0.43867243867243866,
+     "error_rate": 0.02631578947368421,
+     "random_error_rate": 0.17370065789473685
+    },
+    "0.3-0.7": {
+     "calibration_gap": 0.07757878552058359,
+     "coverage": 0.847041847041847,
+     "error_rate": 0.11243611584327087,
+     "random_error_rate": 0.17271720613287905
+    }
    },
    "brier": 0.11577833191226304,
    "brier_skill": 0.4650230494516253,
@@ -135,6 +177,20 @@
     "error_rate": 0.120837297811608,
     "random_error_rate": 0.16658896289248332
    },
+   "abstention_post_hoc_bands": {
+    "0.1-0.9": {
+     "calibration_gap": 0.05250073949805296,
+     "coverage": 0.6544011544011544,
+     "error_rate": 0.09592061742006615,
+     "random_error_rate": 0.16611356119073872
+    },
+    "0.3-0.7": {
+     "calibration_gap": 0.06275734302264209,
+     "coverage": 0.7770562770562771,
+     "error_rate": 0.12256267409470752,
+     "random_error_rate": 0.16637418755803157
+    }
+   },
    "brier": 0.13450334817072793,
    "brier_skill": 0.37850036483984906,
    "label": "no_supported_signal",
@@ -204,6 +260,20 @@
     "error_rate": NaN,
     "random_error_rate": NaN
    },
+   "abstention_post_hoc_bands": {
+    "0.1-0.9": {
+     "calibration_gap": NaN,
+     "coverage": 0.0,
+     "error_rate": NaN,
+     "random_error_rate": NaN
+    },
+    "0.3-0.7": {
+     "calibration_gap": NaN,
+     "coverage": 0.0,
+     "error_rate": NaN,
+     "random_error_rate": NaN
+    }
+   },
    "brier": 0.19589473377352162,
    "brier_skill": 0.0,
    "reliability": [
@@ -222,6 +292,20 @@
     "coverage": 1.0,
     "error_rate": 0.1681096681096681,
     "random_error_rate": 0.1681096681096681
+   },
+   "abstention_post_hoc_bands": {
+    "0.1-0.9": {
+     "calibration_gap": 0.1681096681096681,
+     "coverage": 1.0,
+     "error_rate": 0.1681096681096681,
+     "random_error_rate": 0.1681096681096681
+    },
+    "0.3-0.7": {
+     "calibration_gap": 0.1681096681096681,
+     "coverage": 1.0,
+     "error_rate": 0.1681096681096681,
+     "random_error_rate": 0.1681096681096681
+    }
    },
    "brier": 0.1681096681096681,
    "brier_skill": 0.14183671571271783,
@@ -252,6 +336,20 @@
     "coverage": 0.6017316017316018,
     "error_rate": 0.045563549160671464,
     "random_error_rate": 0.14827338129496404
+   },
+   "abstention_post_hoc_bands": {
+    "0.1-0.9": {
+     "calibration_gap": 0.10284565218083007,
+     "coverage": 0.1976911976911977,
+     "error_rate": 0.06204379562043796,
+     "random_error_rate": 0.14994525547445256
+    },
+    "0.3-0.7": {
+     "calibration_gap": 0.08331597960918405,
+     "coverage": 0.8008658008658008,
+     "error_rate": 0.09099099099099099,
+     "random_error_rate": 0.14824324324324326
+    }
    },
    "brier": 0.11256164011978553,
    "brier_skill": 0.4253973144070293,
@@ -330,6 +428,20 @@
     "coverage": 0.6262626262626263,
     "error_rate": 0.038018433179723504,
     "random_error_rate": 0.148139400921659
+   },
+   "abstention_post_hoc_bands": {
+    "0.1-0.9": {
+     "calibration_gap": 0.09061962305839381,
+     "coverage": 0.2474747474747475,
+     "error_rate": 0.04081632653061224,
+     "random_error_rate": 0.14644314868804664
+    },
+    "0.3-0.7": {
+     "calibration_gap": 0.08977030160820308,
+     "coverage": 0.7864357864357865,
+     "error_rate": 0.07155963302752294,
+     "random_error_rate": 0.14800000000000002
+    }
    },
    "brier": 0.10501976396606005,
    "brier_skill": 0.4638969514745822,
@@ -418,6 +530,20 @@
     "error_rate": NaN,
     "random_error_rate": NaN
    },
+   "abstention_post_hoc_bands": {
+    "0.1-0.9": {
+     "calibration_gap": NaN,
+     "coverage": 0.0,
+     "error_rate": NaN,
+     "random_error_rate": NaN
+    },
+    "0.3-0.7": {
+     "calibration_gap": NaN,
+     "coverage": 0.0,
+     "error_rate": NaN,
+     "random_error_rate": NaN
+    }
+   },
    "brier": 0.19589473377352162,
    "brier_skill": 0.0,
    "reliability": [
@@ -436,6 +562,20 @@
     "coverage": 1.0,
     "error_rate": 0.1681096681096681,
     "random_error_rate": 0.1681096681096681
+   },
+   "abstention_post_hoc_bands": {
+    "0.1-0.9": {
+     "calibration_gap": 0.1681096681096681,
+     "coverage": 1.0,
+     "error_rate": 0.1681096681096681,
+     "random_error_rate": 0.1681096681096681
+    },
+    "0.3-0.7": {
+     "calibration_gap": 0.1681096681096681,
+     "coverage": 1.0,
+     "error_rate": 0.1681096681096681,
+     "random_error_rate": 0.1681096681096681
+    }
    },
    "brier": 0.1681096681096681,
    "brier_skill": 0.14183671571271783,
@@ -466,6 +606,20 @@
     "coverage": 0.6017316017316018,
     "error_rate": 0.045563549160671464,
     "random_error_rate": 0.14827338129496404
+   },
+   "abstention_post_hoc_bands": {
+    "0.1-0.9": {
+     "calibration_gap": 0.10284565218083007,
+     "coverage": 0.1976911976911977,
+     "error_rate": 0.06204379562043796,
+     "random_error_rate": 0.14994525547445256
+    },
+    "0.3-0.7": {
+     "calibration_gap": 0.08331597960918405,
+     "coverage": 0.8008658008658008,
+     "error_rate": 0.09099099099099099,
+     "random_error_rate": 0.14824324324324326
+    }
    },
    "brier": 0.11256164011978553,
    "brier_skill": 0.4253973144070293,
@@ -545,6 +699,20 @@
     "error_rate": 0.047322540473225407,
     "random_error_rate": 0.1321793275217933
    },
+   "abstention_post_hoc_bands": {
+    "0.1-0.9": {
+     "calibration_gap": 0.06663875293424708,
+     "coverage": 0.17243867243867245,
+     "error_rate": 0.06276150627615062,
+     "random_error_rate": 0.1305020920502092
+    },
+    "0.3-0.7": {
+     "calibration_gap": 0.10653151110414759,
+     "coverage": 0.7828282828282829,
+     "error_rate": 0.059907834101382486,
+     "random_error_rate": 0.1324331797235023
+    }
+   },
    "brier": 0.10303107015004424,
    "brier_skill": 0.474048800775008,
    "label": "useful_signal",
@@ -622,6 +790,20 @@
     "coverage": 0.652958152958153,
     "error_rate": 0.06408839779005525,
     "random_error_rate": 0.16098342541436467
+   },
+   "abstention_post_hoc_bands": {
+    "0.1-0.9": {
+     "calibration_gap": 0.042581479709200475,
+     "coverage": 0.39105339105339104,
+     "error_rate": 0.01107011070110701,
+     "random_error_rate": 0.16118081180811805
+    },
+    "0.3-0.7": {
+     "calibration_gap": 0.11806764775778976,
+     "coverage": 0.8304473304473304,
+     "error_rate": 0.11120764552562988,
+     "random_error_rate": 0.161133796698523
+    }
    },
    "brier": 0.11374274590438507,
    "brier_skill": 0.41936802632027026,
@@ -707,6 +889,20 @@
     "error_rate": NaN,
     "random_error_rate": NaN
    },
+   "abstention_post_hoc_bands": {
+    "0.1-0.9": {
+     "calibration_gap": NaN,
+     "coverage": 0.0,
+     "error_rate": NaN,
+     "random_error_rate": NaN
+    },
+    "0.3-0.7": {
+     "calibration_gap": NaN,
+     "coverage": 0.0,
+     "error_rate": NaN,
+     "random_error_rate": NaN
+    }
+   },
    "brier": 0.19589473377352162,
    "brier_skill": 0.0,
    "reliability": [
@@ -725,6 +921,20 @@
     "coverage": 1.0,
     "error_rate": 0.1681096681096681,
     "random_error_rate": 0.1681096681096681
+   },
+   "abstention_post_hoc_bands": {
+    "0.1-0.9": {
+     "calibration_gap": 0.1681096681096681,
+     "coverage": 1.0,
+     "error_rate": 0.1681096681096681,
+     "random_error_rate": 0.1681096681096681
+    },
+    "0.3-0.7": {
+     "calibration_gap": 0.1681096681096681,
+     "coverage": 1.0,
+     "error_rate": 0.1681096681096681,
+     "random_error_rate": 0.1681096681096681
+    }
    },
    "brier": 0.1681096681096681,
    "brier_skill": 0.14183671571271783,
@@ -755,6 +965,20 @@
     "coverage": 0.6017316017316018,
     "error_rate": 0.045563549160671464,
     "random_error_rate": 0.14827338129496404
+   },
+   "abstention_post_hoc_bands": {
+    "0.1-0.9": {
+     "calibration_gap": 0.10284565218083007,
+     "coverage": 0.1976911976911977,
+     "error_rate": 0.06204379562043796,
+     "random_error_rate": 0.14994525547445256
+    },
+    "0.3-0.7": {
+     "calibration_gap": 0.08331597960918405,
+     "coverage": 0.8008658008658008,
+     "error_rate": 0.09099099099099099,
+     "random_error_rate": 0.14824324324324326
+    }
    },
    "brier": 0.11256164011978553,
    "brier_skill": 0.4253973144070293,
@@ -833,6 +1057,20 @@
     "coverage": 0.6926406926406926,
     "error_rate": 0.05625,
     "random_error_rate": 0.123359375
+   },
+   "abstention_post_hoc_bands": {
+    "0.1-0.9": {
+     "calibration_gap": 0.05412175373509249,
+     "coverage": 0.21717171717171718,
+     "error_rate": 0.046511627906976744,
+     "random_error_rate": 0.12088039867109635
+    },
+    "0.3-0.7": {
+     "calibration_gap": 0.14310058058560052,
+     "coverage": 0.8362193362193362,
+     "error_rate": 0.08541846419327007,
+     "random_error_rate": 0.12362381363244175
+    }
    },
    "brier": 0.10395974121810074,
    "brier_skill": 0.4693081370002985,
