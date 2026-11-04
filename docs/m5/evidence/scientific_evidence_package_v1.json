@@ -1,5 +1,5 @@
 {
-  "version": "m5-evidence-1",
+  "version": "m5-evidence-2",
   "questions": {
     "M5-A": "Can historical wind speed/direction, rainfall, regional fire activity, satellite imagery and soil moisture improve Singapore's six-hour-ahead PM2.5 predictions beyond PM2.5-only baselines, especially during severe haze episodes?",
     "M5-B": "Which upwind fire regions show atmospheric transport conditions and temporal associations consistent with subsequent PM2.5 increases in Singapore? Can we distinguish suggestive evidence from unsupported source attribution?",
@@ -35,6 +35,11 @@
     "config/m5/protocol-v1.yaml": "d9a381205b7b6d2747a9347f5ec687804c67f08e50022eb02795a00218a0694b",
     "docs/m5/M5_PROTOCOL_V1.md": "8c99ead93b760614b3e2789bb75cbe758549fa21bfcd70320012eb58cd46ff91"
   },
+  "protocol_bc_sha256": {
+    "docs/m5/M5_PROTOCOL_B_V1.md": "8e8a6163a6b65ab1c4ea53621180b664dba6b5c5c25ee736d96f6e6892e8096b",
+    "docs/m5/M5_PROTOCOL_C_V1.md": "f60056224f359586ef322e8e5b250b2441816a318289aa14f225740e35412ad1"
+  },
+  "window_rule": "A feature window is valid only if its newest observation end plus the source latency is at or before the issue time T. availability.assert_issue_time_valid checks this. IMERG Final (2556 h) and SMAP (50 h) are issue-time valid per source, but no recent-hours window at T+6 can use them; tests/test_m5_units_masks_availability.py covers IMERG Final.",
   "source_rules": [
     {
       "source": "nea_pm25",
@@ -23000,6 +23005,10 @@
       "sha256": "efcbb3cbf19484889f9d6199fe62fd216b9f9bdc6596c2a5481b985b33700fed"
     },
     {
+      "path": "docs/m5/results/m5_event_rates.json",
+      "sha256": "da207cd167fa6c90f2453b2609bd051dfb39e9fc30966da964e3234ba7bfa71c"
+    },
+    {
       "path": "docs/m5/M5_SCIENCE_REPORT.md",
       "sha256": "70ff6778a2dbe82dbd1da8a32fbf7b570ec05d607fc046f64153366b5989caac"
     },
@@ -23043,5 +23052,5 @@
     "No operational forecast and no health advice.",
     "No sealed NEA data (from 2024-01-01) was read."
   ],
-  "package_sha256": "d489df77118faad5bc8fee8bfee0702b7e8ba94c75853650ea20c4b0cf744f15"
+  "package_sha256": "0d3f80cfac1c68ec1ab3db077e90e9c285b3b969e7028de36dba650f056f6507"
 }

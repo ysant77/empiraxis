@@ -18,7 +18,7 @@ from earthlab.contracts import Strict
 from earthlab.haze.geometry import H1_SOURCE_BOXES, RECEPTOR_LAT, RECEPTOR_LON
 from earthlab.m5.availability import RULES
 
-PACKAGE_VERSION = "m5-evidence-1"
+PACKAGE_VERSION = "m5-evidence-2"
 RECEIPT_DIR = "docs/m5/receipts"
 RESULT_FILES = (
     "m5_ladder_stage_p",
@@ -26,6 +26,7 @@ RESULT_FILES = (
     "m5_i1_stage_p_2015",
     "m5_h1_stage_p",
     "m5_assoc_v1",
+    "m5_event_rates",
 )
 
 
@@ -76,6 +77,8 @@ class EvidencePackage(Frozen):
     source_boxes: dict[str, dict[str, float]]
     period: str
     protocol_sha256: dict[str, str]
+    protocol_bc_sha256: dict[str, str]
+    window_rule: str
     source_rules: list[SourceRule]
     assets: list[Asset]
     modalities: list[Modality]
@@ -88,6 +91,12 @@ class EvidencePackage(Frozen):
 
 
 STATIC = "config/m5/evidence-static.json"
+WINDOW_RULE = (
+    "A feature window is valid only if its newest observation end plus the source latency is "
+    "at or before the issue time T. availability.assert_issue_time_valid checks this. "
+    "IMERG Final (2556 h) and SMAP (50 h) are issue-time valid per source, but no recent-hours "
+    "window at T+6 can use them; tests/test_m5_units_masks_availability.py covers IMERG Final."
+)
 
 
 def sha256_file(path: Path) -> str:
@@ -141,6 +150,7 @@ def questions_from(repo: Path) -> dict[str, str]:
 def build(repo: Path) -> EvidencePackage:
     freeze = json.loads((repo / "docs/m5/protocol-v1.freeze.json").read_text())
     static = json.loads((repo / STATIC).read_text())
+    bc = json.loads((repo / "docs/m5/protocol-bc.freeze.json").read_text())
     pkg = EvidencePackage(
         version=PACKAGE_VERSION,
         questions=questions_from(repo),
@@ -149,6 +159,8 @@ def build(repo: Path) -> EvidencePackage:
         source_boxes={s.box_id: s.box.model_dump(mode="json") for s in H1_SOURCE_BOXES},
         period=static["period"],
         protocol_sha256=freeze["sha256"],
+        protocol_bc_sha256=bc["sha256"],
+        window_rule=WINDOW_RULE,
         source_rules=rules(),
         assets=assets_from(repo),
         modalities=[Modality(**m) for m in static["modalities"]],

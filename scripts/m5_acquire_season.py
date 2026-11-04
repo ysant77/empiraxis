@@ -1,6 +1,7 @@
 """Fetch ERA5 (10 m, 850 hPa) and FIRMS MODIS_SP boxes A, B, C for one Sep-Oct season.
 
-Usage: FIRMS_API_KEY=... uv run python scripts/m5_acquire_season.py DATA_ROOT YEAR [firms-only]
+Usage: FIRMS_API_KEY=... uv run python scripts/m5_acquire_season.py \
+    DATA_ROOT YEAR [firms-only|era5-only]
 Credentials come from ~/.cdsapirc (cdsapi) and the FIRMS_API_KEY variable. Caps: 60 MB per
 ERA5 single-level month, 30 MB per pressure-level month, 15 MB per FIRMS box. Receipts are
 written under DATA_ROOT/receipts. The layout matches runs/haze-2015 so the haze extract
@@ -68,18 +69,19 @@ def fetch_firms(root: Path, year: int, receipts: list[dict[str, object]]) -> Non
             print(name, len(data), flush=True)
 
 
+def _suffix(flags: list[str]) -> str:
+    return "_firms" if "firms-only" in flags else "_era5" if "era5-only" in flags else ""
+
+
 def main() -> int:
     root = Path(sys.argv[1]).expanduser() / "season" / sys.argv[2]
     year = int(sys.argv[2])
     receipts: list[dict[str, object]] = []
-    fetch_firms(root, year, receipts)
+    if "era5-only" not in sys.argv[3:]:
+        fetch_firms(root, year, receipts)
     if "firms-only" not in sys.argv[3:]:
         fetch_era5(root, year, receipts)
-    out = (
-        Path(sys.argv[1]).expanduser()
-        / "receipts"
-        / f"season_{year}{'_firms' if 'firms-only' in sys.argv[3:] else ''}.json"
-    )
+    out = Path(sys.argv[1]).expanduser() / "receipts" / f"season_{year}{_suffix(sys.argv[3:])}.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps({"authority": AUTHORITY, "files": receipts}, indent=2) + "\n")
     return 0

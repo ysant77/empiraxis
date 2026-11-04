@@ -1,0 +1,45 @@
+{
+  "threshold_ugm3": 55.0,
+  "years": {
+    "2015": {
+      "issues": 1386,
+      "issues_with_observed_window": 1386,
+      "events": 1173,
+      "base_rate": 0.8463203463203464,
+      "event_days": 55,
+      "episodes_gap_over_1_day": 3
+    },
+    "2016": {
+      "issues": 1386,
+      "issues_with_observed_window": 1386,
+      "events": 130,
+      "base_rate": 0.09379509379509379,
+      "event_days": 11,
+      "episodes_gap_over_1_day": 7
+    },
+    "2017": {
+      "issues": 1386,
+      "issues_with_observed_window": 1386,
+      "events": 104,
+      "base_rate": 0.07503607503607504,
+      "event_days": 10,
+      "episodes_gap_over_1_day": 4
+    },
+    "2018": {
+      "issues": 1386,
+      "issues_with_observed_window": 1386,
+      "events": 0,
+      "base_rate": 0.0,
+      "event_days": 0,
+      "episodes_gap_over_1_day": 0
+    },
+    "2019": {
+      "issues": 1386,
+      "issues_with_observed_window": 1386,
+      "events": 349,
+      "base_rate": 0.2518037518037518,
+      "event_days": 22,
+      "episodes_gap_over_1_day": 1
+    }
+  }
+}

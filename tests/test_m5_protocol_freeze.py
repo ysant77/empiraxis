@@ -26,3 +26,10 @@ def test_protocol_yaml_has_the_frozen_split() -> None:
     assert seasons["heldout_season"] not in seasons["train_seasons"]
     assert set(seasons["train_seasons"]) | {seasons["heldout_season"]} <= set(range(2015, 2024))
     assert cfg["sealed"]["first_sealed_label"].startswith("2024")
+
+
+def test_transport_and_event_protocols_match_the_freeze_record() -> None:
+    record = json.loads(Path("docs/m5/protocol-bc.freeze.json").read_text(encoding="utf-8"))
+    assert record["protocol_ids"] == ["m5-protocol-b-1", "m5-protocol-c-1"]
+    for name, digest in record["sha256"].items():
+        assert file_digest(Path(name)) == digest, f"{name} changed after the freeze"

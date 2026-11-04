@@ -108,3 +108,21 @@ def test_hindsight_sources_never_pass(source: str) -> None:
 
 def test_latest_visible_end_matches_latency() -> None:
     assert latest_visible_end("imerg_early", T) == T - timedelta(hours=4)
+
+
+def test_imerg_final_is_not_readable_for_a_recent_window_at_t_plus_six() -> None:
+    """IMERG Final needs about 106 days. A window ending 6 h before T is a leak."""
+    from datetime import UTC, datetime, timedelta
+
+    import pytest
+
+    from earthlab.m5.availability import LeakError, assert_issue_time_valid
+
+    issue = datetime(2015, 10, 20, 12, tzinfo=UTC)
+    for hours_back in (6, 24, 24 * 100):
+        with pytest.raises(LeakError):
+            assert_issue_time_valid("imerg_final", issue - timedelta(hours=hours_back), issue)
+    assert_issue_time_valid("imerg_final", issue - timedelta(hours=24 * 107), issue)
+    assert_issue_time_valid("imerg_early", issue - timedelta(hours=5), issue)
+    with pytest.raises(LeakError):
+        assert_issue_time_valid("smap_l3", issue - timedelta(hours=6), issue)
