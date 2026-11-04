@@ -22,6 +22,8 @@ happened after the historical check:
   and H and HC on 4 of 5. The heterogeneous council did not outperform the simpler baselines.
   The Muse critic failed the detection and support gates. Report: `docs/m41/m41-benchmark-report.md`.
 - M5-B did not run (ERA5 files missing). The M5 workstream is frozen.
+- PR #116 (video production kit) merged at `6b876d8`. CI now runs the five render failure tests
+  with ffmpeg and no skips. Merging the kit does not certify any film.
 - Gate 22: a voice-only V1.1 cut exists (no music; credits say "no music"). Video 2.0 has a
   watermarked review render and waits for the owner review. Neither film is published.
 - Gates 23, 24 and 27 stay NOT RUN until the owner does them.
