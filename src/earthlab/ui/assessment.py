@@ -33,12 +33,13 @@ def runs(root: Path = REPLAY) -> list[str]:
 def load(name: str, root: Path = REPLAY) -> tuple[dict[str, Any], list[dict[str, Any]], str]:
     folder = root / name
     result = json.loads((folder / "result.json").read_text(encoding="utf-8"))
-    trace = RunTrace(folder / "trace.jsonl")
     try:
+        trace = RunTrace(folder / "trace.jsonl")
         integrity = f"hash chain verified, {trace.verify()} entries"
-    except TraceIntegrityError as exc:
-        integrity = f"hash chain broken: {exc}"
-    return result, list(trace.records()), integrity
+        records = list(trace.records())
+    except (TraceIntegrityError, KeyError) as exc:
+        return result, [], f"hash chain broken: {exc}"
+    return result, records, integrity
 
 
 def roster(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
