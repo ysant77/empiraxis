@@ -50,6 +50,11 @@ The new ladder code also gives R0 = 30.76 and R1 = 32.10 on the same season, so 
 
 ## 2. Experiment B: issue-time-valid T+6 prediction
 
+> **Correction note (2026-11-04).** In this heading, "issue-time-valid" means allowed under the nominal-latency
+> rule. It does not mean verified. No M5 source has a verified publication time per observation. FIRMS
+> standard processing and IMERG Early belong to the class `nominal_latency_assumed`. A near-real-time FIRMS
+> feed is a different product and was not compared. The heading and the results below are unchanged.
+
 Inputs allowed at issue time: NEA lags (newest T-2 h) and FIRMS (pass + 3 h). ERA5 is excluded
 because it is hindsight data. Rungs: R0 persistence; R1 ridge on 24 lags; R2 R1 + 9 FIRMS features;
 R3a trees on R1 inputs; R3 trees on R2 inputs. Settings are in `config/m5/protocol-v1.yaml`.
@@ -277,6 +282,16 @@ uv run python scripts/m5_run_assoc.py <DATA_ROOT> <runs/haze-2015>
 Raw data sits in `<DATA_ROOT>` outside Git. Receipts with SHA-256 are in `docs/m5/receipts/`.
 
 ## 9. Evidence package for M4 (ScientificEvidencePackageV1)
+
+> **Correction note (2026-11-04).** The text below describes `m5-evidence-4`, which stays unchanged. Its
+> two-class field (`issue_time_valid`, `retrospective_only`) was too strong. The new package `m5-evidence-5`
+> (`docs/m5/evidence/scientific_evidence_package_v2.json`, built by `scripts/m5_build_evidence_v2.py`) uses
+> four classes: `verified_issue_time` (no M5 source has it), `nominal_latency_assumed`, `retrospective_only`
+> and `unknown`. FIRMS standard processing and IMERG Early are `nominal_latency_assumed`. The FIRMS
+> near-real-time feed is `unknown`. No frozen result changes.
+> The text below about rebuilding applies to `m5-evidence-5`. The `m5-evidence-4` file is never rebuilt in place.
+> To reproduce it, run `python scripts/m5_build_evidence.py --out FILE`. The script builds the package from
+> its pinned source commit `78bd3fb` in a temporary folder and checks that the bytes equal the archived file.
 
 `scripts/m5_build_evidence.py` writes `docs/m5/evidence/scientific_evidence_package_v1.json` from committed artifacts only.
 It holds the three registered questions (M5-A primary), the AOI and source boxes, the frozen-protocol hashes,
