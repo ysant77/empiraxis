@@ -63,6 +63,79 @@ NEA file SHA-256: `2fb76e1c4e4208e92f49670602e303c86e21eaa3704651633323e50f51015
 ## Limits
 
 - Post hoc. The definitions were written after the primary result was known.
-- The 20-hour observation rule and the 24 h merge rule are choices of this audit. No
-  sensitivity test was run on them.
+- The 20-hour observation rule and the 24 h merge rule are choices of this audit. The review
+  revision below tests them.
 - No causal attribution. No operational forecast.
+
+## Review revision (2026-11-04, audit 2)
+
+The definitions above are unchanged. The review added checks. The script is now audit 2
+(`m5-c-onset-audit-2`). The primary numbers equal audit 1: same state counts, same 4 onsets.
+The output adds the NEA file digest, a sensitivity grid and the week structure.
+Tests: `tests/test_m5_onset_audit.py` (merge boundary, lag window edge, coverage rule, onset
+versus continuation, and a fresh run that must equal the committed file).
+
+### What "independent onset" means
+
+It means two exceedances are separated by fewer than 24 hours of merge distance: fewer than
+24 hours without an exceedance lie between them. It does not mean meteorologically independent.
+All 2019 episodes lie in one September haze period. Whether they share a fire regime was not tested.
+
+### Why M5 says one episode and this audit says five
+
+M5 counts days with an event label. It starts a new episode only after a gap of more than one day.
+The event window reaches back to T+13 h, so label days run together over gaps of 35 to 50 hours.
+This audit counts hourly exceedances. Both counts are correct for their definitions. The M5 report
+keeps "one episode" for the scored labels. The exceedance episodes are:
+
+| Start | Span (h) | Exceedance hours | Counted as onset |
+|---|---|---|---|
+| 9 Sep | 41 | 16 | yes |
+| 12 Sep | 164 | 101 | yes |
+| 20 Sep | 96 | 65 | no |
+| 26 Sep | 1 | 1 | yes |
+| 28 Sep | 1 | 1 | yes |
+
+The 20 Sep episode begins 35 hours after the previous one ends. That exceedance is inside the 24
+lag hours of every issue that could predict it, so those issues are "ongoing". The audit treats
+it as a continuation, not an onset. Two of the four counted onsets are single-hour exceedances.
+
+### Sensitivity (not a selection)
+
+Independent onsets under 24 settings (merge 12, 24, 48, 72 h; coverage rule 16, 20, 24 hours;
+minimum exceedance hours 1 and 6). The range is 1 to 5. No setting reaches the declared 10.
+
+| Merge gap (h) | Min 1 exceedance hour | Min 6 exceedance hours |
+|---|---|---|
+| 12 | 5 | 2 |
+| 24 (primary) | 4 | 2 |
+| 48 | 2 | 1 |
+| 72 | 1 | 1 |
+
+The coverage rule has no effect in 2019: all 968 non-ongoing issues have at least 24 observed
+lag hours. The verdict "insufficient independent onsets" holds under every tested setting.
+
+### Why a week bootstrap does not estimate generalisation across episodes
+
+- The 1,386 scored issues cover 9 ISO weeks. Events fall in 4 of them: week 36 has 21, week 37 has
+  132, week 38 has 145 and week 39 has 51. All 349 events belong to one connected label period.
+- The M5-C bootstrap resamples these weeks. It shows how the score changes when the weeks of one
+  episode get different weights. It holds the episode, the season, the station network and the fire
+  regime fixed.
+- Consecutive hourly issues share 11 of their 12 target hours, so hours are not independent. Weeks
+  fix that for hours. They do not turn the weeks of one episode into draws from many episodes.
+- The interval therefore covers week-to-week variation inside one episode. It does not cover
+  episode-to-episode variation in size, duration or source, variation between years, or the choice
+  of 2019. The season 2019 was also the Stage T test season, so it was reused.
+- An onset-only bootstrap would resample at most 4 units (1 to 5 across settings). That is too few.
+
+### Saved predictions and re-creation
+
+- **Saved predictions: NO.** `scripts/m5_run_c.py` writes aggregates only. No file with per-issue
+  probabilities exists in the repository or in the local data folders.
+- **Could they be re-created?** Yes, in principle. M5-C has fixed folds and seed 7. A full rerun
+  on 2026-11-04 reproduced every number of the primary record (0 differences). A dump of the C2
+  and C3 probabilities would therefore be exact. A predictions-only path would skip the bootstrap.
+- **Not done here.** The brief forbids a new fit. Even with predictions, 4 onsets cannot support a
+  skill estimate for onset prediction. A state-split Brier table would be descriptive only. It
+  needs its own ID and the owner's approval first.
