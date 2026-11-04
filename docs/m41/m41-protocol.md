@@ -167,5 +167,8 @@ is reported, with a proposal to remove it or call it only when needed.
   experiment the adapter counts a source as issue-time valid only when M5 classes it so and its
   nominal latency is at most 24 hours. A source M5 gated out or did not assess is `unknown`.
   This rule is M4.1's, not M5's.
-- **Runs.** Arms H and HC on package E, after the main matrix. The answer key for E is in
+- **Version used.** Before any run on E, M5 froze its B and C protocols and published
+  `m5-evidence-2` at commit `458f297`. Package E is built from `458f297`. Its sources and facts
+  equal the `feeeef9` build; only the M5 version and package hash differ.
+- **Runs.** Arms F, H and HC on package E, after the main matrix. The answer key for E is in
   `config/assess/answer-keys.yaml`, written before the first run on E.
