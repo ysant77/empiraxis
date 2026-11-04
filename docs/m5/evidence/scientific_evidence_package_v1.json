@@ -1,5 +1,5 @@
 {
-  "version": "m5-evidence-3",
+  "version": "m5-evidence-4",
   "questions": {
     "M5-A": "Can historical wind speed/direction, rainfall, regional fire activity, satellite imagery and soil moisture improve Singapore's six-hour-ahead PM2.5 predictions beyond PM2.5-only baselines, especially during severe haze episodes?",
     "M5-B": "Which upwind fire regions show atmospheric transport conditions and temporal associations consistent with subsequent PM2.5 increases in Singapore? Can we distinguish suggestive evidence from unsupported source attribution?",
@@ -23022,7 +23022,7 @@
     },
     {
       "path": "docs/m5/M5_SCIENCE_REPORT.md",
-      "sha256": "7b8b728bc0d7308d9f810f5c9c1f73b8ca8b9254866edfbaa10d7be41003aefb"
+      "sha256": "1887d4e41e04e2ffea725b8a8712d0e043bfc04f3da9e0044912776a9df4a87c"
     },
     {
       "path": "docs/m5/layers_manifest.json",
@@ -23064,5 +23064,5 @@
     "No operational forecast and no health advice.",
     "No sealed NEA data (from 2024-01-01) was read."
   ],
-  "package_sha256": "bb458c2f2effabac77b770d0639bed40add4f071c5520549b5bf8dc65a6e35d9"
+  "package_sha256": "bd8cf0bd487a1efb26d4ab80d2d321e3df554b80cc9ee539e6a23366258be881"
 }

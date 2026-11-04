@@ -49,7 +49,7 @@ runs a small issue-time ladder on real data, and records what is not usable.
 - Strict JSON: `m5_c_v1.json` (nine NaN tokens) is unchanged. `m5_c_v1.strict_v1.json` is the valid-JSON export with null and a reason for each missing value.
   All M5 writers reject NaN and Infinity. A test parses every published `docs/m5` and `config/m5` JSON file strictly.
 - Coverage-aware event labels (Amendment C4): a negative needs complete window coverage. No saved 2015 to 2019 score changes (rerun: 0 differences).
-- Evidence package `m5-evidence-3` (new version). `m5-evidence-2` at commit `458f297` is untouched.
+- Evidence package `m5-evidence-4` (new version). `m5-evidence-2` at commit `458f297` is untouched.
 - Limits: latencies are nominal, 2019 is a reused test season, no causal attribution.
 
 ## Not in this PR

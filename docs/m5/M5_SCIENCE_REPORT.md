@@ -1,17 +1,21 @@
 # M5 science report: multisource environment pilot
 
 Date: 2026-11-03. Protocol: `docs/m5/M5_PROTOCOL_V1.md` (frozen before the first new fit).
-Branch: `experiment/m5-multisource-environment`. No Meta model took part. All runs are deterministic code on CPU.
+Branch: `feat/m5-multisource-environment`. No Meta model took part. All runs are deterministic code on CPU.
 
 ## Summary
 
 - **The published 2015 negative ablation reproduces exactly.** Persistence 30.76, ridge 32.10, ERA5 36.73,
   ERA5 + FIRMS 41.75 µg/m³ (MAE).
-- **No issue-time-valid addition gave a supported gain.** FIRMS features did not beat PM2.5 history on all
+- **No addition classed as issue-time valid by nominal latency gave a supported gain.** FIRMS features did not beat PM2.5 history on all
   hours in any scored season. Trees did not beat ridge.
 - **One exploratory signal.** On the 2019 held-out haze season, FIRMS features lowered the error on
   elevated hours (above 55 µg/m³) by about 39%, while they raised the all-hours error by about 13%.
   This is not a supported gain under the frozen rule. It needs its own protocol.
+- **M5-C (event 12 to 24 h ahead, 2019): the skill comes from the PM2.5 lags.** A FIRMS increment is not supported:
+  the C3 label does not survive the 24 h FIRMS delay or the season-rank check. All 349 events come from one 2019 episode.
+  The 2019 season was reused (it is also the Stage T test season), so this is not an independent test. The abstention bands
+  0.1 to 0.9 and 0.3 to 0.7 are post hoc and exploratory.
 - **Three of the new data layers are not fit for the model.** SMAP has no recommended-quality retrieval over
   the Kalimantan box. HLS has 2.7% clear land on both dates, with high aerosol on more than 96% of pixels.
   IMERG was blocked by an account permission until the owner fixed it; the pilot now ran on four days.

@@ -1,6 +1,6 @@
 # M5 data integration status
 
-Audit date: 2026-11-03. Base: `release/hackathon-2026` = `4e4a4f1`. Branch: `experiment/m5-multisource-environment`.
+Audit date: 2026-11-03. Base: `release/hackathon-2026` = `4e4a4f1`. Branch: `feat/m5-multisource-environment`.
 A dataset is not "integrated" because a YAML file lists it. Seven levels are tracked apart.
 
 | Level | Meaning |

@@ -18,7 +18,7 @@ from earthlab.contracts import Strict
 from earthlab.haze.geometry import H1_SOURCE_BOXES, RECEPTOR_LAT, RECEPTOR_LON
 from earthlab.m5.availability import RULES
 
-PACKAGE_VERSION = "m5-evidence-3"
+PACKAGE_VERSION = "m5-evidence-4"
 RECEIPT_DIR = "docs/m5/receipts"
 RESULT_FILES = (
     "m5_ladder_stage_p",
