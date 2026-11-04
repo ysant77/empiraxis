@@ -51,7 +51,7 @@ def _clients(
     return clients
 
 
-def main() -> None:
+def _args() -> argparse.Namespace:
     ap = argparse.ArgumentParser()
     ap.add_argument("--arms", required=True)
     ap.add_argument("--packages", required=True)
@@ -62,7 +62,11 @@ def main() -> None:
     ap.add_argument("--repeat", type=int, default=1)
     ap.add_argument("--temperature", type=float, default=None)
     ap.add_argument("--critic-contract", choices=["v1", "v2"], default=None)
-    a = ap.parse_args()
+    return ap.parse_args()
+
+
+def main() -> None:
+    a = _args()
     spec = load_spec(Path("config/assess/council-m41-v2.yaml"))
     if a.temperature is not None:
         spec = spec.model_copy(

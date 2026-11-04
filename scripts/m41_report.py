@@ -54,6 +54,7 @@ def council_rows(folders: list[Path]) -> list[dict[str, Any]]:
         pid = result["package_id"]
         row = {
             "run": folder.name,
+            "set": folder.parent.name,
             "arm": result["arm"],
             "package": pid,
             "temperature": result.get("temperature"),
@@ -65,6 +66,7 @@ def council_rows(folders: list[Path]) -> list[dict[str, Any]]:
         row["critic_independent_checkpoint"] = formed.get("critic_independent_checkpoint")
         row["participation"] = result.get("participation")
         row["escalations"] = result.get("escalations", [])
+        row["code_rule_flags"] = (result.get("code_rule") or {}).get("flags", [])
         if result["status"] == "failed":
             row.update({"status": "failed", "reason": result.get("reason")})
         else:
