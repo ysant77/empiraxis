@@ -12,6 +12,8 @@ Empiraxis: AI-directed scientific engineering, evidence before conclusions
 
 Meta open-weight models plan environmental studies; code runs and scores them; a person decides, and the system records when the answer is "the extra data did not help".
 
+Central message: Empiraxis explores how AI agents can coordinate reproducible scientific engineering, with evidence and deterministic verification determining what conclusions are justified.
+
 ## Problem and approach (150 words)
 
 Language models can write a confident scientific answer that no experiment supports. Empiraxis tests a different arrangement on the 2015 and 2019 Southeast Asian haze. Meta open-weight models do the planning: they scope the question, choose a method and propose the next step. They do not compute results. Allowlisted tools get the data and train the models. Separate evaluator code scores every candidate against simple baselines such as persistence. A hash-chained trace records each model call, tool call and checkpoint hash. A person makes the final decision. The allowed outcomes include "train", "keep the baseline", "abstain" and "request better data". The project keeps its negative results. In the multisource pilot, satellite fire counts, reanalysis wind and satellite rain did not give a supported gain over PM2.5 history. A team of models reached the same decision as a deterministic pipeline, at a higher cost. Both results are part of the submission.
@@ -23,7 +25,8 @@ Language models can write a confident scientific answer that no experiment suppo
 | Model | Where it ran | What it did | Evidence |
 |---|---|---|---|
 | Muse Glimmer 30B (GGUF Q4_K_M, Apache-2.0) | Local, llama.cpp `llama-server` | Product manager and Lead seats: scope, method, review, recommendation. In the M3 team runs it also filled the data and ML specialist seats. | `examples/replay/scenario-m4-heterogeneous-council/trace.jsonl` (`role_binding`, checkpoint SHA-256 `4cc57c0f5104...`); `scenario-muse-*` replays |
-| Llama 3.2 3B Instruct (GGUF Q4_K_M, Llama 3.2 Community License) | Local, llama.cpp | M4 run: data specialist, ML specialist and advisory critic seats. The specialists call fixed tools and write a short note. | Same trace, checkpoint SHA-256 `6c1a2b411610...` |
+| Llama 3.2 3B Instruct (GGUF Q4_K_M, Llama 3.2 Community License) | Local, llama.cpp | M4 run: data specialist, ML specialist and advisory critic seats. M4.1 benchmark: data specialist seat in arms H and HC. | Same trace, checkpoint SHA-256 `6c1a2b411610...`; `docs/m41/evidence/m41-v2-benchmark.json` |
+| Qwen3 4B Instruct 2507 (GGUF, Apache-2.0; non-Meta, secondary seat) | Local, llama.cpp | M4.1 benchmark: ML specialist seat in arms H and HC | `examples/assess/replay/20261104T060024Z-HC-e-m5-handoff-v2-r1`, checkpoint SHA-256 `3605803b982c...` |
 | Llama Guard 3 8B | Local, Ollama | Safety check on questions and answers in the investigation path only | README "Safety gate"; in-sample 16 cases |
 
 Counts from the recorded M4 run (`scenario-m4-heterogeneous-council`): 13 model calls on 2 checkpoints. Muse 8 (PM 2, Lead 6). Llama 3.2 3B 5 (data 2, ML 2, critic 1).
@@ -44,7 +47,7 @@ What the models did **not** do:
 4a. **M5-B (transport consistency 2017 to 2019): no result.** The ERA5 pressure-level files for 2017 to 2019 did not arrive from the data service. M5-B did not run. M5 is frozen for this submission.
 5. **Data suitability.** SMAP had no recommended-quality retrieval over the Kalimantan box. HLS had 2.7% clear land on the two dates. These results apply to these footprints and dates only.
 6. **Recorded scenarios (validation years, sealed test period not read).** S1: a GRU had MAE 4.588 against 5.465 for persistence, but was worse above 55 µg/m³ (28.772 against 26.324), so "adopt with limits". S2: a reused encoder lost to a persistence alarm (F1 0.255 against 0.306), so the baseline stays. S3: no box was consistent (0 of 6), so the system abstains. S4: the imagery did not fit, so the system requests resources.
-7. **Multi-agent advantage is not shown.** The earlier comparison found a team of models reached the same decision as the deterministic pipeline, at higher cost (`docs/comparative-evidence-report.md`). The M4.1 benchmark confirms this. Arms F, S and T were correct on 5 of 5 packages; the mixed council H and HC on 4 of 5, at higher cost (HC: 91,601 tokens and 91 minutes; S: 14,070 tokens and 26 minutes). The Muse critic found 1 of 12 seeded faults with support. It runs on the Lead's checkpoint and is not independent.
+7. **No multi-agent advantage in this five-case evaluation.** The earlier comparison found a team of models reached the same decision as the deterministic pipeline, at higher cost (`docs/comparative-evidence-report.md`). The M4.1 benchmark confirms this. Arms F, S and T were correct on 5 of 5 packages; the mixed council H and HC on 4 of 5, at higher cost (HC: 91,601 tokens and 91 minutes; S: 14,070 tokens and 26 minutes). The Muse critic found 1 of 12 seeded faults with support. It runs on the Lead's checkpoint and is not independent.
 
 ## Architecture (diagram description)
 
@@ -62,7 +65,7 @@ Left to right: a research question goes to the safety gate. The Muse PM seat sco
 ## Video
 
 - Primary: Video 2.0 from Session C, if the owner approves it before the cutoff. `[VIDEO 2.0 PENDING: file, SHA-256, duration]`
-- Fallback: V1.1 picture (`Empiraxis_V1_1*.mp4`, SHA-256 in `video/README.md` on PR #116). **V1.1 as rendered carries a MusicGen bed under CC-BY-NC 4.0, and its credits frame says so.** This conflicts with the owner's decision of 4 November (no music, or a track with a verified licence). See the release QA report for the voice-only option.
+- Fallback: `Empiraxis_V1_1_voice_only.mp4` (2:49, 1920×1080, SHA-256 `fd54e3d26145ecf8a38442667b3f99f3dde4172165f8710a0c0480c5b647af4d`). It is the V1.1 picture with the Kokoro narration only and no music. Its credits say "no music". It shows M3 only, not M4, M4.1 or M5.
 
 ## Credits and licences
 

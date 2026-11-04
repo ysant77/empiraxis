@@ -5,6 +5,27 @@ Checkout: a clean worktree of that commit. No model server, GPU or network data 
 
 **Overall status: RED.** No portal submission exists and no receipt exists. Some gates below are open.
 
+## Status update (2026-11-04, 22:10 SGT)
+
+The gate table below is the historical check of `35de956`. Its results apply to that commit
+only. The final integrated release is checked again after this PR merges. These events
+happened after the historical check:
+
+- PR #119 (M5-C onset audit) merged at `62fdc83`. Verdict: insufficient independent onsets (4, below 10).
+- PR #120 merged at `0c564e8`. It adds `m5-evidence-5` with four availability classes. The M5
+  wording finding below is resolved there: FIRMS standard processing and IMERG Early are
+  `nominal_latency_assumed`, and no M5 source has a verified publication time. `m5-evidence-4`
+  is unchanged.
+- PR #117 (M4.1) merged at `eac435c` after CI passed on `07ada6f` (2,018 passed, 94.58%).
+  The benchmark is complete: 25 main, 2 repeat and 2 stochastic runs, 24 critic cases, and one
+  demonstration run. In this five-case evaluation, F, S and T were correct on 5 of 5 packages,
+  and H and HC on 4 of 5. The heterogeneous council did not outperform the simpler baselines.
+  The Muse critic failed the detection and support gates. Report: `docs/m41/m41-benchmark-report.md`.
+- M5-B did not run (ERA5 files missing). The M5 workstream is frozen.
+- Gate 22: a voice-only V1.1 cut exists (no music; credits say "no music"). Video 2.0 has a
+  watermarked review render and waits for the owner review. Neither film is published.
+- Gates 23, 24 and 27 stay NOT RUN until the owner does them.
+
 ## Gates
 
 | # | Gate | Result | Evidence |
@@ -75,7 +96,7 @@ The README is shared, so this report proposes text only. It does not change the 
 1. Pick the film: Video 2.0 or the voice-only V1.1 cut from Session C. Do not ship the MusicGen bed.
 2. Read the deadline and the edit policy on the portal itself.
 3. Done: the M4.1 fields come from `docs/m41/m41-benchmark-report.md` (PR #117).
-4. Merge the README and `LICENSING.md` changes (this branch) through a PR with green CI, or ship without them.
+4. Done when PR #121 merges: the README and `LICENSING.md` changes.
 5. Submit, and save the receipt. Until then the status stays RED.
 
 Closed on 2026-11-04 by owner decision: public visibility (intended), licence (Apache-2.0), local paths in the held-out results (accepted).

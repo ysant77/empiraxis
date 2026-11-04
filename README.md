@@ -87,7 +87,7 @@ M4.1 benchmark (experiment m41-v2, `docs/m41/m41-benchmark-report.md`): 29 recor
 
 H and HC abstain on the M5 package, outside the code rule; the repeat run gives the same error. The Llama data specialist made 40 findings, none supported. The Qwen ML specialist raised 1 known fault per arm. The Muse critic detected 1 of 12 seeded faults with support (the code rules: 6 of 12). HC used 91,601 tokens and 91 minutes, against 14,070 tokens and 26 minutes for S.
 
-The data does not show that the council is better, faster or more accurate than the deterministic path.
+In our initial five-case evaluation, heterogeneous agents did not outperform the simpler baselines. Empiraxis records that finding instead of hiding it. One run per cell on five packages gives counts, not general accuracy for any arm. The council remains an experimental research-engineering architecture, not validated production automation.
 
 ## Run the demonstration
 

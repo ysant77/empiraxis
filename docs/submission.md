@@ -99,6 +99,6 @@ uv run ruff check . && uv run ruff format --check . && uv run mypy && uv run pyt
 | Licence | Apache-2.0 for the project code and documents. Data and models keep their own terms (`LICENSING.md`). | none |
 | Repository visibility | Public | none |
 | Hosted replay | Not published | Optional. Follow `docs/hosted-replay.md`. |
-| Video | V1.1 exists. Its music bed is CC-BY-NC, so the release cut must use voice only or a track with a verified licence. Video 2.0 is in progress. | Pick the film and check its SHA-256. |
+| Video | Voice-only V1.1 fallback exists (no music, SHA-256 `fd54e3d26145…`). Video 2.0 has a watermarked review render and waits for the owner review. | Pick the film and check its SHA-256. |
 | Deadline | Planning documents give 4 November 21:00 ET (5 November 10:00 SGT). | Confirm the deadline on the portal. |
 | Submission | Not submitted | Submit and keep the receipt. |
