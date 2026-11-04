@@ -26,6 +26,25 @@ ROLE = {
     "hls_archive": "observation",
 }
 Reader = Callable[[str], bytes]
+HEAD: dict[str, Any] = {
+    "package_id": "e-m5-handoff",
+    "scenario": "design",
+    "study_area": "Singapore receptor and source boxes A, B, C",
+    "target": "hourly PM2.5 at T+6, ug/m3",
+    "acceptance_criteria": [
+        "Only inputs available at issue time enter the prediction experiment.",
+        "Inputs that M5 gated out or did not assess are excluded.",
+        "No supported gain is claimed from Stage P or one season.",
+    ],
+    "allowed_decisions": [
+        "proceed_with_limits",
+        "request_validation",
+        "request_data",
+        "abstain",
+        "adopt",
+    ],
+    "fixture": False,
+}
 
 
 class ArtifactMismatch(RuntimeError):
@@ -81,8 +100,7 @@ def _fact(
     }
 
 
-def facts(m5: dict[str, Any], stage_t: dict[str, Any]) -> list[dict[str, Any]]:
-    b = m5["baselines"]
+def _baseline_facts(b: dict[str, Any]) -> list[dict[str, Any]]:
     out = [
         _fact(f"p15.{k}", f"2015 Stage P {k} MAE (blocked folds, no skill claim)", "m5_package", v)
         for k, v in b["stage_p_2015_mae"].items()
@@ -99,6 +117,11 @@ def facts(m5: dict[str, Any], stage_t: dict[str, Any]) -> list[dict[str, Any]]:
             b["stage_p_2015_i1_mae"]["I1"],
         )
     )
+    return out
+
+
+def facts(m5: dict[str, Any], stage_t: dict[str, Any]) -> list[dict[str, Any]]:
+    out = _baseline_facts(m5["baselines"])
     s = stage_t["2019"]
     for rung in ("R0", "R1", "R2"):
         out.append(
@@ -164,17 +187,9 @@ def adapt(m5: dict[str, Any], read: Reader, commit: str) -> EvidencePackageV1:
     ]
     return EvidencePackageV1.model_validate(
         {
-            "package_id": "e-m5-handoff",
-            "scenario": "design",
+            **HEAD,
             "question": m5["questions"][m5["primary_question"]][:400],
-            "study_area": "Singapore receptor and source boxes A, B, C",
             "interval": m5["period"],
-            "target": "hourly PM2.5 at T+6, ug/m3",
-            "acceptance_criteria": [
-                "Only inputs available at issue time enter the prediction experiment.",
-                "Inputs that M5 gated out or did not assess are excluded.",
-                "No supported gain is claimed from Stage P or one season.",
-            ],
             "sources": srcs,
             "facts": facts(m5, stage_t),
             "limitations": [*m5["limitations"], *m5["claims_not_made"]],
@@ -183,13 +198,5 @@ def adapt(m5: dict[str, Any], read: Reader, commit: str) -> EvidencePackageV1:
                 for m in m5["modalities"]
                 if m["status"] in ("not_assessed", "blocked")
             ],
-            "allowed_decisions": [
-                "proceed_with_limits",
-                "request_validation",
-                "request_data",
-                "abstain",
-                "adopt",
-            ],
-            "fixture": False,
         }
     )

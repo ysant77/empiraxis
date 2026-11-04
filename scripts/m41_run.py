@@ -10,6 +10,7 @@ import argparse
 import json
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 from earthlab.assess.contracts import EvidencePackageV1
 from earthlab.assess.council import Council, arm_of, load_spec
@@ -31,6 +32,20 @@ def package(prefix: str) -> EvidencePackageV1:
 def models_map(root: Path, files: dict[str, str]) -> dict[str, Path]:
     found = {p.name: p for p in root.rglob("*.gguf")}
     return {prov: found[name] for prov, name in files.items() if name in found}
+
+
+def _clients(
+    spec: Any, providers: dict[str, Any], registry: dict[str, Any], side_url: str
+) -> dict[str, StructuredClient]:
+    """Muse on its own port; every other checkpoint on the side server."""
+    clients: dict[str, StructuredClient] = {}
+    for name in sorted(providers):
+        if name in registry:
+            cfg = providers[name]
+            if name not in spec.main_providers:
+                cfg = cfg.model_copy(update={"base_url": side_url})
+            clients[name] = HttpStructuredClient(cfg)
+    return clients
 
 
 def main() -> None:
@@ -56,13 +71,7 @@ def main() -> None:
     side = SideServer(
         models_map(a.models_dir, {p: c.file for p, c in registry.items()}), registry, port=8081
     )
-    clients: dict[str, StructuredClient] = {}
-    for name in sorted(providers):
-        if name in registry:
-            cfg = providers[name]
-            if name not in spec.main_providers:
-                cfg = cfg.model_copy(update={"base_url": side.base_url})
-            clients[name] = HttpStructuredClient(cfg)
+    clients = _clients(spec, providers, registry, side.base_url)
     verify_identity(providers["local-glimmer"].base_url, registry["local-glimmer"])
     try:
         for rep in range(a.repeat):
