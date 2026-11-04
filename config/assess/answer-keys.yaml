@@ -47,3 +47,17 @@ keys:
       - fault_class: insufficient_evidence
         evidence: [t19.elev_days, t19.R3a.mae_gt55]
     must_exclude: [era5, imerg_final, hls, smap]
+  # Amendment 2 (2026-11-04): package E is built from the M5 package (m5-evidence-1, commit
+  # feeeef9) by assess/m5_adapter.py. Key written before any run on package E.
+  e-m5-handoff:
+    acceptable: [proceed_with_limits, request_validation]
+    known_faults:
+      - fault_class: hindsight_as_forecast
+        evidence: [era5, imerg_final, mcd64a1, hls_archive, maiac_061]
+      - fault_class: missing_observations
+        evidence: [smap_l3, hls_archive, mcd64a1, maiac_061, imerg_late]
+      - fault_class: subgroup_deterioration
+        evidence: [t19.R2_vs_R1.high, t19.R2.mae, t19.R2.mae_gt55, t19.R1.mae]
+      - fault_class: insufficient_evidence
+        evidence: [t19.elev_days, p15.I1, p15.R2, p15.R0]
+    must_exclude: [era5, imerg_final, mcd64a1, hls_archive, maiac_061, smap_l3, imerg_late]

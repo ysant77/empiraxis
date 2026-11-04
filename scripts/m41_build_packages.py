@@ -20,6 +20,7 @@ from pathlib import Path
 from typing import Any
 
 from earthlab.assess.contracts import EvidencePackageV1
+from earthlab.assess.m5_adapter import adapt
 
 M3_RUN = "20261103T061204Z-829fed"
 NEA_RUN = "20261103T035551Z-95e7a3"
@@ -55,6 +56,12 @@ class Store:
     def repo_file(self, rel: str) -> tuple[Any, str, str]:
         raw = Path(rel).read_bytes()  # this checkout
         return json.loads(raw), hashlib.sha256(raw).hexdigest(), rel
+
+    def git_bytes(self, ref: str, rel: str) -> bytes:
+        git = shutil.which("git") or "git"
+        return subprocess.run(  # noqa: S603 - fixed git command on a pinned commit
+            [git, "-C", str(self.repo), "show", f"{ref}:{rel}"], check=True, capture_output=True
+        ).stdout
 
     def m5_file(self, rel: str) -> tuple[Any, str, str]:
         git = shutil.which("git") or "git"
@@ -556,16 +563,31 @@ def package_d(st: Store) -> dict[str, Any]:
     }
 
 
+def package_e(st: Store, ref: str) -> EvidencePackageV1:
+    """Amendment 2: consume the M5 package itself through the hash-checking adapter."""
+    path = "docs/m5/evidence/scientific_evidence_package_v1.json"
+    m5 = json.loads(st.git_bytes(ref, path))
+    return adapt(m5, lambda rel: st.git_bytes(ref, rel), ref)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     for flag in ("--runs", "--m4-runs", "--repo", "--out"):
         ap.add_argument(flag, type=Path, required=True)
     ap.add_argument("--m5-ref", required=True)
+    ap.add_argument("--m5-package-ref", default=None)
+    ap.add_argument("--only", default="abcd")
     a = ap.parse_args()
     st = Store(a.runs, a.m4_runs, a.repo, a.m5_ref)
     a.out.mkdir(parents=True, exist_ok=True)
-    for build in (package_a, package_b, package_c, package_d):
-        pkg = EvidencePackageV1.model_validate(build(st))
+    built = [
+        EvidencePackageV1.model_validate(b(st))
+        for k, b in zip("abcd", (package_a, package_b, package_c, package_d), strict=True)
+        if k in a.only
+    ]
+    if a.m5_package_ref:
+        built.append(package_e(st, a.m5_package_ref))
+    for pkg in built:
         path = a.out / f"{pkg.package_id}.json"
         path.write_text(json.dumps(pkg.model_dump(mode="json"), indent=1) + "\n")
         print(path.name, len(pkg.facts), "facts")

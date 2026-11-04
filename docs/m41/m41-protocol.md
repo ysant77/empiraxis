@@ -155,3 +155,17 @@ is reported, with a proposal to remove it or call it only when needed.
 - **Use in arm HC.** `critic_contract` in `config/assess/council.yaml` selects the contract.
   The HC critic and its contract are chosen by the section 5 rule over all critic results
   (V1 and V2), before the first HC run. The choice is recorded in `critic-choice.json`.
+
+### Amendment 2 (2026-11-04): package E from the M5 package
+
+- **Why.** The brief asks M4 to consume the M5 package, not to read M5 files on its own.
+  M5 published `scientific_evidence_package_v1.json` (version `m5-evidence-1`) at commit
+  `feeeef9` after package D was frozen.
+- **Change.** `assess/m5_adapter.py` reads that package and the Stage T result file it lists.
+  The adapter refuses a file whose SHA-256 differs from the package. Package D stays as frozen.
+- **Availability rule for package E.** M5 classes a source by its own rule. For a T+6 hourly
+  experiment the adapter counts a source as issue-time valid only when M5 classes it so and its
+  nominal latency is at most 24 hours. A source M5 gated out or did not assess is `unknown`.
+  This rule is M4.1's, not M5's.
+- **Runs.** Arms H and HC on package E, after the main matrix. The answer key for E is in
+  `config/assess/answer-keys.yaml`, written before the first run on E.
