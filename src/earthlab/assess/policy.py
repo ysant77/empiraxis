@@ -27,6 +27,9 @@ from earthlab.contracts import Strict
 
 MIN_GAIN = 0.02  # a candidate must lower MAE by 2 percent to count as better
 INPUT_ROLES = {"observation", "estimate", "reanalysis"}
+# Design scenario: a source is suitable only when its essential quality measurement exists.
+# A missing or null measurement makes the source ineligible; it never counts as a pass.
+REQUIRED_QUALITY = {"hls": "hls.clear", "smap": "smap.rq"}
 
 
 class FlagV1(Strict):
@@ -206,6 +209,15 @@ RULES: dict[str, Callable[[EvidencePackageV1], tuple[list[Decision], list[FlagV1
 }
 
 
+def _unmeasured(pkg: EvidencePackageV1) -> list[str]:
+    """Input sources whose essential quality measurement is absent or null."""
+    values = {f.id: f.value for f in pkg.facts}
+    inputs = {s.id for s in pkg.sources if s.role in INPUT_ROLES}
+    return [
+        sid for sid, fid in REQUIRED_QUALITY.items() if sid in inputs and values.get(fid) is None
+    ]
+
+
 def _cited(flags: list[FlagV1], pkg: EvidencePackageV1) -> list[FlagV1]:
     known = {f.id for f in pkg.facts} | {s.id for s in pkg.sources}
     return [f.model_copy(update={"evidence": [e for e in f.evidence if e in known]}) for f in flags]
@@ -223,6 +235,17 @@ def decide(pkg: EvidencePackageV1) -> PolicyResultV1:
     usable, excluded = _inputs(pkg)
     if pkg.scenario == "design":
         excluded += [s.id for s in pkg.sources if s.availability is Availability.UNKNOWN]
+        unmeasured = _unmeasured(pkg)
+        excluded += unmeasured
+        missing += [REQUIRED_QUALITY[u] for u in unmeasured if REQUIRED_QUALITY[u] not in missing]
+        flags += [
+            FlagV1(
+                fault_class=FaultClass.MISSING_OBSERVATIONS,
+                evidence=[u],
+                note=f"Essential quality measurement {REQUIRED_QUALITY[u]} is missing.",
+            )
+            for u in unmeasured
+        ]
         usable = [u for u in usable if u not in excluded]
     allowed = [d for d in allowed if d in pkg.allowed_decisions]
     return PolicyResultV1(

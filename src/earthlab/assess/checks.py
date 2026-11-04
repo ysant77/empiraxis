@@ -10,6 +10,7 @@ from __future__ import annotations
 import re
 from collections.abc import Iterable
 
+from earthlab.assess import policy
 from earthlab.assess.contracts import (
     Availability,
     CheckReportV1,
@@ -89,14 +90,16 @@ def findings_report(subject: str, items: list[FindingV1], pkg: EvidencePackageV1
 
 
 def unavailable_inputs(inputs: Iterable[str], pkg: EvidencePackageV1) -> list[str]:
-    """Inputs that are not known to be available at issue time."""
+    """Inputs that are not known to be available at issue time, or that the code rule
+    excludes because an essential quality measurement is missing (design scenario)."""
     by_id = {s.id: s for s in pkg.sources}
+    unmeasured = set(policy.decide(pkg).excluded_inputs) if pkg.scenario == "design" else set()
     return [
         i
         for i in inputs
         if i in by_id
         and by_id[i].role in INPUT_ROLES
-        and by_id[i].availability is not Availability.ISSUE_TIME_VALID
+        and (by_id[i].availability is not Availability.ISSUE_TIME_VALID or i in unmeasured)
     ]
 
 

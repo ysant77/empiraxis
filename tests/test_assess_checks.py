@@ -7,7 +7,7 @@ import pytest
 from assess_fakes import ROOT, finding, package
 
 from earthlab.assess import checks, policy
-from earthlab.assess.contracts import CritiqueV1, Decision, FindingV1
+from earthlab.assess.contracts import Availability, CritiqueV1, Decision, FindingV1
 from earthlab.assess.critic_bench import (
     load_cases,
     load_seeded,
@@ -235,3 +235,46 @@ def test_provenance_rule_zero_null_missing(
     result = policy.decide(pkg)
     got = any(f.fault_class.value == "missing_observations" for f in result.flags)
     assert got is flagged and ("file.missing_region" in result.missing_facts) is missing
+
+
+def _design_with_valid_quality_sources(**facts: float | str | None) -> Any:
+    """Package D with HLS and SMAP made issue-time valid, so only quality facts decide."""
+    pkg = package("d")
+    sources = [
+        s.model_copy(update={"availability": Availability.ISSUE_TIME_VALID})
+        if s.id in ("hls", "smap")
+        else s
+        for s in pkg.sources
+    ]
+    kept = [f for f in pkg.facts if f.id not in facts]
+    added = [
+        f.model_copy(update={"value": facts[f.id]})
+        for f in pkg.facts
+        if f.id in facts and not isinstance(facts[f.id], str)
+    ]
+    return pkg.model_copy(update={"sources": sources, "facts": kept + added})
+
+
+def test_measured_quality_makes_a_source_eligible() -> None:
+    pkg = _design_with_valid_quality_sources(**{"hls.clear": 0.5, "smap.rq": 12.0})
+    result = policy.decide(pkg)
+    assert {"hls", "smap"} <= set(result.eligible_inputs) and result.missing_facts == []
+
+
+@pytest.mark.parametrize("how", ["drop", None])
+def test_missing_essential_quality_fact_never_permits_suitability(how: str | None) -> None:
+    pkg = _design_with_valid_quality_sources(**{"hls.clear": how, "smap.rq": 12.0})
+    result = policy.decide(pkg)
+    assert "hls" not in result.eligible_inputs and "hls" in result.excluded_inputs
+    assert "hls.clear" in result.missing_facts
+    assert any(f.evidence == ["hls"] and "missing" in f.note for f in result.flags)
+    report = checks.plan_report(
+        "lead",
+        pkg,
+        decision=Decision.PROCEED_WITH_LIMITS,
+        inputs_used=["nea_pm25", "hls"],
+        excluded=[],
+        texts=["Use HLS burn scars as an input."],
+    )
+    late = next(c for c in report.checks if c.name == "issue_time_inputs")
+    assert not late.passed and late.detail == "hls"

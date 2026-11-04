@@ -48,3 +48,18 @@ the section 5 gates (Amendment 3). The rescored files confirm this.
 Roles and checkpoints (Amendment 3), the critic gates, the council metrics, the disqualifiers,
 the escalation rule and the human gate. A Muse critic is a separate role on the Lead's
 checkpoint, not an independent model. No model approves adoption.
+
+## Amendments
+
+### Amendment 1 (2026-11-04): a missing essential quality fact excludes the source
+
+- **Why.** Review of PR #117: a missing required measurement must not quietly permit an
+  affirmative suitability recommendation.
+- **Change.** In the design scenario, HLS needs `hls.clear` and SMAP needs `smap.rq`. If the
+  fact is absent or null, the code rule excludes the source, raises `missing_observations`
+  with the source id, and lists the fact in `missing_facts`. A proceeding plan that uses the
+  source fails the `issue_time_inputs` check.
+- **Effect on runs.** Written while the m41-v2 council runs were in progress. The code rule
+  output is byte-identical on all six frozen packages before and after the change (checked in
+  code), because none of them has an issue-time-valid HLS or SMAP source without its quality
+  fact. No recorded run changes. Tests cover a measured fact, an absent fact and a null fact.
