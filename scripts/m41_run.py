@@ -62,12 +62,13 @@ def _args() -> argparse.Namespace:
     ap.add_argument("--repeat", type=int, default=1)
     ap.add_argument("--temperature", type=float, default=None)
     ap.add_argument("--critic-contract", choices=["v1", "v2"], default=None)
+    ap.add_argument("--spec", type=Path, default=Path("config/assess/council-m41-v2.yaml"))
     return ap.parse_args()
 
 
 def main() -> None:
     a = _args()
-    spec = load_spec(Path("config/assess/council-m41-v2.yaml"))
+    spec = load_spec(a.spec)
     if a.temperature is not None:
         spec = spec.model_copy(
             update={"sampling": spec.sampling.model_copy(update={"temperature": a.temperature})}
