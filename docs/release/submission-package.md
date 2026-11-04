@@ -68,13 +68,14 @@ Left to right: a research question goes to the safety gate. The Muse PM seat sco
 
 | Item | Licence or terms |
 |---|---|
-| Empiraxis source code | Apache-2.0 (`LICENSE`). `LICENSING.md` still calls this a draft proposal: owner to confirm. |
+| Empiraxis source code and documents | Apache-2.0 (`LICENSE`, `LICENSING.md`) |
 | NEA historical 1-hour PM2.5 | Singapore Open Data Licence v1.0 |
 | NASA FIRMS MODIS, MCD64A1, HLS, SMAP, IMERG | NASA Earthdata terms; see `docs/m5/M5_SOURCE_AND_LICENCE_REGISTER.md` |
 | ERA5 | Copernicus licence (C3S) |
 | Muse Glimmer 30B | Apache-2.0 and the Meta usage policy |
 | Llama 3.2 3B Instruct | Llama 3.2 Community License |
-| Llama Guard 3 8B | Llama 3.1 Community License (check the model card before submission) |
+| Llama Guard 3 8B | Llama 3.1 Community License |
+| Qwen3 4B Instruct 2507 (non-Meta, M4.1 ML specialist seat) | Apache-2.0, as stated on the model card |
 | Narration voice | Kokoro v1.0 (Apache-2.0), generated locally |
 | Music | None in the release cut, or a track whose licence the owner has verified |
 | Python dependencies | Each package's own licence (`uv.lock`) |
@@ -83,7 +84,7 @@ Engineering disclosure: one developer, with AI-assisted engineering under the de
 
 ## Link checklist
 
-- [ ] Repository URL `https://github.com/ysant77/empiraxis` opens without login (API reports `public`; owner to confirm this is intended).
+- [ ] Repository URL `https://github.com/ysant77/empiraxis` opens without login (public; the owner confirmed this is intended).
 - [ ] Release commit: owner picks one (see the release QA report).
 - [ ] Video URL plays without login, and the file matches its SHA-256.
 - [ ] Hosted replay URL, if published (`docs/hosted-replay.md`). Not published at last check.

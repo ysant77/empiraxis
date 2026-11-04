@@ -24,11 +24,11 @@ Checkout: a clean worktree of that commit. No model server, GPU or network data 
 | 13 | Secret scan, full history of `main` | PASS | gitleaks 8.30.1: 253 commits, no leaks. Regex scan: one fake test key only (`tests/test_events.py`). |
 | 14 | Attribution trailers and authorship | PASS | 0 `Co-Authored-By` trailers. Authors: `ysant77` only (merge commits by GitHub). |
 | 15 | Local developer guide files, `.agent/` and `.env` not tracked | PASS | not in `git ls-files`; all in `.gitignore` |
-| 16 | Absolute local paths in tracked files | **FAIL** | `evals/results/heldout-v1/results.jsonl`: 45 lines hold a local home-folder path with the user name. Added in `9582251` (#31). It is in history. |
+| 16 | Absolute local paths in tracked files | ACCEPTED by owner | `evals/results/heldout-v1/results.jsonl`: 45 lines hold a local home-folder path (added in `9582251`, #31). The owner accepted them as they are on 2026-11-04. No redaction. |
 | 17 | Private project names | PASS | no hit in tracked files |
 | 18 | Large binaries and weights | PASS | no weights. Largest files: receipts JSONL 3.6 MB, NEA CSV 3.1 MB, two MCD64A1 GeoTIFFs (small). |
-| 19 | README accuracy | **FAIL (stale)** | see "README findings" |
-| 20 | Licence statements agree | **FAIL** | see "Licence and visibility" |
+| 19 | README accuracy | FIXED on this branch (not merged) | commit `2705c7a`; see "README findings". `docs/submission.md` is still stale. |
+| 20 | Licence statements agree | FIXED on this branch (not merged) | owner chose Apache-2.0; `LICENSING.md` rewritten |
 | 21 | V1.1 fallback checksums | PASS | all four SHA-256 values in `video/README.md` (PR #116 head `1c30655`) match the local files |
 | 22 | V1.1 fallback music rights | **FAIL** | V1.1 audio and credits frame use MusicGen (CC-BY-NC 4.0). The owner decided today: no music, or a verified licence. |
 | 23 | Portal rules, deadline, edit policy | NOT RUN | the portal was not opened. Planning docs only: Nov 4 21:00 ET = Nov 5 10:00 SGT. |
@@ -57,9 +57,9 @@ The README is shared, so this report proposes text only. It does not change the 
 
 ## Licence and visibility
 
-- GitHub API (2026-11-04): `ysant77/empiraxis` is **public**, licence detected as Apache-2.0. The session brief and the local guide say the repo is private until the owner makes it public. **Owner: confirm that the public state is intended.** If it is not, this is the first action.
-- Because the repo is public, the absolute path in `evals/results/heldout-v1/results.jsonl` (gate 16) is already published. A fix in a new commit removes it from the tree but not from history. Do not rewrite history without an owner decision.
-- `LICENSE` is Apache-2.0. `LICENSING.md` still says "draft licensing proposal", uses the old name "Axiom EarthLab", and says "The repository may remain private". The workspace guide says "MIT licence is planned". **Owner: choose one licence and update `LICENSING.md`.**
+- The repository is public. The owner confirmed on 2026-11-04 that this is intended. Finding closed.
+- Licence: the owner chose Apache-2.0 for the project code and documents (the `LICENSE` file already holds it). On this branch, `LICENSING.md` no longer says "draft". It states Apache-2.0 for the code and lists each third-party data source and model with its own terms (NEA, Copernicus ERA5, NASA products, Muse, Llama, Qwen, Prithvi, Kokoro).
+- The absolute paths in `evals/results/heldout-v1/results.jsonl` stay. The owner accepted them.
 
 ## Fallback recommendation
 
@@ -72,13 +72,13 @@ The README is shared, so this report proposes text only. It does not change the 
 
 ## Blockers (owner)
 
-1. Confirm the public visibility of the repository is intended.
-2. Choose the licence (Apache-2.0 in `LICENSE`, MIT in the guide) and fix `LICENSING.md`.
-3. Decide on the absolute path in `evals/results/heldout-v1/results.jsonl` (redact in a new commit; history keeps it).
-4. Pick the film: Video 2.0 or the voice-only V1.1. Do not ship the MusicGen bed.
-5. Read the deadline and the edit policy on the portal itself.
-6. Fill the `[M4.1 PENDING]` fields from Session A's frozen report.
-7. Submit, and save the receipt. Until then the status stays RED.
+1. Pick the film: Video 2.0 or the voice-only V1.1 cut from Session C. Do not ship the MusicGen bed.
+2. Read the deadline and the edit policy on the portal itself.
+3. Fill the `[M4.1 PENDING]` fields from Session A's frozen report.
+4. Merge the README and `LICENSING.md` changes (this branch) through a PR with green CI, or ship without them.
+5. Submit, and save the receipt. Until then the status stays RED.
+
+Closed on 2026-11-04 by owner decision: public visibility (intended), licence (Apache-2.0), local paths in the held-out results (accepted).
 
 ## Commands
 
