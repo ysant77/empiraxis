@@ -17,7 +17,6 @@ from pathlib import Path
 from typing import Any
 
 from common import FPS, URL, WORK, load
-from playwright.sync_api import sync_playwright
 
 GPU = ["--use-angle=metal", "--enable-gpu", "--ignore-gpu-blocklist"]
 
@@ -59,6 +58,8 @@ def verdict(errs: list[str], encoder: int, out: str | None) -> int:
 
 
 def main() -> int:
+    from playwright.sync_api import sync_playwright  # only the capture needs the browser
+
     total = load("timeline.json")["total"]
     with sync_playwright() as p:
         browser = p.chromium.launch(args=GPU, headless=True)
