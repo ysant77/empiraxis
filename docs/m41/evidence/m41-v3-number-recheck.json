@@ -1,0 +1,157 @@
+{
+ "evaluation": "m41-v3 number rule on recorded m41-v2 runs (offline, no model call)",
+ "runs": 25,
+ "runs_with_new_ungrounded_numbers": 0,
+ "rows": [
+  {
+   "run": "20261104T031853Z-F-a-model-selection-m3-r1",
+   "arm": "F",
+   "package": "a-model-selection-m3",
+   "new": []
+  },
+  {
+   "run": "20261104T031853Z-F-b-nea-provenance-r1",
+   "arm": "F",
+   "package": "b-nea-provenance",
+   "new": []
+  },
+  {
+   "run": "20261104T031853Z-F-c-fire-weather-sufficiency-r1",
+   "arm": "F",
+   "package": "c-fire-weather-sufficiency",
+   "new": []
+  },
+  {
+   "run": "20261104T031853Z-F-d-multisource-design-m5-r1",
+   "arm": "F",
+   "package": "d-multisource-design-m5",
+   "new": []
+  },
+  {
+   "run": "20261104T031853Z-F-e-m5-handoff-v2-r1",
+   "arm": "F",
+   "package": "e-m5-handoff-v2",
+   "new": []
+  },
+  {
+   "run": "20261104T031853Z-S-a-model-selection-m3-r1",
+   "arm": "S",
+   "package": "a-model-selection-m3",
+   "new": []
+  },
+  {
+   "run": "20261104T032333Z-S-b-nea-provenance-r1",
+   "arm": "S",
+   "package": "b-nea-provenance",
+   "new": []
+  },
+  {
+   "run": "20261104T032751Z-S-c-fire-weather-sufficiency-r1",
+   "arm": "S",
+   "package": "c-fire-weather-sufficiency",
+   "new": []
+  },
+  {
+   "run": "20261104T033121Z-S-d-multisource-design-m5-r1",
+   "arm": "S",
+   "package": "d-multisource-design-m5",
+   "new": []
+  },
+  {
+   "run": "20261104T033734Z-S-e-m5-handoff-v2-r1",
+   "arm": "S",
+   "package": "e-m5-handoff-v2",
+   "new": []
+  },
+  {
+   "run": "20261104T034426Z-H-a-model-selection-m3-r1",
+   "arm": "H",
+   "package": "a-model-selection-m3",
+   "new": []
+  },
+  {
+   "run": "20261104T035639Z-H-b-nea-provenance-r1",
+   "arm": "H",
+   "package": "b-nea-provenance",
+   "new": []
+  },
+  {
+   "run": "20261104T040439Z-H-c-fire-weather-sufficiency-r1",
+   "arm": "H",
+   "package": "c-fire-weather-sufficiency",
+   "new": []
+  },
+  {
+   "run": "20261104T041629Z-H-d-multisource-design-m5-r1",
+   "arm": "H",
+   "package": "d-multisource-design-m5",
+   "new": []
+  },
+  {
+   "run": "20261104T043348Z-H-e-m5-handoff-v2-r1",
+   "arm": "H",
+   "package": "e-m5-handoff-v2",
+   "new": []
+  },
+  {
+   "run": "20261104T044553Z-HC-a-model-selection-m3-r1",
+   "arm": "HC",
+   "package": "a-model-selection-m3",
+   "new": []
+  },
+  {
+   "run": "20261104T050818Z-HC-b-nea-provenance-r1",
+   "arm": "HC",
+   "package": "b-nea-provenance",
+   "new": []
+  },
+  {
+   "run": "20261104T051758Z-HC-c-fire-weather-sufficiency-r1",
+   "arm": "HC",
+   "package": "c-fire-weather-sufficiency",
+   "new": []
+  },
+  {
+   "run": "20261104T053158Z-HC-d-multisource-design-m5-r1",
+   "arm": "HC",
+   "package": "d-multisource-design-m5",
+   "new": []
+  },
+  {
+   "run": "20261104T060024Z-HC-e-m5-handoff-v2-r1",
+   "arm": "HC",
+   "package": "e-m5-handoff-v2",
+   "new": []
+  },
+  {
+   "run": "20261104T061716Z-T-a-model-selection-m3-r1",
+   "arm": "T",
+   "package": "a-model-selection-m3",
+   "new": []
+  },
+  {
+   "run": "20261104T063627Z-T-b-nea-provenance-r1",
+   "arm": "T",
+   "package": "b-nea-provenance",
+   "new": []
+  },
+  {
+   "run": "20261104T064900Z-T-c-fire-weather-sufficiency-r1",
+   "arm": "T",
+   "package": "c-fire-weather-sufficiency",
+   "new": []
+  },
+  {
+   "run": "20261104T071915Z-T-d-multisource-design-m5-r1",
+   "arm": "T",
+   "package": "d-multisource-design-m5",
+   "new": []
+  },
+  {
+   "run": "20261104T074205Z-T-e-m5-handoff-v2-r1",
+   "arm": "T",
+   "package": "e-m5-handoff-v2",
+   "new": []
+  }
+ ]
+}

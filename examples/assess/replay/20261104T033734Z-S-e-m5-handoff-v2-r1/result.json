@@ -1,0 +1,249 @@
+{
+ "package_id": "e-m5-handoff-v2",
+ "arm": "S",
+ "status": "awaiting_human",
+ "roles": {
+  "lead": {
+   "provider": "local-glimmer",
+   "state": "valid",
+   "output": {
+    "dispositions": [
+     {
+      "finding_id": "d1",
+      "verdict": "reject",
+      "reason": "Stage P results are blocked folds inside one season and carry no skill claim per acceptance criteria. No supported gain can be claimed from Stage P or one season.",
+      "evidence": [
+       "e-m5-handoff-v2"
+      ]
+     },
+     {
+      "finding_id": "d2",
+      "verdict": "reject",
+      "reason": "2019 held-out Stage T shows R2 vs R1 paired skill negative with upper 95% bound below zero, i.e. no improvement beyond PM2.5-only baseline.",
+      "evidence": [
+       "e-m5-handoff-v2"
+      ]
+     },
+     {
+      "finding_id": "d3",
+      "verdict": "reject",
+      "reason": "Inputs gated out by M5 or not assessed are excluded by acceptance criteria.",
+      "evidence": [
+       "e-m5-handoff-v2"
+      ]
+     },
+     {
+      "finding_id": "d4",
+      "verdict": "clarify",
+      "reason": "FIRMS MODIS SP availability is unknown; issue-time validity cannot be confirmed from the package.",
+      "evidence": [
+       "e-m5-handoff-v2"
+      ]
+     }
+    ],
+    "decision": "proceed_with_limits",
+    "inputs_used": [
+     "nea_pm25",
+     "imerg_early"
+    ],
+    "excluded_inputs": [
+     "firms_modis_sp",
+     "imerg_late",
+     "imerg_final",
+     "smap_l3",
+     "era5",
+     "mcd64a1",
+     "hls_archive",
+     "maiac_061"
+    ],
+    "plan": "Run T+6 hourly PM2.5 experiment restricted to issue-time-valid inputs only. Baseline R1 = PM2.5-only. Test R2 = PM2.5 + IMERG Early with enforced input cutoff 4.0 h and NEA cutoff 2.0 h. Exclude all M5-gated-out or not-assessed sources. Do not claim supported gain from Stage P or single-season results. Report 2019 held-out MAE all hours and >55 \u00b5g/m3 with paired skill and 95% bounds.",
+    "claims": [
+     "2019 held-out R1 MAE all hours is 9.874 ug/m3",
+     "2019 held-out R2 MAE all hours is 11.208 ug/m3",
+     "R2 vs R1 all-hours paired skill is -0.135",
+     "R2 vs R1 all-hours paired skill upper 95% bound is -0.039"
+    ],
+    "unresolved": [],
+    "limitations": [
+     "FIRMS MODIS SP availability unknown; issue-time validity not confirmed.",
+     "Wind speed/direction from ERA5 is retrospective only and excluded.",
+     "Soil moisture SMAP L3 and satellite imagery MCD64A1/HLS/Maiac are gated out or hindsight.",
+     "Stage P MAE values carry no skill claim."
+    ]
+   }
+  }
+ },
+ "checks": {
+  "lead": {
+   "subject": "lead",
+   "checks": [
+    {
+     "name": "decision_allowed",
+     "passed": true,
+     "detail": "proceed_with_limits"
+    },
+    {
+     "name": "inputs_known",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "issue_time_inputs",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "numbers_grounded",
+     "passed": false,
+     "detail": "4.0, 2.0"
+    },
+    {
+     "name": "no_forbidden_claims",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "answers_cover_findings",
+     "passed": false,
+     "detail": "unknown ['d1', 'd2', 'd3', 'd4']"
+    }
+   ]
+  }
+ },
+ "final": {
+  "dispositions": [
+   {
+    "finding_id": "d1",
+    "verdict": "reject",
+    "reason": "Stage P results are blocked folds inside one season and carry no skill claim per acceptance criteria. No supported gain can be claimed from Stage P or one season.",
+    "evidence": [
+     "e-m5-handoff-v2"
+    ]
+   },
+   {
+    "finding_id": "d2",
+    "verdict": "reject",
+    "reason": "2019 held-out Stage T shows R2 vs R1 paired skill negative with upper 95% bound below zero, i.e. no improvement beyond PM2.5-only baseline.",
+    "evidence": [
+     "e-m5-handoff-v2"
+    ]
+   },
+   {
+    "finding_id": "d3",
+    "verdict": "reject",
+    "reason": "Inputs gated out by M5 or not assessed are excluded by acceptance criteria.",
+    "evidence": [
+     "e-m5-handoff-v2"
+    ]
+   },
+   {
+    "finding_id": "d4",
+    "verdict": "clarify",
+    "reason": "FIRMS MODIS SP availability is unknown; issue-time validity cannot be confirmed from the package.",
+    "evidence": [
+     "e-m5-handoff-v2"
+    ]
+   }
+  ],
+  "decision": "proceed_with_limits",
+  "inputs_used": [
+   "nea_pm25",
+   "imerg_early"
+  ],
+  "excluded_inputs": [
+   "firms_modis_sp",
+   "imerg_late",
+   "imerg_final",
+   "smap_l3",
+   "era5",
+   "mcd64a1",
+   "hls_archive",
+   "maiac_061"
+  ],
+  "plan": "Run T+6 hourly PM2.5 experiment restricted to issue-time-valid inputs only. Baseline R1 = PM2.5-only. Test R2 = PM2.5 + IMERG Early with enforced input cutoff 4.0 h and NEA cutoff 2.0 h. Exclude all M5-gated-out or not-assessed sources. Do not claim supported gain from Stage P or single-season results. Report 2019 held-out MAE all hours and >55 \u00b5g/m3 with paired skill and 95% bounds.",
+  "claims": [
+   "2019 held-out R1 MAE all hours is 9.874 ug/m3",
+   "2019 held-out R2 MAE all hours is 11.208 ug/m3",
+   "R2 vs R1 all-hours paired skill is -0.135",
+   "R2 vs R1 all-hours paired skill upper 95% bound is -0.039"
+  ],
+  "unresolved": [],
+  "limitations": [
+   "FIRMS MODIS SP availability unknown; issue-time validity not confirmed.",
+   "Wind speed/direction from ERA5 is retrospective only and excluded.",
+   "Soil moisture SMAP L3 and satellite imagery MCD64A1/HLS/Maiac are gated out or hindsight.",
+   "Stage P MAE values carry no skill claim."
+  ]
+ },
+ "decision": "proceed_with_limits",
+ "code_rule": {
+  "policy": "m41-v2",
+  "allowed": [
+   "proceed_with_limits",
+   "request_validation"
+  ],
+  "preferred": "proceed_with_limits",
+  "flags": [
+   {
+    "fault_class": "hindsight_as_forecast",
+    "evidence": [
+     "imerg_final",
+     "smap_l3",
+     "era5"
+    ],
+    "note": "Not available at issue time."
+   },
+   {
+    "fault_class": "missing_observations",
+    "evidence": [
+     "firms_modis_sp",
+     "imerg_late"
+    ],
+    "note": "When these values become available is not established."
+   },
+   {
+    "fault_class": "subgroup_deterioration",
+    "evidence": [
+     "t19.R2_vs_R1.skill",
+     "t19.R2_vs_R1.high"
+    ],
+    "note": "Fire inputs help elevated hours and hurt all hours."
+   }
+  ],
+  "eligible_inputs": [
+   "nea_pm25",
+   "imerg_early"
+  ],
+  "excluded_inputs": [
+   "era5",
+   "firms_modis_sp",
+   "hls_archive",
+   "imerg_final",
+   "imerg_late",
+   "maiac_061",
+   "mcd64a1",
+   "smap_l3"
+  ],
+  "missing_facts": [
+   "hls.clear",
+   "smap.rq"
+  ]
+ },
+ "agrees_with_code_rule": true,
+ "escalations": [
+  "lead check failed: numbers_grounded",
+  "lead check failed: answers_cover_findings"
+ ],
+ "participation": {
+  "executed": {
+   "lead": "local-glimmer"
+  },
+  "executed_checkpoints": [
+   "local-glimmer"
+  ],
+  "configured_not_run": []
+ },
+ "wall_seconds": 411.3,
+ "trace_entries": 9,
+ "temperature": 0.0
+}

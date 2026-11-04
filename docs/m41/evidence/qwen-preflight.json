@@ -1,0 +1,141 @@
+{
+ "identity": {
+  "file": "Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
+  "sha256": "3605803b982cb64aead44f6c1b2ae36e3acdb41d8e46c8a94c6533bc4c67e597",
+  "matches_registry": true,
+  "load_seconds": 4.27
+ },
+ "tool_auto": [
+  {
+   "ok": false,
+   "stage": "closing call",
+   "tool_calls": [],
+   "text": "The PM2.5 T+6 baseline (lagged ridge B4) performs with a validation MAE of 4.68 ug/m\u00b3 and a skill score of 0.1419 against persistence, indicating moderate predictive performance. The MAE for elevated "
+  },
+  {
+   "ok": false,
+   "stage": "closing call",
+   "tool_calls": [],
+   "text": "The known facts about the NEA PM2.5 values include:\n\n1. **Disagreements**: There are 17 discrepancies between the real-time PM2.5 API data and the historical file data across three checked days in 202"
+  },
+  {
+   "ok": true,
+   "stage": "closing call",
+   "tool_calls": [
+    "submit_note"
+   ],
+   "text": "The evidence package indicates that incorporating wind (ERA5) and fire counts (FIRMS) inputs improves PM2.5 prediction at T+6, as shown by reduced MAE and improved paired skill scores in the ablation "
+  },
+  {
+   "ok": true,
+   "stage": "closing call",
+   "tool_calls": [
+    "submit_note"
+   ],
+   "text": "The following inputs are suitable for a T+6 PM2.5 prediction experiment based on availability, quality, and issue-time-validity:\n\n1. **FIRMS (MODIS fire detections)**: Available at issue time with 3-h"
+  }
+ ],
+ "tool_required": [
+  {
+   "ok": false,
+   "stage": "closing call",
+   "tool_calls": [],
+   "text": "The PM2.5 T+6 baseline (lagged ridge B4) performs with a validation MAE of 4.68 ug/m\u00b3 and a skill score of 0.1419 against persistence, indicating moderate predictive performance. The MAE for elevated "
+  },
+  {
+   "ok": true,
+   "stage": "closing call",
+   "tool_calls": [
+    "submit_note"
+   ],
+   "text": "The known facts about the NEA PM2.5 values include:\n\n1. **Disagreements**: There are 17 discrepancies between the real-time PM2.5 API data and the historical file data across three checked days in 202"
+  },
+  {
+   "ok": true,
+   "stage": "closing call",
+   "tool_calls": [
+    "submit_note"
+   ],
+   "text": "The evidence package indicates that incorporating wind (ERA5) and fire counts (FIRMS) inputs improves PM2.5 prediction at T+6, as shown by reduced MAE and improved paired skill scores in the ablation "
+  },
+  {
+   "ok": true,
+   "stage": "closing call",
+   "tool_calls": [
+    "submit_note"
+   ],
+   "text": "The following inputs are suitable for a T+6 PM2.5 prediction experiment based on availability, quality, and issue-time-validity:\n\n1. **FIRMS (MODIS fire detections)**: Available at issue time with 3-h"
+  }
+ ],
+ "schema": [
+  {
+   "package": "a-model-selection-m3",
+   "seed": 20261104,
+   "valid": true,
+   "attempts": 1,
+   "faults": [],
+   "findings": 4
+  },
+  {
+   "package": "b-nea-provenance",
+   "seed": 20261104,
+   "valid": true,
+   "attempts": 1,
+   "faults": [],
+   "findings": 3
+  },
+  {
+   "package": "c-fire-weather-sufficiency",
+   "seed": 20261104,
+   "valid": true,
+   "attempts": 1,
+   "faults": [],
+   "findings": 4
+  },
+  {
+   "package": "d-multisource-design-m5",
+   "seed": 20261104,
+   "valid": true,
+   "attempts": 1,
+   "faults": [],
+   "findings": 4
+  },
+  {
+   "package": "a-model-selection-m3",
+   "seed": 7,
+   "valid": true,
+   "attempts": 1,
+   "faults": [],
+   "findings": 4
+  },
+  {
+   "package": "b-nea-provenance",
+   "seed": 7,
+   "valid": true,
+   "attempts": 1,
+   "faults": [],
+   "findings": 3
+  },
+  {
+   "package": "c-fire-weather-sufficiency",
+   "seed": 7,
+   "valid": true,
+   "attempts": 1,
+   "faults": [],
+   "findings": 4
+  },
+  {
+   "package": "d-multisource-design-m5",
+   "seed": 7,
+   "valid": true,
+   "attempts": 1,
+   "faults": [],
+   "findings": 4
+  }
+ ],
+ "summary": {
+  "tool_auto": "2/4",
+  "tool_required": "3/4",
+  "schema": "8/8"
+ }
+}

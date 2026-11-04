@@ -1,0 +1,630 @@
+{
+ "package_id": "e-m5-demo-v3",
+ "arm": "HC",
+ "status": "awaiting_human",
+ "roles": {
+  "data_specialist": {
+   "provider": "local-llama-3-2-3b",
+   "state": "valid",
+   "output": {
+    "examined": [
+     "d1: The 2015 negative ablation (30.76, 32.10, 36.73, 41.75) is a separate result and is not mixed with M5 numbers.",
+     "d2: No causal attribution of Singapore PM2.5 to specific fires.",
+     "d3: No operational forecast and no health advice.",
+     "d4: No sealed NEA data (from 2024-01-01) was read.",
+     "d5: Issue-time validity uses nominal product latency with an enforced input cutoff. The release time of each historical observation is not recorded.",
+     "d6: Archived values can differ from the values published at the issue time.",
+     "d7: FIRMS is the MODIS standard-product archive, not the near-real-time product. When each value was available at issue time is not known.",
+     "d8: ERA5 is retrospective reanalysis. M5 used it only for association in hindsight.",
+     "d9: HLS has 2.7% clear land on both pilot dates. SMAP has no recommended-quality retrieval in the study box. M5 gated out both.",
+     "d10: 2019 is the test season of both Stage T and M5-C. It was reused and is not an independent test. M5-C holds one 2019 episode.",
+     "d11: Correction: M5 later replaced its issue_time_valid label (m5-evidence-5). No M5 source has a verified publication time per observation. NEA and IMERG Early availability is a nominal latency assumption, not verified."
+    ],
+    "findings": [
+     {
+      "id": "p15.R0",
+      "fault_class": "missing_observations",
+      "claim": "2015 Stage P R0 MAE (blocked folds, no skill claim)",
+      "evidence": [
+       "30.762",
+       "ug/m3",
+       "m5_package"
+      ],
+      "cited_values": {},
+      "severity": "low",
+      "action": "exclude_input",
+      "uncertainty": "unknown"
+     },
+     {
+      "id": "p15.R1",
+      "fault_class": "missing_observations",
+      "claim": "2015 Stage P R1 MAE (blocked folds, no skill claim)",
+      "evidence": [
+       "32.1",
+       "ug/m3",
+       "m5_package"
+      ],
+      "cited_values": {},
+      "severity": "low",
+      "action": "exclude_input",
+      "uncertainty": "unknown"
+     },
+     {
+      "id": "p15.R2",
+      "fault_class": "missing_observations",
+      "claim": "2015 Stage P R2 MAE (blocked folds, no skill claim)",
+      "evidence": [
+       "34.109",
+       "ug/m3",
+       "m5_package"
+      ],
+      "cited_values": {},
+      "severity": "low",
+      "action": "exclude_input",
+      "uncertainty": "unknown"
+     },
+     {
+      "id": "p15.R3",
+      "fault_class": "missing_observations",
+      "claim": "2015 Stage P R3 MAE (blocked folds, no skill claim)",
+      "evidence": [
+       "38.209",
+       "ug/m3",
+       "m5_package"
+      ],
+      "cited_values": {},
+      "severity": "low",
+      "action": "exclude_input",
+      "uncertainty": "unknown"
+     },
+     {
+      "id": "p15.R3a",
+      "fault_class": "missing_observations",
+      "claim": "2015 Stage P R3a MAE (blocked folds, no skill claim)",
+      "evidence": [
+       "35.491",
+       "ug/m3",
+       "m5_package"
+      ],
+      "cited_values": {},
+      "severity": "low",
+      "action": "exclude_input",
+      "uncertainty": "unknown"
+     }
+    ],
+    "recommended_exclusions": [
+     "maiac_061: HDF4 files; no reader in this branch",
+     "imerg_late: not downloaded"
+    ],
+    "limitations": [
+     "Singapore PM2.5 is five NEA regions, not stations; the label start or end of hour is not stated.",
+     "Stage P results come from blocked folds inside one season and carry no skill claim.",
+     "The shift null in Experiment A has 31 shifts; no test can reach supported_association (Amendment 1).",
+     "Latencies for FIRMS, IMERG and SMAP are nominal values, not measured per file."
+    ]
+   }
+  },
+  "ml_engineer": {
+   "provider": "local-qwen3-4b-2507",
+   "state": "valid",
+   "output": {
+    "baseline": "The baseline is the PM2.5-only model from Stage P in 2015 (R0\u2013R3), with MAE values of 30.762, 32.1, 34.109, and 38.209 ug/m\u00b3 for R0\u2013R3 respectively. These are from blocked folds and carry no skill claim, as per the acceptance criteria. The 2016 clean season baseline (R0\u2013R3) shows significantly improved performance (MAE: 8.619, 7.097, 7.386, 7.88 ug/m\u00b3), indicating that the baseline is not static and may vary by season. However, since Stage P results are from blocked folds and lack a skill claim, they are not considered a valid benchmark for performance gain.",
+    "alternatives": [
+     "IMERG Early (used) with 2015 Stage P I1 (R2 + IMERG Early) MAE of 36.106 ug/m\u00b3 \u2014 this is worse than the PM2.5-only baseline (34.109 ug/m\u00b3), indicating no improvement and suggesting that IMERG Early does not add skill in this context.",
+     "FIRMS MODIS SP (used) \u2014 included in M5-C C3 (lags + FIRMS) with Brier skill of 0.474, which is higher than C2 (0.425), suggesting some skill gain when combined with lags. However, this is a retrospective analysis and not evaluated at issue time. Also, FIRMS availability is not verified at issue time, and its use is based on standard product archive, not near-real-time.",
+     "ERA5 (used only in hindsight) \u2014 used for association only, not in real-time prediction. Its use is retrospective and does not meet the requirement that inputs must be available at issue time.",
+     "SMAP L3 (gated out) \u2014 latency of 50 hours exceeds 24 hours, and it was gated out due to latency and quality issues in the study area. Not eligible for inclusion in real-time prediction."
+    ],
+    "training_justified": false,
+    "eligible_inputs": [
+     "nea_pm25: available at issue time with 2-hour latency, eligible.",
+     "firms_modis_sp: available in archive, not verified at issue time, and used in retrospective analysis \u2014 not eligible under 'inputs available at issue time' requirement.",
+     "imerg_early: available at issue time with 4-hour latency, used in 2015 I1 experiment, but MAE increased to 36.106 (worse than baseline), indicating no skill gain.",
+     "era5: retrospective only, not available at issue time \u2014 ineligible."
+    ],
+    "ineligible_inputs": [
+     "imerg_late: not assessed and not available at issue time \u2014 excluded.",
+     "smap_l3: gated out due to latency and quality \u2014 excluded.",
+     "mcd64a1: hindsight only \u2014 excluded.",
+     "hls_archive: hindsight only \u2014 excluded.",
+     "maiac_061: not assessed and not available at issue time \u2014 excluded."
+    ],
+    "split_suitable": false,
+    "findings": [
+     {
+      "id": "m1",
+      "fault_class": "baseline_unsuitable",
+      "claim": "The Stage P baseline (2015) is from blocked folds and carries no skill claim, violating the acceptance criteria that 'no supported gain is claimed from Stage P or one season'. Therefore, it cannot serve as a valid baseline for evaluating new inputs.",
+      "evidence": [
+       "p15.R0: 30.762 ug/m\u00b3",
+       "p15.R1: 32.1 ug/m\u00b3",
+       "p15.R2: 34.109 ug/m\u00b3",
+       "p15.R3: 38.209 ug/m\u00b3"
+      ],
+      "cited_values": {},
+      "severity": "high",
+      "action": "abstain",
+      "uncertainty": "The 2016 clean season baseline shows improvement, but it is not a full season test and lacks a skill claim. No valid baseline exists under the stated acceptance criteria."
+     },
+     {
+      "id": "m2",
+      "fault_class": "non_independent_evidence",
+      "claim": "The 2019 held-out season (Stage T and M5-C) is reused across both Stage T and M5-C, and is not an independent test. This violates the requirement for a fair evaluation split.",
+      "evidence": [
+       "t19.R0.mae: 11.33 ug/m\u00b3",
+       "c19.episodes: 1.0",
+       "c19.events: 349.0",
+       "c19.C3.skill: 0.474"
+      ],
+      "cited_values": {},
+      "severity": "high",
+      "action": "abstain",
+      "uncertainty": "The reuse of 2019 data in both Stage T and M5-C introduces bias and undermines the validity of any skill attribution."
+     },
+     {
+      "id": "m3",
+      "fault_class": "non_independent_evidence",
+      "claim": "FIRMS MODIS SP is used in a retrospective analysis (M5-C C3) with no verification of availability at issue time. Its use violates the requirement that only inputs available at issue time enter the experiment.",
+      "evidence": [
+       "firms_modis_sp: availability 'unknown'",
+       "c19.C3.skill: 0.474",
+       "c19d24.C3.skill: 0.469"
+      ],
+      "cited_values": {},
+      "severity": "medium",
+      "action": "abstain",
+      "uncertainty": "The lack of verified issue-time availability prevents a fair assessment of real-time usability."
+     },
+     {
+      "id": "m4",
+      "fault_class": "non_independent_evidence",
+      "claim": "IMERG Early is used in a single-season experiment (2015 I1) with a higher MAE (36.106) than the PM2.5-only baseline (34.109), indicating no skill gain and suggesting it is not beneficial.",
+      "evidence": [
+       "p15.R2: 34.109 ug/m\u00b3",
+       "p15.I1: 36.106 ug/m\u00b3"
+      ],
+      "cited_values": {},
+      "severity": "medium",
+      "action": "abstain",
+      "uncertainty": "No evidence of improvement in PM2.5 prediction during haze episodes."
+     },
+     {
+      "id": "m5",
+      "fault_class": "non_independent_evidence",
+      "claim": "ERA5 and other reanalysis datasets are used only in hindsight and not at issue time, violating the 'inputs available at issue time' requirement.",
+      "evidence": [
+       "era5: availability 'hindsight'",
+       "smap_l3: availability 'hindsight'",
+       "mcd64a1: availability 'hindsight'"
+      ],
+      "cited_values": {},
+      "severity": "high",
+      "action": "abstain",
+      "uncertainty": "No real-time inputs are used in the model, so no operational relevance can be claimed."
+     }
+    ],
+    "recommended_experiment": "abstain",
+    "limitations": [
+     "No inputs are available at issue time with verified latency and availability.",
+     "Baseline from Stage P has no skill claim and is not valid under acceptance criteria.",
+     "2019 season is reused across multiple evaluations, violating independence.",
+     "All alternative inputs are either retrospective, unavailable at issue time, or show no performance gain."
+    ]
+   }
+  },
+  "lead": {
+   "provider": "local-glimmer",
+   "state": "valid",
+   "output": {
+    "dispositions": [
+     {
+      "finding_id": "p15.R0",
+      "verdict": "reject",
+      "reason": "The MAE value is present in the evidence package; the specialist claim of missing observations is not supported.",
+      "evidence": [
+       "p15.R0"
+      ]
+     },
+     {
+      "finding_id": "p15.R1",
+      "verdict": "reject",
+      "reason": "The MAE value is present in the evidence package; the specialist claim of missing observations is not supported.",
+      "evidence": [
+       "p15.R1"
+      ]
+     },
+     {
+      "finding_id": "p15.R2",
+      "verdict": "reject",
+      "reason": "The MAE value is present in the evidence package; the specialist claim of missing observations is not supported.",
+      "evidence": [
+       "p15.R2"
+      ]
+     },
+     {
+      "finding_id": "p15.R3",
+      "verdict": "reject",
+      "reason": "The MAE value is present in the evidence package; the specialist claim of missing observations is not supported.",
+      "evidence": [
+       "p15.R3"
+      ]
+     },
+     {
+      "finding_id": "p15.R3a",
+      "verdict": "reject",
+      "reason": "The MAE value is present in the evidence package; the specialist claim of missing observations is not supported.",
+      "evidence": [
+       "p15.R3a"
+      ]
+     },
+     {
+      "finding_id": "m1",
+      "verdict": "accept",
+      "reason": "Stage P results are blocked folds with no skill claim and acceptance criteria forbid supported gain from Stage P or one season.",
+      "evidence": [
+       "p15.R0",
+       "p15.R1",
+       "p15.R2",
+       "p15.R3"
+      ]
+     }
+    ],
+    "decision": "abstain",
+    "inputs_used": [
+     "nea_pm25",
+     "imerg_early"
+    ],
+    "excluded_inputs": [
+     "firms_modis_sp",
+     "era5",
+     "smap_l3",
+     "mcd64a1",
+     "hls_archive",
+     "imerg_late",
+     "imerg_final",
+     "maiac_061"
+    ],
+    "plan": "Restrict the experiment to issue-time-valid inputs only, with nominal latency enforced cutoff. Re-establish a PM2.5-only baseline and an augmented model using only nea_pm25 and imerg_early on independent seasons with verified issue-time availability. Exclude all gated-out or hindsight sources and do not claim supported gain from Stage P or a single season.",
+    "claims": [
+     "No supported gain can be claimed from Stage P or one season per acceptance criteria.",
+     "FIRMS MODIS SP availability is unknown and therefore cannot be used for issue-time prediction.",
+     "IMERG Early single-season test shows MAE 36.106 ug/m3 versus PM2.5-only R2 MAE 34.109 ug/m3 in 2015.",
+     "ERA5, SMAP L3, MCD64A1 and HLS are hindsight/retrospective only and are excluded from issue-time evaluation."
+    ],
+    "unresolved": [],
+    "limitations": [
+     "Singapore PM2.5 is five NEA regions, not stations; the label start or end of hour is not stated.",
+     "Stage P results come from blocked folds inside one season and carry no skill claim.",
+     "The shift null in Experiment A has 31 shifts; no test can reach supported_association (Amendment 1).",
+     "Latencies for FIRMS, IMERG and SMAP are nominal values, not measured per file."
+    ]
+   }
+  },
+  "critic": {
+   "provider": "local-glimmer",
+   "state": "valid",
+   "output": {
+    "verdict": "concerns",
+    "findings": [
+     {
+      "id": "c1",
+      "fault_class": "temporal_leakage",
+      "claim": "Issue-time validity for NEA and IMERG Early rests on nominal latency assumptions without verified per-observation publication times",
+      "evidence": [
+       "e-m5-demo-v3"
+      ],
+      "cited_values": {},
+      "severity": "high",
+      "action": "request_data",
+      "uncertainty": "The package notes a correction that no M5 source has a verified publication time per observation and that NEA and IMERG Early availability is a nominal latency assumption, not verified. Issue-time use"
+     }
+    ]
+   }
+  },
+  "rebuttal": {
+   "provider": "local-glimmer",
+   "state": "valid",
+   "output": {
+    "responses": [
+     {
+      "finding_id": "c1",
+      "verdict": "accept",
+      "reason": "Issue-time validity for NEA PM2.5 and IMERG Early is based on nominal latency assumptions. The evidence package states no M5 source has a verified publication time per observation and that NEA and IMERG Early availability is a nominal-lat\u00ade",
+      "evidence": []
+     }
+    ],
+    "decision": "request_data",
+    "inputs_used": [],
+    "excluded_inputs": [
+     "nea_pm25",
+     "imerg_early",
+     "firms_modis_sp",
+     "era5",
+     "smap_l3",
+     "mcd64a1",
+     "hls_archive",
+     "imerg_late",
+     "imerg_final",
+     "maiac_061"
+    ],
+    "plan": "Do not run an issue-time prediction experiment until per-observation publication times are verified. Obtain verified release timestamps for NEA PM2.5 and IMERG Early for the study interval 2015-09-01 to 2015-10-31, 2016 clean season and 2019 held-out haze season, and confirm nominal latency with enforced input cutoff of 2.0 hours for nea_pm25 and 4.0 hours for imerg_early is met at issue time. Only after verified issue-time availability is established re-establish a PM2.5-only baseline and an augmented model on independent seasons with verified issue-time data. Continue to exclude all gated\u2011ou",
+    "claims": [
+     "No supported gain can be claimed from Stage P or one season per acceptance criteria.",
+     "Issue-time validity for NEA PM2.5 and IMERG Early cannot be asserted from the current evidence because per-observation publication times are not verified and availability rests on nominal latency assumptions.",
+     "FIRMS MODIS SP availability is unknown and therefore cannot be used for issue-time prediction.",
+     "ERA5, SMAP L3, MCD64A1 and HLS are hindsight/retrospective only and are excluded from issue-time evaluation."
+    ]
+   }
+  },
+  "pm": {
+   "provider": "local-glimmer",
+   "state": "valid",
+   "output": {
+    "addresses_question": true,
+    "criteria_met": [
+     true,
+     true,
+     true
+    ],
+    "action": "revise",
+    "note": "The decision request_data is allowed and the plan correctly excludes gated-out / not-assessed inputs and does not claim supported gain from Stage P or a single season. To meet evidence requirements, add citations to the evidence package for the nominal-latency / no verified publication time claims, "
+   }
+  }
+ },
+ "checks": {
+  "data_specialist": {
+   "subject": "data_specialist",
+   "checks": [
+    {
+     "name": "finding p15.R0",
+     "passed": false,
+     "detail": "unknown ref 30.762; unknown ref ug/m3"
+    },
+    {
+     "name": "finding p15.R1",
+     "passed": false,
+     "detail": "unknown ref 32.1; unknown ref ug/m3"
+    },
+    {
+     "name": "finding p15.R2",
+     "passed": false,
+     "detail": "unknown ref 34.109; unknown ref ug/m3"
+    },
+    {
+     "name": "finding p15.R3",
+     "passed": false,
+     "detail": "unknown ref 38.209; unknown ref ug/m3"
+    },
+    {
+     "name": "finding p15.R3a",
+     "passed": false,
+     "detail": "unknown ref 35.491; unknown ref ug/m3"
+    }
+   ]
+  },
+  "ml_engineer": {
+   "subject": "ml_engineer",
+   "checks": [
+    {
+     "name": "finding m1",
+     "passed": false,
+     "detail": "unknown ref p15.R0: 30.762 ug/m\u00b3; unknown ref p15.R1: 32.1 ug/m\u00b3; unknown ref p15.R2: 34.109 ug/m\u00b3; unknown ref p15.R3: 38.209 ug/m\u00b3"
+    },
+    {
+     "name": "finding m2",
+     "passed": false,
+     "detail": "unknown ref t19.R0.mae: 11.33 ug/m\u00b3; unknown ref c19.episodes: 1.0; unknown ref c19.events: 349.0; unknown ref c19.C3.skill: 0.474"
+    },
+    {
+     "name": "finding m3",
+     "passed": false,
+     "detail": "unknown ref firms_modis_sp: availability 'unknown'; unknown ref c19.C3.skill: 0.474; unknown ref c19d24.C3.skill: 0.469"
+    },
+    {
+     "name": "finding m4",
+     "passed": false,
+     "detail": "unknown ref p15.R2: 34.109 ug/m\u00b3; unknown ref p15.I1: 36.106 ug/m\u00b3"
+    },
+    {
+     "name": "finding m5",
+     "passed": false,
+     "detail": "unknown ref era5: availability 'hindsight'; unknown ref smap_l3: availability 'hindsight'; unknown ref mcd64a1: availability 'hindsight'"
+    }
+   ]
+  },
+  "lead": {
+   "subject": "lead",
+   "checks": [
+    {
+     "name": "decision_allowed",
+     "passed": true,
+     "detail": "abstain"
+    },
+    {
+     "name": "inputs_known",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "issue_time_inputs",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "numbers_grounded",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "no_forbidden_claims",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "answers_cover_findings",
+     "passed": false,
+     "detail": "missing ['m2', 'm3', 'm4', 'm5']"
+    }
+   ]
+  },
+  "critic": {
+   "subject": "critic",
+   "checks": [
+    {
+     "name": "finding c1",
+     "passed": false,
+     "detail": "unknown ref e-m5-demo-v3"
+    }
+   ]
+  },
+  "rebuttal": {
+   "subject": "rebuttal",
+   "checks": [
+    {
+     "name": "decision_allowed",
+     "passed": true,
+     "detail": "request_data"
+    },
+    {
+     "name": "inputs_known",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "issue_time_inputs",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "numbers_grounded",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "no_forbidden_claims",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "answers_cover_findings",
+     "passed": true,
+     "detail": ""
+    }
+   ]
+  }
+ },
+ "final": {
+  "responses": [
+   {
+    "finding_id": "c1",
+    "verdict": "accept",
+    "reason": "Issue-time validity for NEA PM2.5 and IMERG Early is based on nominal latency assumptions. The evidence package states no M5 source has a verified publication time per observation and that NEA and IMERG Early availability is a nominal-lat\u00ade",
+    "evidence": []
+   }
+  ],
+  "decision": "request_data",
+  "inputs_used": [],
+  "excluded_inputs": [
+   "nea_pm25",
+   "imerg_early",
+   "firms_modis_sp",
+   "era5",
+   "smap_l3",
+   "mcd64a1",
+   "hls_archive",
+   "imerg_late",
+   "imerg_final",
+   "maiac_061"
+  ],
+  "plan": "Do not run an issue-time prediction experiment until per-observation publication times are verified. Obtain verified release timestamps for NEA PM2.5 and IMERG Early for the study interval 2015-09-01 to 2015-10-31, 2016 clean season and 2019 held-out haze season, and confirm nominal latency with enforced input cutoff of 2.0 hours for nea_pm25 and 4.0 hours for imerg_early is met at issue time. Only after verified issue-time availability is established re-establish a PM2.5-only baseline and an augmented model on independent seasons with verified issue-time data. Continue to exclude all gated\u2011ou",
+  "claims": [
+   "No supported gain can be claimed from Stage P or one season per acceptance criteria.",
+   "Issue-time validity for NEA PM2.5 and IMERG Early cannot be asserted from the current evidence because per-observation publication times are not verified and availability rests on nominal latency assumptions.",
+   "FIRMS MODIS SP availability is unknown and therefore cannot be used for issue-time prediction.",
+   "ERA5, SMAP L3, MCD64A1 and HLS are hindsight/retrospective only and are excluded from issue-time evaluation."
+  ]
+ },
+ "decision": "request_data",
+ "code_rule": {
+  "policy": "m41-v3",
+  "allowed": [
+   "proceed_with_limits",
+   "request_validation"
+  ],
+  "preferred": "proceed_with_limits",
+  "flags": [
+   {
+    "fault_class": "hindsight_as_forecast",
+    "evidence": [
+     "imerg_final",
+     "smap_l3",
+     "era5"
+    ],
+    "note": "Not available at issue time."
+   },
+   {
+    "fault_class": "missing_observations",
+    "evidence": [
+     "firms_modis_sp",
+     "imerg_late"
+    ],
+    "note": "When these values become available is not established."
+   },
+   {
+    "fault_class": "overall_deterioration",
+    "evidence": [
+     "t19.R2_vs_R1.skill",
+     "t19.R2_vs_R1.high"
+    ],
+    "note": "Fire inputs make all-hour MAE worse; the elevated-hour gain is exploratory."
+   }
+  ],
+  "eligible_inputs": [
+   "nea_pm25",
+   "imerg_early"
+  ],
+  "excluded_inputs": [
+   "era5",
+   "firms_modis_sp",
+   "hls_archive",
+   "imerg_final",
+   "imerg_late",
+   "maiac_061",
+   "mcd64a1",
+   "smap_l3"
+  ],
+  "missing_facts": [
+   "hls.clear",
+   "smap.rq"
+  ]
+ },
+ "agrees_with_code_rule": false,
+ "escalations": [
+  "decision request_data is outside the code rule ['proceed_with_limits', 'request_validation']",
+  "lead check failed: answers_cover_findings",
+  "high ml_engineer finding m2: unanswered",
+  "medium ml_engineer finding m3: unanswered",
+  "medium ml_engineer finding m4: unanswered",
+  "high ml_engineer finding m5: unanswered",
+  "PM asks to revise: The decision request_data is allowed and the plan correctly excludes gated-out / not-assessed inputs and does not claim supported gain from Stage P or a single season. To meet evidence requirements, add citations to the evidence package for the nominal-latency / no verified publication time claims, "
+ ],
+ "participation": {
+  "executed": {
+   "data_specialist": "local-llama-3-2-3b",
+   "ml_engineer": "local-qwen3-4b-2507",
+   "lead": "local-glimmer",
+   "critic": "local-glimmer",
+   "rebuttal": "local-glimmer",
+   "pm": "local-glimmer"
+  },
+  "executed_checkpoints": [
+   "local-glimmer",
+   "local-llama-3-2-3b",
+   "local-qwen3-4b-2507"
+  ],
+  "configured_not_run": []
+ },
+ "wall_seconds": 1617.0,
+ "trace_entries": 30,
+ "temperature": 0.0
+}

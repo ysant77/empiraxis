@@ -1,0 +1,474 @@
+{
+ "package_id": "e-m5-handoff-v2",
+ "arm": "H",
+ "status": "awaiting_human",
+ "roles": {
+  "data_specialist": {
+   "provider": "local-llama-3-2-3b",
+   "state": "valid",
+   "output": {
+    "examined": [
+     "d1: The dataset 'nea_pm25' is available at issue time.",
+     "d2: The dataset 'firms_modis_sp' is unknown at issue time.",
+     "d3: The dataset 'imerg_early' is available at issue time.",
+     "d4: The dataset 'imerg_late' is not downloaded at issue time.",
+     "d5: The dataset 'imerg_final' is available at hindsight.",
+     "d6: The dataset 'smap_l3' is gated out at issue time.",
+     "d7: The dataset 'era5' is available at hindsight.",
+     "d8: The dataset 'mcd64a1' is gated out at issue time.",
+     "d9: The dataset 'hls_archive' is gated out at issue time.",
+     "d10: The dataset 'maiac_061' is not assessed at issue time.",
+     "d11: The dataset 'm5_package' is available at hindsight.",
+     "d12: The dataset 'm5_stage_t' is available at hindsight."
+    ],
+    "findings": [
+     {
+      "id": "d2",
+      "fault_class": "unfair_comparison",
+      "claim": "The dataset 'firms_modis_sp' is unknown at issue time.",
+      "evidence": [
+       "The dataset 'firms_modis_sp' is unknown at issue time."
+      ],
+      "cited_values": {},
+      "severity": "low",
+      "action": "exclude_input",
+      "uncertainty": "low"
+     },
+     {
+      "id": "d4",
+      "fault_class": "unfair_comparison",
+      "claim": "The dataset 'imerg_late' is not downloaded at issue time.",
+      "evidence": [
+       "The dataset 'imerg_late' is not downloaded at issue time."
+      ],
+      "cited_values": {},
+      "severity": "low",
+      "action": "exclude_input",
+      "uncertainty": "low"
+     },
+     {
+      "id": "d6",
+      "fault_class": "unfair_comparison",
+      "claim": "The dataset 'smap_l3' is gated out at issue time.",
+      "evidence": [
+       "The dataset 'smap_l3' is gated out at issue time."
+      ],
+      "cited_values": {},
+      "severity": "low",
+      "action": "exclude_input",
+      "uncertainty": "low"
+     },
+     {
+      "id": "d8",
+      "fault_class": "unfair_comparison",
+      "claim": "The dataset 'mcd64a1' is gated out at issue time.",
+      "evidence": [
+       "The dataset 'mcd64a1' is gated out at issue time."
+      ],
+      "cited_values": {},
+      "severity": "low",
+      "action": "exclude_input",
+      "uncertainty": "low"
+     },
+     {
+      "id": "d9",
+      "fault_class": "unfair_comparison",
+      "claim": "The dataset 'hls_archive' is gated out at issue time.",
+      "evidence": [
+       "The dataset 'hls_archive' is gated out at issue time."
+      ],
+      "cited_values": {},
+      "severity": "low",
+      "action": "exclude_input",
+      "uncertainty": "low"
+     }
+    ],
+    "recommended_exclusions": [],
+    "limitations": []
+   }
+  },
+  "ml_engineer": {
+   "provider": "local-qwen3-4b-2507",
+   "state": "valid",
+   "output": {
+    "baseline": "The baseline is the PM2.5-only model from Stage P in 2015 (R0, R1, R2, R3, R3a), with MAE values of 30.762, 32.1, 34.109, 38.209, and 35.491 ug/m\u00b3 respectively. These are from blocked folds and carry no skill claim, as per the acceptance criteria. The 2016 clean season baseline (R0: 8.619, R1: 7.097, R2: 7.386, R3: 7.88, R3a: 7.214) shows significantly lower MAE, indicating a potential improvement in model performance during non-haze conditions. However, since no skill claim is supported for Stage P, these results cannot be used to justify gains from adding new inputs.",
+    "alternatives": [
+     "IMERG Early (used) in 2015 (I1 MAE: 36.106 ug/m\u00b3) shows a higher MAE than the PM2.5-only baseline, indicating no improvement. This result is from a single season and not validated against a skill claim.",
+     "ERA5 reanalysis is used only in hindsight and not at issue time, violating the requirement that only inputs available at issue time enter the experiment. Thus, it is excluded.",
+     "FIRMS MODIS SP is used with availability basis 'standard product archive not nrt' and latency of 3 hours. Since it is not available at issue time (nominal latency not verified), it is excluded.",
+     "SMAP L3 and MCD64A1 are gated out or not assessed due to hindsight availability and latency above 24 hours, violating the issue-time availability rule. Excluded."
+    ],
+    "training_justified": false,
+    "eligible_inputs": [
+     "nea_pm25: available at issue time with 2-hour latency, eligible.",
+     "imerg_early: available at issue time with 4-hour latency, eligible (though only used in 2015, and no skill claim supported)."
+    ],
+    "ineligible_inputs": [
+     "imerg_late: not assessed and not available at issue time (latency 14h, availability unknown), excluded.",
+     "imerg_final: hindsight, excluded.",
+     "smap_l3: hindsight, excluded.",
+     "mcd64a1: hindsight, excluded.",
+     "hls_archive: hindsight, excluded.",
+     "maiac_061: not assessed, hindsight, excluded."
+    ],
+    "split_suitable": true,
+    "findings": [
+     {
+      "id": "m1",
+      "fault_class": "baseline_unsuitable",
+      "claim": "The Stage P baseline from 2015 has no skill claim and is based on blocked folds, violating the acceptance criteria that no supported gain is claimed from Stage P or one season.",
+      "evidence": [
+       "p15.R0",
+       "p15.R1",
+       "p15.R2",
+       "p15.R3"
+      ],
+      "cited_values": {},
+      "severity": "high",
+      "action": "exclude_input",
+      "uncertainty": "high"
+     },
+     {
+      "id": "m2",
+      "fault_class": "non_independent_evidence",
+      "claim": "The only input tested (IMERG Early) in 2015 shows higher MAE (36.106) than the PM2.5-only baseline (30.762), indicating no improvement. No skill claim is supported, and the experiment lacks cross-season validation.",
+      "evidence": [
+       "p15.R0",
+       "p15.I1"
+      ],
+      "cited_values": {},
+      "severity": "high",
+      "action": "exclude_input",
+      "uncertainty": "high"
+     },
+     {
+      "id": "m3",
+      "fault_class": "hindsight_as_forecast",
+      "claim": "ERA5, SMAP L3, MCD64A1, and HLS are all retrospective and not available at issue time, violating the requirement that only inputs available at issue time enter the experiment.",
+      "evidence": [
+       "era5",
+       "smap_l3",
+       "mcd64a1",
+       "hls_archive"
+      ],
+      "cited_values": {},
+      "severity": "high",
+      "action": "exclude_input",
+      "uncertainty": "medium"
+     },
+     {
+      "id": "m4",
+      "fault_class": "missing_observations",
+      "claim": "No data from 2024-01-01 onward is available, and no sealed NEA data was read, limiting the ability to assess operational relevance.",
+      "evidence": [
+       "limitations"
+      ],
+      "cited_values": {},
+      "severity": "medium",
+      "action": "request_data",
+      "uncertainty": "medium"
+     },
+     {
+      "id": "m5",
+      "fault_class": "subgroup_deterioration",
+      "claim": "In the 2019 held-out season, R2 vs R1 paired skill is negative (-0.135), and R2 MAE above 55 is 17.267 ug/m\u00b3, suggesting performance degradation in elevated PM2.5 conditions. This indicates that any added input may not improve performance during severe haze.",
+      "evidence": [
+       "t19.R2_vs_R1.skill",
+       "t19.R2.mae_gt55"
+      ],
+      "cited_values": {},
+      "severity": "high",
+      "action": "abstain",
+      "uncertainty": "high"
+     }
+    ],
+    "recommended_experiment": "abstain",
+    "limitations": [
+     "No skill claim supported for Stage P results.",
+     "Only 2015 and 2016 data used; no cross-season validation.",
+     "No evidence of improvement from IMERG Early or other inputs.",
+     "Hindsight inputs violate issue-time availability rule."
+    ]
+   }
+  },
+  "lead": {
+   "provider": "local-glimmer",
+   "state": "valid",
+   "output": {
+    "dispositions": [
+     {
+      "finding_id": "d2",
+      "verdict": "accept",
+      "reason": "FIRMS MODIS SP availability is unknown in the package and the specialist code check flags unknown reference; it cannot be treated as issue-time valid.",
+      "evidence": [
+       "sources"
+      ]
+     }
+    ],
+    "decision": "abstain",
+    "inputs_used": [
+     "nea_pm25",
+     "imerg_early"
+    ],
+    "excluded_inputs": [
+     "firms_modis_sp",
+     "imerg_late",
+     "imerg_final",
+     "smap_l3",
+     "era5",
+     "mcd64a1",
+     "hls_archive",
+     "maiac_061"
+    ],
+    "plan": "Restrict the experiment to issue-time valid inputs only. Re-run the six-hour-ahead PM2.5 evaluation with NEA PM2.5 as the PM2.5-only baseline and NEA PM2.5 + IMERG Early as the augmented model, using blocked cross-season validation across 2015 haze, 2016 clean and 2019 held-out haze with an enforced input cutoff. Do not use ERA5, SMAP L3, MCD64A1, HLS, FIRMS MODIS SP, IMERG Late/Final or MAIA C061. Report MAE overall and for PM2.5 >55 ug/m3 with paired skill and confidence bounds, and do not claim supported gain from Stage P or a single season.",
+    "claims": [
+     "Stage P 2015 PM2.5-only baseline MAE is 30.762 ug/m3",
+     "Stage P 2015 IMERG Early augmented MAE is 36.106 ug/m3",
+     "2019 held-out R2 vs R1 paired skill is -0.135",
+     "2019 held-out R2 MAE above 55 is 17.267 ug/m3"
+    ],
+    "unresolved": [],
+    "limitations": [
+     "Singapore PM2.5 is five NEA regions, not stations; the label start or end of hour is not stated.",
+     "Stage P results come from blocked folds inside one season and carry no skill claim.",
+     "The shift null in Experiment A has 31 shifts; no test can reach supported_association (Amendment 1).",
+     "Latencies for FIRMS, IMERG and SMAP are nominal values, not measured per file."
+    ]
+   }
+  },
+  "pm": {
+   "provider": "local-glimmer",
+   "state": "valid",
+   "output": {
+    "addresses_question": true,
+    "criteria_met": [
+     true,
+     true,
+     true
+    ],
+    "action": "revise",
+    "note": "The final plan restricts inputs to issue-time valid NEA PM2.5 and IMERG Early and excludes gated/out-of-scope inputs, and it does not claim supported gain from Stage P or a single season. The plan is otherwise incomplete: the lead check reports answers_cover_findings = false with missing ['d4','d6',"
+   }
+  }
+ },
+ "checks": {
+  "data_specialist": {
+   "subject": "data_specialist",
+   "checks": [
+    {
+     "name": "finding d2",
+     "passed": false,
+     "detail": "unknown ref The dataset 'firms_modis_sp' is unknown at issue time."
+    },
+    {
+     "name": "finding d4",
+     "passed": false,
+     "detail": "unknown ref The dataset 'imerg_late' is not downloaded at issue time."
+    },
+    {
+     "name": "finding d6",
+     "passed": false,
+     "detail": "unknown ref The dataset 'smap_l3' is gated out at issue time."
+    },
+    {
+     "name": "finding d8",
+     "passed": false,
+     "detail": "unknown ref The dataset 'mcd64a1' is gated out at issue time."
+    },
+    {
+     "name": "finding d9",
+     "passed": false,
+     "detail": "unknown ref The dataset 'hls_archive' is gated out at issue time."
+    }
+   ]
+  },
+  "ml_engineer": {
+   "subject": "ml_engineer",
+   "checks": [
+    {
+     "name": "finding m1",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finding m2",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finding m3",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finding m4",
+     "passed": false,
+     "detail": "unknown ref limitations"
+    },
+    {
+     "name": "finding m5",
+     "passed": true,
+     "detail": ""
+    }
+   ]
+  },
+  "lead": {
+   "subject": "lead",
+   "checks": [
+    {
+     "name": "decision_allowed",
+     "passed": true,
+     "detail": "abstain"
+    },
+    {
+     "name": "inputs_known",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "issue_time_inputs",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "numbers_grounded",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "no_forbidden_claims",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "answers_cover_findings",
+     "passed": false,
+     "detail": "missing ['d4', 'd6', 'd8', 'd9', 'm1', 'm2', 'm3', 'm4', 'm5']"
+    }
+   ]
+  }
+ },
+ "final": {
+  "dispositions": [
+   {
+    "finding_id": "d2",
+    "verdict": "accept",
+    "reason": "FIRMS MODIS SP availability is unknown in the package and the specialist code check flags unknown reference; it cannot be treated as issue-time valid.",
+    "evidence": [
+     "sources"
+    ]
+   }
+  ],
+  "decision": "abstain",
+  "inputs_used": [
+   "nea_pm25",
+   "imerg_early"
+  ],
+  "excluded_inputs": [
+   "firms_modis_sp",
+   "imerg_late",
+   "imerg_final",
+   "smap_l3",
+   "era5",
+   "mcd64a1",
+   "hls_archive",
+   "maiac_061"
+  ],
+  "plan": "Restrict the experiment to issue-time valid inputs only. Re-run the six-hour-ahead PM2.5 evaluation with NEA PM2.5 as the PM2.5-only baseline and NEA PM2.5 + IMERG Early as the augmented model, using blocked cross-season validation across 2015 haze, 2016 clean and 2019 held-out haze with an enforced input cutoff. Do not use ERA5, SMAP L3, MCD64A1, HLS, FIRMS MODIS SP, IMERG Late/Final or MAIA C061. Report MAE overall and for PM2.5 >55 ug/m3 with paired skill and confidence bounds, and do not claim supported gain from Stage P or a single season.",
+  "claims": [
+   "Stage P 2015 PM2.5-only baseline MAE is 30.762 ug/m3",
+   "Stage P 2015 IMERG Early augmented MAE is 36.106 ug/m3",
+   "2019 held-out R2 vs R1 paired skill is -0.135",
+   "2019 held-out R2 MAE above 55 is 17.267 ug/m3"
+  ],
+  "unresolved": [],
+  "limitations": [
+   "Singapore PM2.5 is five NEA regions, not stations; the label start or end of hour is not stated.",
+   "Stage P results come from blocked folds inside one season and carry no skill claim.",
+   "The shift null in Experiment A has 31 shifts; no test can reach supported_association (Amendment 1).",
+   "Latencies for FIRMS, IMERG and SMAP are nominal values, not measured per file."
+  ]
+ },
+ "decision": "abstain",
+ "code_rule": {
+  "policy": "m41-v2",
+  "allowed": [
+   "proceed_with_limits",
+   "request_validation"
+  ],
+  "preferred": "proceed_with_limits",
+  "flags": [
+   {
+    "fault_class": "hindsight_as_forecast",
+    "evidence": [
+     "imerg_final",
+     "smap_l3",
+     "era5"
+    ],
+    "note": "Not available at issue time."
+   },
+   {
+    "fault_class": "missing_observations",
+    "evidence": [
+     "firms_modis_sp",
+     "imerg_late"
+    ],
+    "note": "When these values become available is not established."
+   },
+   {
+    "fault_class": "subgroup_deterioration",
+    "evidence": [
+     "t19.R2_vs_R1.skill",
+     "t19.R2_vs_R1.high"
+    ],
+    "note": "Fire inputs help elevated hours and hurt all hours."
+   }
+  ],
+  "eligible_inputs": [
+   "nea_pm25",
+   "imerg_early"
+  ],
+  "excluded_inputs": [
+   "era5",
+   "firms_modis_sp",
+   "hls_archive",
+   "imerg_final",
+   "imerg_late",
+   "maiac_061",
+   "mcd64a1",
+   "smap_l3"
+  ],
+  "missing_facts": [
+   "hls.clear",
+   "smap.rq"
+  ]
+ },
+ "agrees_with_code_rule": false,
+ "escalations": [
+  "decision abstain is outside the code rule ['proceed_with_limits', 'request_validation']",
+  "lead check failed: answers_cover_findings",
+  "high ml_engineer finding m1: unanswered",
+  "high ml_engineer finding m2: unanswered",
+  "high ml_engineer finding m3: unanswered",
+  "medium ml_engineer finding m4: unanswered",
+  "high ml_engineer finding m5: unanswered",
+  "PM asks to revise: The final plan restricts inputs to issue-time valid NEA PM2.5 and IMERG Early and excludes gated/out-of-scope inputs, and it does not claim supported gain from Stage P or a single season. The plan is otherwise incomplete: the lead check reports answers_cover_findings = false with missing ['d4','d6',"
+ ],
+ "participation": {
+  "executed": {
+   "data_specialist": "local-llama-3-2-3b",
+   "ml_engineer": "local-qwen3-4b-2507",
+   "lead": "local-glimmer",
+   "pm": "local-glimmer"
+  },
+  "executed_checkpoints": [
+   "local-glimmer",
+   "local-llama-3-2-3b",
+   "local-qwen3-4b-2507"
+  ],
+  "configured_not_run": []
+ },
+ "wall_seconds": 724.2,
+ "trace_entries": 22,
+ "temperature": 0.0
+}

@@ -1,0 +1,282 @@
+{
+ "schema_version": "1",
+ "package_id": "e-m5-handoff",
+ "scenario": "design",
+ "question": "Can historical wind speed/direction, rainfall, regional fire activity, satellite imagery and soil moisture improve Singapore's six-hour-ahead PM2.5 predictions beyond PM2.5-only baselines, especially during severe haze episodes?",
+ "study_area": "Singapore receptor and source boxes A, B, C",
+ "interval": "2015-09-01 to 2015-10-31 (haze, main); 2016 clean season; 2019 held-out haze season; NEA before 2024-01-01",
+ "target": "hourly PM2.5 at T+6, ug/m3",
+ "acceptance_criteria": [
+  "Only inputs available at issue time enter the prediction experiment.",
+  "Inputs that M5 gated out or did not assess are excluded.",
+  "No supported gain is claimed from Stage P or one season."
+ ],
+ "sources": [
+  {
+   "id": "nea_pm25",
+   "dataset": "nea_pm25 (used)",
+   "role": "observation",
+   "availability": "issue_time_valid",
+   "latency_hours": 2.0,
+   "sha256": null,
+   "origin": "m5@458f297:docs/m5/evidence/scientific_evidence_package_v1.json"
+  },
+  {
+   "id": "firms_modis_sp",
+   "dataset": "firms_modis_sp (used)",
+   "role": "observation",
+   "availability": "issue_time_valid",
+   "latency_hours": 3.0,
+   "sha256": null,
+   "origin": "m5@458f297:docs/m5/evidence/scientific_evidence_package_v1.json"
+  },
+  {
+   "id": "imerg_early",
+   "dataset": "imerg_early (used)",
+   "role": "estimate",
+   "availability": "issue_time_valid",
+   "latency_hours": 4.0,
+   "sha256": null,
+   "origin": "m5@458f297:docs/m5/evidence/scientific_evidence_package_v1.json"
+  },
+  {
+   "id": "imerg_late",
+   "dataset": "imerg_late (not_assessed)",
+   "role": "estimate",
+   "availability": "unknown",
+   "latency_hours": 14.0,
+   "sha256": null,
+   "origin": "m5@458f297:docs/m5/evidence/scientific_evidence_package_v1.json"
+  },
+  {
+   "id": "imerg_final",
+   "dataset": "imerg_final (not listed)",
+   "role": "estimate",
+   "availability": "hindsight",
+   "latency_hours": 2556.0,
+   "sha256": null,
+   "origin": "m5@458f297:docs/m5/evidence/scientific_evidence_package_v1.json"
+  },
+  {
+   "id": "smap_l3",
+   "dataset": "smap_l3 (gated_out)",
+   "role": "estimate",
+   "availability": "hindsight",
+   "latency_hours": 50.0,
+   "sha256": null,
+   "origin": "m5@458f297:docs/m5/evidence/scientific_evidence_package_v1.json"
+  },
+  {
+   "id": "era5",
+   "dataset": "era5 (used)",
+   "role": "reanalysis",
+   "availability": "hindsight",
+   "latency_hours": null,
+   "sha256": null,
+   "origin": "m5@458f297:docs/m5/evidence/scientific_evidence_package_v1.json"
+  },
+  {
+   "id": "mcd64a1",
+   "dataset": "mcd64a1 (gated_out)",
+   "role": "observation",
+   "availability": "hindsight",
+   "latency_hours": null,
+   "sha256": null,
+   "origin": "m5@458f297:docs/m5/evidence/scientific_evidence_package_v1.json"
+  },
+  {
+   "id": "hls_archive",
+   "dataset": "hls_archive (gated_out)",
+   "role": "observation",
+   "availability": "hindsight",
+   "latency_hours": null,
+   "sha256": null,
+   "origin": "m5@458f297:docs/m5/evidence/scientific_evidence_package_v1.json"
+  },
+  {
+   "id": "maiac_061",
+   "dataset": "maiac_061 (not_assessed)",
+   "role": "estimate",
+   "availability": "hindsight",
+   "latency_hours": null,
+   "sha256": null,
+   "origin": "m5@458f297:docs/m5/evidence/scientific_evidence_package_v1.json"
+  },
+  {
+   "id": "m5_package",
+   "dataset": "m5-evidence-2",
+   "role": "derived",
+   "availability": "hindsight",
+   "latency_hours": null,
+   "sha256": "0d3f80cfac1c68ec1ab3db077e90e9c285b3b969e7028de36dba650f056f6507",
+   "origin": "m5@458f297:docs/m5/evidence/scientific_evidence_package_v1.json"
+  },
+  {
+   "id": "m5_stage_t",
+   "dataset": "M5 Stage T results",
+   "role": "evaluation",
+   "availability": "hindsight",
+   "latency_hours": null,
+   "sha256": "daf45e25c0a1209f8c74bd9cecec3f132cc8fce2b986678f7f31170bd09f48c1",
+   "origin": "m5@458f297:docs/m5/results/m5_ladder_stage_t.json"
+  }
+ ],
+ "facts": [
+  {
+   "id": "p15.R0",
+   "statement": "2015 Stage P R0 MAE (blocked folds, no skill claim)",
+   "value": 30.762,
+   "unit": "ug/m3",
+   "source": "m5_package"
+  },
+  {
+   "id": "p15.R1",
+   "statement": "2015 Stage P R1 MAE (blocked folds, no skill claim)",
+   "value": 32.1,
+   "unit": "ug/m3",
+   "source": "m5_package"
+  },
+  {
+   "id": "p15.R2",
+   "statement": "2015 Stage P R2 MAE (blocked folds, no skill claim)",
+   "value": 34.109,
+   "unit": "ug/m3",
+   "source": "m5_package"
+  },
+  {
+   "id": "p15.R3",
+   "statement": "2015 Stage P R3 MAE (blocked folds, no skill claim)",
+   "value": 38.209,
+   "unit": "ug/m3",
+   "source": "m5_package"
+  },
+  {
+   "id": "p15.R3a",
+   "statement": "2015 Stage P R3a MAE (blocked folds, no skill claim)",
+   "value": 35.491,
+   "unit": "ug/m3",
+   "source": "m5_package"
+  },
+  {
+   "id": "p16.R0",
+   "statement": "2016 clean season Stage P R0 MAE",
+   "value": 8.619,
+   "unit": "ug/m3",
+   "source": "m5_package"
+  },
+  {
+   "id": "p16.R1",
+   "statement": "2016 clean season Stage P R1 MAE",
+   "value": 7.097,
+   "unit": "ug/m3",
+   "source": "m5_package"
+  },
+  {
+   "id": "p16.R2",
+   "statement": "2016 clean season Stage P R2 MAE",
+   "value": 7.386,
+   "unit": "ug/m3",
+   "source": "m5_package"
+  },
+  {
+   "id": "p16.R3",
+   "statement": "2016 clean season Stage P R3 MAE",
+   "value": 7.88,
+   "unit": "ug/m3",
+   "source": "m5_package"
+  },
+  {
+   "id": "p16.R3a",
+   "statement": "2016 clean season Stage P R3a MAE",
+   "value": 7.214,
+   "unit": "ug/m3",
+   "source": "m5_package"
+  },
+  {
+   "id": "p15.I1",
+   "statement": "2015 Stage P I1 (R2 + IMERG Early) MAE",
+   "value": 36.106,
+   "unit": "ug/m3",
+   "source": "m5_package"
+  },
+  {
+   "id": "t19.R0.mae",
+   "statement": "2019 held-out R0 MAE, all hours",
+   "value": 11.33,
+   "unit": "ug/m3",
+   "source": "m5_stage_t"
+  },
+  {
+   "id": "t19.R0.mae_gt55",
+   "statement": "2019 held-out R0 MAE above 55",
+   "value": 27.628,
+   "unit": "ug/m3",
+   "source": "m5_stage_t"
+  },
+  {
+   "id": "t19.R1.mae",
+   "statement": "2019 held-out R1 MAE, all hours",
+   "value": 9.874,
+   "unit": "ug/m3",
+   "source": "m5_stage_t"
+  },
+  {
+   "id": "t19.R1.mae_gt55",
+   "statement": "2019 held-out R1 MAE above 55",
+   "value": 28.165,
+   "unit": "ug/m3",
+   "source": "m5_stage_t"
+  },
+  {
+   "id": "t19.R2.mae",
+   "statement": "2019 held-out R2 MAE, all hours",
+   "value": 11.208,
+   "unit": "ug/m3",
+   "source": "m5_stage_t"
+  },
+  {
+   "id": "t19.R2.mae_gt55",
+   "statement": "2019 held-out R2 MAE above 55",
+   "value": 17.267,
+   "unit": "ug/m3",
+   "source": "m5_stage_t"
+  },
+  {
+   "id": "t19.R2_vs_R1.high",
+   "statement": "R2 vs R1 all-hours paired skill, upper 95% bound",
+   "value": -0.039,
+   "unit": "",
+   "source": "m5_stage_t"
+  },
+  {
+   "id": "t19.elev_days",
+   "statement": "Elevated days in the 2019 season",
+   "value": 17.0,
+   "unit": "days",
+   "source": "m5_stage_t"
+  }
+ ],
+ "limitations": [
+  "Singapore PM2.5 is five NEA regions, not stations; the label start or end of hour is not stated.",
+  "Stage P results come from blocked folds inside one season and carry no skill claim.",
+  "The shift null in Experiment A has 31 shifts; no test can reach supported_association (Amendment 1).",
+  "Latencies for FIRMS, IMERG and SMAP are nominal values, not measured per file.",
+  "I1 ran on the 2015 season only. Other seasons of IMERG Early were not downloaded.",
+  "The 2015 negative ablation (30.76, 32.10, 36.73, 41.75) is a separate result and is not mixed with M5 numbers.",
+  "No causal attribution of Singapore PM2.5 to specific fires.",
+  "No operational forecast and no health advice.",
+  "No sealed NEA data (from 2024-01-01) was read."
+ ],
+ "missing_inputs": [
+  "maiac_061: HDF4 files; no reader in this branch",
+  "imerg_late: not downloaded"
+ ],
+ "allowed_decisions": [
+  "proceed_with_limits",
+  "request_validation",
+  "request_data",
+  "abstain",
+  "adopt"
+ ],
+ "fixture": false
+}

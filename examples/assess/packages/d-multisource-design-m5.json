@@ -1,0 +1,253 @@
+{
+ "schema_version": "1",
+ "package_id": "d-multisource-design-m5",
+ "scenario": "design",
+ "question": "Which ERA5, FIRMS, IMERG, HLS and SMAP inputs are suitable for an issue-time-valid PM2.5 T+6 prediction experiment, and what experiment should run next?",
+ "study_area": "Singapore and three upwind boxes",
+ "interval": "2015 to 2019 seasons",
+ "target": "hourly PM2.5 at T+6, ug/m3",
+ "acceptance_criteria": [
+  "Only inputs available at issue time enter the prediction experiment.",
+  "Inputs that failed quality checks are excluded.",
+  "The elevated-hour signal is not claimed as a supported gain."
+ ],
+ "sources": [
+  {
+   "id": "nea_pm25",
+   "dataset": "NEA hourly PM2.5",
+   "role": "observation",
+   "availability": "issue_time_valid",
+   "latency_hours": 2.0,
+   "sha256": null,
+   "origin": "Historical1hrPM2.5.csv"
+  },
+  {
+   "id": "firms",
+   "dataset": "FIRMS MODIS fire detections",
+   "role": "observation",
+   "availability": "issue_time_valid",
+   "latency_hours": 3.0,
+   "sha256": null,
+   "origin": "FIRMS area API"
+  },
+  {
+   "id": "era5",
+   "dataset": "ERA5 reanalysis wind and rain",
+   "role": "reanalysis",
+   "availability": "hindsight",
+   "latency_hours": 120.0,
+   "sha256": null,
+   "origin": "Copernicus CDS"
+  },
+  {
+   "id": "imerg_early",
+   "dataset": "GPM IMERG V07 Early",
+   "role": "estimate",
+   "availability": "issue_time_valid",
+   "latency_hours": 4.0,
+   "sha256": null,
+   "origin": "NASA GES DISC"
+  },
+  {
+   "id": "imerg_final",
+   "dataset": "GPM IMERG V07 Final",
+   "role": "estimate",
+   "availability": "hindsight",
+   "latency_hours": 2500.0,
+   "sha256": null,
+   "origin": "NASA GES DISC"
+  },
+  {
+   "id": "hls",
+   "dataset": "HLS L30 v2.0 surface reflectance",
+   "role": "observation",
+   "availability": "unknown",
+   "latency_hours": null,
+   "sha256": "bd1cf60acf112c3f4f6c1124e6da18a947123188148172a09b30095dfdaddc84",
+   "origin": "m5@9d7ebf1:docs/m5/qa/hls_qa.json"
+  },
+  {
+   "id": "smap",
+   "dataset": "SMAP L3 SPL3SMP v009 soil moisture",
+   "role": "estimate",
+   "availability": "unknown",
+   "latency_hours": null,
+   "sha256": "5b327667293cdc42f9d6543e80da56fc6745cffdbaca0d20d325eff590e949c9",
+   "origin": "m5@9d7ebf1:docs/m5/qa/smap_qa.json"
+  },
+  {
+   "id": "m5_stage_t",
+   "dataset": "M5 Stage T results, 2019 held out",
+   "role": "evaluation",
+   "availability": "hindsight",
+   "latency_hours": null,
+   "sha256": "daf45e25c0a1209f8c74bd9cecec3f132cc8fce2b986678f7f31170bd09f48c1",
+   "origin": "m5@9d7ebf1:docs/m5/results/m5_ladder_stage_t.json"
+  },
+  {
+   "id": "m5_i1",
+   "dataset": "M5 rung I1 result, 2015",
+   "role": "evaluation",
+   "availability": "hindsight",
+   "latency_hours": null,
+   "sha256": "e839747ef0ca73ebdb7ddc390b3055459aeea39503428803c5c5d328fc697ac6",
+   "origin": "m5@9d7ebf1:docs/m5/results/m5_i1_stage_p_2015.json"
+  },
+  {
+   "id": "m5_hls",
+   "dataset": "M5 HLS quality check",
+   "role": "derived",
+   "availability": "hindsight",
+   "latency_hours": null,
+   "sha256": "bd1cf60acf112c3f4f6c1124e6da18a947123188148172a09b30095dfdaddc84",
+   "origin": "m5@9d7ebf1:docs/m5/qa/hls_qa.json"
+  },
+  {
+   "id": "m5_smap",
+   "dataset": "M5 SMAP quality check",
+   "role": "derived",
+   "availability": "hindsight",
+   "latency_hours": null,
+   "sha256": "5b327667293cdc42f9d6543e80da56fc6745cffdbaca0d20d325eff590e949c9",
+   "origin": "m5@9d7ebf1:docs/m5/qa/smap_qa.json"
+  }
+ ],
+ "facts": [
+  {
+   "id": "t19.R0.mae",
+   "statement": "2019 held-out R0: MAE all hours",
+   "value": 11.33,
+   "unit": "ug/m3",
+   "source": "m5_stage_t"
+  },
+  {
+   "id": "t19.R1.mae",
+   "statement": "2019 held-out R1: MAE all hours",
+   "value": 9.87,
+   "unit": "ug/m3",
+   "source": "m5_stage_t"
+  },
+  {
+   "id": "t19.R2.mae",
+   "statement": "2019 held-out R2: MAE all hours",
+   "value": 11.21,
+   "unit": "ug/m3",
+   "source": "m5_stage_t"
+  },
+  {
+   "id": "t19.R3a.mae",
+   "statement": "2019 held-out R3a: MAE all hours",
+   "value": 10.21,
+   "unit": "ug/m3",
+   "source": "m5_stage_t"
+  },
+  {
+   "id": "t19.R0.mae_gt55",
+   "statement": "2019 held-out R0: MAE above 55",
+   "value": 27.63,
+   "unit": "ug/m3",
+   "source": "m5_stage_t"
+  },
+  {
+   "id": "t19.R1.mae_gt55",
+   "statement": "2019 held-out R1: MAE above 55",
+   "value": 28.16,
+   "unit": "ug/m3",
+   "source": "m5_stage_t"
+  },
+  {
+   "id": "t19.R2.mae_gt55",
+   "statement": "2019 held-out R2: MAE above 55",
+   "value": 17.27,
+   "unit": "ug/m3",
+   "source": "m5_stage_t"
+  },
+  {
+   "id": "t19.R3a.mae_gt55",
+   "statement": "2019 held-out R3a: MAE above 55",
+   "value": 23.76,
+   "unit": "ug/m3",
+   "source": "m5_stage_t"
+  },
+  {
+   "id": "t19.R2_vs_R1.skill",
+   "statement": "R2 (lags + FIRMS) vs R1, all hours, paired skill",
+   "value": -0.135,
+   "unit": "",
+   "source": "m5_stage_t"
+  },
+  {
+   "id": "t19.R2_vs_R1.high",
+   "statement": "Same, upper 95% bound",
+   "value": -0.039,
+   "unit": "",
+   "source": "m5_stage_t"
+  },
+  {
+   "id": "t19.R2.bias",
+   "statement": "R2 bias, all hours",
+   "value": 6.11,
+   "unit": "ug/m3",
+   "source": "m5_stage_t"
+  },
+  {
+   "id": "t19.elev_days",
+   "statement": "Elevated days in the 2019 season",
+   "value": 17.0,
+   "unit": "days",
+   "source": "m5_stage_t"
+  },
+  {
+   "id": "i1.mae",
+   "statement": "I1 (R2 + IMERG Early) MAE, 2015 Stage P",
+   "value": 36.11,
+   "unit": "ug/m3",
+   "source": "m5_i1"
+  },
+  {
+   "id": "i1.R2.mae",
+   "statement": "R2 MAE, 2015 Stage P",
+   "value": 34.11,
+   "unit": "ug/m3",
+   "source": "m5_i1"
+  },
+  {
+   "id": "hls.clear",
+   "statement": "HLS clear-land share on both dates",
+   "value": 0.027,
+   "unit": "",
+   "source": "m5_hls"
+  },
+  {
+   "id": "hls.aerosol3",
+   "statement": "HLS post-date pixels with high aerosol flag",
+   "value": 0.964,
+   "unit": "",
+   "source": "m5_hls"
+  },
+  {
+   "id": "smap.rq",
+   "statement": "SMAP recommended-quality cells over the Kalimantan box, 16 Oct 2015",
+   "value": 0.0,
+   "unit": "",
+   "source": "m5_smap"
+  }
+ ],
+ "limitations": [
+  "Historical validation only. Not a forecast of any future date.",
+  "Not for health, safety or travel decisions.",
+  "PM2.5 alone does not identify the cause of haze."
+ ],
+ "missing_inputs": [
+  "MAIAC aerosol not assessed (no HDF4 reader).",
+  "ERA5 2016 download not complete."
+ ],
+ "allowed_decisions": [
+  "proceed_with_limits",
+  "request_validation",
+  "request_data",
+  "abstain",
+  "adopt"
+ ],
+ "fixture": false
+}
