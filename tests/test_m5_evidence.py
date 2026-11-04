@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -32,11 +33,20 @@ def test_issue_time_and_retrospective_inputs_are_separate() -> None:
     assert {f.input_class for f in pkg.features if f.source == "era5"} == {"retrospective_only"}
 
 
-def test_committed_package_matches_artifacts() -> None:
+V4_FILE_SHA256 = "b0ad01a1b7b4b0346edc5841b541747b34c773f62dfebbf8128357ab3dbe3497"
+
+
+def test_committed_m5_evidence_4_is_frozen() -> None:
+    """The v4 file stays byte-identical. Its artifact digests describe the files at its commit.
+
+    The report gained a dated correction note later, so a fresh build() no longer equals the file.
+    The current package is m5-evidence-5 (tests/test_m5_evidence_v2.py).
+    """
     path = ROOT / "docs/m5/evidence/scientific_evidence_package_v1.json"
+    assert hashlib.sha256(path.read_bytes()).hexdigest() == V4_FILE_SHA256
     committed = EvidencePackage.model_validate(json.loads(path.read_text()))
     assert verify(committed)
-    assert committed == build(ROOT)
+    assert committed.version == "m5-evidence-4"
 
 
 def test_questions_are_registered_verbatim() -> None:
