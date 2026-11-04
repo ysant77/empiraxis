@@ -1,0 +1,23 @@
+[
+ ["earth", "October twenty fifteen. Satellites detect more than eighty thousand fires across Sumatra and Kalimantan."],
+ ["earth", "Haze covers Singapore. In one region, hourly P M two point five reaches four hundred and seventy-one micrograms."],
+ ["question", "Can wind, rainfall and regional fires help us understand, and predict, these haze episodes?"],
+ ["ablation", "Our 2015 study tested this. Adding wind and rain made six-hour predictions worse. Adding fires made them worse again."],
+ ["problem", "So how should an AI science team decide what evidence to trust, and when to abstain? Training a model takes minutes. Knowing whether to trust it takes evidence."],
+ ["product", "Empi-raxis is an AI science team that has to earn its conclusions."],
+ ["council", "A person asks: can Singapore's P M two point five be predicted six hours ahead, and does a neural network justify its cost?"],
+ ["council", "One local model, Meta's Muse Glimmer, plays four roles. Each role can only propose. Code checks every proposal, and twice it refused one."],
+ ["council", "The lead expected a statistical model to win, and still asked for a neural challenger."],
+ ["train", "Trusted code tuned a ridge on three rolling yearly folds. The strongest penalty, ten thousand, gave the lowest error."],
+ ["train", "Then it trained a compact temporal network. Validation loss was best at epoch five, so training stopped at epoch eight."],
+ ["train", "The saved network was reloaded, and reproduced all forty-three thousand predictions exactly."],
+ ["evidence", "An independent evaluator scored every model on the same rows. The neural network did not beat the ridge."],
+ ["evidence", "And in high pollution hours, every learned model lost to simply repeating the last value."],
+ ["evidence", "So the lead recommended keeping the existing lagged ridge. These years were used before, so this is not an independent test."],
+ ["gate", "No model approves its own work. The decision waits for a person, with a signed key."],
+ ["data", "When Muse asked for fresh official data, the owner signed the request. Seventeen of three hundred and fifty values disagree with the archive, and stay visible."],
+ ["no", "Sometimes, the right answer is no. Reject a reused model. Abstain on a fire source. Ask a person for better imagery."],
+ ["proof", "Every step is hash-chained, and replays without a model. Five real predictions, made hours ahead, were scored against what Singapore later published."],
+ ["next", "Next, we will test whether wind, rain, fire, satellite and soil-moisture data add real skill. That study is planned. It has no results yet."],
+ ["close", "Empi-raxis. Not more autonomy. Better evidence."]
+]

@@ -22,3 +22,6 @@ AGENTS.md
 .env.*
 !.env.example
 .DS_Store
+
+# Video production work files (audio, frames, films). See video/README.md.
+video/work/

@@ -1,0 +1,128 @@
+[
+ {
+  "scene": "earth",
+  "wav": "audio/00.wav",
+  "dur": 6.502,
+  "text": "October twenty fifteen. Satellites detect more than eighty thousand fires across Sumatra and Kalimantan."
+ },
+ {
+  "scene": "earth",
+  "wav": "audio/01.wav",
+  "dur": 7.334,
+  "text": "Haze covers Singapore. In one region, hourly P M two point five reaches four hundred and seventy-one micrograms."
+ },
+ {
+  "scene": "question",
+  "wav": "audio/02.wav",
+  "dur": 5.947,
+  "text": "Can wind, rainfall and regional fires help us understand, and predict, these haze episodes?"
+ },
+ {
+  "scene": "ablation",
+  "wav": "audio/03.wav",
+  "dur": 7.899,
+  "text": "Our 2015 study tested this. Adding wind and rain made six-hour predictions worse. Adding fires made them worse again."
+ },
+ {
+  "scene": "problem",
+  "wav": "audio/04.wav",
+  "dur": 9.317,
+  "text": "So how should an AI science team decide what evidence to trust, and when to abstain? Training a model takes minutes. Knowing whether to trust it takes evidence."
+ },
+ {
+  "scene": "product",
+  "wav": "audio/05.wav",
+  "dur": 4.06,
+  "text": "Empi-raxis is an AI science team that has to earn its conclusions."
+ },
+ {
+  "scene": "council",
+  "wav": "audio/06.wav",
+  "dur": 8.136,
+  "text": "A person asks: can Singapore's P M two point five be predicted six hours ahead, and does a neural network justify its cost?"
+ },
+ {
+  "scene": "council",
+  "wav": "audio/07.wav",
+  "dur": 8.852,
+  "text": "One local model, Meta's Muse Glimmer, plays four roles. Each role can only propose. Code checks every proposal, and twice it refused one."
+ },
+ {
+  "scene": "council",
+  "wav": "audio/08.wav",
+  "dur": 4.792,
+  "text": "The lead expected a statistical model to win, and still asked for a neural challenger."
+ },
+ {
+  "scene": "train",
+  "wav": "audio/09.wav",
+  "dur": 7.282,
+  "text": "Trusted code tuned a ridge on three rolling yearly folds. The strongest penalty, ten thousand, gave the lowest error."
+ },
+ {
+  "scene": "train",
+  "wav": "audio/10.wav",
+  "dur": 7.124,
+  "text": "Then it trained a compact temporal network. Validation loss was best at epoch five, so training stopped at epoch eight."
+ },
+ {
+  "scene": "train",
+  "wav": "audio/11.wav",
+  "dur": 5.328,
+  "text": "The saved network was reloaded, and reproduced all forty-three thousand predictions exactly."
+ },
+ {
+  "scene": "evidence",
+  "wav": "audio/12.wav",
+  "dur": 5.98,
+  "text": "An independent evaluator scored every model on the same rows. The neural network did not beat the ridge."
+ },
+ {
+  "scene": "evidence",
+  "wav": "audio/13.wav",
+  "dur": 5.014,
+  "text": "And in high pollution hours, every learned model lost to simply repeating the last value."
+ },
+ {
+  "scene": "evidence",
+  "wav": "audio/14.wav",
+  "dur": 7.222,
+  "text": "So the lead recommended keeping the existing lagged ridge. These years were used before, so this is not an independent test."
+ },
+ {
+  "scene": "gate",
+  "wav": "audio/15.wav",
+  "dur": 4.788,
+  "text": "No model approves its own work. The decision waits for a person, with a signed key."
+ },
+ {
+  "scene": "data",
+  "wav": "audio/16.wav",
+  "dur": 8.904,
+  "text": "When Muse asked for fresh official data, the owner signed the request. Seventeen of three hundred and fifty values disagree with the archive, and stay visible."
+ },
+ {
+  "scene": "no",
+  "wav": "audio/17.wav",
+  "dur": 7.588,
+  "text": "Sometimes, the right answer is no. Reject a reused model. Abstain on a fire source. Ask a person for better imagery."
+ },
+ {
+  "scene": "proof",
+  "wav": "audio/18.wav",
+  "dur": 8.925,
+  "text": "Every step is hash-chained, and replays without a model. Five real predictions, made hours ahead, were scored against what Singapore later published."
+ },
+ {
+  "scene": "next",
+  "wav": "audio/19.wav",
+  "dur": 8.858,
+  "text": "Next, we will test whether wind, rain, fire, satellite and soil-moisture data add real skill. That study is planned. It has no results yet."
+ },
+ {
+  "scene": "close",
+  "wav": "audio/20.wav",
+  "dur": 3.008,
+  "text": "Empi-raxis. Not more autonomy. Better evidence."
+ }
+]
