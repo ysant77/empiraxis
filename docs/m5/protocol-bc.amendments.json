@@ -1,6 +1,6 @@
 {
-  "note": "The amendments file is append-only. These values fix its bytes up to and including Amendment C3.",
+  "note": "The amendments file is append-only. These values fix its bytes up to and including the correction to Amendment C3.",
   "file": "docs/m5/M5_PROTOCOL_BC_AMENDMENTS.md",
-  "bytes": 3915,
-  "sha256": "feb0690b127540ba6603e6248a7523435076e45a4b29ce9c825468118b361522"
+  "bytes": 4677,
+  "sha256": "05676e77752c395a8b3c008d2dd6473e1c3eb38b37a42e1b1c4276f6cc3f9dbd"
 }

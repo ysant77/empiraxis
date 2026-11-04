@@ -164,7 +164,7 @@ Brier skill is against the constant training base rate (C0, Brier 0.196). Interv
 | C3 lags + FIRMS | 0.103 | 0.474 | 0.267 to 0.643 | 0.915 | 0.58 / 0.047 | 0.093 | useful_signal |
 | C4 trees (gate met) | 0.114 | 0.419 | -0.056 to 0.733 | 0.941 | 0.65 / 0.064 | 0.087 | not labelled (interval includes 0) |
 
-Exploratory bands (Amendment C3, post hoc, no label decision), coverage / error / calibration gap:
+Exploratory bands, added AFTER the primary run (Amendment C3, post hoc, outside the label decision and the headline; file `m5_c_v1_post_hoc_bands.json`), coverage / error / calibration gap:
 
 | Rung | 0.1 to 0.9 | 0.3 to 0.7 |
 |---|---|---|
@@ -185,6 +185,8 @@ How far to trust it (Amendment C1 checks, same 2019 data):
 - **Calibration is imperfect.** Low probabilities are too high: the 0.14 bin has an observed rate of 0.03. The reliability table is in the result file.
 - **One scored episode.** All 349 events come from one connected haze period in 2019. The week bootstrap cannot show variation between episodes. The result is not evidence of skill on a new episode.
 - IMERG was not used (2015 only). The latency rules are nominal (see the latency note in section 2a).
+
+Headline: the skill comes from the PM2.5 lags. A FIRMS increment is not supported. The week-bootstrap intervals reflect variation between weeks inside one episode, not between independent episodes.
 
 Reading: for this one held-out episode, a lag-based model with Platt calibration and abstention predicts the event much better than the training base rate and better than 0/1 persistence.
 FIRMS adds little. The frozen rule gives `useful_signal` for C3 but the label does not survive two sensitivity checks. Claim no operational forecast.
@@ -228,6 +230,9 @@ scenes are 80 to 100% cloudy by the provider's own value.
 - Missing PM2.5 lags are filled with the training mean after scaling in ridge. Trees read the gaps as missing.
 - The protocol's Experiment A cannot reach `supported_association` (Amendment 1).
 - Thresholds for the HLS and SMAP gates were set after one look at the pilot data. They are not independent of it.
+- **Deviation (M5-C).** The owner asked for the 0.1 to 0.9 and 0.3 to 0.7 abstention rows by amendment before any M5-C run. The primary run (`a7a3c14`) happened first,
+  on the owner's direct go-ahead, before that decision reached this session. The rows were added afterwards as post-hoc exploratory rows (Amendment C3 and its correction). The primary result is unchanged. An earlier commit (`81883e9`) wrongly wrote the rows into the primary result file. The next commit removes them.
+- M5-C holds one scored episode (2019). Week-bootstrap intervals reflect weeks, not independent episodes.
 - No sealed data (NEA from 2024-01-01) was used. The loader sets those hours to missing, and a test checks it.
 
 ## 6. What is not known

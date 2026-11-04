@@ -2,6 +2,8 @@
 
 Usage: uv run python scripts/m5_run_c.py DATA_ROOT HAZE2015_RUN_FOLDER
 Output: docs/m5/results/m5_c_v1.json
+With a third argument `post-hoc-bands` it writes only m5_c_v1_post_hoc_bands.json (Amendment C3)
+and leaves m5_c_v1.json unchanged.
 """
 
 from __future__ import annotations
@@ -95,11 +97,30 @@ def rank_within(block: E.Block) -> E.Block:
     return E.Block(block.year, block.lags, order, block.y, block.weeks, block.days)
 
 
+def post_hoc_bands(train: list[E.Block], test: E.Block) -> dict[str, Any]:
+    out: dict[str, Any] = {}
+    for name, fire in (("C2", False), ("C3", True)):
+        p = calibrated(train, test, fire)
+        out[name] = {
+            f"{lo}-{hi}": E.covered_error(p, test.y, band=(lo, hi))
+            for lo, hi in E.EXPLORATORY_BANDS
+        }
+    return out
+
+
 def main() -> int:
     data, haze = Path(sys.argv[1]).expanduser(), Path(sys.argv[2]).expanduser()
     grid = load_open_grid(Path("data/nea/Historical1hrPM2.5.csv"))
     b = blocks(grid, data, haze, (*TRAIN, TEST))
     train, test = [b[y] for y in TRAIN], b[TEST]
+    if "post-hoc-bands" in sys.argv[3:]:
+        rows = {"status": "exploratory_post_hoc_amendment_C3", "primary_run_commit": "a7a3c14",
+                "bands": post_hoc_bands(train, test)}  # fmt: skip
+        Path("docs/m5/results/m5_c_v1_post_hoc_bands.json").write_text(
+            json.dumps(rows, indent=1) + "\n"
+        )
+        print(json.dumps(rows, indent=1))
+        return 0
     record: dict[str, Any] = {"protocol_id": "m5-protocol-c-1", "main": evaluate(train, test)}
     F.FIRMS_DELAY = timedelta(hours=24)
     late = blocks(grid, data, haze, (*TRAIN, TEST))

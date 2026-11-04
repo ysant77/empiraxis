@@ -38,3 +38,12 @@ before the main-session advice to add other bands reached this session. This ame
 - The owner decided (relayed by the main session, 2026-11-04): keep 0.2 to 0.8 as the frozen primary rule and add 0.1 to 0.9 and 0.3 to 0.7 as exploratory secondary rows. The two rows carry no label decision.
 - The decision reached this session after the first run. The order the owner asked for (amendment before any run) was not kept. The rerun shows that all primary numbers are identical.
 - The owner may still change the primary band. That would need a new amendment and a new run.
+
+## Amendment C3, correction (2026-11-04)
+
+The owner approved the post-hoc rows (relayed by the main session): "add the 0.1–0.9 and 0.3–0.7 rows as post-hoc exploratory rows, outside the label decision and headline."
+
+- The rows were added AFTER the primary M5-C run in commit `a7a3c14`. That run's result file `m5_c_v1.json` is unchanged and equals its `a7a3c14` version.
+- The first version of Amendment C3 also put the rows into `m5_c_v1.json` (commit `81883e9`). This correction removes them from that file.
+- The rows now live only in `docs/m5/results/m5_c_v1_post_hoc_bands.json`, made with `scripts/m5_run_c.py ... post-hoc-bands`. The model, features, folds and seeds are the same.
+- The rows are outside the label decision and outside the headline.

@@ -185,9 +185,6 @@ def score_rung(p: np.ndarray, y: np.ndarray, base_brier: float) -> dict[str, Any
         "roc_auc": float(roc_auc_score(y, p)) if both else float("nan"),
         "reliability": reliability(p, y),
         "abstention": covered_error(p, y),
-        "abstention_post_hoc_bands": {
-            f"{lo}-{hi}": covered_error(p, y, band=(lo, hi)) for lo, hi in EXPLORATORY_BANDS
-        },
     }
 
 
