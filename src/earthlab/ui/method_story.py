@@ -14,6 +14,10 @@ from earthlab.ui import scenarios as S
 
 RUN = "scenario-muse-method-comparison"
 NAMES = {"candidate-ridge-cv": "Tuned ridge (rolling-origin)"}
+QUESTION = (
+    "Does a compact neural model gain enough over a tuned ridge to justify its "
+    "cost, for regional PM2.5 six hours ahead?"
+)
 
 
 def _trace(run_dir: Path, event: str) -> dict[str, Any]:
@@ -22,6 +26,22 @@ def _trace(run_dir: Path, event: str) -> dict[str, Any]:
         if record["event"] == event:
             return dict(record["data"])
     return {}
+
+
+def entries(run_dir: Path) -> list[dict[str, Any]]:
+    lines = (run_dir / "trace.jsonl").read_text(encoding="utf-8").splitlines()
+    return [json.loads(line) for line in lines]
+
+
+def neural_name(records: list[dict[str, Any]]) -> str:
+    family: dict[str, Any] = next(
+        (r["data"] for r in records if r["event"] == "family_comparison"), {}
+    )
+    return str(family.get("trained", ["", "neural"])[-1]).upper()
+
+
+def rows(record: dict[str, Any], neural: str) -> list[dict[str, Any]]:
+    return _rows(record, neural)
 
 
 def _rows(record: dict[str, Any], neural: str) -> list[dict[str, Any]]:
@@ -47,8 +67,7 @@ def m3(run_dir: Path) -> S.Story:
     pick = record["recommendation"]
     return S.Story(
         key="M3", run=RUN, title=S.TITLES["M3"],
-        question="Does a compact neural model gain enough over a tuned ridge to justify its "
-        "cost, for regional PM2.5 six hours ahead?",
+        question=QUESTION,
         method=f"Muse Glimmer as Lead selected the {family.get('lead_strategy')} strategy "
         f"and configured a {neural}. The research question required both families, so trusted "
         "tools trained a ridge "

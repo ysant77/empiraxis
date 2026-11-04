@@ -1,0 +1,283 @@
+{
+  "status": "awaiting_human",
+  "reason": "evidence ready for a human decision",
+  "arm": "team",
+  "kind": "regression",
+  "problem_id": "pm25-method-comparison-6h",
+  "evidence_label": "Issue-time replay with modelled availability",
+  "limitations": [
+    "Non-operational research result.",
+    "Historical evaluation. Not a forecast of any future date.",
+    "Not for health, safety or travel decisions.",
+    "PM2.5 is not PSI or AQI.",
+    "PM2.5 concentration alone does not identify wildfire haze or its cause.",
+    "Above 55 ug/m3 the MAE of candidate-1 is 29.104 against 26.324 for persistence. Do not rely on it in elevated hours.",
+    "subgroup_failure: MAE above 55 ug/m3 is 29.104, reference 26.324"
+  ],
+  "refusal_codes": [],
+  "state": "forwarded",
+  "model_changed_the_plan": true,
+  "workflow_class": "autonomous multi-agent",
+  "split_scored": "validation",
+  "test_period": "not evaluated; it needs a lock and a human decision",
+  "artifacts": {
+    "request": "1401502015a5b929239c8b103739cb47dcae9b3a88568581f06d98366e71e7ff",
+    "problem": "dd9ddd9892d0304084d9f428bdc32669e7677d77fecc98a0b8a4994e917f83f5",
+    "profile": "6c2755cfe5ca7434d4c2a713b03d0cd0e22a2cf6f6ab1fefaf665e191a32cb70",
+    "suitability": "8029e17f1c7eead424dd02ad9464c1cb5cf906bd13c437744d747df90682753f",
+    "plan-1": "5b70abdfcc9298e6dcf723c000b07cabe720070ff461c13a637d051b004976ca",
+    "task-data-plan-1": "df55d290f5b1df215effeb4ff55e748a03d5408965f1cf2ad4fbbc24d36c9068",
+    "task-ml-plan-1": "5559f86c0611e1974425e1feb71bd62c83070a06799073e2a02e249da41862ca",
+    "evaluation-plan-1": "232ca11101f3f6dae2230b1f4f6ba61279e0c0e72a39935d36ba48577e69ab6f",
+    "decision": "5b4d158ded4b04dee9e54774e2ee6d187c7427341344df5f773866138a7a4b04"
+  },
+  "strategy": "statistical",
+  "suitability": {
+    "schema_version": "1",
+    "facts": {
+      "kind": "regression",
+      "rows": 109584,
+      "labels_with_provenance": true,
+      "positive_rate": null,
+      "availability_latency_hours": 2,
+      "training_budget_seconds": 1200.0,
+      "repeated_inference_per_day": 0,
+      "pretrained_assets_approved": [],
+      "evaluable": true
+    },
+    "checks": [
+      {
+        "strategy": "deterministic",
+        "eligible": true,
+        "reasons": []
+      },
+      {
+        "strategy": "statistical",
+        "eligible": true,
+        "reasons": []
+      },
+      {
+        "strategy": "small_neural",
+        "eligible": true,
+        "reasons": []
+      },
+      {
+        "strategy": "pretrained_transfer",
+        "eligible": false,
+        "reasons": [
+          "no approved weights",
+          "no approved pretrained model fits a tabular series"
+        ]
+      },
+      {
+        "strategy": "fine_tuning",
+        "eligible": false,
+        "reasons": [
+          "no approved weights",
+          "no approved pretrained model fits a tabular series"
+        ]
+      },
+      {
+        "strategy": "distillation",
+        "eligible": false,
+        "reasons": [
+          "no repeated inference workload declared"
+        ]
+      },
+      {
+        "strategy": "abstain_or_request",
+        "eligible": true,
+        "reasons": []
+      }
+    ]
+  },
+  "recommendation": {
+    "outcome": "adopt_limited",
+    "model_id": "candidate-1",
+    "reason": "Candidate-1 shows positive mean skill over persistence with lower confidence bound above zero and improved overall MAE and RMSE versus B0_persistence. Validation passes criteria for general use. Limitation notes above 55 ug/m3 MAE is 29.104 versus 26.324 for persistence and advises against reliance in elevated hours, so adoption is limited to non-elevated conditions."
+  },
+  "comparison": [
+    {
+      "model": "candidate-1",
+      "mae": 4.575,
+      "rmse": 6.424,
+      "bias": -0.699,
+      "skill": 0.1622,
+      "above_55_mae": 29.104,
+      "low": 0.15167307448659786,
+      "high": 0.17236420450463646,
+      "passes": true
+    },
+    {
+      "model": "B4_lagged_ridge",
+      "mae": 4.68,
+      "rmse": 6.385,
+      "bias": 0.518,
+      "skill": 0.1419,
+      "above_55_mae": 30.254,
+      "low": 0.13208726569484483,
+      "high": 0.15140389876301877,
+      "passes": true
+    },
+    {
+      "model": "candidate-ridge-cv",
+      "mae": 4.697,
+      "rmse": 6.381,
+      "bias": 0.653,
+      "skill": 0.1384,
+      "above_55_mae": 30.577,
+      "low": 0.12822900494344444,
+      "high": 0.14836622393766158,
+      "passes": true
+    },
+    {
+      "model": "B0_persistence",
+      "mae": 5.465,
+      "rmse": 7.707,
+      "bias": 0.001,
+      "skill": 0.0,
+      "above_55_mae": 26.324,
+      "low": 0.0,
+      "high": 0.0,
+      "passes": false
+    },
+    {
+      "model": "B1_daily_naive",
+      "mae": 5.64,
+      "rmse": 8.191,
+      "bias": -0.0,
+      "skill": -0.0318,
+      "above_55_mae": 32.43,
+      "low": -0.05308750460980289,
+      "high": -0.013173477070768299,
+      "passes": false
+    },
+    {
+      "model": "B2_weekly_naive",
+      "mae": 6.515,
+      "rmse": 9.366,
+      "bias": 0.018,
+      "skill": -0.1916,
+      "above_55_mae": 41.127,
+      "low": -0.2334652138313038,
+      "high": -0.15421623353993333,
+      "passes": false
+    },
+    {
+      "model": "B3_climatology",
+      "mae": 7.788,
+      "rmse": 10.16,
+      "bias": 4.738,
+      "skill": -0.4356,
+      "above_55_mae": 45.997,
+      "low": -0.5389550333329717,
+      "high": -0.3465910640911091,
+      "passes": false
+    }
+  ],
+  "acceptance": {
+    "profile_written": true,
+    "baselines_evaluated": true,
+    "neural_model_when_chosen": true,
+    "every_model_has_predictions_hash": true,
+    "no_feature_file_reaches_test": true,
+    "elevated_hours_reported": true
+  },
+  "code_outcome": "adopt_limited",
+  "prompt_variant": "note-close-v1",
+  "prompt_digests": {
+    "scope": "deb591a50ba4bcaf200768b7357105d0eff87f4e3b915c7201339de6a21854d1",
+    "strategy": "8791d37347f9bd681f0de37c55233ffd8dc22f07cdfac9c16aaa58cdbceafef2",
+    "plan": "74b0548d49044ce59f1f820eee94ff864b44db2bd159db841d12892eb47cdd16",
+    "data": "f5a5b9014b0ac1fc757ef573faa98463cb24e0ff5ca35ff30c0c7f7cf9902d08",
+    "ml": "c7b1d356a50b3f6df0f9171e5318de07a06cbed1bbc3fa29287724a33427e1df",
+    "review": "fe133f5f47f48dcf2ca312a9b99ef0c40998fea3af0d81583e4ed43be9b863c0",
+    "decide": "870361b04cf398c4e1ecae2941566e40fcb0ebbaf6fb098757d913538bf088a0",
+    "forward": "d29d528e0d591813fc092a6807cde82a8d75ace165cfb973a6be853cee49208e"
+  },
+  "usage": {
+    "wall_seconds": 1846.1,
+    "inference_seconds": 1814.7,
+    "training_seconds": 23.4,
+    "peak_training_rss_mb": 297.3,
+    "model_calls": 13,
+    "prompt_tokens": 15071,
+    "completion_tokens": 5747,
+    "cached_tokens": "not exposed by this provider",
+    "retries": 0,
+    "provider_faults": 0,
+    "tool_calls": 2,
+    "rejected_tool_calls": 0,
+    "human_interventions": 0
+  },
+  "council": {
+    "seats": 5,
+    "distinct_checkpoints": 2,
+    "heterogeneous": true,
+    "families": [
+      "meta-llama",
+      "meta-muse"
+    ],
+    "seats_per_checkpoint": {
+      "4cc57c0f5104": [
+        "product_manager",
+        "geospatial_engineer"
+      ],
+      "6c1a2b411610": [
+        "data_specialist",
+        "ml_engineer",
+        "method_critic"
+      ]
+    }
+  },
+  "decision_critique": {
+    "critic_source": "independent_model",
+    "advisory": true,
+    "state": "usable",
+    "verdict": "no_concern",
+    "reason": "",
+    "findings": []
+  },
+  "roles": {
+    "product_manager": {
+      "role": "product_manager",
+      "provider": "local-glimmer",
+      "model": "muse-glimmer-30B",
+      "served_model": "muse-glimmer-30B",
+      "calls": 2,
+      "kind": "live_http"
+    },
+    "geospatial_engineer": {
+      "role": "geospatial_engineer",
+      "provider": "local-glimmer",
+      "model": "muse-glimmer-30B",
+      "served_model": "muse-glimmer-30B",
+      "calls": 6,
+      "kind": "live_http"
+    },
+    "data_specialist": {
+      "role": "data_specialist",
+      "provider": "local-llama-3-2-3b",
+      "model": "meta-llama/Llama-3.2-3B-Instruct",
+      "served_model": "meta-llama/Llama-3.2-3B-Instruct",
+      "calls": 2,
+      "kind": "live_http"
+    },
+    "ml_engineer": {
+      "role": "ml_engineer",
+      "provider": "local-llama-3-2-3b",
+      "model": "meta-llama/Llama-3.2-3B-Instruct",
+      "served_model": "meta-llama/Llama-3.2-3B-Instruct",
+      "calls": 2,
+      "kind": "live_http"
+    },
+    "method_critic": {
+      "role": "method_critic",
+      "provider": "local-llama-3-2-3b",
+      "model": "meta-llama/Llama-3.2-3B-Instruct",
+      "served_model": "meta-llama/Llama-3.2-3B-Instruct",
+      "calls": 1,
+      "kind": "live_http"
+    }
+  }
+}

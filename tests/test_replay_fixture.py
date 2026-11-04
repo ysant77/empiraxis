@@ -168,7 +168,7 @@ def test_committed_fixture_holds_redacted_real_runs() -> None:
             trace = records(verified_run(REPLAY, entry["run"]) / "trace.jsonl")
             turns = [r for r in trace if r["event"] == "model_turn"]
             assert all(not set(MODEL_TURN_DROPPED) & set(t["data"]) for t in turns)
-            assert bool(turns) == (entry["scenario_id"] in ("M1", "M2", "M3"))
+            assert bool(turns) == (entry["scenario_id"] in ("M1", "M2", "M3", "M4"))
             continue
         assert entry["label"] in (LABEL, WORKFLOW_LABEL) and entry["split"] == "development"
         assert len(entry["source_trace_sha256"]) == 64 and entry["redaction_version"] == "1"

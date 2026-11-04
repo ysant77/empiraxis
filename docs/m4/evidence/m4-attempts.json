@@ -1,0 +1,630 @@
+{
+ "experiment": "m4-het-v1",
+ "note": "One row per attempt. Times are seconds. Run IDs are UTC.",
+ "attempts": [
+  {
+   "stage": "primary",
+   "arm": "T-Mc",
+   "run": "20261103T130107Z-64304d",
+   "status": "refused",
+   "err": "",
+   "reason": "method_review: unknown_method: not a registered method; method_review: unknown_method: not a registered method; method_review: not_in_plan: the plan runs ['pers",
+   "wall": 1693.0,
+   "commit": "781603d",
+   "calls": 6,
+   "strategy": null,
+   "rec": "-",
+   "code": "-",
+   "tokens": 12543,
+   "checkpoints": 2,
+   "critic": "none",
+   "invalid": 2,
+   "records": 30,
+   "head": "0667a7ce",
+   "per": {
+    "product_manager": [
+     1,
+     1331
+    ],
+    "geospatial_engineer": [
+     5,
+     11212
+    ]
+   },
+   "replay": {
+    "mismatches": 0,
+    "models_rechecked": 0
+   }
+  },
+  {
+   "stage": "primary",
+   "arm": "T-Mc",
+   "run": "20261103T135356Z-be8ef6",
+   "status": "abstained",
+   "err": "",
+   "reason": "the Lead chose to run no experiment",
+   "wall": 527.1,
+   "commit": "5f596d4",
+   "calls": 3,
+   "strategy": null,
+   "rec": "-",
+   "code": "-",
+   "tokens": 4528,
+   "checkpoints": 2,
+   "critic": "none",
+   "invalid": 1,
+   "records": 23,
+   "head": "70d05783",
+   "per": {
+    "product_manager": [
+     1,
+     1311
+    ],
+    "geospatial_engineer": [
+     2,
+     3217
+    ]
+   },
+   "replay": {
+    "mismatches": 0,
+    "models_rechecked": 0
+   }
+  },
+  {
+   "stage": "primary",
+   "arm": "T-L",
+   "run": "20261103T140243Z-40d596",
+   "status": "awaiting_human",
+   "err": "",
+   "reason": "evidence ready for a human decision",
+   "wall": 1848.1,
+   "commit": "5f596d4",
+   "calls": 13,
+   "strategy": "statistical",
+   "rec": "adopt_limited:candidate-1",
+   "code": "adopt_limited",
+   "tokens": 20818,
+   "checkpoints": 2,
+   "critic": "usable/indep/0",
+   "invalid": 2,
+   "records": 61,
+   "head": "641d5b5e",
+   "per": {
+    "product_manager": [
+     2,
+     3888
+    ],
+    "geospatial_engineer": [
+     6,
+     11713
+    ],
+    "data_specialist": [
+     2,
+     1408
+    ],
+    "ml_engineer": [
+     2,
+     1699
+    ],
+    "method_critic": [
+     1,
+     2110
+    ]
+   },
+   "replay": {
+    "mismatches": 0,
+    "models_rechecked": 7
+   }
+  },
+  {
+   "stage": "primary",
+   "arm": "T-Mc",
+   "run": "20261103T143435Z-579616",
+   "status": "failed",
+   "err": "",
+   "reason": "Stopped: choose_strategy: reason: String should have at most 400 characters",
+   "wall": 796.9,
+   "commit": "31b6de2",
+   "calls": 4,
+   "strategy": null,
+   "rec": "-",
+   "code": "-",
+   "tokens": 6273,
+   "checkpoints": 2,
+   "critic": "none",
+   "invalid": 3,
+   "records": 25,
+   "head": "97112359",
+   "per": {
+    "product_manager": [
+     2,
+     2680
+    ],
+    "geospatial_engineer": [
+     2,
+     3593
+    ]
+   },
+   "replay": {
+    "mismatches": 0,
+    "models_rechecked": 0
+   }
+  },
+  {
+   "stage": "primary",
+   "arm": "T-Mc",
+   "run": "20261103T144809Z-c32be1",
+   "status": "awaiting_human",
+   "err": "",
+   "reason": "evidence ready for a human decision",
+   "wall": 2168.4,
+   "commit": "829856b",
+   "calls": 15,
+   "strategy": "small_neural",
+   "rec": "adopt_limited:candidate-1",
+   "code": "adopt_limited",
+   "tokens": 28714,
+   "checkpoints": 2,
+   "critic": "unusable/indep/0",
+   "invalid": 5,
+   "records": 65,
+   "head": "212fb441",
+   "per": {
+    "product_manager": [
+     3,
+     7753
+    ],
+    "geospatial_engineer": [
+     6,
+     11113
+    ],
+    "data_specialist": [
+     2,
+     2263
+    ],
+    "ml_engineer": [
+     2,
+     2809
+    ],
+    "method_critic": [
+     2,
+     4776
+    ]
+   },
+   "replay": {
+    "mismatches": 0,
+    "models_rechecked": 7
+   }
+  },
+  {
+   "stage": "primary",
+   "arm": "S-M",
+   "run": "20261103T152431Z-8e9959",
+   "status": "awaiting_human",
+   "err": "",
+   "reason": "evidence ready for a human decision",
+   "wall": 1639.0,
+   "commit": "829856b",
+   "calls": 6,
+   "strategy": "small_neural",
+   "rec": "retain_baseline:B4_lagged_ridge",
+   "code": "retain_baseline",
+   "tokens": 13604,
+   "checkpoints": 1,
+   "critic": "usable/same/1",
+   "invalid": 1,
+   "records": 35,
+   "head": "39391dc4",
+   "per": {
+    "geospatial_engineer": [
+     5,
+     10343
+    ],
+    "method_critic": [
+     1,
+     3261
+    ]
+   },
+   "replay": {
+    "mismatches": 0,
+    "models_rechecked": 7
+   }
+  },
+  {
+   "stage": "primary",
+   "arm": "T-M",
+   "run": "20261103T155207Z-9f4613",
+   "status": "awaiting_human",
+   "err": "",
+   "reason": "evidence ready for a human decision",
+   "wall": 2286.8,
+   "commit": "c53597e",
+   "calls": 15,
+   "strategy": "small_neural",
+   "rec": "adopt_limited:candidate-1",
+   "code": "adopt_limited",
+   "tokens": 28028,
+   "checkpoints": 1,
+   "critic": "usable/same/1",
+   "invalid": 4,
+   "records": 65,
+   "head": "4ef0c764",
+   "per": {
+    "product_manager": [
+     4,
+     8322
+    ],
+    "geospatial_engineer": [
+     6,
+     10892
+    ],
+    "data_specialist": [
+     2,
+     2430
+    ],
+    "ml_engineer": [
+     2,
+     2806
+    ],
+    "method_critic": [
+     1,
+     3578
+    ]
+   },
+   "replay": {
+    "mismatches": 0,
+    "models_rechecked": 7
+   }
+  },
+  {
+   "stage": "primary",
+   "arm": "T-Q",
+   "run": "20261103T163307Z-1f6f19",
+   "status": "failed",
+   "err": "",
+   "reason": "Stopped: data_specialist stopped without submit_note",
+   "wall": 1005.0,
+   "commit": "c53597e",
+   "calls": 7,
+   "strategy": "statistical",
+   "rec": "-",
+   "code": "-",
+   "tokens": 10814,
+   "checkpoints": 2,
+   "critic": "none",
+   "invalid": 2,
+   "records": 36,
+   "head": "1d129f17",
+   "per": {
+    "product_manager": [
+     1,
+     1543
+    ],
+    "geospatial_engineer": [
+     4,
+     7591
+    ],
+    "data_specialist": [
+     2,
+     1680
+    ]
+   },
+   "replay": {
+    "mismatches": 0,
+    "models_rechecked": 0
+   }
+  },
+  {
+   "stage": "primary",
+   "arm": "T-Qr",
+   "run": "20261103T165039Z-2a939b",
+   "status": "failed",
+   "err": "",
+   "reason": "Stopped: data_specialist stopped without submit_note",
+   "wall": 743.6,
+   "commit": "495d0e3",
+   "calls": 7,
+   "strategy": "small_neural",
+   "rec": "-",
+   "code": "-",
+   "tokens": 9492,
+   "checkpoints": 2,
+   "critic": "none",
+   "invalid": 1,
+   "records": 35,
+   "head": "0fd4d30c",
+   "per": {
+    "product_manager": [
+     1,
+     1313
+    ],
+    "geospatial_engineer": [
+     3,
+     5479
+    ],
+    "data_specialist": [
+     3,
+     2700
+    ]
+   },
+   "replay": {
+    "mismatches": 0,
+    "models_rechecked": 0
+   }
+  },
+  {
+   "stage": "primary",
+   "arm": "F",
+   "run": "20261103T170329Z-1533d0",
+   "status": "awaiting_human",
+   "err": "",
+   "reason": "evidence ready for a human decision",
+   "wall": 23.0,
+   "commit": "495d0e3",
+   "calls": 0,
+   "strategy": "small_neural",
+   "rec": "adopt_limited:candidate-1",
+   "code": "adopt_limited",
+   "tokens": 0,
+   "checkpoints": "-",
+   "critic": "none",
+   "invalid": 0,
+   "records": 19,
+   "head": "55af08dd",
+   "per": {},
+   "replay": {
+    "mismatches": 0,
+    "models_rechecked": 7
+   }
+  },
+  {
+   "stage": "secondary",
+   "arm": "T-M",
+   "run": "20261103T170832Z-35ab8b",
+   "status": "awaiting_human",
+   "err": "",
+   "reason": "evidence ready for a human decision",
+   "wall": 1743.6,
+   "commit": "3aba50c",
+   "calls": 15,
+   "strategy": "deterministic",
+   "rec": "adopt_limited:raster_deterministic",
+   "code": "adopt_limited",
+   "tokens": 21344,
+   "checkpoints": 1,
+   "critic": "usable/same/0",
+   "invalid": 1,
+   "records": 74,
+   "head": "6d5c2ebc",
+   "per": {
+    "product_manager": [
+     2,
+     3426
+    ],
+    "geospatial_engineer": [
+     4,
+     6204
+    ],
+    "data_specialist": [
+     4,
+     4839
+    ],
+    "ml_engineer": [
+     4,
+     5284
+    ],
+    "method_critic": [
+     1,
+     1591
+    ]
+   },
+   "replay": {
+    "mismatches": 0,
+    "models_rechecked": 2
+   }
+  },
+  {
+   "stage": "secondary",
+   "arm": "T-L",
+   "run": "20261103T173741Z-82fbbd",
+   "status": "failed",
+   "err": "",
+   "reason": "ProviderError: server: HTTP 500",
+   "wall": 314.3,
+   "commit": "3aba50c",
+   "calls": 3,
+   "strategy": "deterministic",
+   "rec": "-",
+   "code": "-",
+   "tokens": 2776,
+   "checkpoints": 2,
+   "critic": "none",
+   "invalid": 0,
+   "records": 28,
+   "head": "f70e8fd0",
+   "per": {
+    "product_manager": [
+     1,
+     1382
+    ],
+    "geospatial_engineer": [
+     1,
+     1394
+    ]
+   },
+   "replay": {
+    "mismatches": 0,
+    "models_rechecked": 0
+   }
+  },
+  {
+   "stage": "secondary",
+   "arm": "T-L",
+   "run": "20261103T174256Z-9b6809",
+   "status": "abstained",
+   "err": "",
+   "reason": "the PM found it out of scope",
+   "wall": 254.4,
+   "commit": "3aba50c",
+   "calls": 1,
+   "strategy": null,
+   "rec": "-",
+   "code": "-",
+   "tokens": 1634,
+   "checkpoints": 2,
+   "critic": "none",
+   "invalid": 0,
+   "records": 14,
+   "head": "6e25e595",
+   "per": {
+    "product_manager": [
+     1,
+     1634
+    ]
+   },
+   "replay": {
+    "mismatches": 0,
+    "models_rechecked": 0
+   }
+  },
+  {
+   "stage": "secondary",
+   "arm": "F",
+   "run": "20261103T174713Z-51ca40",
+   "status": "awaiting_human",
+   "err": "",
+   "reason": "evidence ready for a human decision",
+   "wall": 0.7,
+   "commit": "3aba50c",
+   "calls": 0,
+   "strategy": "deterministic",
+   "rec": "adopt_limited:raster_deterministic",
+   "code": "adopt_limited",
+   "tokens": 0,
+   "checkpoints": "-",
+   "critic": "none",
+   "invalid": 0,
+   "records": 16,
+   "head": "3760d451",
+   "per": {},
+   "replay": {
+    "mismatches": 0,
+    "models_rechecked": 2
+   }
+  },
+  {
+   "stage": "secondary",
+   "arm": "T-L",
+   "run": "20261103T174731Z-15ae00",
+   "status": "failed",
+   "err": "",
+   "reason": "ProviderError: server: HTTP 500",
+   "wall": 298.6,
+   "commit": "3aba50c",
+   "calls": 5,
+   "strategy": "deterministic",
+   "rec": "-",
+   "code": "-",
+   "tokens": 4081,
+   "checkpoints": 2,
+   "critic": "none",
+   "invalid": 0,
+   "records": 35,
+   "head": "65e95806",
+   "per": {
+    "product_manager": [
+     1,
+     1339
+    ],
+    "geospatial_engineer": [
+     1,
+     1417
+    ],
+    "data_specialist": [
+     2,
+     1325
+    ]
+   },
+   "replay": {
+    "mismatches": 0,
+    "models_rechecked": 0
+   }
+  },
+  {
+   "stage": "secondary",
+   "arm": "T-L",
+   "run": "20261103T175231Z-c6bdea",
+   "status": "abstained",
+   "err": "",
+   "reason": "the PM found it out of scope",
+   "wall": 179.6,
+   "commit": "3aba50c",
+   "calls": 1,
+   "strategy": null,
+   "rec": "-",
+   "code": "-",
+   "tokens": 1432,
+   "checkpoints": 2,
+   "critic": "none",
+   "invalid": 0,
+   "records": 14,
+   "head": "78e4be78",
+   "per": {
+    "product_manager": [
+     1,
+     1432
+    ]
+   },
+   "replay": {
+    "mismatches": 0,
+    "models_rechecked": 0
+   }
+  },
+  {
+   "stage": "secondary",
+   "arm": "T-L",
+   "run": "20261103T175531Z-e7c3a6",
+   "status": "awaiting_human",
+   "err": "",
+   "reason": "evidence ready for a human decision",
+   "wall": 1299.3,
+   "commit": "3aba50c",
+   "calls": 13,
+   "strategy": "deterministic",
+   "rec": "adopt_limited:raster_deterministic",
+   "code": "adopt_limited",
+   "tokens": 17562,
+   "checkpoints": 2,
+   "critic": "unusable/indep/0",
+   "invalid": 4,
+   "records": 58,
+   "head": "eb7ad8c5",
+   "per": {
+    "product_manager": [
+     3,
+     5316
+    ],
+    "geospatial_engineer": [
+     4,
+     6778
+    ],
+    "data_specialist": [
+     2,
+     1334
+    ],
+    "ml_engineer": [
+     2,
+     1417
+    ],
+    "method_critic": [
+     2,
+     2717
+    ]
+   },
+   "replay": {
+    "mismatches": 0,
+    "models_rechecked": 2
+   }
+  }
+ ]
+}

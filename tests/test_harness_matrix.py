@@ -230,3 +230,9 @@ def test_the_tuned_arm_is_refused_until_a_person_adds_the_reviewed_variant(
             ),
             pin=PIN, repo=ROOT, out_dir=tmp_path, head_of=lambda _r: (PIN, False),
         )  # fmt: skip
+
+
+def test_only_arms_limits_a_block_to_the_named_arm(plan: MatrixPlan, tmp_path: Path) -> None:
+    calls: list[dict[str, Any]] = []
+    rows = stage(plan, tmp_path, run_one=fake_run(calls), only_arms=frozenset({"S-M"}))
+    assert {r["arm_id"] for r in rows} == {"S-M"} and len(calls) == len(rows) == 4

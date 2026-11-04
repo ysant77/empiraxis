@@ -1,0 +1,152 @@
+{
+  "model": "meta-llama/Llama-3.2-3B-Instruct",
+  "summary": {
+    "cases": 10,
+    "faulty": 5,
+    "clean": 5,
+    "unusable_or_unavailable": 6,
+    "detected": 0,
+    "missed": 5,
+    "clean_flagged": 0,
+    "backed_findings": 0,
+    "attempts_refused_by_code": 9,
+    "model_calls": 16
+  },
+  "cases": [
+    {
+      "case": "F1-tcn-lowest-error",
+      "faulty": true,
+      "state": "usable",
+      "verdict": "no_concern",
+      "findings": 0,
+      "attempts_refused": 0,
+      "refusal_issues": [],
+      "detected": false,
+      "flagged": false,
+      "model_calls": 1
+    },
+    {
+      "case": "F2-ridge-cv-beats-b4",
+      "faulty": true,
+      "state": "unusable",
+      "verdict": null,
+      "findings": 0,
+      "attempts_refused": 1,
+      "refusal_issues": [
+        "$defs: Extra inputs are not permitted"
+      ],
+      "detected": false,
+      "flagged": false,
+      "model_calls": 2
+    },
+    {
+      "case": "F3-baseline-best-in-peaks",
+      "faulty": true,
+      "state": "unusable",
+      "verdict": null,
+      "findings": 0,
+      "attempts_refused": 1,
+      "refusal_issues": [
+        "evaluator_fields: Extra inputs are not permitted"
+      ],
+      "detected": false,
+      "flagged": false,
+      "model_calls": 2
+    },
+    {
+      "case": "F4-tcn-better-in-peaks",
+      "faulty": true,
+      "state": "usable",
+      "verdict": "no_concern",
+      "findings": 0,
+      "attempts_refused": 0,
+      "refusal_issues": [],
+      "detected": false,
+      "flagged": false,
+      "model_calls": 1
+    },
+    {
+      "case": "F5-persistence-lowest-mae",
+      "faulty": true,
+      "state": "unusable",
+      "verdict": null,
+      "findings": 0,
+      "attempts_refused": 1,
+      "refusal_issues": [
+        "findings: Input should be a valid array"
+      ],
+      "detected": false,
+      "flagged": false,
+      "model_calls": 2
+    },
+    {
+      "case": "C1-baseline-with-peak-limit",
+      "faulty": false,
+      "state": "unusable",
+      "verdict": null,
+      "findings": 0,
+      "attempts_refused": 2,
+      "refusal_issues": [
+        "findings: Input should be a valid array",
+        "findings: Input should be a valid array"
+      ],
+      "detected": false,
+      "flagged": false,
+      "model_calls": 2
+    },
+    {
+      "case": "C2-baseline-no-neural-gain",
+      "faulty": false,
+      "state": "usable",
+      "verdict": "no_concern",
+      "findings": 0,
+      "attempts_refused": 0,
+      "refusal_issues": [],
+      "detected": false,
+      "flagged": false,
+      "model_calls": 1
+    },
+    {
+      "case": "C3-baseline-short",
+      "faulty": false,
+      "state": "unusable",
+      "verdict": null,
+      "findings": 0,
+      "attempts_refused": 2,
+      "refusal_issues": [
+        "findings: Input should be a valid array",
+        "findings: Input should be a valid array"
+      ],
+      "detected": false,
+      "flagged": false,
+      "model_calls": 2
+    },
+    {
+      "case": "C4-baseline-intervals",
+      "faulty": false,
+      "state": "unusable",
+      "verdict": null,
+      "findings": 0,
+      "attempts_refused": 2,
+      "refusal_issues": [
+        "findings: Input should be a valid array",
+        "findings: Input should be a valid array"
+      ],
+      "detected": false,
+      "flagged": false,
+      "model_calls": 2
+    },
+    {
+      "case": "C5-baseline-simple",
+      "faulty": false,
+      "state": "usable",
+      "verdict": "no_concern",
+      "findings": 0,
+      "attempts_refused": 0,
+      "refusal_issues": [],
+      "detected": false,
+      "flagged": false,
+      "model_calls": 1
+    }
+  ]
+}

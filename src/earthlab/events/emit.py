@@ -10,6 +10,8 @@ from earthlab.events.contract import ActorRole, EventStatus, EventType, EventV1,
 SUBMIT_TOOLS = frozenset({"submit_findings", "submit_area_findings"})
 HELDOUT_MARK = "heldout"
 _SUMMARY_LIMIT = 240
+# Trace seat names that differ from the public role names.
+ROLE_ALIASES: dict[str, str] = {"method_critic": "qa_reviewer"}
 
 
 class TraceMissingError(RuntimeError):
@@ -66,6 +68,9 @@ def emit(
     **extra: Any,
 ) -> EventV1:
     suffix = extra.pop("suffix", "")
+    actor = ROLE_ALIASES.get(actor, actor)  # type: ignore[assignment]
+    if extra.get("receiver_role") in ROLE_ALIASES:
+        extra["receiver_role"] = ROLE_ALIASES[extra["receiver_role"]]
     event = EventV1(
         event_id=f"{state.run_id}:{entry['seq']}{suffix}",
         run_id=state.run_id,

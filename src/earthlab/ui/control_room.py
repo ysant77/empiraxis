@@ -107,7 +107,9 @@ def _cards(run: RunEvents | None, error: str | None) -> None:
     with cols[0], common.panel("Runtime", "implemented"):
         st.write("The Muse investigator with deterministic tools. The PM path adds model roles.")
     with cols[1], common.panel("Plan critic", "implemented"):
-        st.write("Deterministic plan rules, code, not a model. A model critic is not built.")
+        st.write(
+            "Deterministic plan rules, code, not a model. An optional model critic is advisory."
+        )
     with cols[2], common.panel("Trace integrity", "implemented" if run else "unavailable"):
         if run is not None:
             st.write(f"SHA-256 chain verified: {run.trace_records} records.")

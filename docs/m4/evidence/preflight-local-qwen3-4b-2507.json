@@ -1,0 +1,149 @@
+{
+  "provider": "local-qwen3-4b-2507",
+  "registry_file": "Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
+  "registry_sha256": "3605803b982cb64aead44f6c1b2ae36e3acdb41d8e46c8a94c6533bc4c67e597",
+  "server": {
+    "model_path": "qwen3-4b-instruct-2507-gguf/Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
+    "build": "b11669-620d2225c"
+  },
+  "server_file_matches": true,
+  "file_sha256": "3605803b982cb64aead44f6c1b2ae36e3acdb41d8e46c8a94c6533bc4c67e597",
+  "file_sha256_matches": true,
+  "critic_eval": {
+    "model": "Qwen/Qwen3-4B-Instruct-2507",
+    "summary": {
+      "cases": 10,
+      "faulty": 5,
+      "clean": 5,
+      "unusable_or_unavailable": 0,
+      "detected": 1,
+      "missed": 4,
+      "clean_flagged": 2,
+      "backed_findings": 8,
+      "attempts_refused_by_code": 0,
+      "model_calls": 10
+    },
+    "cases": [
+      {
+        "case": "F1-tcn-lowest-error",
+        "faulty": true,
+        "state": "usable",
+        "verdict": "concerns",
+        "findings": 1,
+        "attempts_refused": 0,
+        "refusal_issues": [],
+        "detected": true,
+        "flagged": false,
+        "model_calls": 1
+      },
+      {
+        "case": "F2-ridge-cv-beats-b4",
+        "faulty": true,
+        "state": "usable",
+        "verdict": "concerns",
+        "findings": 2,
+        "attempts_refused": 0,
+        "refusal_issues": [],
+        "detected": false,
+        "flagged": false,
+        "model_calls": 1
+      },
+      {
+        "case": "F3-baseline-best-in-peaks",
+        "faulty": true,
+        "state": "usable",
+        "verdict": "no_concern",
+        "findings": 0,
+        "attempts_refused": 0,
+        "refusal_issues": [],
+        "detected": false,
+        "flagged": false,
+        "model_calls": 1
+      },
+      {
+        "case": "F4-tcn-better-in-peaks",
+        "faulty": true,
+        "state": "usable",
+        "verdict": "concerns",
+        "findings": 1,
+        "attempts_refused": 0,
+        "refusal_issues": [],
+        "detected": false,
+        "flagged": false,
+        "model_calls": 1
+      },
+      {
+        "case": "F5-persistence-lowest-mae",
+        "faulty": true,
+        "state": "usable",
+        "verdict": "no_concern",
+        "findings": 0,
+        "attempts_refused": 0,
+        "refusal_issues": [],
+        "detected": false,
+        "flagged": false,
+        "model_calls": 1
+      },
+      {
+        "case": "C1-baseline-with-peak-limit",
+        "faulty": false,
+        "state": "usable",
+        "verdict": "concerns",
+        "findings": 2,
+        "attempts_refused": 0,
+        "refusal_issues": [],
+        "detected": false,
+        "flagged": true,
+        "model_calls": 1
+      },
+      {
+        "case": "C2-baseline-no-neural-gain",
+        "faulty": false,
+        "state": "usable",
+        "verdict": "no_concern",
+        "findings": 0,
+        "attempts_refused": 0,
+        "refusal_issues": [],
+        "detected": false,
+        "flagged": false,
+        "model_calls": 1
+      },
+      {
+        "case": "C3-baseline-short",
+        "faulty": false,
+        "state": "usable",
+        "verdict": "concerns",
+        "findings": 2,
+        "attempts_refused": 0,
+        "refusal_issues": [],
+        "detected": false,
+        "flagged": true,
+        "model_calls": 1
+      },
+      {
+        "case": "C4-baseline-intervals",
+        "faulty": false,
+        "state": "usable",
+        "verdict": "no_concern",
+        "findings": 0,
+        "attempts_refused": 0,
+        "refusal_issues": [],
+        "detected": false,
+        "flagged": false,
+        "model_calls": 1
+      },
+      {
+        "case": "C5-baseline-simple",
+        "faulty": false,
+        "state": "usable",
+        "verdict": "no_concern",
+        "findings": 0,
+        "attempts_refused": 0,
+        "refusal_issues": [],
+        "detected": false,
+        "flagged": false,
+        "model_calls": 1
+      }
+    ]
+  }
+}
