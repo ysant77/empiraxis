@@ -289,6 +289,9 @@ Raw data sits in `<DATA_ROOT>` outside Git. Receipts with SHA-256 are in `docs/m
 > four classes: `verified_issue_time` (no M5 source has it), `nominal_latency_assumed`, `retrospective_only`
 > and `unknown`. FIRMS standard processing and IMERG Early are `nominal_latency_assumed`. The FIRMS
 > near-real-time feed is `unknown`. No frozen result changes.
+> The text below about rebuilding applies to `m5-evidence-5`. The `m5-evidence-4` file is never rebuilt in place.
+> To reproduce it, run `python scripts/m5_build_evidence.py --out FILE`. The script builds the package from
+> its pinned source commit `78bd3fb` in a temporary folder and checks that the bytes equal the archived file.
 
 `scripts/m5_build_evidence.py` writes `docs/m5/evidence/scientific_evidence_package_v1.json` from committed artifacts only.
 It holds the three registered questions (M5-A primary), the AOI and source boxes, the frozen-protocol hashes,

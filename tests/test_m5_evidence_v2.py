@@ -83,3 +83,32 @@ def test_the_report_headings_are_kept_and_get_dated_correction_notes() -> None:
 
 def test_the_v4_builder_is_not_the_current_builder() -> None:
     assert V4.PACKAGE_VERSION == "m5-evidence-4" and V2.PACKAGE_VERSION == "m5-evidence-5"
+
+
+@pytest.mark.parametrize(
+    ("rules", "extra", "message"),
+    [
+        ({"x": ("issue_time", 1.0, "n")}, {}, "unsupported availability basis"),
+        ({"x": ("verified", 1.0, "n")}, {}, "unsupported availability basis"),
+        ({"x": ("nominal_latency", None, "n")}, {}, "needs a latency"),
+        ({"x": ("nominal_latency", -1.0, "n")}, {}, "needs a latency"),
+        ({"x": ("hindsight_only", 3.0, "n")}, {}, "must not carry a latency"),
+        ({}, {"y": ("verified_issue_time", "n")}, "must be 'unknown'"),
+        ({}, {"y": ("nominal_latency_assumed", "n")}, "must be 'unknown'"),
+        ({"x": ("hindsight_only", None, "n")}, {"x": ("unknown", "n")}, "listed twice"),
+    ],
+)
+def test_classification_fails_closed(
+    rules: dict[str, tuple[str, float | None, str]],
+    extra: dict[str, tuple[V2.AvailabilityClass, str]],
+    message: str,
+) -> None:
+    with pytest.raises(V2.AvailabilityError, match=message):
+        V2.source_rules(rules, extra)
+
+
+def test_no_basis_gives_verified_issue_time() -> None:
+    assert "verified_issue_time" not in set(V2.BASIS_CLASS.values())
+    assert V2.classify("x", "nominal_latency", 0.0) == "nominal_latency_assumed"
+    assert V2.classify("x", "hindsight_only", None) == "retrospective_only"
+    assert V2.classify("x", "not_assessed", None) == "unknown"

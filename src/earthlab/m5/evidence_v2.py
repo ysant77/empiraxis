@@ -94,15 +94,44 @@ WINDOW_RULE = (
 )
 
 
-def source_rules() -> list[SourceRuleV2]:
+BASIS_CLASS: dict[str, AvailabilityClass] = {
+    "nominal_latency": "nominal_latency_assumed",
+    "hindsight_only": "retrospective_only",
+    "not_assessed": "unknown",
+}
+"""The only allowed basis-to-class map. No basis maps to verified_issue_time: that class needs
+per-observation publication evidence, which no M5 source has."""
+
+
+class AvailabilityError(ValueError):
+    """A source rule has an unknown basis or a basis that does not agree with its latency."""
+
+
+def classify(source: str, basis: str, latency_hours: float | None) -> AvailabilityClass:
+    """Class of one source rule. Fails closed: an unknown or inconsistent basis is an error."""
+    if basis not in BASIS_CLASS:
+        raise AvailabilityError(f"{source}: unsupported availability basis {basis!r}")
+    if basis == "nominal_latency" and (latency_hours is None or latency_hours < 0):
+        raise AvailabilityError(f"{source}: nominal_latency needs a latency >= 0 h")
+    if basis != "nominal_latency" and latency_hours is not None:
+        raise AvailabilityError(f"{source}: basis {basis!r} must not carry a latency")
+    return BASIS_CLASS[basis]
+
+
+def source_rules(
+    rules: dict[str, tuple[str, float | None, str]] = RULES,
+    extra: dict[str, tuple[AvailabilityClass, str]] = NEW_SOURCES,
+) -> list[SourceRuleV2]:
     out = []
-    for source, (basis, hours, note) in RULES.items():
-        klass: AvailabilityClass = (
-            "retrospective_only" if basis == "hindsight_only" else "nominal_latency_assumed"
-        )
+    for source, (basis, hours, note) in rules.items():
+        klass = classify(source, basis, hours)
         out.append(SourceRuleV2(source=source, basis=basis, latency_hours=hours, note=note,
                                 availability_class=klass))  # fmt: skip
-    for source, (klass, note) in NEW_SOURCES.items():
+    for source, (klass, note) in extra.items():
+        if source in rules:
+            raise AvailabilityError(f"{source}: listed twice")
+        if klass != classify(source, "not_assessed", None):
+            raise AvailabilityError(f"{source}: a not-assessed source must be 'unknown'")
         out.append(SourceRuleV2(source=source, basis="not_assessed", latency_hours=None, note=note,
                                 availability_class=klass))  # fmt: skip
     return out

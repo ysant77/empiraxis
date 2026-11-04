@@ -53,3 +53,21 @@ def test_questions_are_registered_verbatim() -> None:
     pkg = build(ROOT)
     assert set(pkg.questions) == {"M5-A", "M5-B", "M5-C"}
     assert pkg.primary_question == "M5-A"
+
+
+def test_the_documented_v4_reproduction_gives_the_archived_bytes(tmp_path: Path) -> None:
+    """The procedure in M5_SCIENCE_REPORT.md section 9 rebuilds v4 at its pinned source commit."""
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("m5_v4", ROOT / "scripts/m5_build_evidence.py")
+    assert spec and spec.loader
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    assert mod.ARCHIVED_SHA256 == V4_FILE_SHA256
+    out = tmp_path / "v4.json"
+    assert mod.reproduce(ROOT, out) == V4_FILE_SHA256
+    assert out.read_bytes() == (ROOT / mod.ARCHIVED).read_bytes()
+    with pytest.raises(SystemExit, match="refusing"):
+        mod.reproduce(ROOT, ROOT / mod.ARCHIVED)
+    report = (ROOT / "docs/m5/M5_SCIENCE_REPORT.md").read_text()
+    assert "scripts/m5_build_evidence.py --out FILE" in report and mod.SOURCE_COMMIT[:7] in report
