@@ -7,7 +7,7 @@ Bindings are written to the trace before the first model call.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import yaml
 
@@ -38,6 +38,7 @@ class CouncilSpecV1(Strict):
     sampling: Sampling
     template_kwargs: dict[str, dict[str, Any]]  # provider -> chat template arguments
     main_providers: list[str]
+    critic_contract: Literal["v1", "v2"] = "v1"
     arms: dict[str, dict[str, str]]
 
 

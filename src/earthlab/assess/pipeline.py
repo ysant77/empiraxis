@@ -14,8 +14,10 @@ from pydantic import BaseModel
 
 from earthlab.assess import checks, policy
 from earthlab.assess.contracts import (
+    CRITIC_CONTRACTS,
     CheckReportV1,
     CritiqueV1,
+    CritiqueV2,
     DataAssessmentV1,
     EvidencePackageV1,
     FindingV1,
@@ -51,12 +53,14 @@ class Run:
         client, switch = self.council.client(role)
         if switch is not None:
             self.record("model_switch", {"role": "runtime", **switch})
+        contract = CRITIC_CONTRACTS[self.council.spec.critic_contract] if role == "critic" else None
         result = ask(
             role,
             client,
             messages_for(role, self.pkg, context),
             self.council.sampling(role),
             self.record,
+            contract,
         )
         state = "valid" if result is not None else "failed"
         self.out["roles"][role] = {
@@ -136,7 +140,7 @@ def plan_checks(
 def critique(run: Run, plan: LeadPlanV1) -> RebuttalV1 | LeadPlanV1:
     """Critic, code check, Lead response. Bounded to one round."""
     crit = run.call("critic", {"lead_plan": plan.model_dump(mode="json")})
-    if not isinstance(crit, CritiqueV1) or not crit.findings:
+    if not isinstance(crit, CritiqueV1 | CritiqueV2) or not crit.findings:
         return plan
     report = run.check("critic", checks.findings_report("critic", crit.findings, run.pkg))
     ctx = {

@@ -42,12 +42,15 @@ def main() -> None:
     ap.add_argument("--critic", default=None)
     ap.add_argument("--repeat", type=int, default=1)
     ap.add_argument("--temperature", type=float, default=None)
+    ap.add_argument("--critic-contract", choices=["v1", "v2"], default=None)
     a = ap.parse_args()
     spec = load_spec(Path("config/assess/council.yaml"))
     if a.temperature is not None:
         spec = spec.model_copy(
             update={"sampling": spec.sampling.model_copy(update={"temperature": a.temperature})}
         )
+    if a.critic_contract is not None:
+        spec = spec.model_copy(update={"critic_contract": a.critic_contract})
     providers = load_providers(Path("config/providers.yaml"))
     registry = load_registry(Path("config/benchmark/checkpoints.yaml"))
     side = SideServer(

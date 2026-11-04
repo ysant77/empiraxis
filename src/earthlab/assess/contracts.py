@@ -157,6 +157,20 @@ class CritiqueV1(Strict):
     findings: list[FindingV1] = Field(max_length=4)
 
 
+class CritiqueV2(Strict):
+    """Same fields as V1, findings first: the verdict is written after the review (Amendment 1)."""
+
+    findings: list[FindingV1] = Field(max_length=4)
+    verdict: Literal["no_concern", "concerns"]
+
+
+Critique = CritiqueV1 | CritiqueV2
+CRITIC_CONTRACTS: dict[str, type[CritiqueV1] | type[CritiqueV2]] = {
+    "v1": CritiqueV1,
+    "v2": CritiqueV2,
+}
+
+
 class ResponseV1(Strict):
     finding_id: str = Field(pattern=REF)
     verdict: Literal["accept", "rebut"]

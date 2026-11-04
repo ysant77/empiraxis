@@ -14,6 +14,7 @@ from typing import Any
 from earthlab.assess import checks, policy
 from earthlab.assess.contracts import (
     Availability,
+    Critique,
     CritiqueV1,
     EvidencePackageV1,
     FaultClass,
@@ -102,7 +103,7 @@ def rule_critique(plan: LeadPlanV1, pkg: EvidencePackageV1) -> CritiqueV1:
     return CritiqueV1(verdict="concerns", findings=found[:4])
 
 
-def score(case: CaseV1, crit: CritiqueV1 | None, pkg: EvidencePackageV1) -> CaseScoreV1:
+def score(case: CaseV1, crit: Critique | None, pkg: EvidencePackageV1) -> CaseScoreV1:
     if crit is None:
         return CaseScoreV1(
             case=case.id,
@@ -146,7 +147,7 @@ def summary(scores: list[CaseScoreV1]) -> dict[str, Any]:
     }
 
 
-Critic = Callable[[CaseV1, EvidencePackageV1], CritiqueV1 | None]
+Critic = Callable[[CaseV1, EvidencePackageV1], Critique | None]
 
 
 def run_bench(

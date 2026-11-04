@@ -142,4 +142,16 @@ is reported, with a proposal to remove it or call it only when needed.
 
 ## Amendments
 
-None yet.
+### Amendment 1 (2026-11-04): findings-first critic contract
+
+- **What happened.** In the critic test, Llama 3.2 3B and Qwen3 4B gave 24 of 24 usable
+  answers with verdict `no_concern` and no findings on every case, faulty or clean.
+- **Suspected cause.** `CritiqueV1` puts `verdict` before `findings`. Under grammar decoding a
+  model without a reasoning phase writes the verdict first, before it has reviewed anything.
+  Muse writes a reasoning text before the JSON, so the order matters less for Muse.
+- **Change.** Add `CritiqueV2`: the same fields, with `findings` first and `verdict` last.
+  Run it as a separate condition (`--contract v2`) for the small critics. V1 results stay in
+  the record and in the report.
+- **Use in arm HC.** `critic_contract` in `config/assess/council.yaml` selects the contract.
+  The HC critic and its contract are chosen by the section 5 rule over all critic results
+  (V1 and V2), before the first HC run. The choice is recorded in `critic-choice.json`.

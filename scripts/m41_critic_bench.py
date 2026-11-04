@@ -10,7 +10,13 @@ import json
 from pathlib import Path
 from typing import Any
 
-from earthlab.assess.contracts import CritiqueV1, EvidencePackageV1
+from earthlab.assess.contracts import (
+    CRITIC_CONTRACTS,
+    Critique,
+    CritiqueV1,
+    CritiqueV2,
+    EvidencePackageV1,
+)
 from earthlab.assess.council import load_spec
 from earthlab.assess.critic_bench import CaseV1, load_cases, rule_critique, run_bench
 from earthlab.assess.llm import HttpStructuredClient
@@ -48,13 +54,15 @@ def model_critic(provider: str, a: argparse.Namespace, trace: RunTrace) -> Any:
         update={"template_kwargs": spec.template_kwargs.get(provider, {})}
     )
 
-    def critic(case: CaseV1, pkg: EvidencePackageV1) -> CritiqueV1 | None:
+    contract = CRITIC_CONTRACTS[a.contract]
+
+    def critic(case: CaseV1, pkg: EvidencePackageV1) -> Critique | None:
         def record(event: str, data: dict[str, Any]) -> None:
             trace.append(event, "critic", case=case.id, **data)
 
         msgs = messages_for("critic", pkg, {"lead_plan": case.plan.model_dump(mode="json")})
-        out = ask("critic", client, msgs, sampling, record)
-        if isinstance(out, CritiqueV1):
+        out = ask("critic", client, msgs, sampling, record, contract)
+        if isinstance(out, CritiqueV1 | CritiqueV2):
             trace.append("role_output", "critic", case=case.id, output=out.model_dump(mode="json"))
             return out
         return None
@@ -67,12 +75,14 @@ def main() -> None:
     ap.add_argument("--critics", required=True)
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--models-dir", type=Path, required=True)
+    ap.add_argument("--contract", choices=["v1", "v2"], default="v1")
     a = ap.parse_args()
     cases = load_cases(Path("examples/assess/critic-cases.json"))
     pkgs = packages()
     a.out.mkdir(parents=True, exist_ok=True)
     for name in a.critics.split(","):
-        trace = RunTrace(a.out / f"critic-{name}.trace.jsonl")
+        tag = name if a.contract == "v1" or name == "rules" else f"{name}-{a.contract}"
+        trace = RunTrace(a.out / f"critic-{tag}.trace.jsonl")
         side = None
         if name == "rules":
             critic: Any = lambda case, pkg: rule_critique(case.plan, pkg)  # noqa: E731
@@ -84,12 +94,12 @@ def main() -> None:
             if side is not None:
                 side.stop()
         body = {
-            "critic": name,
+            "critic": tag,
             "summary": totals,
             "cases": [s.model_dump(mode="json") for s in scores],
         }
-        (a.out / f"critic-{name}.json").write_text(json.dumps(body, indent=1) + "\n")
-        print(name, json.dumps(totals), flush=True)
+        (a.out / f"critic-{tag}.json").write_text(json.dumps(body, indent=1) + "\n")
+        print(tag, json.dumps(totals), flush=True)
 
 
 if __name__ == "__main__":

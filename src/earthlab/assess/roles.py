@@ -117,9 +117,10 @@ def ask(
     messages: list[dict[str, str]],
     sampling: Sampling,
     record: Recorder,
+    contract: type[BaseModel] | None = None,
 ) -> BaseModel | None:
     """Call once; on a contract fault, send the fault back once. Record every attempt."""
-    contract = CONTRACTS[role]
+    contract = contract or CONTRACTS[role]
     for attempt in (1, 2):
         parsed, reply, fault = _attempt(client, messages, contract, sampling)
         record(
