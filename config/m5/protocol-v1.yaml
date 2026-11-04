@@ -1,0 +1,54 @@
+# M5 protocol v1. Machine-readable constants. The narrative is docs/m5/M5_PROTOCOL_V1.md.
+# Frozen before any new model is fitted. The freeze record is docs/m5/protocol-v1.freeze.json.
+protocol_id: m5-protocol-1
+seasons:
+  window_start_mmdd: "09-04T00:00"     # first issue time, Singapore time
+  window_end_mmdd: "10-31T17:00"       # last issue time, Singapore time
+  firms_first_day_mmdd: "08-25"        # FIRMS download starts here so 72 h windows are complete
+  haze_seasons: [2015, 2019]
+  comparison_seasons: [2016, 2017, 2018]
+  pilot_seasons: [2015, 2016]
+  train_seasons: [2015, 2016, 2017, 2018]
+  heldout_season: 2019
+sealed:
+  first_sealed_label: "2024-01-01T00:00"   # repository split; never read for any statistic
+horizon_hours: 6
+newest_pm25_lag_hours: 2
+pm25_lags: 24
+firms_delay_hours: 3
+elevated_threshold_ugm3: 55.0
+ridge_alphas: [0.1, 1.0, 10.0, 100.0, 1000.0]
+pilot_blocks: 4
+bootstrap: {resamples: 2000, seed: 7, unit: whole_day}
+trees:
+  model: HistGradientBoostingRegressor
+  max_iter: 150
+  learning_rate: 0.05
+  max_depth: 3
+  min_samples_leaf: 40
+  l2_regularization: 1.0
+  random_state: 7
+  pooled_regions: true
+  region_one_hot: true
+neural_rung:
+  run: false
+  gate: "Only if trees beat ridge with a lower 95% limit above 0 on the held-out season and at least 3 training seasons exist."
+decision:
+  gain_rule: "lower 95% limit of paired skill on all hours is above 0"
+  elevated_rule: "point estimate on elevated hours must not be below 0 for a supported gain"
+  labels: [supported_gain, mixed, no_incremental_gain, worse, insufficient_data, abstain]
+experiment_a:
+  seasons: [2015, 2016]
+  daily_min_valid_fraction: 0.8
+  lags_days: [0, 1, 2, 3]
+  bootstrap_block_days: 7
+  null: circular_shift
+  min_shift_days: 14
+  resamples: 2000
+  seed: 7
+  multiplicity: holm
+data_gates:
+  hls: {min_clear_land_both_dates: 0.20, max_high_aerosol_share: 0.50}
+  smap: {min_recommended_share_of_retrieved: 0.50, min_valid_days_per_window: 5}
+  mcd64a1: {min_valid_land_fraction: 0.80}
+  imerg: {status: blocked_until_owner_authorises_ges_disc}

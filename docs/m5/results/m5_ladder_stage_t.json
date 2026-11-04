@@ -1,0 +1,143 @@
+{
+  "2019": {
+    "bias": {
+      "R0": -0.08513708513708514,
+      "R1": 0.38384643407420593,
+      "R2": 6.10993971844912,
+      "R3": 9.347315008807351,
+      "R3a": 0.9112067874880955
+    },
+    "cost_seconds": {
+      "R1": 0.1861792920390144,
+      "R2": 0.24258316704072058,
+      "R3": 0.8772242079721764,
+      "R3a": 1.2195803750073537
+    },
+    "elevated_days": 17,
+    "elevated_mae": {
+      "R0": 27.627551020408163,
+      "R1": 28.164988842495305,
+      "R2": 17.266836288257085,
+      "R3": 19.968986211959237,
+      "R3a": 23.756456949721194
+    },
+    "elevated_paired": {
+      "R1_vs_R0": {
+        "high": 0.05544582624586341,
+        "low": -0.07238574821206793,
+        "skill": -0.01945296641349592
+      },
+      "R2_vs_R1": {
+        "high": 0.48839805602217534,
+        "low": 0.3167490588560082,
+        "skill": 0.386939707847322
+      },
+      "R3_vs_R2": {
+        "high": 0.004906696772545616,
+        "low": -0.45399819383809215,
+        "skill": -0.1564936319886141
+      },
+      "R3_vs_R3a": {
+        "high": 0.36339799274259255,
+        "low": -0.06573810035131004,
+        "skill": 0.1594291078748763
+      },
+      "R3a_vs_R1": {
+        "high": 0.23454258497729139,
+        "low": 0.0748311902054592,
+        "skill": 0.15652524903977671
+      }
+    },
+    "elevated_rows": 588,
+    "exploratory_mae_by_stratum": {
+      "25to55": {
+        "R0": 12.735553772070626,
+        "R1": 9.652038364852917,
+        "R2": 12.102358033972752,
+        "R3": 18.175953834509105,
+        "R3a": 12.535071672036938,
+        "rows": 2492
+      },
+      "gt55": {
+        "R0": 27.627551020408163,
+        "R1": 28.164988842495305,
+        "R2": 17.266836288257085,
+        "R3": 19.968986211959237,
+        "R3a": 23.756456949721194,
+        "rows": 588
+      },
+      "lt25": {
+        "R0": 7.930909090909091,
+        "R1": 7.224766079567658,
+        "R2": 9.704072902931316,
+        "R3": 12.257021635517779,
+        "R3a": 6.632999020396484,
+        "rows": 3850
+      }
+    },
+    "labels": {
+      "R1_vs_R0": "mixed",
+      "R2_vs_R1": "worse",
+      "R3_vs_R2": "worse",
+      "R3_vs_R3a": "worse",
+      "R3a_vs_R1": "no_incremental_gain"
+    },
+    "mae": {
+      "R0": 11.32987012987013,
+      "R1": 9.874349560019652,
+      "R2": 11.20817556052537,
+      "R3": 15.039794248913735,
+      "R3a": 10.208259959838179
+    },
+    "paired": {
+      "R1_vs_R0": {
+        "high": 0.16779616934104136,
+        "low": 0.08811959882242087,
+        "skill": 0.1284675422724516
+      },
+      "R2_vs_R1": {
+        "high": -0.03855003069458445,
+        "low": -0.25547295457742536,
+        "skill": -0.13507988474565047
+      },
+      "R3_vs_R2": {
+        "high": -0.18541507172111307,
+        "low": -0.5231153560709587,
+        "skill": -0.34185926761203955
+      },
+      "R3_vs_R3a": {
+        "high": -0.25710325004099144,
+        "low": -0.7662962106209225,
+        "skill": -0.47329655671818793
+      },
+      "R3a_vs_R1": {
+        "high": 0.02375540847410173,
+        "low": -0.09429347939004304,
+        "skill": -0.03381593873995503
+      }
+    },
+    "scored_days": 58,
+    "scored_rows": 6930
+  },
+  "computed_at_utc": "2026-11-03T13:41:17+00:00",
+  "inputs": {
+    "2016/firms/box-a/firms_modis_sp_season.csv": "75d7cb52651612ec0623a06bd8fd2ec9f4b42cdbe2af32a5ef7dae7266120b5f",
+    "2016/firms/box-b/firms_modis_sp_season.csv": "3c37a90ad32da561fe70607daf95f4ce6e1143efa0e26a92d35f5edd9f32df21",
+    "2016/firms/box-c/firms_modis_sp_season.csv": "b319f1fe5d3271fc71646df7c0503032e3a9b2ba81092c26743f2e5e88d22b36",
+    "2017/firms/box-a/firms_modis_sp_season.csv": "0c0789cce3ae256d928f6e1210df4377dd0f74251b83a41409b3038db29f3d5d",
+    "2017/firms/box-b/firms_modis_sp_season.csv": "eff75223f9dcc6f01481584c154109f5875c6d695344821442841cf997eb5ccd",
+    "2017/firms/box-c/firms_modis_sp_season.csv": "0fcbade79aa376416f16fb5b759d46bdfdde3b5fb7bef097d04d8a7197c0108e",
+    "2018/firms/box-a/firms_modis_sp_season.csv": "f3904c76a6cc136f14a273cac24cbd0acef06d9c82941cf15b6375b8578a04ec",
+    "2018/firms/box-b/firms_modis_sp_season.csv": "be5dbe70c8ca78fdfbd58c7b7b8da619f30e1177e197db6d4d01ffc172e98234",
+    "2018/firms/box-c/firms_modis_sp_season.csv": "6834d8ce7037c5916bb7920804504c7cb9f0fad2b6b6d067ef02bdbd6e18928d",
+    "2019/firms/box-a/firms_modis_sp_season.csv": "8d8c57c3ceb3785f7ef0233eceb703f353d7f34540dc42ec923477473c575463",
+    "2019/firms/box-b/firms_modis_sp_season.csv": "765a233d893d0fdf1300914dbe7f587a5cd37418ddea0de96fbbe4df404ebfab",
+    "2019/firms/box-c/firms_modis_sp_season.csv": "a21cc47f1fdccf654847616ed4233052d6fb4f408ac0d7588ab2e37ba4b7fef9",
+    "data/nea/Historical1hrPM2.5.csv": "2fb76e1c4e4208e92f49670602e303c86e21eaa3704651633323e50f51015de4",
+    "haze-2015/firms/box-a/firms_modis_sp_2015_08_2015_11.csv": "22daf432c9177fbb14c664201183e0d9223d319d2d3f904bb17d4ad18cec98d7",
+    "haze-2015/firms/box-b/firms_modis_sp_2015_08_2015_11.csv": "acdb845579dbbab5a81864b713f041f4aedbb93a125b6db2d23fe5bfd8b9f9d1",
+    "haze-2015/firms/box-c/firms_modis_sp_2015_08_2015_11.csv": "ae040d7ce6b309e77de392f2e5daba37f9afc96707a675a0e17e7802dce46df3"
+  },
+  "protocol_id": "m5-protocol-1",
+  "stage": "t"
+}

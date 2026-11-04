@@ -1,0 +1,26 @@
+{
+  "authority": "Owner instruction relayed in the M5 session brief, 2026-11-03: small pilot downloads of free, openly licensed data are approved; any download over about 5 GB needs the owner. This is not a signed HumanApproval record.",
+  "files": [
+    {
+      "file": "box-a/firms_modis_sp_season.csv",
+      "sha256": "0c0789cce3ae256d928f6e1210df4377dd0f74251b83a41409b3038db29f3d5d",
+      "bytes": 27368,
+      "dataset": "FIRMS/MODIS_SP",
+      "retrieved_at_utc": "2026-11-03T13:33:15.961469+00:00"
+    },
+    {
+      "file": "box-b/firms_modis_sp_season.csv",
+      "sha256": "eff75223f9dcc6f01481584c154109f5875c6d695344821442841cf997eb5ccd",
+      "bytes": 38141,
+      "dataset": "FIRMS/MODIS_SP",
+      "retrieved_at_utc": "2026-11-03T13:33:24.297007+00:00"
+    },
+    {
+      "file": "box-c/firms_modis_sp_season.csv",
+      "sha256": "0fcbade79aa376416f16fb5b759d46bdfdde3b5fb7bef097d04d8a7197c0108e",
+      "bytes": 115147,
+      "dataset": "FIRMS/MODIS_SP",
+      "retrieved_at_utc": "2026-11-03T13:33:29.243247+00:00"
+    }
+  ]
+}

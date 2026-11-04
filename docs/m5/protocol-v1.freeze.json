@@ -1,0 +1,9 @@
+{
+  "frozen_at_utc": "2026-11-03T13:35:25+00:00",
+  "note": "Frozen before any new M5 model fit. Editing either file breaks tests/test_m5_protocol_freeze.py.",
+  "protocol_id": "m5-protocol-1",
+  "sha256": {
+    "config/m5/protocol-v1.yaml": "d9a381205b7b6d2747a9347f5ec687804c67f08e50022eb02795a00218a0694b",
+    "docs/m5/M5_PROTOCOL_V1.md": "8c99ead93b760614b3e2789bb75cbe758549fa21bfcd70320012eb58cd46ff91"
+  }
+}

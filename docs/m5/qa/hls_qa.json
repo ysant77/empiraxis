@@ -1,0 +1,51 @@
+{
+ "both_dates_clear_fraction_of_box_pixels": 0.02714014685223537,
+ "dates": {
+  "post": "2015-10-15",
+  "pre": "2015-09-13"
+ },
+ "dnbr_contrast": {
+  "auc": 0.8486795817572604,
+  "mean_burned": 0.23305106265301187,
+  "mean_control": 0.08173662062667973,
+  "n_burned_total": 2286,
+  "n_burned_valid": 439,
+  "n_control_total": 26049,
+  "n_control_valid": 1308
+ },
+ "mcd64a1_window": {
+  "burned_window_doy": [
+   257,
+   288
+  ]
+ },
+ "notes": [
+  "MCD64A1 labels are another satellite product, not ground truth.",
+  "Provider cloud_cover does not measure smoke haze; Fmask is used here."
+ ],
+ "post": {
+  "adjacent_or_shadow": 0.08506224066390042,
+  "aerosol_level_0": 0.0,
+  "aerosol_level_1": 0.012033195020746889,
+  "aerosol_level_2": 0.024066390041493777,
+  "aerosol_level_3": 0.9639004149377594,
+  "clear_land": 0.027429796231661575,
+  "cloud": 0.14356846473029045,
+  "no_data": 0.9650972497791424,
+  "pixels": 69049,
+  "water": 0.0
+ },
+ "pre": {
+  "adjacent_or_shadow": 0.0,
+  "aerosol_level_0": 0.0,
+  "aerosol_level_1": 0.0,
+  "aerosol_level_2": 0.0018214936247723133,
+  "aerosol_level_3": 0.9981785063752276,
+  "clear_land": 0.039348868195049895,
+  "cloud": 0.0,
+  "no_data": 0.9602456226737535,
+  "pixels": 69049,
+  "water": 0.010200364298724954
+ },
+ "tile": "T50MKB"
+}
