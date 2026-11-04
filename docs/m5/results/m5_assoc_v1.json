@@ -485,11 +485,171 @@
     "p_holm": 1.0,
     "p_shift": 0.6875,
     "rho": -0.1745460440043191
+   },
+   "rain_mean@lag0": {
+    "ci_high": 0.043857801158691936,
+    "ci_low": -0.45972169084719716,
+    "label": "descriptive_only",
+    "n_days": 58,
+    "null_abs_q95": 0.3205266233965979,
+    "p_holm": 1.0,
+    "p_shift": 0.3125,
+    "rho": -0.1791811498354302
+   },
+   "rain_mean@lag1": {
+    "ci_high": 0.23041228940455155,
+    "ci_low": -0.3501118810084778,
+    "label": "descriptive_only",
+    "n_days": 58,
+    "null_abs_q95": 0.2811529115014304,
+    "p_holm": 1.0,
+    "p_shift": 0.5,
+    "rho": -0.12830293149589345
+   },
+   "rain_mean@lag2": {
+    "ci_high": 0.1658680302401053,
+    "ci_low": -0.43649512896421033,
+    "label": "descriptive_only",
+    "n_days": 58,
+    "null_abs_q95": 0.2572825986649851,
+    "p_holm": 1.0,
+    "p_shift": 0.25,
+    "rho": -0.20914208373065923
+   },
+   "rain_mean@lag3": {
+    "ci_high": 0.2351100097711299,
+    "ci_low": -0.185286288225183,
+    "label": "descriptive_only",
+    "n_days": 57,
+    "null_abs_q95": 0.2620884106818771,
+    "p_holm": 1.0,
+    "p_shift": 0.78125,
+    "rho": -0.022945294270158158
+   },
+   "transport850_box-a@lag0": {
+    "ci_high": 0.032262665926955515,
+    "ci_low": -0.612271462398023,
+    "label": "descriptive_only",
+    "n_days": 58,
+    "null_abs_q95": 0.3210495555077056,
+    "p_holm": 1.0,
+    "p_shift": 0.0625,
+    "rho": -0.3826940231935772
+   },
+   "transport850_box-a@lag1": {
+    "ci_high": 0.07422162705746016,
+    "ci_low": -0.5491525741478412,
+    "label": "descriptive_only",
+    "n_days": 58,
+    "null_abs_q95": 0.3581469746839337,
+    "p_holm": 1.0,
+    "p_shift": 0.1875,
+    "rho": -0.28592082192623586
+   },
+   "transport850_box-a@lag2": {
+    "ci_high": 0.22526538607948662,
+    "ci_low": -0.4884420372816573,
+    "label": "descriptive_only",
+    "n_days": 58,
+    "null_abs_q95": 0.39053800486019263,
+    "p_holm": 1.0,
+    "p_shift": 0.6875,
+    "rho": -0.15857147251530346
+   },
+   "transport850_box-a@lag3": {
+    "ci_high": 0.2641260603483882,
+    "ci_low": -0.363576991088011,
+    "label": "descriptive_only",
+    "n_days": 57,
+    "null_abs_q95": 0.39438034742027483,
+    "p_holm": 1.0,
+    "p_shift": 0.90625,
+    "rho": -0.05029815919108115
+   },
+   "transport850_box-b@lag0": {
+    "ci_high": 0.054498498448098946,
+    "ci_low": -0.5643107111826702,
+    "label": "descriptive_only",
+    "n_days": 58,
+    "null_abs_q95": 0.37060506321326403,
+    "p_holm": 1.0,
+    "p_shift": 0.34375,
+    "rho": -0.2792149866190901
+   },
+   "transport850_box-b@lag1": {
+    "ci_high": 0.174667884623423,
+    "ci_low": -0.46085901428856946,
+    "label": "descriptive_only",
+    "n_days": 58,
+    "null_abs_q95": 0.3753422129256514,
+    "p_holm": 1.0,
+    "p_shift": 0.71875,
+    "rho": -0.19222369190070443
+   },
+   "transport850_box-b@lag2": {
+    "ci_high": 0.29248584903733194,
+    "ci_low": -0.4006952594890026,
+    "label": "descriptive_only",
+    "n_days": 58,
+    "null_abs_q95": 0.3753422129256514,
+    "p_holm": 1.0,
+    "p_shift": 0.96875,
+    "rho": -0.0622289212218155
+   },
+   "transport850_box-b@lag3": {
+    "ci_high": 0.40671790155110854,
+    "ci_low": -0.3961943957149054,
+    "label": "descriptive_only",
+    "n_days": 57,
+    "null_abs_q95": 0.38008815141301533,
+    "p_holm": 1.0,
+    "p_shift": 1.0,
+    "rho": -0.07168784029038112
+   },
+   "transport850_box-c@lag0": {
+    "ci_high": 0.3093506361410741,
+    "ci_low": -0.4219640003530103,
+    "label": "descriptive_only",
+    "n_days": 58,
+    "null_abs_q95": 0.39284505829155003,
+    "p_holm": 1.0,
+    "p_shift": 0.9375,
+    "rho": -0.046356393614076105
+   },
+   "transport850_box-c@lag1": {
+    "ci_high": 0.34373761449784135,
+    "ci_low": -0.3787063007217225,
+    "label": "descriptive_only",
+    "n_days": 58,
+    "null_abs_q95": 0.40367282906272106,
+    "p_holm": 1.0,
+    "p_shift": 1.0,
+    "rho": 0.003537481928081455
+   },
+   "transport850_box-c@lag2": {
+    "ci_high": 0.4291867019791656,
+    "ci_low": -0.3293477707246552,
+    "label": "descriptive_only",
+    "n_days": 58,
+    "null_abs_q95": 0.40684118244178535,
+    "p_holm": 1.0,
+    "p_shift": 0.84375,
+    "rho": 0.06721215663354764
+   },
+   "transport850_box-c@lag3": {
+    "ci_high": 0.448014091353973,
+    "ci_low": -0.367556886052206,
+    "label": "descriptive_only",
+    "n_days": 57,
+    "null_abs_q95": 0.4061122634171636,
+    "p_holm": 1.0,
+    "p_shift": 1.0,
+    "rho": -0.008555872439719992
    }
   },
   "valid_outcome_days": 58
  },
- "computed_at_utc": "2026-11-03T13:52:34+00:00",
+ "computed_at_utc": "2026-11-04T00:51:27+00:00",
  "experiment": "A",
  "protocol_id": "m5-protocol-1"
 }

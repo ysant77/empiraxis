@@ -27,13 +27,13 @@ Branch: `experiment/m5-multisource-environment`. No Meta model took part. All ru
 | Protocol v1 frozen, hash-checked | done |
 | 2015 baseline reproduction | done |
 | Experiment B, Stage P (2015, 2016) and Stage T (train 2015 to 2018, score 2019) | done for R0 to R3 |
-| Experiment B, rung H1 (ERA5, hindsight) for 2016 | not run; ERA5 2016 download still queued at the time of writing |
+| Experiment B, rung H1 (ERA5, hindsight) for 2016 | not run; ERA5 2016 is now downloaded and extracted, but the H1 feature builder of the 2015 ablation is not yet adapted to 2016 |
 | Experiment B, rung I1 (IMERG Early), Stage P 2015 | done; no gain (see section 2a) |
 | Experiment B, rung R4 (neural) | not run; the gate in the protocol was not met |
-| Experiment A, FIRMS exposures 2015 and 2016; ERA5 exposures 2015 | done |
-| Experiment A, ERA5 exposures 2016 | not run (same ERA5 download) |
+| Experiment A, FIRMS and ERA5 exposures 2015 and 2016 | done |
 | SMAP, HLS pilots | done as feasibility and QA |
 | IMERG pilot and Early season | pilot on four days of Final and one of Early; then 2,976 Early granules (31 Aug to 31 Oct 2015, 22.8 GB, owner approved) reduced to corridor means; raw files deleted; receipts in `docs/m5/receipts/` |
+| Evidence package for the M4 council | done: `docs/m5/evidence/scientific_evidence_package_v1.json` (hash-checked; see section 9) |
 | MAIAC | not assessed (no HDF4 reader) |
 | Layer catalogue and readers (Phase 5, data side) | done; no viewer was built |
 
@@ -129,7 +129,7 @@ R0 and R1 equal the reproduced baseline values.
 ## 3. Experiment A: retrospective association (hindsight allowed)
 
 Daily Singapore mean PM2.5 against lagged FIRMS counts (boxes A, B, C and sum), ERA5 850 hPa wind component toward
-Singapore, and ERA5 rain. 58 scored days per season. 2015 has 32 tests. 2016 has 16 tests because ERA5 2016 is missing.
+Singapore, and ERA5 rain. 58 scored days per season. Both seasons have 32 tests (ERA5 2016 arrived later; extracts built with `scripts/m5_era5_extract.py`).
 
 - **Frozen result:** no test is `supported_association`. This is by construction: the shift null has 31 shifts,
   so the smallest p value is 0.031, and the Holm correction over 32 tests cannot go below 1.0.
@@ -138,8 +138,7 @@ Singapore, and ERA5 rain. 58 scored days per season. 2015 has 32 tests. 2016 has
   They are all about source box B (Jambi and South Sumatra): FIRMS detections at lag 1 (rho 0.38, interval −0.01 to 0.54),
   and the 850 hPa transport component at lag 1 (0.37, 0.01 to 0.52) and lag 2 (0.40, 0.08 to 0.53).
   These are temporal associations, consistent with a Sumatra-to-Singapore pathway. They are not source attribution.
-- **2016:** the strongest FIRMS pair is box C at lag 0 with a negative sign (−0.33). Fire counts were low that year.
-  No pair has a shift-null p value below 0.09.
+- **2016 (clean year, with ERA5):** all 32 tests are descriptive only. The smallest shift-null p value is 0.0625: the 850 hPa component from box A at lag 0 (rho −0.38, interval −0.61 to 0.03). The strongest FIRMS pair is box C at lag 0 (−0.33, p 0.094), with a negative sign. Fire counts were low. ERA5 rain has no pair below p 0.25. The 2015 box B pattern does not repeat in 2016.
 
 ## 4. Data suitability
 
@@ -171,7 +170,7 @@ scenes are 80 to 100% cloudy by the provider's own value.
 ## 6. What is not known
 
 - Whether IMERG Early rain adds issue-time information in other seasons. Rung I1 ran on 2015 only (Stage P). Other seasons were not downloaded.
-- Whether ERA5 adds hindsight association in a clean season (2016). The download is queued.
+- Whether ERA5 adds to the hindsight ridge (rung H1) in 2016. The data is ready. The feature builder needs an adapter.
 - Whether the elevated-hour effect of FIRMS features repeats. One season shows it. A new protocol must test it with more haze seasons.
 - Whether HLS and MCD64A1 agree over the full box. Clear scenes cover too little of it.
 
@@ -191,3 +190,14 @@ uv run python scripts/m5_run_assoc.py <DATA_ROOT> <runs/haze-2015>
 ```
 
 Raw data sits in `<DATA_ROOT>` outside Git. Receipts with SHA-256 are in `docs/m5/receipts/`.
+
+## 9. Evidence package for M4 (ScientificEvidencePackageV1)
+
+`scripts/m5_build_evidence.py` writes `docs/m5/evidence/scientific_evidence_package_v1.json` from committed artifacts only.
+It holds the three registered questions (M5-A primary), the AOI and source boxes, the frozen-protocol hashes,
+the availability rule per source, 3,256 asset hashes from the receipts, the QA verdict per modality, the feature contracts,
+the baseline and I1 MAE values read from result files, the limitations and the claims M5 does not make.
+Every feature and source carries `issue_time_valid` or `retrospective_only`. The package carries its own SHA-256, and a test rebuilds it.
+It holds no raw data. M4 reads it and critiques it. M4 does not replace the numerical runs or the owner's approval.
+Rebuild it after any change to the result files or this report; the test fails if it is stale.
+

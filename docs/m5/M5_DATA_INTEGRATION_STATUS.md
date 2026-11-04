@@ -85,6 +85,7 @@ The assessment says: NEA, ERA5 wind and rain, FIRMS and MCD64A1 are in real use.
 - L1: `config/haze/datasets.yaml`, `config/acquire/haze-2015-h1.yaml`.
 - L2: `src/earthlab/acquire/era5.py`. The module accepts only the 2015 request.
 - L3: four GRIB files in `runs/haze-2015/era5/`, manifests with hashes. I re-hashed all four on 2026-11-03: each matches its manifest.
+  M5 added four GRIB files for 2016 (Sep, Oct; single and pressure levels) outside Git, hashes in `docs/m5/receipts/season_2016.json`. Extracts: `scripts/m5_era5_extract.py`.
 - L4: corridor-mean extracts (`haze/met.py`, `haze/grib.py`). Boundary layer height is downloaded but not extracted.
 - L5: H1, S3 and the 2015 ablation. I reproduced the ablation exactly on 2026-11-03.
 - L6 (partial): a separate corridor mean over the decoded fields matched to 3e-6 m/s. Wind conventions are tested (`tests/test_haze_wind.py`).

@@ -26,7 +26,7 @@ runs a small issue-time ladder on real data, and records what is not usable.
 
 ## Not in this PR
 
-Raw data (kept outside Git), the sealed NEA period, M3 evidence, a viewer, a neural model, ERA5 for 2016 (queued), IMERG beyond 2015.
+Raw data (kept outside Git), the sealed NEA period, M3 evidence, a viewer, a neural model, the H1 rung for 2016 (data ready), IMERG beyond 2015.
 
 ## Checks
 

@@ -1,0 +1,54 @@
+{
+  "authority": "Owner instruction relayed in the M5 session brief, 2026-11-03: small pilot downloads of free, openly licensed data are approved; any download over about 5 GB needs the owner. This is not a signed HumanApproval record.",
+  "files": [
+    {
+      "file": "box-a/firms_modis_sp_season.csv",
+      "sha256": "75d7cb52651612ec0623a06bd8fd2ec9f4b42cdbe2af32a5ef7dae7266120b5f",
+      "bytes": 66259,
+      "dataset": "FIRMS/MODIS_SP",
+      "retrieved_at_utc": "2026-11-03T13:31:36.026223+00:00"
+    },
+    {
+      "file": "box-b/firms_modis_sp_season.csv",
+      "sha256": "3c37a90ad32da561fe70607daf95f4ce6e1143efa0e26a92d35f5edd9f32df21",
+      "bytes": 31143,
+      "dataset": "FIRMS/MODIS_SP",
+      "retrieved_at_utc": "2026-11-03T13:31:41.703620+00:00"
+    },
+    {
+      "file": "box-c/firms_modis_sp_season.csv",
+      "sha256": "b319f1fe5d3271fc71646df7c0503032e3a9b2ba81092c26743f2e5e88d22b36",
+      "bytes": 167928,
+      "dataset": "FIRMS/MODIS_SP",
+      "retrieved_at_utc": "2026-11-03T13:31:52.932942+00:00"
+    },
+    {
+      "file": "era5_sl_2016_09.grib",
+      "sha256": "4ee617af26e2435011e4f7dce39313ef023dc12f3343b7a55e742efea70f4536",
+      "bytes": 22273920,
+      "dataset": "reanalysis-era5-single-levels",
+      "retrieved_at_utc": "2026-11-03T13:36:24.811740+00:00"
+    },
+    {
+      "file": "era5_sl_2016_10.grib",
+      "sha256": "ac75e8aadd4e7fcc032175f3a9bd8c37cca5a807326440ceab12db8d9f97750a",
+      "bytes": 23016384,
+      "dataset": "reanalysis-era5-single-levels",
+      "retrieved_at_utc": "2026-11-03T16:58:31.897858+00:00"
+    },
+    {
+      "file": "era5_pl_2016_09.grib",
+      "sha256": "9a4ed283115629dcc1a5b72915193628281114c87e037d13e225d23c556f135b",
+      "bytes": 11136960,
+      "dataset": "reanalysis-era5-pressure-levels",
+      "retrieved_at_utc": "2026-11-03T19:36:17.358606+00:00"
+    },
+    {
+      "file": "era5_pl_2016_10.grib",
+      "sha256": "05b26ef52ee2afcedd3f1e32d1395dbaf66385a601a8d5dec2c92bac2eb7a9eb",
+      "bytes": 11508192,
+      "dataset": "reanalysis-era5-pressure-levels",
+      "retrieved_at_utc": "2026-11-03T21:49:45.926758+00:00"
+    }
+  ]
+}
