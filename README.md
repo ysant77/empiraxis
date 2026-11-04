@@ -33,6 +33,8 @@ Muse Glimmer 30B ran locally through llama-server. The four foundational scenari
 | Safety screening of investigation answers | Llama Guard 3 8B, in the separate investigation path only; not in these harness runs |
 | Final decision | A person. No decision is recorded in these runs. |
 
+This table covers the Muse-only team runs. In M4, Llama 3.2 3B Instruct also filled seats. See "M4 and M4.1" below.
+
 The original team run reached the same outcome as the deterministic pipeline and cost more. See `docs/comparative-evidence-report.md`: the tested multi-agent configuration did not establish an advantage over simpler workflows. Later team experiments add signed acquisition, statistical training and a compact neural-family comparison without claiming that multi-agent orchestration is generally superior.
 
 ### New bounded scientific engineering evidence
@@ -42,6 +44,50 @@ The original team run reached the same outcome as the deterministic pipeline and
 - **M3:** a real Muse-directed comparison trained a tuned ridge and a compact TCN under one protocol. Saved models were reloaded and independently scored (`docs/muse-method-comparison-run.md`). The already-used 2019–2023 validation period does not provide an independent generalization estimate.
 - **Historical wind, rain and wildfire:** a separate deterministic 2015 feature ablation used ERA5 and FIRMS, found no gain over persistence, and is retrospective rather than a live weather forecast (`docs/haze-2015-ablation-results.md`).
 - **Prospective research:** an experimental signed ledger issued five T+6-hour regional PM2.5 predictions. These are not an operational forecast; scoring requires later publication of actual observations (`docs/prediction-ledger.md`).
+
+### M5: multisource environment pilot
+
+M5 tested whether satellite fire counts, reanalysis wind and satellite rain improve PM2.5 prediction. **No Meta model took part.** All M5 models are deterministic Python on CPU. Report: `docs/m5/M5_SCIENCE_REPORT.md`.
+
+- **No supported gain.** On the 2019 haze season (6,930 region-hours), ridge on PM2.5 lags had MAE 9.87 µg/m³ against 11.33 for persistence. Ridge with FIRMS fire features had 11.21. The frozen rule labels FIRMS "worse".
+- **One exploratory signal.** Above 55 µg/m³ (588 hours on 17 days), FIRMS features lowered MAE from 28.16 to 17.27. Trees on lags only also lowered it, to 23.76. This is not a claim.
+- **The 2015 negative ablation reproduces exactly:** MAE 30.76 (persistence), 32.10 (ridge), 36.73 (+ ERA5), 41.75 (+ ERA5 + FIRMS) µg/m³.
+- **Event 12 to 24 h ahead (M5-C, 2019):** the skill comes from the PM2.5 lags (Brier skill 0.425). FIRMS adds little (0.474), and that label fails when FIRMS is delayed 24 h. All 349 events come from one episode.
+- **M5-B (transport, 2017 to 2019): no result.** The ERA5 pressure-level files are missing.
+- **Unsuitable layers:** SMAP had no recommended-quality retrieval over the Kalimantan box. HLS had 2.7% clear land on the two dates.
+
+Limits: FIRMS is the standard-processing archive. Its 3 h latency is nominal and assumed, not measured, so M5 does not show issue-time-valid forecasting. The 2019 season was used again, so it is not an independent test. No result is a source attribution.
+
+### M4 and M4.1: a council of different Meta checkpoints
+
+M4 put different checkpoints in different seats. The recorded run `examples/replay/scenario-m4-heterogeneous-council` used Muse Glimmer 30B for the PM and Lead seats, and Llama 3.2 3B Instruct for the data specialist, ML specialist and an advisory critic. The trace names the file and SHA-256 of each checkpoint. That run made 13 model calls: Muse 8, Llama 5. Code reached the same outcome as the council.
+
+M4.1 (PR #117, in review) reads the frozen M5 evidence package and critiques it. It does not re-run M5.
+
+| Seat | Checkpoint |
+|---|---|
+| PM, Lead | Muse Glimmer 30B |
+| Data specialist | Llama 3.2 3B Instruct |
+| ML specialist | Qwen3 4B Instruct 2507 (non-Meta, secondary seat) |
+| Critic | Muse Glimmer 30B in a separate role, on the Lead's checkpoint. It is not independent. |
+| Numbers, scores, rule | Deterministic code |
+| Final decision | A person. No decision is recorded. |
+
+A Llama 3.1 8B critic was tried and failed the gates, so it is not used.
+
+M4.1 benchmark (experiment m41-v2, `docs/m41/m41-benchmark-report.md`): 29 recorded runs (25 main, 2 repeat, 2 stochastic) and a 24-case critic test. All traces verify offline.
+
+| Arm | Seats | Correct decisions (5 packages) |
+|---|---|---|
+| F | code rule | 5/5 |
+| S | Muse Lead | 5/5 |
+| T | Muse in every seat | 5/5 |
+| H | Llama data, Qwen ML, Muse Lead and PM | 4/5 |
+| HC | H plus the Muse critic | 4/5 |
+
+H and HC abstain on the M5 package, outside the code rule; the repeat run gives the same error. The Llama data specialist made 40 findings, none supported. The Qwen ML specialist raised 1 known fault per arm. The Muse critic detected 1 of 12 seeded faults with support (the code rules: 6 of 12). HC used 91,601 tokens and 91 minutes, against 14,070 tokens and 26 minutes for S.
+
+In our initial five-case evaluation, heterogeneous agents did not outperform the simpler baselines. Empiraxis records that finding instead of hiding it. One run per cell on five packages gives counts, not general accuracy for any arm. The council remains an experimental research-engineering architecture, not validated production automation.
 
 ## Run the demonstration
 
@@ -93,9 +139,9 @@ The demonstration script is in [docs/demo-three-minute.md](docs/demo-three-minut
 - The NEA file has no available-at time, so availability is modelled.
 - The GRU is worse than persistence in elevated hours, and the elevated-hour rule is exploratory.
 - S2 and S3 traces record packaging of saved results. They are not the traces of the original jobs.
-- The critic is a second pass by the same model. It is not an independent reviewer.
+- In the M3 runs and in M4.1, the critic runs on the Lead's checkpoint. It is not an independent reviewer. The M4 run used a Llama 3.2 3B critic: it gave one "no concern" and two unusable answers in three live runs.
 - In live validation the review gate found no scientific fault and stopped 2 of 3 correct plans, so it stays off.
-- Benchmark cells hold 1 to 3 runs on one shared Mac under swap pressure. There are no significance claims. Team arms with mixed models did not run.
+- Benchmark cells hold 1 to 3 runs on one shared Mac under swap pressure. There are no significance claims. Mixed-checkpoint team runs exist since M4 (`docs/m4/benchmark-report.md`); they do not show an advantage over the deterministic path.
 
 ## Engineering disclosure
 
@@ -481,8 +527,10 @@ Each run writes `results.jsonl` (one row per scenario, arm and repeat, with code
 | Component | Source | Licence |
 | --- | --- | --- |
 | NEA Historical 1-hr PM2.5 | https://data.gov.sg/datasets/d_6c0d5fc34838b12472475fdb73c0af29/view | Singapore Open Data Licence v1.0 (see `data/nea/DATA_CARD.md`) |
-| Muse Glimmer 30B (GGUF) | https://huggingface.co/meta-models/Muse-Glimmer-30B-GGUF | Apache 2.0 and the Meta usage policy |
-| Muse Spark Open (hosted) | Baseten, Fireworks or Modal | Provider terms and the Meta licence |
+| Muse Glimmer 30B (GGUF) | https://huggingface.co/meta-models/Muse-Glimmer-30B-GGUF | Apache-2.0 (model card) |
+| Muse Spark Open (hosted) | Baseten, Fireworks or Modal | Licence not verified; configured only, not used in a recorded run |
 | Python libraries | `uv.lock` | Each package's own licence |
+
+The full list, with the source of each licence statement, is in [LICENSING.md](LICENSING.md).
 
 The repository was created on 27 October 2026, inside the Meta Global AI Developer Hackathon build window. The design builds on ideas from the author's earlier private work on policy-gated, verified agents.
