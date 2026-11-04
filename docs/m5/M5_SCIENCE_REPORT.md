@@ -27,6 +27,7 @@ Branch: `experiment/m5-multisource-environment`. No Meta model took part. All ru
 | Protocol v1 frozen, hash-checked | done |
 | 2015 baseline reproduction | done |
 | Experiment B, Stage P (2015, 2016) and Stage T (train 2015 to 2018, score 2019) | done for R0 to R3 |
+| M5-C, held-out 2019 | done (section 2c); one episode; label fragile |
 | Experiment B, rung H1 (ERA5, hindsight), Stage P 2015 and 2016 | done (Amendment 5); no gain (section 2b) |
 | Experiment B, rung I1 (IMERG Early), Stage P 2015 | done; no gain (see section 2a) |
 | Experiment B, rung R4 (neural) | not run; the gate in the protocol was not met |
@@ -149,6 +150,35 @@ Result file: `docs/m5/results/m5_h1_stage_p.json`. 5,195 scored rows per season.
 Finding: ERA5 made the ridge worse in the haze season, and did not help in the clean season. The 2015 H1 value of 41.75 equals the
 published 2015 ablation figure for ERA5 plus FIRMS, so the new code agrees with the release code. This is one model class
 with 24 lags plus 39 extra columns; overfitting is a likely reason, and it was not tested. No skill claim.
+
+### 2c. M5-C: event 12 to 24 h ahead, held-out 2019 (`m5-protocol-c-1`)
+
+Fit on 2015 to 2017, Platt calibration on out-of-fold blocked predictions, score on 2019. Event: any region above 55 ug/m3 in (T+12 h, T+24 h].
+Result file: `docs/m5/results/m5_c_v1.json`. 1,386 scored issues, 349 events, **one episode**. Training base rate 0.338.
+Brier skill is against the constant training base rate (C0, Brier 0.196). Interval: bootstrap by ISO week.
+
+| Rung | Brier | Skill | 95% interval | ROC area | Coverage / error (abstain in 0.2 to 0.8) | Calibration gap | Frozen label |
+|---|---|---|---|---|---|---|---|
+| C1 persistence 0/1 | 0.168 | 0.142 | -0.179 to 0.753 | 0.699 | 1.00 / 0.168 | not assessed | no_supported_signal |
+| C2 lags | 0.113 | 0.425 | 0.286 to 0.648 | 0.903 | 0.60 / 0.046 | 0.105 | no_supported_signal |
+| C3 lags + FIRMS | 0.103 | 0.474 | 0.267 to 0.643 | 0.915 | 0.58 / 0.047 | 0.093 | useful_signal |
+| C4 trees (gate met) | 0.114 | 0.419 | -0.056 to 0.733 | 0.941 | 0.65 / 0.064 | 0.087 | not labelled (interval includes 0) |
+
+Random abstention at equal coverage has an error of about 0.13 to 0.15, so the abstention band selects easier issues, as intended.
+
+How far to trust it (Amendment C1 checks, same 2019 data):
+
+- **The label is fragile.** C3 passes the frozen rule by a small margin (gap 0.093 against the limit 0.1). With FIRMS delayed by 24 h the gap is 0.128 and the label becomes
+  `no_supported_signal` (skill 0.469, interval 0.056 to 0.747). With within-season FIRMS ranks (hindsight diagnostic) the gap is 0.101 and the label also fails.
+- **Most of the skill comes from the PM2.5 lags.** C2 alone has skill 0.425. FIRMS adds 0.05 at most, and a paired test of C3 against C2 was not pre-registered, so it is not claimed.
+  Haze persists, so a lag-based model predicts "haze tomorrow" well. This is not the same as skill at the start of an episode.
+- **The 2015 haze does not explain it.** Lags only, fitted on 2016 and 2017 without 2015: skill 0.465 (interval 0.205 to 0.518), label `useful_signal`. FIRMS in that setting is worse (0.379).
+- **Calibration is imperfect.** Low probabilities are too high: the 0.14 bin has an observed rate of 0.03. The reliability table is in the result file.
+- **One scored episode.** All 349 events come from one connected haze period in 2019. The week bootstrap cannot show variation between episodes. The result is not evidence of skill on a new episode.
+- IMERG was not used (2015 only). The latency rules are nominal (see the latency note in section 2a).
+
+Reading: for this one held-out episode, a lag-based model with Platt calibration and abstention predicts the event much better than the training base rate and better than 0/1 persistence.
+FIRMS adds little. The frozen rule gives `useful_signal` for C3 but the label does not survive two sensitivity checks. Claim no operational forecast.
 
 ## 3. Experiment A: retrospective association (hindsight allowed)
 

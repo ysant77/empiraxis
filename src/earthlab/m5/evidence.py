@@ -27,6 +27,8 @@ RESULT_FILES = (
     "m5_h1_stage_p",
     "m5_assoc_v1",
     "m5_event_rates",
+    "m5_c_v1",
+    "m5_latency_sample",
 )
 
 

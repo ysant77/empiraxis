@@ -22,8 +22,8 @@ Verbatim text is in `M5_RESEARCH_QUESTIONS.md`.
 | ID | Short name | Stage | State |
 |---|---|---|---|
 | M5-A | Multisource T+6 PM2.5 prediction | primary, first | pilot run; no supported gain; IMERG Early rung I1 run, no gain |
-| M5-B | Regional transport consistency | later, own protocol | not started; no source attribution |
-| M5-C | Severe-event prediction 12 to 24 h, calibrated, with abstention | later, own protocol | not started; issue-time inputs only |
+| M5-B | Regional transport consistency | own protocol (`m5-protocol-b-1`) | frozen; waits for ERA5 2017 to 2019; no source attribution |
+| M5-C | Severe-event prediction 12 to 24 h, calibrated, with abstention | own protocol (`m5-protocol-c-1`) | run on 2019: lag model skilful vs base rate; FIRMS adds little; one episode; label fragile |
 
 The 2015 negative ablation stays a separate finding.
 
