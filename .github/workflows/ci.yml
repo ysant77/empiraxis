@@ -66,6 +66,21 @@ jobs:
       - name: Pytest with 85% coverage gate
         run: uv run pytest
 
+  video-kit:
+    name: video kit render smoke tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        with:
+          enable-cache: true
+      - run: uv sync --all-extras
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+      - name: Render failure handling (no browser; never skipped)
+        run: uv run pytest video/tests --no-cov -p no:cacheprovider -rs
+
   supply-chain:
     name: dependency audit and secret scan
     runs-on: ubuntu-latest
