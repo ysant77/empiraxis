@@ -74,7 +74,7 @@ The README is shared, so this report proposes text only. It does not change the 
 
 1. Pick the film: Video 2.0 or the voice-only V1.1 cut from Session C. Do not ship the MusicGen bed.
 2. Read the deadline and the edit policy on the portal itself.
-3. Fill the `[M4.1 PENDING]` fields from Session A's frozen report.
+3. Done: the M4.1 fields come from `docs/m41/m41-benchmark-report.md` (PR #117).
 4. Merge the README and `LICENSING.md` changes (this branch) through a PR with green CI, or ship without them.
 5. Submit, and save the receipt. Until then the status stays RED.
 

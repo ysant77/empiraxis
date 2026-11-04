@@ -2,7 +2,7 @@
 
 Status: **draft. Not submitted.** The owner submits through the portal and keeps the receipt.
 Every number here is in `docs/release/source_to_screen.csv` or in the trace that the row names.
-Fields marked `[M4.1 PENDING]` wait for the frozen benchmark verdict. Do not fill them from memory.
+The M4.1 fields come from the benchmark report `docs/m41/m41-benchmark-report.md` (PR #117).
 
 ## Title
 
@@ -31,20 +31,20 @@ Counts from the recorded M4 run (`scenario-m4-heterogeneous-council`): 13 model 
 What the models did **not** do:
 
 - The M5 environmental models (ridge, trees, calibrated event models) are deterministic Python on CPU. No Meta model produced an M5 number.
-- The M4.1 council read the frozen M5 evidence package afterwards and critiqued it. It did not re-run M5. `[M4.1 PENDING: council arms, checkpoints, verdict]`
+- The M4.1 council read the frozen M5 evidence package afterwards and critiqued it. It did not re-run M5. In the M4.1 benchmark (`docs/m41/m41-benchmark-report.md`), the code rule, Muse alone and Muse in every seat were correct on 5 of 5 packages. The mixed council (Llama 3.2 3B, Qwen3 4B, Muse Glimmer 30B), with or without the Muse critic, was correct on 4 of 5.
 - The critic is advisory. It sets no score, outcome or approval.
 - No human approval is shown in the recorded runs. Each run stops at "awaiting a human decision".
 
 ## Findings, with caveats
 
-1. **Multisource data did not give a supported gain (M5).** On the held-out 2019 haze season (6,930 region-hours), ridge on PM2.5 lags had MAE 9.87 µg/m³ against 11.33 for persistence. Adding FIRMS fire features raised the all-hours MAE to 11.21 (frozen label: worse). Caveats: FIRMS data is the MODIS standard-processing archive with a nominal latency, assumed at 3 h; the release time was not measured. Do not call FIRMS "issue-time valid" (the M5 evidence package label says so; a later package version should correct it). The 2019 season was also used by earlier work and by M5-C, so it is not an independent test.
+1. **Multisource data did not give a supported gain (M5).** On the held-out 2019 haze season (6,930 region-hours), ridge on PM2.5 lags had MAE 9.87 µg/m³ against 11.33 for persistence. Adding FIRMS fire features raised the all-hours MAE to 11.21 (frozen label: worse). Caveats: FIRMS data is the MODIS standard-processing archive with a nominal latency, assumed at 3 h; the release time was not measured. Do not call FIRMS "issue-time valid". The package `m5-evidence-5` (PR #120, on `main` at `0c564e8`) corrects the label to `nominal_latency_assumed`. No M5 source has a verified publication time per observation. The 2019 season was also used by earlier work and by M5-C, so it is not an independent test.
 2. **One exploratory signal.** On elevated hours (above 55 µg/m³, 588 hours on 17 days) FIRMS features lowered MAE from 28.16 to 17.27. Trees on lags only also lowered it (to 23.76), so part of the effect may come from training on the 2015 haze. Exploratory. Not a claim.
 3. **The 2015 negative ablation reproduces exactly.** MAE: persistence 30.76, ridge 32.10, ridge + ERA5 36.73, ridge + ERA5 + FIRMS 41.75 µg/m³. ERA5 is hindsight data. Not a causal statement.
-4. **Event 12 to 24 h ahead (M5-C, 2019): the skill comes from PM2.5 lags.** Brier skill 0.425 (lags) and 0.474 (lags + FIRMS) against the training base rate. The FIRMS label passes the frozen rule by a small margin (calibration gap 0.093, limit 0.1) and fails with FIRMS delayed 24 h. All 349 events come from **one** connected episode. Not an operational warning. A post-hoc onset audit (unmerged branch `docs/m5-c-onset-audit-review`, head `9180d6c9`) finds about 80% of events are continuations and 4 independent onsets: too few to judge onset skill. Cite it only after it merges.
-4a. **M5-B (transport consistency 2017 to 2019): no result.** The ERA5 pressure-level files are missing; the data service rejected the requests.
+4. **Event 12 to 24 h ahead (M5-C, 2019): the skill comes from PM2.5 lags.** Brier skill 0.425 (lags) and 0.474 (lags + FIRMS) against the training base rate. The FIRMS label passes the frozen rule by a small margin (calibration gap 0.093, limit 0.1) and fails with FIRMS delayed 24 h. All 349 events come from **one** connected episode. Not an operational warning. A post-hoc onset audit (PR #119, merged at `62fdc83`) finds that 279 of 349 events (80%) are continuations. There are only 4 independent onset episodes, below the declared threshold of 10: too few to judge onset skill.
+4a. **M5-B (transport consistency 2017 to 2019): no result.** The ERA5 pressure-level files for 2017 to 2019 did not arrive from the data service. M5-B did not run. M5 is frozen for this submission.
 5. **Data suitability.** SMAP had no recommended-quality retrieval over the Kalimantan box. HLS had 2.7% clear land on the two dates. These results apply to these footprints and dates only.
 6. **Recorded scenarios (validation years, sealed test period not read).** S1: a GRU had MAE 4.588 against 5.465 for persistence, but was worse above 55 µg/m³ (28.772 against 26.324), so "adopt with limits". S2: a reused encoder lost to a persistence alarm (F1 0.255 against 0.306), so the baseline stays. S3: no box was consistent (0 of 6), so the system abstains. S4: the imagery did not fit, so the system requests resources.
-7. **Multi-agent advantage is not shown.** The earlier comparison found a team of models reached the same decision as the deterministic pipeline, at higher cost (`docs/comparative-evidence-report.md`). `[M4.1 PENDING: frozen benchmark verdict. Preliminary report from Session A: F and S arms agree with the code rule 5/5; H and HC arms leave the rule on the M5 package; no evidence of multi-agent superiority. Do not publish this line until the report is frozen.]`
+7. **Multi-agent advantage is not shown.** The earlier comparison found a team of models reached the same decision as the deterministic pipeline, at higher cost (`docs/comparative-evidence-report.md`). The M4.1 benchmark confirms this. Arms F, S and T were correct on 5 of 5 packages; the mixed council H and HC on 4 of 5, at higher cost (HC: 91,601 tokens and 91 minutes; S: 14,070 tokens and 26 minutes). The Muse critic found 1 of 12 seeded faults with support. It runs on the Lead's checkpoint and is not independent.
 
 ## Architecture (diagram description)
 

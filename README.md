@@ -75,7 +75,17 @@ M4.1 (PR #117, in review) reads the frozen M5 evidence package and critiques it.
 
 A Llama 3.1 8B critic was tried and failed the gates, so it is not used.
 
-`[M4.1 RESULTS PENDING: benchmark arms, run counts, agreement with the code rule and verdict. Fill from the frozen report only.]`
+M4.1 benchmark (experiment m41-v2, `docs/m41/m41-benchmark-report.md`): 29 recorded runs (25 main, 2 repeat, 2 stochastic) and a 24-case critic test. All traces verify offline.
+
+| Arm | Seats | Correct decisions (5 packages) |
+|---|---|---|
+| F | code rule | 5/5 |
+| S | Muse Lead | 5/5 |
+| T | Muse in every seat | 5/5 |
+| H | Llama data, Qwen ML, Muse Lead and PM | 4/5 |
+| HC | H plus the Muse critic | 4/5 |
+
+H and HC abstain on the M5 package, outside the code rule; the repeat run gives the same error. The Llama data specialist made 40 findings, none supported. The Qwen ML specialist raised 1 known fault per arm. The Muse critic detected 1 of 12 seeded faults with support (the code rules: 6 of 12). HC used 91,601 tokens and 91 minutes, against 14,070 tokens and 26 minutes for S.
 
 The data does not show that the council is better, faster or more accurate than the deterministic path.
 
