@@ -1,0 +1,270 @@
+{
+ "audit": "m5-c-onset-audit-2 (post hoc, exploratory)",
+ "season": 2019,
+ "inputs": {
+  "nea_csv_sha256": "2fb76e1c4e4208e92f49670602e303c86e21eaa3704651633323e50f51015de4"
+ },
+ "scored_issues": 1386,
+ "events": 349,
+ "m5_episode_count_by_day": 1,
+ "by_state": {
+  "ongoing": {
+   "issues": 418,
+   "events": 279
+  },
+  "onset": {
+   "issues": 968,
+   "events": 70
+  },
+  "unclear": {
+   "issues": 0,
+   "events": 0
+  }
+ },
+ "base_rate": {
+  "ongoing": 0.6674641148325359,
+  "onset": 0.07231404958677685,
+  "unclear": null
+ },
+ "exceedance_episodes_in_season": [
+  {
+   "start": "2019-09-09 00:00",
+   "end": "2019-09-10 16:00",
+   "span_hours": 41,
+   "exceedance_hours": 16
+  },
+  {
+   "start": "2019-09-12 10:00",
+   "end": "2019-09-19 05:00",
+   "span_hours": 164,
+   "exceedance_hours": 101
+  },
+  {
+   "start": "2019-09-20 16:00",
+   "end": "2019-09-24 15:00",
+   "span_hours": 96,
+   "exceedance_hours": 65
+  },
+  {
+   "start": "2019-09-26 17:00",
+   "end": "2019-09-26 17:00",
+   "span_hours": 1,
+   "exceedance_hours": 1
+  },
+  {
+   "start": "2019-09-28 15:00",
+   "end": "2019-09-28 15:00",
+   "span_hours": 1,
+   "exceedance_hours": 1
+  }
+ ],
+ "onset_episodes_primary": [
+  {
+   "start": "2019-09-09 00:00",
+   "end": "2019-09-10 16:00",
+   "span_hours": 41,
+   "exceedance_hours": 16
+  },
+  {
+   "start": "2019-09-12 10:00",
+   "end": "2019-09-19 05:00",
+   "span_hours": 164,
+   "exceedance_hours": 101
+  },
+  {
+   "start": "2019-09-26 17:00",
+   "end": "2019-09-26 17:00",
+   "span_hours": 1,
+   "exceedance_hours": 1
+  },
+  {
+   "start": "2019-09-28 15:00",
+   "end": "2019-09-28 15:00",
+   "span_hours": 1,
+   "exceedance_hours": 1
+  }
+ ],
+ "independent_onsets": 4,
+ "threshold_declared": 10,
+ "verdict": "insufficient independent onsets",
+ "sensitivity": [
+  {
+   "min_observed": 16,
+   "merge_hours": 12,
+   "min_episode_hours": 1,
+   "independent_onsets": 5,
+   "onset_issues": 968
+  },
+  {
+   "min_observed": 16,
+   "merge_hours": 12,
+   "min_episode_hours": 6,
+   "independent_onsets": 2,
+   "onset_issues": 968
+  },
+  {
+   "min_observed": 16,
+   "merge_hours": 24,
+   "min_episode_hours": 1,
+   "independent_onsets": 4,
+   "onset_issues": 968
+  },
+  {
+   "min_observed": 16,
+   "merge_hours": 24,
+   "min_episode_hours": 6,
+   "independent_onsets": 2,
+   "onset_issues": 968
+  },
+  {
+   "min_observed": 16,
+   "merge_hours": 48,
+   "min_episode_hours": 1,
+   "independent_onsets": 2,
+   "onset_issues": 968
+  },
+  {
+   "min_observed": 16,
+   "merge_hours": 48,
+   "min_episode_hours": 6,
+   "independent_onsets": 1,
+   "onset_issues": 968
+  },
+  {
+   "min_observed": 16,
+   "merge_hours": 72,
+   "min_episode_hours": 1,
+   "independent_onsets": 1,
+   "onset_issues": 968
+  },
+  {
+   "min_observed": 16,
+   "merge_hours": 72,
+   "min_episode_hours": 6,
+   "independent_onsets": 1,
+   "onset_issues": 968
+  },
+  {
+   "min_observed": 20,
+   "merge_hours": 12,
+   "min_episode_hours": 1,
+   "independent_onsets": 5,
+   "onset_issues": 968
+  },
+  {
+   "min_observed": 20,
+   "merge_hours": 12,
+   "min_episode_hours": 6,
+   "independent_onsets": 2,
+   "onset_issues": 968
+  },
+  {
+   "min_observed": 20,
+   "merge_hours": 24,
+   "min_episode_hours": 1,
+   "independent_onsets": 4,
+   "onset_issues": 968
+  },
+  {
+   "min_observed": 20,
+   "merge_hours": 24,
+   "min_episode_hours": 6,
+   "independent_onsets": 2,
+   "onset_issues": 968
+  },
+  {
+   "min_observed": 20,
+   "merge_hours": 48,
+   "min_episode_hours": 1,
+   "independent_onsets": 2,
+   "onset_issues": 968
+  },
+  {
+   "min_observed": 20,
+   "merge_hours": 48,
+   "min_episode_hours": 6,
+   "independent_onsets": 1,
+   "onset_issues": 968
+  },
+  {
+   "min_observed": 20,
+   "merge_hours": 72,
+   "min_episode_hours": 1,
+   "independent_onsets": 1,
+   "onset_issues": 968
+  },
+  {
+   "min_observed": 20,
+   "merge_hours": 72,
+   "min_episode_hours": 6,
+   "independent_onsets": 1,
+   "onset_issues": 968
+  },
+  {
+   "min_observed": 24,
+   "merge_hours": 12,
+   "min_episode_hours": 1,
+   "independent_onsets": 5,
+   "onset_issues": 968
+  },
+  {
+   "min_observed": 24,
+   "merge_hours": 12,
+   "min_episode_hours": 6,
+   "independent_onsets": 2,
+   "onset_issues": 968
+  },
+  {
+   "min_observed": 24,
+   "merge_hours": 24,
+   "min_episode_hours": 1,
+   "independent_onsets": 4,
+   "onset_issues": 968
+  },
+  {
+   "min_observed": 24,
+   "merge_hours": 24,
+   "min_episode_hours": 6,
+   "independent_onsets": 2,
+   "onset_issues": 968
+  },
+  {
+   "min_observed": 24,
+   "merge_hours": 48,
+   "min_episode_hours": 1,
+   "independent_onsets": 2,
+   "onset_issues": 968
+  },
+  {
+   "min_observed": 24,
+   "merge_hours": 48,
+   "min_episode_hours": 6,
+   "independent_onsets": 1,
+   "onset_issues": 968
+  },
+  {
+   "min_observed": 24,
+   "merge_hours": 72,
+   "min_episode_hours": 1,
+   "independent_onsets": 1,
+   "onset_issues": 968
+  },
+  {
+   "min_observed": 24,
+   "merge_hours": 72,
+   "min_episode_hours": 6,
+   "independent_onsets": 1,
+   "onset_issues": 968
+  }
+ ],
+ "week_structure": {
+  "iso_weeks": 9,
+  "weeks_with_events": 4,
+  "events_per_week": {
+   "36": 21,
+   "37": 132,
+   "38": 145,
+   "39": 51
+  }
+ }
+}
