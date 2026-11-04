@@ -1,0 +1,2962 @@
+{
+ "protocol": "m41-v2",
+ "critic": {
+  "scoring": "m41-v2",
+  "summaries": {
+   "local-qwen3-4b-2507": {
+    "cases": 24,
+    "usable": 24,
+    "faults_detected": 0,
+    "faults_detected_raw": 0,
+    "faults": 12,
+    "clean_with_high_finding": 0,
+    "clean_with_any_finding": 0,
+    "clean": 12,
+    "findings": 0,
+    "unsupported_findings": 0
+   },
+   "local-llama-3-1-8b-v2": {
+    "cases": 24,
+    "usable": 24,
+    "faults_detected": 0,
+    "faults_detected_raw": 0,
+    "faults": 12,
+    "clean_with_high_finding": 0,
+    "clean_with_any_finding": 0,
+    "clean": 12,
+    "findings": 12,
+    "unsupported_findings": 8
+   },
+   "local-qwen3-4b-2507-v2": {
+    "cases": 24,
+    "usable": 24,
+    "faults_detected": 0,
+    "faults_detected_raw": 1,
+    "faults": 12,
+    "clean_with_high_finding": 11,
+    "clean_with_any_finding": 11,
+    "clean": 12,
+    "findings": 89,
+    "unsupported_findings": 46
+   },
+   "local-llama-3-1-8b": {
+    "cases": 24,
+    "usable": 24,
+    "faults_detected": 0,
+    "faults_detected_raw": 0,
+    "faults": 12,
+    "clean_with_high_finding": 0,
+    "clean_with_any_finding": 0,
+    "clean": 12,
+    "findings": 0,
+    "unsupported_findings": 0
+   },
+   "local-llama-3-2-3b": {
+    "cases": 24,
+    "usable": 24,
+    "faults_detected": 0,
+    "faults_detected_raw": 0,
+    "faults": 12,
+    "clean_with_high_finding": 0,
+    "clean_with_any_finding": 0,
+    "clean": 12,
+    "findings": 0,
+    "unsupported_findings": 0
+   },
+   "local-llama-3-2-3b-v2": {
+    "cases": 24,
+    "usable": 24,
+    "faults_detected": 0,
+    "faults_detected_raw": 0,
+    "faults": 12,
+    "clean_with_high_finding": 0,
+    "clean_with_any_finding": 0,
+    "clean": 12,
+    "findings": 0,
+    "unsupported_findings": 0
+   },
+   "rules": {
+    "cases": 24,
+    "usable": 24,
+    "faults_detected": 6,
+    "faults_detected_raw": 6,
+    "faults": 12,
+    "clean_with_high_finding": 0,
+    "clean_with_any_finding": 0,
+    "clean": 12,
+    "findings": 16,
+    "unsupported_findings": 0
+   },
+   "local-glimmer": {
+    "cases": 24,
+    "usable": 24,
+    "faults_detected": 1,
+    "faults_detected_raw": 3,
+    "faults": 12,
+    "clean_with_high_finding": 3,
+    "clean_with_any_finding": 9,
+    "clean": 12,
+    "findings": 54,
+    "unsupported_findings": 16
+   }
+  },
+  "gates": {
+   "local-qwen3-4b-2507": {
+    "usable": true,
+    "detected": false,
+    "clean": true,
+    "supported": true
+   },
+   "local-llama-3-1-8b-v2": {
+    "usable": true,
+    "detected": false,
+    "clean": true,
+    "supported": false
+   },
+   "local-qwen3-4b-2507-v2": {
+    "usable": true,
+    "detected": false,
+    "clean": false,
+    "supported": false
+   },
+   "local-llama-3-1-8b": {
+    "usable": true,
+    "detected": false,
+    "clean": true,
+    "supported": true
+   },
+   "local-llama-3-2-3b": {
+    "usable": true,
+    "detected": false,
+    "clean": true,
+    "supported": true
+   },
+   "local-llama-3-2-3b-v2": {
+    "usable": true,
+    "detected": false,
+    "clean": true,
+    "supported": true
+   },
+   "rules": {
+    "usable": true,
+    "detected": false,
+    "clean": true,
+    "supported": true
+   },
+   "local-glimmer": {
+    "usable": true,
+    "detected": false,
+    "clean": true,
+    "supported": false
+   }
+  }
+ },
+ "runs": [
+  {
+   "run": "20261104T031853Z-F-a-model-selection-m3-r1",
+   "set": "main",
+   "arm": "F",
+   "package": "a-model-selection-m3",
+   "temperature": 0.0,
+   "wall_seconds": 0.0,
+   "trace_entries": 5,
+   "per_role": {},
+   "load_seconds": 0.0,
+   "critic_independent_checkpoint": null,
+   "participation": {
+    "executed": {},
+    "executed_checkpoints": [],
+    "configured_not_run": []
+   },
+   "escalations": [],
+   "code_rule_flags": [
+    {
+     "fault_class": "subgroup_deterioration",
+     "evidence": [
+      "b4.mae_gt55",
+      "ridgecv.mae_gt55",
+      "tcn.mae_gt55",
+      "persist.mae_gt55"
+     ],
+     "note": "Models are worse than persistence above 55."
+    },
+    {
+     "fault_class": "non_independent_evidence",
+     "evidence": [
+      "val.years",
+      "gru.mae"
+     ],
+     "note": "The gain is on reused validation years."
+    }
+   ],
+   "status": "awaiting_human",
+   "decision": "request_validation",
+   "decision_correct": true,
+   "agrees_with_code_rule": true,
+   "known_faults_raised": [],
+   "known_faults": 3,
+   "unexcluded_inputs": [],
+   "failed_plan_checks": [],
+   "contribution": {}
+  },
+  {
+   "run": "20261104T031853Z-F-b-nea-provenance-r1",
+   "set": "main",
+   "arm": "F",
+   "package": "b-nea-provenance",
+   "temperature": 0.0,
+   "wall_seconds": 0.0,
+   "trace_entries": 5,
+   "per_role": {},
+   "load_seconds": 0.0,
+   "critic_independent_checkpoint": null,
+   "participation": {
+    "executed": {},
+    "executed_checkpoints": [],
+    "configured_not_run": []
+   },
+   "escalations": [],
+   "code_rule_flags": [
+    {
+     "fault_class": "provenance_conflict",
+     "evidence": [
+      "nea.mismatched",
+      "nea.mm_days"
+     ],
+     "note": "API and file disagree; the cause is not in evidence."
+    },
+    {
+     "fault_class": "missing_observations",
+     "evidence": [
+      "file.conflicts",
+      "file.missing_region"
+     ],
+     "note": "The file has gaps and conflicting labels."
+    }
+   ],
+   "status": "awaiting_human",
+   "decision": "proceed_with_limits",
+   "decision_correct": true,
+   "agrees_with_code_rule": true,
+   "known_faults_raised": [],
+   "known_faults": 2,
+   "unexcluded_inputs": [],
+   "failed_plan_checks": [],
+   "contribution": {}
+  },
+  {
+   "run": "20261104T031853Z-F-c-fire-weather-sufficiency-r1",
+   "set": "main",
+   "arm": "F",
+   "package": "c-fire-weather-sufficiency",
+   "temperature": 0.0,
+   "wall_seconds": 0.0,
+   "trace_entries": 5,
+   "per_role": {},
+   "load_seconds": 0.0,
+   "critic_independent_checkpoint": null,
+   "participation": {
+    "executed": {},
+    "executed_checkpoints": [],
+    "configured_not_run": []
+   },
+   "escalations": [],
+   "code_rule_flags": [
+    {
+     "fault_class": "hindsight_as_forecast",
+     "evidence": [
+      "era5"
+     ],
+     "note": "Hindsight inputs cannot support a T+6 prediction claim."
+    },
+    {
+     "fault_class": "insufficient_evidence",
+     "evidence": [
+      "abl.B3.mae",
+      "abl.B0.mae",
+      "abl.days"
+     ],
+     "note": "Added inputs made the error larger in one season."
+    }
+   ],
+   "status": "awaiting_human",
+   "decision": "abstain",
+   "decision_correct": true,
+   "agrees_with_code_rule": true,
+   "known_faults_raised": [],
+   "known_faults": 3,
+   "unexcluded_inputs": [],
+   "failed_plan_checks": [],
+   "contribution": {}
+  },
+  {
+   "run": "20261104T031853Z-F-d-multisource-design-m5-r1",
+   "set": "main",
+   "arm": "F",
+   "package": "d-multisource-design-m5",
+   "temperature": 0.0,
+   "wall_seconds": 0.0,
+   "trace_entries": 5,
+   "per_role": {},
+   "load_seconds": 0.0,
+   "critic_independent_checkpoint": null,
+   "participation": {
+    "executed": {},
+    "executed_checkpoints": [],
+    "configured_not_run": []
+   },
+   "escalations": [],
+   "code_rule_flags": [
+    {
+     "fault_class": "hindsight_as_forecast",
+     "evidence": [
+      "era5",
+      "imerg_final"
+     ],
+     "note": "Not available at issue time."
+    },
+    {
+     "fault_class": "missing_observations",
+     "evidence": [
+      "hls",
+      "smap"
+     ],
+     "note": "When these values become available is not established."
+    },
+    {
+     "fault_class": "missing_observations",
+     "evidence": [
+      "hls.clear",
+      "smap.rq"
+     ],
+     "note": "Quality checks leave too few usable values."
+    },
+    {
+     "fault_class": "subgroup_deterioration",
+     "evidence": [
+      "t19.R2_vs_R1.skill",
+      "t19.R2_vs_R1.high"
+     ],
+     "note": "Fire inputs help elevated hours and hurt all hours."
+    }
+   ],
+   "status": "awaiting_human",
+   "decision": "proceed_with_limits",
+   "decision_correct": true,
+   "agrees_with_code_rule": true,
+   "known_faults_raised": [],
+   "known_faults": 4,
+   "unexcluded_inputs": [],
+   "failed_plan_checks": [],
+   "contribution": {}
+  },
+  {
+   "run": "20261104T031853Z-F-e-m5-handoff-v2-r1",
+   "set": "main",
+   "arm": "F",
+   "package": "e-m5-handoff-v2",
+   "temperature": 0.0,
+   "wall_seconds": 0.0,
+   "trace_entries": 5,
+   "per_role": {},
+   "load_seconds": 0.0,
+   "critic_independent_checkpoint": null,
+   "participation": {
+    "executed": {},
+    "executed_checkpoints": [],
+    "configured_not_run": []
+   },
+   "escalations": [],
+   "code_rule_flags": [
+    {
+     "fault_class": "hindsight_as_forecast",
+     "evidence": [
+      "imerg_final",
+      "smap_l3",
+      "era5"
+     ],
+     "note": "Not available at issue time."
+    },
+    {
+     "fault_class": "missing_observations",
+     "evidence": [
+      "firms_modis_sp",
+      "imerg_late"
+     ],
+     "note": "When these values become available is not established."
+    },
+    {
+     "fault_class": "subgroup_deterioration",
+     "evidence": [
+      "t19.R2_vs_R1.skill",
+      "t19.R2_vs_R1.high"
+     ],
+     "note": "Fire inputs help elevated hours and hurt all hours."
+    }
+   ],
+   "status": "awaiting_human",
+   "decision": "proceed_with_limits",
+   "decision_correct": true,
+   "agrees_with_code_rule": true,
+   "known_faults_raised": [],
+   "known_faults": 4,
+   "unexcluded_inputs": [],
+   "failed_plan_checks": [],
+   "contribution": {}
+  },
+  {
+   "run": "20261104T031853Z-S-a-model-selection-m3-r1",
+   "set": "main",
+   "arm": "S",
+   "package": "a-model-selection-m3",
+   "temperature": 0.0,
+   "wall_seconds": 279.7,
+   "trace_entries": 9,
+   "per_role": {
+    "lead": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 2595.0,
+     "seconds": 279.703
+    }
+   },
+   "load_seconds": 0.0,
+   "critic_independent_checkpoint": null,
+   "participation": {
+    "executed": {
+     "lead": "local-glimmer"
+    },
+    "executed_checkpoints": [
+     "local-glimmer"
+    ],
+    "configured_not_run": []
+   },
+   "escalations": [
+    "lead check failed: answers_cover_findings"
+   ],
+   "code_rule_flags": [
+    {
+     "fault_class": "subgroup_deterioration",
+     "evidence": [
+      "b4.mae_gt55",
+      "ridgecv.mae_gt55",
+      "tcn.mae_gt55",
+      "persist.mae_gt55"
+     ],
+     "note": "Models are worse than persistence above 55."
+    },
+    {
+     "fault_class": "non_independent_evidence",
+     "evidence": [
+      "val.years",
+      "gru.mae"
+     ],
+     "note": "The gain is on reused validation years."
+    }
+   ],
+   "status": "awaiting_human",
+   "decision": "retain_baseline",
+   "decision_correct": true,
+   "agrees_with_code_rule": true,
+   "known_faults_raised": [],
+   "known_faults": 3,
+   "unexcluded_inputs": [],
+   "failed_plan_checks": [
+    "answers_cover_findings"
+   ],
+   "contribution": {}
+  },
+  {
+   "run": "20261104T032333Z-S-b-nea-provenance-r1",
+   "set": "main",
+   "arm": "S",
+   "package": "b-nea-provenance",
+   "temperature": 0.0,
+   "wall_seconds": 257.6,
+   "trace_entries": 9,
+   "per_role": {
+    "lead": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 2288.0,
+     "seconds": 257.549
+    }
+   },
+   "load_seconds": 0.0,
+   "critic_independent_checkpoint": null,
+   "participation": {
+    "executed": {
+     "lead": "local-glimmer"
+    },
+    "executed_checkpoints": [
+     "local-glimmer"
+    ],
+    "configured_not_run": []
+   },
+   "escalations": [
+    "lead check failed: answers_cover_findings"
+   ],
+   "code_rule_flags": [
+    {
+     "fault_class": "provenance_conflict",
+     "evidence": [
+      "nea.mismatched",
+      "nea.mm_days"
+     ],
+     "note": "API and file disagree; the cause is not in evidence."
+    },
+    {
+     "fault_class": "missing_observations",
+     "evidence": [
+      "file.conflicts",
+      "file.missing_region"
+     ],
+     "note": "The file has gaps and conflicting labels."
+    }
+   ],
+   "status": "awaiting_human",
+   "decision": "proceed_with_limits",
+   "decision_correct": true,
+   "agrees_with_code_rule": true,
+   "known_faults_raised": [],
+   "known_faults": 2,
+   "unexcluded_inputs": [],
+   "failed_plan_checks": [
+    "answers_cover_findings"
+   ],
+   "contribution": {}
+  },
+  {
+   "run": "20261104T032751Z-S-c-fire-weather-sufficiency-r1",
+   "set": "main",
+   "arm": "S",
+   "package": "c-fire-weather-sufficiency",
+   "temperature": 0.0,
+   "wall_seconds": 210.0,
+   "trace_entries": 9,
+   "per_role": {
+    "lead": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 2035.0,
+     "seconds": 210.017
+    }
+   },
+   "load_seconds": 0.0,
+   "critic_independent_checkpoint": null,
+   "participation": {
+    "executed": {
+     "lead": "local-glimmer"
+    },
+    "executed_checkpoints": [
+     "local-glimmer"
+    ],
+    "configured_not_run": []
+   },
+   "escalations": [
+    "lead check failed: answers_cover_findings"
+   ],
+   "code_rule_flags": [
+    {
+     "fault_class": "hindsight_as_forecast",
+     "evidence": [
+      "era5"
+     ],
+     "note": "Hindsight inputs cannot support a T+6 prediction claim."
+    },
+    {
+     "fault_class": "insufficient_evidence",
+     "evidence": [
+      "abl.B3.mae",
+      "abl.B0.mae",
+      "abl.days"
+     ],
+     "note": "Added inputs made the error larger in one season."
+    }
+   ],
+   "status": "awaiting_human",
+   "decision": "request_data",
+   "decision_correct": true,
+   "agrees_with_code_rule": true,
+   "known_faults_raised": [],
+   "known_faults": 3,
+   "unexcluded_inputs": [],
+   "failed_plan_checks": [
+    "answers_cover_findings"
+   ],
+   "contribution": {}
+  },
+  {
+   "run": "20261104T033121Z-S-d-multisource-design-m5-r1",
+   "set": "main",
+   "arm": "S",
+   "package": "d-multisource-design-m5",
+   "temperature": 0.0,
+   "wall_seconds": 373.7,
+   "trace_entries": 9,
+   "per_role": {
+    "lead": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 3310.0,
+     "seconds": 373.7
+    }
+   },
+   "load_seconds": 0.0,
+   "critic_independent_checkpoint": null,
+   "participation": {
+    "executed": {
+     "lead": "local-glimmer"
+    },
+    "executed_checkpoints": [
+     "local-glimmer"
+    ],
+    "configured_not_run": []
+   },
+   "escalations": [
+    "lead check failed: numbers_grounded",
+    "lead check failed: answers_cover_findings"
+   ],
+   "code_rule_flags": [
+    {
+     "fault_class": "hindsight_as_forecast",
+     "evidence": [
+      "era5",
+      "imerg_final"
+     ],
+     "note": "Not available at issue time."
+    },
+    {
+     "fault_class": "missing_observations",
+     "evidence": [
+      "hls",
+      "smap"
+     ],
+     "note": "When these values become available is not established."
+    },
+    {
+     "fault_class": "missing_observations",
+     "evidence": [
+      "hls.clear",
+      "smap.rq"
+     ],
+     "note": "Quality checks leave too few usable values."
+    },
+    {
+     "fault_class": "subgroup_deterioration",
+     "evidence": [
+      "t19.R2_vs_R1.skill",
+      "t19.R2_vs_R1.high"
+     ],
+     "note": "Fire inputs help elevated hours and hurt all hours."
+    }
+   ],
+   "status": "awaiting_human",
+   "decision": "proceed_with_limits",
+   "decision_correct": true,
+   "agrees_with_code_rule": true,
+   "known_faults_raised": [],
+   "known_faults": 4,
+   "unexcluded_inputs": [],
+   "failed_plan_checks": [
+    "numbers_grounded",
+    "answers_cover_findings"
+   ],
+   "contribution": {}
+  },
+  {
+   "run": "20261104T033734Z-S-e-m5-handoff-v2-r1",
+   "set": "main",
+   "arm": "S",
+   "package": "e-m5-handoff-v2",
+   "temperature": 0.0,
+   "wall_seconds": 411.3,
+   "trace_entries": 9,
+   "per_role": {
+    "lead": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 3842.0,
+     "seconds": 411.314
+    }
+   },
+   "load_seconds": 0.0,
+   "critic_independent_checkpoint": null,
+   "participation": {
+    "executed": {
+     "lead": "local-glimmer"
+    },
+    "executed_checkpoints": [
+     "local-glimmer"
+    ],
+    "configured_not_run": []
+   },
+   "escalations": [
+    "lead check failed: numbers_grounded",
+    "lead check failed: answers_cover_findings"
+   ],
+   "code_rule_flags": [
+    {
+     "fault_class": "hindsight_as_forecast",
+     "evidence": [
+      "imerg_final",
+      "smap_l3",
+      "era5"
+     ],
+     "note": "Not available at issue time."
+    },
+    {
+     "fault_class": "missing_observations",
+     "evidence": [
+      "firms_modis_sp",
+      "imerg_late"
+     ],
+     "note": "When these values become available is not established."
+    },
+    {
+     "fault_class": "subgroup_deterioration",
+     "evidence": [
+      "t19.R2_vs_R1.skill",
+      "t19.R2_vs_R1.high"
+     ],
+     "note": "Fire inputs help elevated hours and hurt all hours."
+    }
+   ],
+   "status": "awaiting_human",
+   "decision": "proceed_with_limits",
+   "decision_correct": true,
+   "agrees_with_code_rule": true,
+   "known_faults_raised": [],
+   "known_faults": 4,
+   "unexcluded_inputs": [],
+   "failed_plan_checks": [
+    "numbers_grounded",
+    "answers_cover_findings"
+   ],
+   "contribution": {}
+  },
+  {
+   "run": "20261104T034426Z-H-a-model-selection-m3-r1",
+   "set": "main",
+   "arm": "H",
+   "package": "a-model-selection-m3",
+   "temperature": 0.0,
+   "wall_seconds": 733.0,
+   "trace_entries": 22,
+   "per_role": {
+    "data_specialist": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 2919.0,
+     "seconds": 74.085
+    },
+    "ml_engineer": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 2530.0,
+     "seconds": 58.313
+    },
+    "lead": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 4255.0,
+     "seconds": 384.071
+    },
+    "pm": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 3343.0,
+     "seconds": 206.094
+    }
+   },
+   "load_seconds": 10.3,
+   "critic_independent_checkpoint": null,
+   "participation": {
+    "executed": {
+     "data_specialist": "local-llama-3-2-3b",
+     "ml_engineer": "local-qwen3-4b-2507",
+     "lead": "local-glimmer",
+     "pm": "local-glimmer"
+    },
+    "executed_checkpoints": [
+     "local-glimmer",
+     "local-llama-3-2-3b",
+     "local-qwen3-4b-2507"
+    ],
+    "configured_not_run": []
+   },
+   "escalations": [
+    "PM asks to revise: The final plan decision is request_validation and the narrative acknowledges evaluator numbers, elevated hours >55 \u00b5g/m3, and reuse of validation years. However the dispositions and claims are not backed by package citations as required. Evidence arrays are empty and the code checks report unknown/\u200b"
+   ],
+   "code_rule_flags": [
+    {
+     "fault_class": "subgroup_deterioration",
+     "evidence": [
+      "b4.mae_gt55",
+      "ridgecv.mae_gt55",
+      "tcn.mae_gt55",
+      "persist.mae_gt55"
+     ],
+     "note": "Models are worse than persistence above 55."
+    },
+    {
+     "fault_class": "non_independent_evidence",
+     "evidence": [
+      "val.years",
+      "gru.mae"
+     ],
+     "note": "The gain is on reused validation years."
+    }
+   ],
+   "status": "awaiting_human",
+   "decision": "request_validation",
+   "decision_correct": true,
+   "agrees_with_code_rule": true,
+   "known_faults_raised": [],
+   "known_faults": 3,
+   "unexcluded_inputs": [],
+   "failed_plan_checks": [],
+   "contribution": {
+    "data_specialist": {
+     "valid_output": true,
+     "findings": 5,
+     "detected_known_fault": false,
+     "new_backed_concern": false,
+     "unsupported_finding": 5,
+     "redundant": false,
+     "accepted_by_lead": 3
+    },
+    "ml_engineer": {
+     "valid_output": true,
+     "findings": 4,
+     "detected_known_fault": false,
+     "new_backed_concern": false,
+     "unsupported_finding": 4,
+     "redundant": false,
+     "accepted_by_lead": 3
+    }
+   }
+  },
+  {
+   "run": "20261104T035639Z-H-b-nea-provenance-r1",
+   "set": "main",
+   "arm": "H",
+   "package": "b-nea-provenance",
+   "temperature": 0.0,
+   "wall_seconds": 480.2,
+   "trace_entries": 22,
+   "per_role": {
+    "data_specialist": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 1259.0,
+     "seconds": 3.264
+    },
+    "ml_engineer": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 2374.0,
+     "seconds": 61.543
+    },
+    "lead": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 3018.0,
+     "seconds": 254.25
+    },
+    "pm": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 2400.0,
+     "seconds": 154.29
+    }
+   },
+   "load_seconds": 6.8,
+   "critic_independent_checkpoint": null,
+   "participation": {
+    "executed": {
+     "data_specialist": "local-llama-3-2-3b",
+     "ml_engineer": "local-qwen3-4b-2507",
+     "lead": "local-glimmer",
+     "pm": "local-glimmer"
+    },
+    "executed_checkpoints": [
+     "local-glimmer",
+     "local-llama-3-2-3b",
+     "local-qwen3-4b-2507"
+    ],
+    "configured_not_run": []
+   },
+   "escalations": [
+    "lead check failed: answers_cover_findings",
+    "medium ml_engineer finding m2: unanswered",
+    "high ml_engineer finding m3: unanswered",
+    "PM asks to revise: The final plan separates known comparison results from file artefacts and states use limits, and the decision request_data is allowed. Revise to make the separation of known facts vs inconsistencies explicit in the disposition text and ensure the stated limit of use / next check is captured as a ver"
+   ],
+   "code_rule_flags": [
+    {
+     "fault_class": "provenance_conflict",
+     "evidence": [
+      "nea.mismatched",
+      "nea.mm_days"
+     ],
+     "note": "API and file disagree; the cause is not in evidence."
+    },
+    {
+     "fault_class": "missing_observations",
+     "evidence": [
+      "file.conflicts",
+      "file.missing_region"
+     ],
+     "note": "The file has gaps and conflicting labels."
+    }
+   ],
+   "status": "awaiting_human",
+   "decision": "request_data",
+   "decision_correct": true,
+   "agrees_with_code_rule": true,
+   "known_faults_raised": [],
+   "known_faults": 2,
+   "unexcluded_inputs": [],
+   "failed_plan_checks": [
+    "answers_cover_findings"
+   ],
+   "contribution": {
+    "data_specialist": {
+     "valid_output": true,
+     "findings": 0,
+     "detected_known_fault": false,
+     "new_backed_concern": false,
+     "unsupported_finding": 0,
+     "redundant": false,
+     "accepted_by_lead": 0
+    },
+    "ml_engineer": {
+     "valid_output": true,
+     "findings": 3,
+     "detected_known_fault": false,
+     "new_backed_concern": false,
+     "unsupported_finding": 3,
+     "redundant": false,
+     "accepted_by_lead": 1
+    }
+   }
+  },
+  {
+   "run": "20261104T040439Z-H-c-fire-weather-sufficiency-r1",
+   "set": "main",
+   "arm": "H",
+   "package": "c-fire-weather-sufficiency",
+   "temperature": 0.0,
+   "wall_seconds": 710.3,
+   "trace_entries": 22,
+   "per_role": {
+    "data_specialist": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 2055.0,
+     "seconds": 39.972
+    },
+    "ml_engineer": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 2205.0,
+     "seconds": 57.142
+    },
+    "lead": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 4430.0,
+     "seconds": 448.643
+    },
+    "pm": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 2628.0,
+     "seconds": 158.588
+    }
+   },
+   "load_seconds": 5.8,
+   "critic_independent_checkpoint": null,
+   "participation": {
+    "executed": {
+     "data_specialist": "local-llama-3-2-3b",
+     "ml_engineer": "local-qwen3-4b-2507",
+     "lead": "local-glimmer",
+     "pm": "local-glimmer"
+    },
+    "executed_checkpoints": [
+     "local-glimmer",
+     "local-llama-3-2-3b",
+     "local-qwen3-4b-2507"
+    ],
+    "configured_not_run": []
+   },
+   "escalations": [
+    "lead check failed: answers_cover_findings",
+    "high data_specialist finding d2: unanswered",
+    "high data_specialist finding d4: unanswered",
+    "high ml_engineer finding m1: unanswered",
+    "high ml_engineer finding m2: unanswered",
+    "high ml_engineer finding m3: unanswered",
+    "medium ml_engineer finding m4: unanswered",
+    "PM asks to revise: The final plan does not satisfy the acceptance criteria and the evidence coverage required by the checks. The plan decision is abstain, which is allowed, but the stated claims and dispositions are incomplete: only NEA availability is dispositioned, and the required statements about issue-time avail\u00ad"
+   ],
+   "code_rule_flags": [
+    {
+     "fault_class": "hindsight_as_forecast",
+     "evidence": [
+      "era5"
+     ],
+     "note": "Hindsight inputs cannot support a T+6 prediction claim."
+    },
+    {
+     "fault_class": "insufficient_evidence",
+     "evidence": [
+      "abl.B3.mae",
+      "abl.B0.mae",
+      "abl.days"
+     ],
+     "note": "Added inputs made the error larger in one season."
+    }
+   ],
+   "status": "awaiting_human",
+   "decision": "abstain",
+   "decision_correct": true,
+   "agrees_with_code_rule": true,
+   "known_faults_raised": [],
+   "known_faults": 3,
+   "unexcluded_inputs": [],
+   "failed_plan_checks": [
+    "answers_cover_findings"
+   ],
+   "contribution": {
+    "data_specialist": {
+     "valid_output": true,
+     "findings": 5,
+     "detected_known_fault": false,
+     "new_backed_concern": false,
+     "unsupported_finding": 5,
+     "redundant": false,
+     "accepted_by_lead": 1
+    },
+    "ml_engineer": {
+     "valid_output": true,
+     "findings": 4,
+     "detected_known_fault": false,
+     "new_backed_concern": false,
+     "unsupported_finding": 4,
+     "redundant": false,
+     "accepted_by_lead": 0
+    }
+   }
+  },
+  {
+   "run": "20261104T041629Z-H-d-multisource-design-m5-r1",
+   "set": "main",
+   "arm": "H",
+   "package": "d-multisource-design-m5",
+   "temperature": 0.0,
+   "wall_seconds": 1039.1,
+   "trace_entries": 23,
+   "per_role": {
+    "data_specialist": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 2510.0,
+     "seconds": 36.553
+    },
+    "ml_engineer": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 3440.0,
+     "seconds": 98.499
+    },
+    "lead": {
+     "calls": 2.0,
+     "repairs": 1.0,
+     "tokens": 9422.0,
+     "seconds": 674.903
+    },
+    "pm": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 3682.0,
+     "seconds": 222.245
+    }
+   },
+   "load_seconds": 6.8,
+   "critic_independent_checkpoint": null,
+   "participation": {
+    "executed": {
+     "data_specialist": "local-llama-3-2-3b",
+     "ml_engineer": "local-qwen3-4b-2507",
+     "lead": "local-glimmer",
+     "pm": "local-glimmer"
+    },
+    "executed_checkpoints": [
+     "local-glimmer",
+     "local-llama-3-2-3b",
+     "local-qwen3-4b-2507"
+    ],
+    "configured_not_run": []
+   },
+   "escalations": [
+    "PM asks to revise: The final plan identifies suitable inputs and proposes an experiment, but the evidence citations and value grounding need correction before forwarding. The dispositions reference source fields such as latency_hours and availability that are not cited with package IDs and cited values, and the ML-ev\u00ad"
+   ],
+   "code_rule_flags": [
+    {
+     "fault_class": "hindsight_as_forecast",
+     "evidence": [
+      "era5",
+      "imerg_final"
+     ],
+     "note": "Not available at issue time."
+    },
+    {
+     "fault_class": "missing_observations",
+     "evidence": [
+      "hls",
+      "smap"
+     ],
+     "note": "When these values become available is not established."
+    },
+    {
+     "fault_class": "missing_observations",
+     "evidence": [
+      "hls.clear",
+      "smap.rq"
+     ],
+     "note": "Quality checks leave too few usable values."
+    },
+    {
+     "fault_class": "subgroup_deterioration",
+     "evidence": [
+      "t19.R2_vs_R1.skill",
+      "t19.R2_vs_R1.high"
+     ],
+     "note": "Fire inputs help elevated hours and hurt all hours."
+    }
+   ],
+   "status": "awaiting_human",
+   "decision": "proceed_with_limits",
+   "decision_correct": true,
+   "agrees_with_code_rule": true,
+   "known_faults_raised": [],
+   "known_faults": 4,
+   "unexcluded_inputs": [],
+   "failed_plan_checks": [],
+   "contribution": {
+    "data_specialist": {
+     "valid_output": true,
+     "findings": 5,
+     "detected_known_fault": false,
+     "new_backed_concern": false,
+     "unsupported_finding": 5,
+     "redundant": false,
+     "accepted_by_lead": 0
+    },
+    "ml_engineer": {
+     "valid_output": true,
+     "findings": 4,
+     "detected_known_fault": false,
+     "new_backed_concern": false,
+     "unsupported_finding": 4,
+     "redundant": false,
+     "accepted_by_lead": 4
+    }
+   }
+  },
+  {
+   "run": "20261104T043348Z-H-e-m5-handoff-v2-r1",
+   "set": "main",
+   "arm": "H",
+   "package": "e-m5-handoff-v2",
+   "temperature": 0.0,
+   "wall_seconds": 724.2,
+   "trace_entries": 22,
+   "per_role": {
+    "data_specialist": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 3158.0,
+     "seconds": 39.4
+    },
+    "ml_engineer": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 4001.0,
+     "seconds": 90.105
+    },
+    "lead": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 5055.0,
+     "seconds": 372.691
+    },
+    "pm": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 3795.0,
+     "seconds": 215.618
+    }
+   },
+   "load_seconds": 6.3,
+   "critic_independent_checkpoint": null,
+   "participation": {
+    "executed": {
+     "data_specialist": "local-llama-3-2-3b",
+     "ml_engineer": "local-qwen3-4b-2507",
+     "lead": "local-glimmer",
+     "pm": "local-glimmer"
+    },
+    "executed_checkpoints": [
+     "local-glimmer",
+     "local-llama-3-2-3b",
+     "local-qwen3-4b-2507"
+    ],
+    "configured_not_run": []
+   },
+   "escalations": [
+    "decision abstain is outside the code rule ['proceed_with_limits', 'request_validation']",
+    "lead check failed: answers_cover_findings",
+    "high ml_engineer finding m1: unanswered",
+    "high ml_engineer finding m2: unanswered",
+    "high ml_engineer finding m3: unanswered",
+    "medium ml_engineer finding m4: unanswered",
+    "high ml_engineer finding m5: unanswered",
+    "PM asks to revise: The final plan restricts inputs to issue-time valid NEA PM2.5 and IMERG Early and excludes gated/out-of-scope inputs, and it does not claim supported gain from Stage P or a single season. The plan is otherwise incomplete: the lead check reports answers_cover_findings = false with missing ['d4','d6',"
+   ],
+   "code_rule_flags": [
+    {
+     "fault_class": "hindsight_as_forecast",
+     "evidence": [
+      "imerg_final",
+      "smap_l3",
+      "era5"
+     ],
+     "note": "Not available at issue time."
+    },
+    {
+     "fault_class": "missing_observations",
+     "evidence": [
+      "firms_modis_sp",
+      "imerg_late"
+     ],
+     "note": "When these values become available is not established."
+    },
+    {
+     "fault_class": "subgroup_deterioration",
+     "evidence": [
+      "t19.R2_vs_R1.skill",
+      "t19.R2_vs_R1.high"
+     ],
+     "note": "Fire inputs help elevated hours and hurt all hours."
+    }
+   ],
+   "status": "awaiting_human",
+   "decision": "abstain",
+   "decision_correct": false,
+   "agrees_with_code_rule": false,
+   "known_faults_raised": [
+    "hindsight_as_forecast",
+    "subgroup_deterioration"
+   ],
+   "known_faults": 4,
+   "unexcluded_inputs": [],
+   "failed_plan_checks": [
+    "answers_cover_findings"
+   ],
+   "contribution": {
+    "data_specialist": {
+     "valid_output": true,
+     "findings": 5,
+     "detected_known_fault": false,
+     "new_backed_concern": false,
+     "unsupported_finding": 5,
+     "redundant": false,
+     "accepted_by_lead": 1
+    },
+    "ml_engineer": {
+     "valid_output": true,
+     "findings": 5,
+     "detected_known_fault": true,
+     "new_backed_concern": true,
+     "unsupported_finding": 1,
+     "redundant": false,
+     "accepted_by_lead": 0
+    }
+   }
+  },
+  {
+   "run": "20261104T044553Z-HC-a-model-selection-m3-r1",
+   "set": "main",
+   "arm": "HC",
+   "package": "a-model-selection-m3",
+   "temperature": 0.0,
+   "wall_seconds": 1345.6,
+   "trace_entries": 30,
+   "per_role": {
+    "data_specialist": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 2919.0,
+     "seconds": 68.693
+    },
+    "ml_engineer": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 2530.0,
+     "seconds": 54.185
+    },
+    "lead": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 4122.0,
+     "seconds": 334.013
+    },
+    "critic": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 3324.0,
+     "seconds": 343.62
+    },
+    "rebuttal": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 3461.0,
+     "seconds": 328.74
+    },
+    "pm": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 3101.0,
+     "seconds": 209.38
+    }
+   },
+   "load_seconds": 6.8,
+   "critic_independent_checkpoint": false,
+   "participation": {
+    "executed": {
+     "data_specialist": "local-llama-3-2-3b",
+     "ml_engineer": "local-qwen3-4b-2507",
+     "lead": "local-glimmer",
+     "critic": "local-glimmer",
+     "rebuttal": "local-glimmer",
+     "pm": "local-glimmer"
+    },
+    "executed_checkpoints": [
+     "local-glimmer",
+     "local-llama-3-2-3b",
+     "local-qwen3-4b-2507"
+    ],
+    "configured_not_run": []
+   },
+   "escalations": [
+    "PM asks to revise: The plan requests validation and states reuse of validation years 2019 to 2023, and notes the absence of a paired interval and sealed untouched test period. The decision is grounded in evaluator numbers: B4_lagged_ridge validation MAE all hours is 4.68 ug/m3 and GRU candidate from a later run on the"
+   ],
+   "code_rule_flags": [
+    {
+     "fault_class": "subgroup_deterioration",
+     "evidence": [
+      "b4.mae_gt55",
+      "ridgecv.mae_gt55",
+      "tcn.mae_gt55",
+      "persist.mae_gt55"
+     ],
+     "note": "Models are worse than persistence above 55."
+    },
+    {
+     "fault_class": "non_independent_evidence",
+     "evidence": [
+      "val.years",
+      "gru.mae"
+     ],
+     "note": "The gain is on reused validation years."
+    }
+   ],
+   "status": "awaiting_human",
+   "decision": "request_validation",
+   "decision_correct": true,
+   "agrees_with_code_rule": true,
+   "known_faults_raised": [],
+   "known_faults": 3,
+   "unexcluded_inputs": [],
+   "failed_plan_checks": [],
+   "contribution": {
+    "data_specialist": {
+     "valid_output": true,
+     "findings": 5,
+     "detected_known_fault": false,
+     "new_backed_concern": false,
+     "unsupported_finding": 5,
+     "redundant": false,
+     "accepted_by_lead": 0
+    },
+    "ml_engineer": {
+     "valid_output": true,
+     "findings": 4,
+     "detected_known_fault": false,
+     "new_backed_concern": false,
+     "unsupported_finding": 4,
+     "redundant": false,
+     "accepted_by_lead": 0
+    },
+    "critic": {
+     "valid_output": true,
+     "findings": 1,
+     "detected_known_fault": false,
+     "new_backed_concern": true,
+     "unsupported_finding": 0,
+     "redundant": false,
+     "accepted_by_lead": 1
+    }
+   }
+  },
+  {
+   "run": "20261104T050818Z-HC-b-nea-provenance-r1",
+   "set": "main",
+   "arm": "HC",
+   "package": "b-nea-provenance",
+   "temperature": 0.0,
+   "wall_seconds": 580.2,
+   "trace_entries": 26,
+   "per_role": {
+    "data_specialist": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 1259.0,
+     "seconds": 3.617
+    },
+    "ml_engineer": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 2374.0,
+     "seconds": 61.752
+    },
+    "lead": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 3018.0,
+     "seconds": 241.059
+    },
+    "critic": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 2058.0,
+     "seconds": 137.958
+    },
+    "pm": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 2400.0,
+     "seconds": 129.036
+    }
+   },
+   "load_seconds": 6.7,
+   "critic_independent_checkpoint": false,
+   "participation": {
+    "executed": {
+     "data_specialist": "local-llama-3-2-3b",
+     "ml_engineer": "local-qwen3-4b-2507",
+     "lead": "local-glimmer",
+     "critic": "local-glimmer",
+     "pm": "local-glimmer"
+    },
+    "executed_checkpoints": [
+     "local-glimmer",
+     "local-llama-3-2-3b",
+     "local-qwen3-4b-2507"
+    ],
+    "configured_not_run": [
+     "rebuttal"
+    ]
+   },
+   "escalations": [
+    "lead check failed: answers_cover_findings",
+    "medium ml_engineer finding m2: unanswered",
+    "high ml_engineer finding m3: unanswered",
+    "PM asks to revise: The final plan separates known comparison results from file artefacts and states use limits, and the decision request_data is allowed. Revise to make the separation of known facts vs inconsistencies explicit in the disposition text and ensure the stated limit of use / next check is captured as a ver"
+   ],
+   "code_rule_flags": [
+    {
+     "fault_class": "provenance_conflict",
+     "evidence": [
+      "nea.mismatched",
+      "nea.mm_days"
+     ],
+     "note": "API and file disagree; the cause is not in evidence."
+    },
+    {
+     "fault_class": "missing_observations",
+     "evidence": [
+      "file.conflicts",
+      "file.missing_region"
+     ],
+     "note": "The file has gaps and conflicting labels."
+    }
+   ],
+   "status": "awaiting_human",
+   "decision": "request_data",
+   "decision_correct": true,
+   "agrees_with_code_rule": true,
+   "known_faults_raised": [],
+   "known_faults": 2,
+   "unexcluded_inputs": [],
+   "failed_plan_checks": [
+    "answers_cover_findings"
+   ],
+   "contribution": {
+    "data_specialist": {
+     "valid_output": true,
+     "findings": 0,
+     "detected_known_fault": false,
+     "new_backed_concern": false,
+     "unsupported_finding": 0,
+     "redundant": false,
+     "accepted_by_lead": 0
+    },
+    "ml_engineer": {
+     "valid_output": true,
+     "findings": 3,
+     "detected_known_fault": false,
+     "new_backed_concern": false,
+     "unsupported_finding": 3,
+     "redundant": false,
+     "accepted_by_lead": 1
+    },
+    "critic": {
+     "valid_output": true,
+     "findings": 0,
+     "detected_known_fault": false,
+     "new_backed_concern": false,
+     "unsupported_finding": 0,
+     "redundant": false,
+     "accepted_by_lead": 0
+    }
+   }
+  },
+  {
+   "run": "20261104T051758Z-HC-c-fire-weather-sufficiency-r1",
+   "set": "main",
+   "arm": "HC",
+   "package": "c-fire-weather-sufficiency",
+   "temperature": 0.0,
+   "wall_seconds": 839.9,
+   "trace_entries": 26,
+   "per_role": {
+    "data_specialist": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 2055.0,
+     "seconds": 38.663
+    },
+    "ml_engineer": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 2205.0,
+     "seconds": 50.204
+    },
+    "lead": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 4430.0,
+     "seconds": 431.347
+    },
+    "critic": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 2264.0,
+     "seconds": 180.948
+    },
+    "pm": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 2628.0,
+     "seconds": 131.934
+    }
+   },
+   "load_seconds": 6.7,
+   "critic_independent_checkpoint": false,
+   "participation": {
+    "executed": {
+     "data_specialist": "local-llama-3-2-3b",
+     "ml_engineer": "local-qwen3-4b-2507",
+     "lead": "local-glimmer",
+     "critic": "local-glimmer",
+     "pm": "local-glimmer"
+    },
+    "executed_checkpoints": [
+     "local-glimmer",
+     "local-llama-3-2-3b",
+     "local-qwen3-4b-2507"
+    ],
+    "configured_not_run": [
+     "rebuttal"
+    ]
+   },
+   "escalations": [
+    "lead check failed: answers_cover_findings",
+    "high data_specialist finding d2: unanswered",
+    "high data_specialist finding d4: unanswered",
+    "high ml_engineer finding m1: unanswered",
+    "high ml_engineer finding m2: unanswered",
+    "high ml_engineer finding m3: unanswered",
+    "medium ml_engineer finding m4: unanswered",
+    "PM asks to revise: The final plan does not satisfy the acceptance criteria and the evidence coverage required by the checks. The plan decision is abstain, which is allowed, but the stated claims and dispositions are incomplete: only NEA availability is dispositioned, and the required statements about issue-time avail\u00ad"
+   ],
+   "code_rule_flags": [
+    {
+     "fault_class": "hindsight_as_forecast",
+     "evidence": [
+      "era5"
+     ],
+     "note": "Hindsight inputs cannot support a T+6 prediction claim."
+    },
+    {
+     "fault_class": "insufficient_evidence",
+     "evidence": [
+      "abl.B3.mae",
+      "abl.B0.mae",
+      "abl.days"
+     ],
+     "note": "Added inputs made the error larger in one season."
+    }
+   ],
+   "status": "awaiting_human",
+   "decision": "abstain",
+   "decision_correct": true,
+   "agrees_with_code_rule": true,
+   "known_faults_raised": [],
+   "known_faults": 3,
+   "unexcluded_inputs": [],
+   "failed_plan_checks": [
+    "answers_cover_findings"
+   ],
+   "contribution": {
+    "data_specialist": {
+     "valid_output": true,
+     "findings": 5,
+     "detected_known_fault": false,
+     "new_backed_concern": false,
+     "unsupported_finding": 5,
+     "redundant": false,
+     "accepted_by_lead": 1
+    },
+    "ml_engineer": {
+     "valid_output": true,
+     "findings": 4,
+     "detected_known_fault": false,
+     "new_backed_concern": false,
+     "unsupported_finding": 4,
+     "redundant": false,
+     "accepted_by_lead": 0
+    },
+    "critic": {
+     "valid_output": true,
+     "findings": 0,
+     "detected_known_fault": false,
+     "new_backed_concern": false,
+     "unsupported_finding": 0,
+     "redundant": false,
+     "accepted_by_lead": 0
+    }
+   }
+  },
+  {
+   "run": "20261104T053158Z-HC-d-multisource-design-m5-r1",
+   "set": "main",
+   "arm": "HC",
+   "package": "d-multisource-design-m5",
+   "temperature": 0.0,
+   "wall_seconds": 1706.0,
+   "trace_entries": 31,
+   "per_role": {
+    "data_specialist": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 2510.0,
+     "seconds": 30.488
+    },
+    "ml_engineer": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 3440.0,
+     "seconds": 81.171
+    },
+    "lead": {
+     "calls": 2.0,
+     "repairs": 1.0,
+     "tokens": 9491.0,
+     "seconds": 656.973
+    },
+    "critic": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 4167.0,
+     "seconds": 388.796
+    },
+    "rebuttal": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 4234.0,
+     "seconds": 338.374
+    },
+    "pm": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 3616.0,
+     "seconds": 203.873
+    }
+   },
+   "load_seconds": 6.2,
+   "critic_independent_checkpoint": false,
+   "participation": {
+    "executed": {
+     "data_specialist": "local-llama-3-2-3b",
+     "ml_engineer": "local-qwen3-4b-2507",
+     "lead": "local-glimmer",
+     "critic": "local-glimmer",
+     "rebuttal": "local-glimmer",
+     "pm": "local-glimmer"
+    },
+    "executed_checkpoints": [
+     "local-glimmer",
+     "local-llama-3-2-3b",
+     "local-qwen3-4b-2507"
+    ],
+    "configured_not_run": []
+   },
+   "escalations": [
+    "rebuttal check failed: numbers_grounded",
+    "PM asks to revise: The final plan excludes FIRMS and IMERG Early from the prediction feature set, yet both are issue-time-valid per the package. FIRMS has availability 'issue_time_valid' and latency_hours 3.0; IMERG Early has availability 'issue_time_valid' and latency_hours 4.0. ERA5 is hindsight with latency_hours  "
+   ],
+   "code_rule_flags": [
+    {
+     "fault_class": "hindsight_as_forecast",
+     "evidence": [
+      "era5",
+      "imerg_final"
+     ],
+     "note": "Not available at issue time."
+    },
+    {
+     "fault_class": "missing_observations",
+     "evidence": [
+      "hls",
+      "smap"
+     ],
+     "note": "When these values become available is not established."
+    },
+    {
+     "fault_class": "missing_observations",
+     "evidence": [
+      "hls.clear",
+      "smap.rq"
+     ],
+     "note": "Quality checks leave too few usable values."
+    },
+    {
+     "fault_class": "subgroup_deterioration",
+     "evidence": [
+      "t19.R2_vs_R1.skill",
+      "t19.R2_vs_R1.high"
+     ],
+     "note": "Fire inputs help elevated hours and hurt all hours."
+    }
+   ],
+   "status": "awaiting_human",
+   "decision": "proceed_with_limits",
+   "decision_correct": true,
+   "agrees_with_code_rule": true,
+   "known_faults_raised": [],
+   "known_faults": 4,
+   "unexcluded_inputs": [],
+   "failed_plan_checks": [
+    "numbers_grounded"
+   ],
+   "contribution": {
+    "data_specialist": {
+     "valid_output": true,
+     "findings": 5,
+     "detected_known_fault": false,
+     "new_backed_concern": false,
+     "unsupported_finding": 5,
+     "redundant": false,
+     "accepted_by_lead": 0
+    },
+    "ml_engineer": {
+     "valid_output": true,
+     "findings": 4,
+     "detected_known_fault": false,
+     "new_backed_concern": false,
+     "unsupported_finding": 4,
+     "redundant": false,
+     "accepted_by_lead": 0
+    },
+    "critic": {
+     "valid_output": true,
+     "findings": 2,
+     "detected_known_fault": false,
+     "new_backed_concern": false,
+     "unsupported_finding": 2,
+     "redundant": false,
+     "accepted_by_lead": 2
+    }
+   }
+  },
+  {
+   "run": "20261104T060024Z-HC-e-m5-handoff-v2-r1",
+   "set": "main",
+   "arm": "HC",
+   "package": "e-m5-handoff-v2",
+   "temperature": 0.0,
+   "wall_seconds": 997.4,
+   "trace_entries": 26,
+   "per_role": {
+    "data_specialist": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 3158.0,
+     "seconds": 41.859
+    },
+    "ml_engineer": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 4001.0,
+     "seconds": 89.528
+    },
+    "lead": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 5055.0,
+     "seconds": 354.989
+    },
+    "critic": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 3986.0,
+     "seconds": 292.612
+    },
+    "pm": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 3795.0,
+     "seconds": 211.932
+    }
+   },
+   "load_seconds": 6.4,
+   "critic_independent_checkpoint": false,
+   "participation": {
+    "executed": {
+     "data_specialist": "local-llama-3-2-3b",
+     "ml_engineer": "local-qwen3-4b-2507",
+     "lead": "local-glimmer",
+     "critic": "local-glimmer",
+     "pm": "local-glimmer"
+    },
+    "executed_checkpoints": [
+     "local-glimmer",
+     "local-llama-3-2-3b",
+     "local-qwen3-4b-2507"
+    ],
+    "configured_not_run": [
+     "rebuttal"
+    ]
+   },
+   "escalations": [
+    "decision abstain is outside the code rule ['proceed_with_limits', 'request_validation']",
+    "lead check failed: answers_cover_findings",
+    "high ml_engineer finding m1: unanswered",
+    "high ml_engineer finding m2: unanswered",
+    "high ml_engineer finding m3: unanswered",
+    "medium ml_engineer finding m4: unanswered",
+    "high ml_engineer finding m5: unanswered",
+    "PM asks to revise: The final plan restricts inputs to issue-time valid NEA PM2.5 and IMERG Early and excludes gated/out-of-scope inputs, and it does not claim supported gain from Stage P or a single season. The plan is otherwise incomplete: the lead check reports answers_cover_findings = false with missing ['d4','d6',"
+   ],
+   "code_rule_flags": [
+    {
+     "fault_class": "hindsight_as_forecast",
+     "evidence": [
+      "imerg_final",
+      "smap_l3",
+      "era5"
+     ],
+     "note": "Not available at issue time."
+    },
+    {
+     "fault_class": "missing_observations",
+     "evidence": [
+      "firms_modis_sp",
+      "imerg_late"
+     ],
+     "note": "When these values become available is not established."
+    },
+    {
+     "fault_class": "subgroup_deterioration",
+     "evidence": [
+      "t19.R2_vs_R1.skill",
+      "t19.R2_vs_R1.high"
+     ],
+     "note": "Fire inputs help elevated hours and hurt all hours."
+    }
+   ],
+   "status": "awaiting_human",
+   "decision": "abstain",
+   "decision_correct": false,
+   "agrees_with_code_rule": false,
+   "known_faults_raised": [
+    "hindsight_as_forecast",
+    "subgroup_deterioration"
+   ],
+   "known_faults": 4,
+   "unexcluded_inputs": [],
+   "failed_plan_checks": [
+    "answers_cover_findings"
+   ],
+   "contribution": {
+    "data_specialist": {
+     "valid_output": true,
+     "findings": 5,
+     "detected_known_fault": false,
+     "new_backed_concern": false,
+     "unsupported_finding": 5,
+     "redundant": false,
+     "accepted_by_lead": 1
+    },
+    "ml_engineer": {
+     "valid_output": true,
+     "findings": 5,
+     "detected_known_fault": true,
+     "new_backed_concern": true,
+     "unsupported_finding": 1,
+     "redundant": false,
+     "accepted_by_lead": 0
+    },
+    "critic": {
+     "valid_output": true,
+     "findings": 0,
+     "detected_known_fault": false,
+     "new_backed_concern": false,
+     "unsupported_finding": 0,
+     "redundant": false,
+     "accepted_by_lead": 0
+    }
+   }
+  },
+  {
+   "run": "20261104T061716Z-T-a-model-selection-m3-r1",
+   "set": "main",
+   "arm": "T",
+   "package": "a-model-selection-m3",
+   "temperature": 0.0,
+   "wall_seconds": 1151.0,
+   "trace_entries": 20,
+   "per_role": {
+    "data_specialist": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 2623.0,
+     "seconds": 237.776
+    },
+    "ml_engineer": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 2763.0,
+     "seconds": 274.845
+    },
+    "lead": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 4106.0,
+     "seconds": 422.035
+    },
+    "pm": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 3087.0,
+     "seconds": 216.265
+    }
+   },
+   "load_seconds": 0.0,
+   "critic_independent_checkpoint": null,
+   "participation": {
+    "executed": {
+     "data_specialist": "local-glimmer",
+     "ml_engineer": "local-glimmer",
+     "lead": "local-glimmer",
+     "pm": "local-glimmer"
+    },
+    "executed_checkpoints": [
+     "local-glimmer"
+    ],
+    "configured_not_run": []
+   },
+   "escalations": [
+    "PM asks to revise: The final plan excludes the evaluator and profile sources that are required to support the claims and acceptance criteria, and the dispositions cite non-numeric facts and empty evidence. Inputs_used is empty while claims reference m3_eval and m3_profile values. Revise to include the evaluator and/or"
+   ],
+   "code_rule_flags": [
+    {
+     "fault_class": "subgroup_deterioration",
+     "evidence": [
+      "b4.mae_gt55",
+      "ridgecv.mae_gt55",
+      "tcn.mae_gt55",
+      "persist.mae_gt55"
+     ],
+     "note": "Models are worse than persistence above 55."
+    },
+    {
+     "fault_class": "non_independent_evidence",
+     "evidence": [
+      "val.years",
+      "gru.mae"
+     ],
+     "note": "The gain is on reused validation years."
+    }
+   ],
+   "status": "awaiting_human",
+   "decision": "request_validation",
+   "decision_correct": true,
+   "agrees_with_code_rule": true,
+   "known_faults_raised": [],
+   "known_faults": 3,
+   "unexcluded_inputs": [],
+   "failed_plan_checks": [],
+   "contribution": {
+    "data_specialist": {
+     "valid_output": true,
+     "findings": 5,
+     "detected_known_fault": false,
+     "new_backed_concern": true,
+     "unsupported_finding": 3,
+     "redundant": false,
+     "accepted_by_lead": 5
+    },
+    "ml_engineer": {
+     "valid_output": true,
+     "findings": 4,
+     "detected_known_fault": false,
+     "new_backed_concern": false,
+     "unsupported_finding": 2,
+     "redundant": true,
+     "accepted_by_lead": 4
+    }
+   }
+  },
+  {
+   "run": "20261104T063627Z-T-b-nea-provenance-r1",
+   "set": "main",
+   "arm": "T",
+   "package": "b-nea-provenance",
+   "temperature": 0.0,
+   "wall_seconds": 753.0,
+   "trace_entries": 20,
+   "per_role": {
+    "data_specialist": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 1957.0,
+     "seconds": 183.771
+    },
+    "ml_engineer": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 2057.0,
+     "seconds": 194.089
+    },
+    "lead": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 2804.0,
+     "seconds": 235.245
+    },
+    "pm": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 2176.0,
+     "seconds": 139.813
+    }
+   },
+   "load_seconds": 0.0,
+   "critic_independent_checkpoint": null,
+   "participation": {
+    "executed": {
+     "data_specialist": "local-glimmer",
+     "ml_engineer": "local-glimmer",
+     "lead": "local-glimmer",
+     "pm": "local-glimmer"
+    },
+    "executed_checkpoints": [
+     "local-glimmer"
+    ],
+    "configured_not_run": []
+   },
+   "escalations": [
+    "lead check failed: answers_cover_findings",
+    "medium data_specialist finding d3: unanswered",
+    "high data_specialist finding d4: unanswered",
+    "high data_specialist finding d5: unanswered",
+    "medium ml_engineer finding m1: unanswered",
+    "high ml_engineer finding m3: unanswered",
+    "medium ml_engineer finding m4: unanswered",
+    "medium ml_engineer finding m5: unanswered",
+    "PM asks to revise: The final plan does not separate known facts from inconsistencies and does not present the provenance inconsistencies that are in the evidence package. Known facts and inconsistencies must be kept apart, and a next check / limit of use must be stated. The current dispositions only cover d1 and the `"
+   ],
+   "code_rule_flags": [
+    {
+     "fault_class": "provenance_conflict",
+     "evidence": [
+      "nea.mismatched",
+      "nea.mm_days"
+     ],
+     "note": "API and file disagree; the cause is not in evidence."
+    },
+    {
+     "fault_class": "missing_observations",
+     "evidence": [
+      "file.conflicts",
+      "file.missing_region"
+     ],
+     "note": "The file has gaps and conflicting labels."
+    }
+   ],
+   "status": "awaiting_human",
+   "decision": "proceed_with_limits",
+   "decision_correct": true,
+   "agrees_with_code_rule": true,
+   "known_faults_raised": [],
+   "known_faults": 2,
+   "unexcluded_inputs": [],
+   "failed_plan_checks": [
+    "answers_cover_findings"
+   ],
+   "contribution": {
+    "data_specialist": {
+     "valid_output": true,
+     "findings": 5,
+     "detected_known_fault": false,
+     "new_backed_concern": true,
+     "unsupported_finding": 0,
+     "redundant": false,
+     "accepted_by_lead": 1
+    },
+    "ml_engineer": {
+     "valid_output": true,
+     "findings": 5,
+     "detected_known_fault": false,
+     "new_backed_concern": false,
+     "unsupported_finding": 5,
+     "redundant": false,
+     "accepted_by_lead": 0
+    }
+   }
+  },
+  {
+   "run": "20261104T064900Z-T-c-fire-weather-sufficiency-r1",
+   "set": "main",
+   "arm": "T",
+   "package": "c-fire-weather-sufficiency",
+   "temperature": 0.0,
+   "wall_seconds": 1815.4,
+   "trace_entries": 22,
+   "per_role": {
+    "data_specialist": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 2345.0,
+     "seconds": 247.846
+    },
+    "ml_engineer": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 2321.0,
+     "seconds": 239.973
+    },
+    "lead": {
+     "calls": 2.0,
+     "repairs": 1.0,
+     "tokens": 8299.0,
+     "seconds": 697.644
+    },
+    "pm": {
+     "calls": 2.0,
+     "repairs": 1.0,
+     "tokens": 7655.0,
+     "seconds": 629.844
+    }
+   },
+   "load_seconds": 0.0,
+   "critic_independent_checkpoint": null,
+   "participation": {
+    "executed": {
+     "data_specialist": "local-glimmer",
+     "ml_engineer": "local-glimmer",
+     "lead": "local-glimmer",
+     "pm": "local-glimmer"
+    },
+    "executed_checkpoints": [
+     "local-glimmer"
+    ],
+    "configured_not_run": []
+   },
+   "escalations": [
+    "lead check failed: numbers_grounded",
+    "lead check failed: no_forbidden_claims",
+    "lead check failed: answers_cover_findings",
+    "high ml_engineer finding m1: unanswered",
+    "high ml_engineer finding m2: unanswered",
+    "medium ml_engineer finding m3: unanswered",
+    "PM asks to abstain: ERA5 reanalysis is hindsight only and not available at issue time; ablation is hindsight evaluation only. NEA hourly PM2.5 is issue time valid with latency 2.0 h; FIRMS MODIS standard product fire counts is issue time valid with latency 3.0 h. Ablation MAE rises from 30.76 ug/m3 persistence to 41.75"
+   ],
+   "code_rule_flags": [
+    {
+     "fault_class": "hindsight_as_forecast",
+     "evidence": [
+      "era5"
+     ],
+     "note": "Hindsight inputs cannot support a T+6 prediction claim."
+    },
+    {
+     "fault_class": "insufficient_evidence",
+     "evidence": [
+      "abl.B3.mae",
+      "abl.B0.mae",
+      "abl.days"
+     ],
+     "note": "Added inputs made the error larger in one season."
+    }
+   ],
+   "status": "awaiting_human",
+   "decision": "abstain",
+   "decision_correct": true,
+   "agrees_with_code_rule": true,
+   "known_faults_raised": [],
+   "known_faults": 3,
+   "unexcluded_inputs": [],
+   "failed_plan_checks": [
+    "numbers_grounded",
+    "no_forbidden_claims",
+    "answers_cover_findings"
+   ],
+   "contribution": {
+    "data_specialist": {
+     "valid_output": true,
+     "findings": 5,
+     "detected_known_fault": false,
+     "new_backed_concern": false,
+     "unsupported_finding": 5,
+     "redundant": false,
+     "accepted_by_lead": 5
+    },
+    "ml_engineer": {
+     "valid_output": true,
+     "findings": 3,
+     "detected_known_fault": false,
+     "new_backed_concern": false,
+     "unsupported_finding": 3,
+     "redundant": false,
+     "accepted_by_lead": 0
+    }
+   }
+  },
+  {
+   "run": "20261104T071915Z-T-d-multisource-design-m5-r1",
+   "set": "main",
+   "arm": "T",
+   "package": "d-multisource-design-m5",
+   "temperature": 0.0,
+   "wall_seconds": 1369.8,
+   "trace_entries": 20,
+   "per_role": {
+    "data_specialist": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 3081.0,
+     "seconds": 302.804
+    },
+    "ml_engineer": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 3451.0,
+     "seconds": 449.453
+    },
+    "lead": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 3909.0,
+     "seconds": 418.224
+    },
+    "pm": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 3043.0,
+     "seconds": 199.213
+    }
+   },
+   "load_seconds": 0.0,
+   "critic_independent_checkpoint": null,
+   "participation": {
+    "executed": {
+     "data_specialist": "local-glimmer",
+     "ml_engineer": "local-glimmer",
+     "lead": "local-glimmer",
+     "pm": "local-glimmer"
+    },
+    "executed_checkpoints": [
+     "local-glimmer"
+    ],
+    "configured_not_run": []
+   },
+   "escalations": [
+    "lead check failed: answers_cover_findings",
+    "high data_specialist finding d2: unanswered",
+    "medium data_specialist finding d3: unanswered",
+    "medium data_specialist finding d4: unanswered",
+    "high data_specialist finding d5: unanswered",
+    "high ml_engineer finding m1: unanswered",
+    "high ml_engineer finding m2: unanswered",
+    "medium ml_engineer finding m3: unanswered",
+    "medium ml_engineer finding m4: unanswered",
+    "high ml_engineer finding m5: unanswered",
+    "PM asks to revise: The final plan is incomplete and does not satisfy the acceptance criteria as presented. The dispositions list only finding d1 and the lead check reports answers_cover_findings passed false with missing ['d2','d3','d4','d5','m1','m2','m3','m4','m5']. The plan therefore does not demonstrate that all 5"
+   ],
+   "code_rule_flags": [
+    {
+     "fault_class": "hindsight_as_forecast",
+     "evidence": [
+      "era5",
+      "imerg_final"
+     ],
+     "note": "Not available at issue time."
+    },
+    {
+     "fault_class": "missing_observations",
+     "evidence": [
+      "hls",
+      "smap"
+     ],
+     "note": "When these values become available is not established."
+    },
+    {
+     "fault_class": "missing_observations",
+     "evidence": [
+      "hls.clear",
+      "smap.rq"
+     ],
+     "note": "Quality checks leave too few usable values."
+    },
+    {
+     "fault_class": "subgroup_deterioration",
+     "evidence": [
+      "t19.R2_vs_R1.skill",
+      "t19.R2_vs_R1.high"
+     ],
+     "note": "Fire inputs help elevated hours and hurt all hours."
+    }
+   ],
+   "status": "awaiting_human",
+   "decision": "proceed_with_limits",
+   "decision_correct": true,
+   "agrees_with_code_rule": true,
+   "known_faults_raised": [
+    "missing_observations"
+   ],
+   "known_faults": 4,
+   "unexcluded_inputs": [],
+   "failed_plan_checks": [
+    "answers_cover_findings"
+   ],
+   "contribution": {
+    "data_specialist": {
+     "valid_output": true,
+     "findings": 5,
+     "detected_known_fault": true,
+     "new_backed_concern": true,
+     "unsupported_finding": 0,
+     "redundant": false,
+     "accepted_by_lead": 1
+    },
+    "ml_engineer": {
+     "valid_output": true,
+     "findings": 5,
+     "detected_known_fault": false,
+     "new_backed_concern": false,
+     "unsupported_finding": 5,
+     "redundant": false,
+     "accepted_by_lead": 0
+    }
+   }
+  },
+  {
+   "run": "20261104T074205Z-T-e-m5-handoff-v2-r1",
+   "set": "main",
+   "arm": "T",
+   "package": "e-m5-handoff-v2",
+   "temperature": 0.0,
+   "wall_seconds": 1990.8,
+   "trace_entries": 21,
+   "per_role": {
+    "data_specialist": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 3724.0,
+     "seconds": 432.719
+    },
+    "ml_engineer": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 4283.0,
+     "seconds": 597.774
+    },
+    "lead": {
+     "calls": 2.0,
+     "repairs": 1.0,
+     "tokens": 10142.0,
+     "seconds": 783.512
+    },
+    "pm": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 3761.0,
+     "seconds": 176.675
+    }
+   },
+   "load_seconds": 0.0,
+   "critic_independent_checkpoint": null,
+   "participation": {
+    "executed": {
+     "data_specialist": "local-glimmer",
+     "ml_engineer": "local-glimmer",
+     "lead": "local-glimmer",
+     "pm": "local-glimmer"
+    },
+    "executed_checkpoints": [
+     "local-glimmer"
+    ],
+    "configured_not_run": []
+   },
+   "escalations": [],
+   "code_rule_flags": [
+    {
+     "fault_class": "hindsight_as_forecast",
+     "evidence": [
+      "imerg_final",
+      "smap_l3",
+      "era5"
+     ],
+     "note": "Not available at issue time."
+    },
+    {
+     "fault_class": "missing_observations",
+     "evidence": [
+      "firms_modis_sp",
+      "imerg_late"
+     ],
+     "note": "When these values become available is not established."
+    },
+    {
+     "fault_class": "subgroup_deterioration",
+     "evidence": [
+      "t19.R2_vs_R1.skill",
+      "t19.R2_vs_R1.high"
+     ],
+     "note": "Fire inputs help elevated hours and hurt all hours."
+    }
+   ],
+   "status": "awaiting_human",
+   "decision": "proceed_with_limits",
+   "decision_correct": true,
+   "agrees_with_code_rule": true,
+   "known_faults_raised": [],
+   "known_faults": 4,
+   "unexcluded_inputs": [],
+   "failed_plan_checks": [],
+   "contribution": {
+    "data_specialist": {
+     "valid_output": true,
+     "findings": 5,
+     "detected_known_fault": false,
+     "new_backed_concern": true,
+     "unsupported_finding": 0,
+     "redundant": false,
+     "accepted_by_lead": 5
+    },
+    "ml_engineer": {
+     "valid_output": true,
+     "findings": 4,
+     "detected_known_fault": false,
+     "new_backed_concern": false,
+     "unsupported_finding": 4,
+     "redundant": false,
+     "accepted_by_lead": 4
+    }
+   }
+  },
+  {
+   "run": "20261104T101024Z-H-a-model-selection-m3-r1",
+   "set": "repeat",
+   "arm": "H",
+   "package": "a-model-selection-m3",
+   "temperature": 0.0,
+   "wall_seconds": 935.8,
+   "trace_entries": 22,
+   "per_role": {
+    "data_specialist": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 2919.0,
+     "seconds": 79.593
+    },
+    "ml_engineer": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 2530.0,
+     "seconds": 90.424
+    },
+    "lead": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 4255.0,
+     "seconds": 530.127
+    },
+    "pm": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 3343.0,
+     "seconds": 226.462
+    }
+   },
+   "load_seconds": 9.0,
+   "critic_independent_checkpoint": null,
+   "participation": {
+    "executed": {
+     "data_specialist": "local-llama-3-2-3b",
+     "ml_engineer": "local-qwen3-4b-2507",
+     "lead": "local-glimmer",
+     "pm": "local-glimmer"
+    },
+    "executed_checkpoints": [
+     "local-glimmer",
+     "local-llama-3-2-3b",
+     "local-qwen3-4b-2507"
+    ],
+    "configured_not_run": []
+   },
+   "escalations": [
+    "PM asks to revise: The final plan decision is request_validation and the narrative acknowledges evaluator numbers, elevated hours >55 \u00b5g/m3, and reuse of validation years. However the dispositions and claims are not backed by package citations as required. Evidence arrays are empty and the code checks report unknown/\u200b"
+   ],
+   "code_rule_flags": [
+    {
+     "fault_class": "subgroup_deterioration",
+     "evidence": [
+      "b4.mae_gt55",
+      "ridgecv.mae_gt55",
+      "tcn.mae_gt55",
+      "persist.mae_gt55"
+     ],
+     "note": "Models are worse than persistence above 55."
+    },
+    {
+     "fault_class": "non_independent_evidence",
+     "evidence": [
+      "val.years",
+      "gru.mae"
+     ],
+     "note": "The gain is on reused validation years."
+    }
+   ],
+   "status": "awaiting_human",
+   "decision": "request_validation",
+   "decision_correct": true,
+   "agrees_with_code_rule": true,
+   "known_faults_raised": [],
+   "known_faults": 3,
+   "unexcluded_inputs": [],
+   "failed_plan_checks": [],
+   "contribution": {
+    "data_specialist": {
+     "valid_output": true,
+     "findings": 5,
+     "detected_known_fault": false,
+     "new_backed_concern": false,
+     "unsupported_finding": 5,
+     "redundant": false,
+     "accepted_by_lead": 3
+    },
+    "ml_engineer": {
+     "valid_output": true,
+     "findings": 4,
+     "detected_known_fault": false,
+     "new_backed_concern": false,
+     "unsupported_finding": 4,
+     "redundant": false,
+     "accepted_by_lead": 3
+    }
+   }
+  },
+  {
+   "run": "20261104T115402Z-H-e-m5-handoff-v2-r1",
+   "set": "repeat",
+   "arm": "H",
+   "package": "e-m5-handoff-v2",
+   "temperature": 0.0,
+   "wall_seconds": 926.6,
+   "trace_entries": 22,
+   "per_role": {
+    "data_specialist": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 3158.0,
+     "seconds": 49.924
+    },
+    "ml_engineer": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 4001.0,
+     "seconds": 117.054
+    },
+    "lead": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 5055.0,
+     "seconds": 527.045
+    },
+    "pm": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 3795.0,
+     "seconds": 224.735
+    }
+   },
+   "load_seconds": 7.7,
+   "critic_independent_checkpoint": null,
+   "participation": {
+    "executed": {
+     "data_specialist": "local-llama-3-2-3b",
+     "ml_engineer": "local-qwen3-4b-2507",
+     "lead": "local-glimmer",
+     "pm": "local-glimmer"
+    },
+    "executed_checkpoints": [
+     "local-glimmer",
+     "local-llama-3-2-3b",
+     "local-qwen3-4b-2507"
+    ],
+    "configured_not_run": []
+   },
+   "escalations": [
+    "decision abstain is outside the code rule ['proceed_with_limits', 'request_validation']",
+    "lead check failed: answers_cover_findings",
+    "high ml_engineer finding m1: unanswered",
+    "high ml_engineer finding m2: unanswered",
+    "high ml_engineer finding m3: unanswered",
+    "medium ml_engineer finding m4: unanswered",
+    "high ml_engineer finding m5: unanswered",
+    "PM asks to revise: The final plan restricts inputs to issue-time valid NEA PM2.5 and IMERG Early and excludes gated/out-of-scope inputs, and it does not claim supported gain from Stage P or a single season. The plan is otherwise incomplete: the lead check reports answers_cover_findings = false with missing ['d4','d6',"
+   ],
+   "code_rule_flags": [
+    {
+     "fault_class": "hindsight_as_forecast",
+     "evidence": [
+      "imerg_final",
+      "smap_l3",
+      "era5"
+     ],
+     "note": "Not available at issue time."
+    },
+    {
+     "fault_class": "missing_observations",
+     "evidence": [
+      "firms_modis_sp",
+      "imerg_late"
+     ],
+     "note": "When these values become available is not established."
+    },
+    {
+     "fault_class": "subgroup_deterioration",
+     "evidence": [
+      "t19.R2_vs_R1.skill",
+      "t19.R2_vs_R1.high"
+     ],
+     "note": "Fire inputs help elevated hours and hurt all hours."
+    }
+   ],
+   "status": "awaiting_human",
+   "decision": "abstain",
+   "decision_correct": false,
+   "agrees_with_code_rule": false,
+   "known_faults_raised": [
+    "hindsight_as_forecast",
+    "subgroup_deterioration"
+   ],
+   "known_faults": 4,
+   "unexcluded_inputs": [],
+   "failed_plan_checks": [
+    "answers_cover_findings"
+   ],
+   "contribution": {
+    "data_specialist": {
+     "valid_output": true,
+     "findings": 5,
+     "detected_known_fault": false,
+     "new_backed_concern": false,
+     "unsupported_finding": 5,
+     "redundant": false,
+     "accepted_by_lead": 1
+    },
+    "ml_engineer": {
+     "valid_output": true,
+     "findings": 5,
+     "detected_known_fault": true,
+     "new_backed_concern": true,
+     "unsupported_finding": 1,
+     "redundant": false,
+     "accepted_by_lead": 0
+    }
+   }
+  },
+  {
+   "run": "20261104T120943Z-HC-a-model-selection-m3-r1",
+   "set": "stochastic",
+   "arm": "HC",
+   "package": "a-model-selection-m3",
+   "temperature": 1.0,
+   "wall_seconds": 1161.8,
+   "trace_entries": 27,
+   "per_role": {
+    "data_specialist": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 2011.0,
+     "seconds": 28.939
+    },
+    "ml_engineer": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 2734.0,
+     "seconds": 74.329
+    },
+    "lead": {
+     "calls": 2.0,
+     "repairs": 1.0,
+     "tokens": 9394.0,
+     "seconds": 755.53
+    },
+    "critic": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 2894.0,
+     "seconds": 180.742
+    },
+    "pm": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 2975.0,
+     "seconds": 112.693
+    }
+   },
+   "load_seconds": 9.4,
+   "critic_independent_checkpoint": false,
+   "participation": {
+    "executed": {
+     "data_specialist": "local-llama-3-2-3b",
+     "ml_engineer": "local-qwen3-4b-2507",
+     "lead": "local-glimmer",
+     "critic": "local-glimmer",
+     "pm": "local-glimmer"
+    },
+    "executed_checkpoints": [
+     "local-glimmer",
+     "local-llama-3-2-3b",
+     "local-qwen3-4b-2507"
+    ],
+    "configured_not_run": [
+     "rebuttal"
+    ]
+   },
+   "escalations": [
+    "high ml_engineer finding m1: reject",
+    "medium ml_engineer finding m4: reject"
+   ],
+   "code_rule_flags": [
+    {
+     "fault_class": "subgroup_deterioration",
+     "evidence": [
+      "b4.mae_gt55",
+      "ridgecv.mae_gt55",
+      "tcn.mae_gt55",
+      "persist.mae_gt55"
+     ],
+     "note": "Models are worse than persistence above 55."
+    },
+    {
+     "fault_class": "non_independent_evidence",
+     "evidence": [
+      "val.years",
+      "gru.mae"
+     ],
+     "note": "The gain is on reused validation years."
+    }
+   ],
+   "status": "awaiting_human",
+   "decision": "request_validation",
+   "decision_correct": true,
+   "agrees_with_code_rule": true,
+   "known_faults_raised": [],
+   "known_faults": 3,
+   "unexcluded_inputs": [],
+   "failed_plan_checks": [],
+   "contribution": {
+    "data_specialist": {
+     "valid_output": true,
+     "findings": 3,
+     "detected_known_fault": false,
+     "new_backed_concern": false,
+     "unsupported_finding": 3,
+     "redundant": false,
+     "accepted_by_lead": 3
+    },
+    "ml_engineer": {
+     "valid_output": true,
+     "findings": 5,
+     "detected_known_fault": false,
+     "new_backed_concern": false,
+     "unsupported_finding": 5,
+     "redundant": false,
+     "accepted_by_lead": 3
+    },
+    "critic": {
+     "valid_output": true,
+     "findings": 0,
+     "detected_known_fault": false,
+     "new_backed_concern": false,
+     "unsupported_finding": 0,
+     "redundant": false,
+     "accepted_by_lead": 0
+    }
+   }
+  },
+  {
+   "run": "20261104T122904Z-HC-a-model-selection-m3-r2",
+   "set": "stochastic",
+   "arm": "HC",
+   "package": "a-model-selection-m3",
+   "temperature": 1.0,
+   "wall_seconds": 961.0,
+   "trace_entries": 27,
+   "per_role": {
+    "data_specialist": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 2011.0,
+     "seconds": 24.239
+    },
+    "ml_engineer": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 2734.0,
+     "seconds": 75.467
+    },
+    "lead": {
+     "calls": 2.0,
+     "repairs": 1.0,
+     "tokens": 9394.0,
+     "seconds": 646.635
+    },
+    "critic": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 2894.0,
+     "seconds": 148.964
+    },
+    "pm": {
+     "calls": 1.0,
+     "repairs": 0.0,
+     "tokens": 2975.0,
+     "seconds": 59.581
+    }
+   },
+   "load_seconds": 6.0,
+   "critic_independent_checkpoint": false,
+   "participation": {
+    "executed": {
+     "data_specialist": "local-llama-3-2-3b",
+     "ml_engineer": "local-qwen3-4b-2507",
+     "lead": "local-glimmer",
+     "critic": "local-glimmer",
+     "pm": "local-glimmer"
+    },
+    "executed_checkpoints": [
+     "local-glimmer",
+     "local-llama-3-2-3b",
+     "local-qwen3-4b-2507"
+    ],
+    "configured_not_run": [
+     "rebuttal"
+    ]
+   },
+   "escalations": [
+    "high ml_engineer finding m1: reject",
+    "medium ml_engineer finding m4: reject"
+   ],
+   "code_rule_flags": [
+    {
+     "fault_class": "subgroup_deterioration",
+     "evidence": [
+      "b4.mae_gt55",
+      "ridgecv.mae_gt55",
+      "tcn.mae_gt55",
+      "persist.mae_gt55"
+     ],
+     "note": "Models are worse than persistence above 55."
+    },
+    {
+     "fault_class": "non_independent_evidence",
+     "evidence": [
+      "val.years",
+      "gru.mae"
+     ],
+     "note": "The gain is on reused validation years."
+    }
+   ],
+   "status": "awaiting_human",
+   "decision": "request_validation",
+   "decision_correct": true,
+   "agrees_with_code_rule": true,
+   "known_faults_raised": [],
+   "known_faults": 3,
+   "unexcluded_inputs": [],
+   "failed_plan_checks": [],
+   "contribution": {
+    "data_specialist": {
+     "valid_output": true,
+     "findings": 3,
+     "detected_known_fault": false,
+     "new_backed_concern": false,
+     "unsupported_finding": 3,
+     "redundant": false,
+     "accepted_by_lead": 3
+    },
+    "ml_engineer": {
+     "valid_output": true,
+     "findings": 5,
+     "detected_known_fault": false,
+     "new_backed_concern": false,
+     "unsupported_finding": 5,
+     "redundant": false,
+     "accepted_by_lead": 3
+    },
+    "critic": {
+     "valid_output": true,
+     "findings": 0,
+     "detected_known_fault": false,
+     "new_backed_concern": false,
+     "unsupported_finding": 0,
+     "redundant": false,
+     "accepted_by_lead": 0
+    }
+   }
+  }
+ ]
+}

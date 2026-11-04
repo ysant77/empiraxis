@@ -1,7 +1,8 @@
 # M4.1 benchmark report (experiment m41-v2)
 
 Date: 2026-11-04. Protocol: `docs/m41/m41-protocol.md` (question, metrics, acceptance) and
-`docs/m41/m41-protocol-v2.md` (runs, corrections, Amendments 1 and 2). Evidence file:
+`docs/m41/m41-protocol-v2.md` (runs, corrections, Amendments 1 and 2). Runs: 25 main, 2 repeat,
+2 stochastic; all 29 traces verify offline. Evidence file:
 `docs/m41/evidence/m41-v2-benchmark.json`. Tables: `scripts/m41_tables.py` on that file.
 
 This is an engineering screen with small counts: one run per cell, five packages. It gives
@@ -26,8 +27,8 @@ H and HC used more calls, more tokens and more time than S. Under the acceptance
 ## 2. Runs and failures
 
 All 25 main cells ran (F, S, T, H, HC on A, B, C, D and `e-m5-handoff-v2`, temperature 0, seed
-20261104). No run failed. No role output failed its contract parse. Every trace verifies
-offline (hash chain, package hash, human gate, executed checkpoints). No disqualifier applies.
+20261104). No run failed. No role output failed its contract parse. Every trace (29 with the
+repeat and stochastic runs) verifies offline (hash chain, package hash, human gate, executed checkpoints). No disqualifier applies.
 
 Checkpoints (SHA-256 prefix of the model file, the same in every run):
 
@@ -101,7 +102,22 @@ that it failed. All earlier critic runs are counted.
 
 ## 7. Repeat and stochastic runs
 
-PENDING: filled from `v2/repeat` and `v2/stochastic` when the chain finishes.
+| Run | Arm | Package | Temperature | Decision | Correct | Escalations | Failed plan checks | Wall s |
+|---|---|---|---|---|---|---|---|---|
+| main | H | a-model-selection-m3 | 0.0 | request_validation | yes | 1 | 0 | 733.0 |
+| repeat | H | a-model-selection-m3 | 0.0 | request_validation | yes | 1 | 0 | 935.8 |
+| main | H | e-m5-handoff-v2 | 0.0 | abstain | no | 8 | 1 | 724.2 |
+| repeat | H | e-m5-handoff-v2 | 0.0 | abstain | no | 8 | 1 | 926.6 |
+| main | HC | a-model-selection-m3 | 0.0 | request_validation | yes | 1 | 0 | 1345.6 |
+| stochastic 1 | HC | a-model-selection-m3 | 1.0 | request_validation | yes | 2 | 0 | 1161.8 |
+| stochastic 2 | HC | a-model-selection-m3 | 1.0 | request_validation | yes | 2 | 0 | 961.0 |
+
+The repeats at temperature 0 gave the same decision, the same escalation count and the same
+failed check as the main runs. The H error on `e-m5-handoff-v2` is reproducible: the same
+`answers_cover_findings` failure occurs again. At temperature 1.0, HC on package A gave the
+same decision twice, with one more escalation than at temperature 0. Three runs on one package
+do not measure variance in general. Wall times differ by up to about 30% between runs of the
+same cell; this machine was swapping during the repeats.
 
 ## 8. Number grounding (rule m41-v3, Amendment 2)
 
