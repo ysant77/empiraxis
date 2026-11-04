@@ -18,10 +18,16 @@ from earthlab.assess.contracts import (
     EvidencePackageV1,
 )
 from earthlab.assess.council import load_spec
-from earthlab.assess.critic_bench import CaseV1, load_cases, rule_critique, run_bench
+from earthlab.assess.critic_bench import (
+    CaseV1,
+    load_cases,
+    load_seeded,
+    rule_critique,
+    run_bench,
+)
 from earthlab.assess.llm import HttpStructuredClient
 from earthlab.assess.roles import ask, messages_for
-from earthlab.assess.serving import SideServer, verify_identity
+from earthlab.assess.serving import SideServer, verify_identity, verify_served
 from earthlab.harness.identity import load_registry
 from earthlab.llm.providers import load_providers
 from earthlab.trace import RunTrace
@@ -33,12 +39,12 @@ def packages() -> dict[str, EvidencePackageV1]:
     found = {}
     for path in sorted(PACKAGES.glob("*.json")):
         pkg = EvidencePackageV1.model_validate_json(path.read_text())
-        found[pkg.package_id[0]] = pkg
+        found.setdefault(pkg.package_id[0], pkg)  # cases use packages A to D only
     return found
 
 
 def model_critic(provider: str, a: argparse.Namespace, trace: RunTrace) -> Any:
-    spec = load_spec(Path("config/assess/council.yaml"))
+    spec = load_spec(Path("config/assess/council-m41-v2.yaml"))
     registry = load_registry(Path("config/benchmark/checkpoints.yaml"))
     cfg = load_providers(Path("config/providers.yaml"))[provider]
     side = None
@@ -46,8 +52,18 @@ def model_critic(provider: str, a: argparse.Namespace, trace: RunTrace) -> Any:
         files = {p.name: p for p in a.models_dir.rglob("*.gguf")}
         side = SideServer({provider: files[registry[provider].file]}, registry, port=8081)
         load = side.ensure(provider)
-        trace.append("model_switch", "runtime", to=provider, load_seconds=load)
+        trace.append(
+            "model_switch",
+            "runtime",
+            to=provider,
+            load_seconds=load,
+            checkpoint_verified=side.digests[provider],
+        )
         cfg = cfg.model_copy(update={"base_url": side.base_url})
+    else:
+        trace.append(
+            "checkpoint_verified", "runtime", **verify_served(cfg.base_url, registry[provider])
+        )
     verify_identity(cfg.base_url, registry[provider])
     client = HttpStructuredClient(cfg)
     sampling = spec.sampling.model_copy(
@@ -78,6 +94,7 @@ def main() -> None:
     ap.add_argument("--contract", choices=["v1", "v2"], default="v1")
     a = ap.parse_args()
     cases = load_cases(Path("examples/assess/critic-cases.json"))
+    seeded = load_seeded(Path("examples/assess/critic-case-evidence.json"))
     pkgs = packages()
     a.out.mkdir(parents=True, exist_ok=True)
     for name in a.critics.split(","):
@@ -89,7 +106,7 @@ def main() -> None:
         else:
             critic, side = model_critic(name, a, trace)
         try:
-            scores, totals = run_bench(cases, pkgs, critic)
+            scores, totals = run_bench(cases, pkgs, critic, seeded)
         finally:
             if side is not None:
                 side.stop()

@@ -82,8 +82,20 @@ class Run:
 
     def fail(self, why: str) -> dict[str, Any]:
         self.out["status"], self.out["reason"] = "failed", why
+        self.participation()
         self.record("run_failed", {"why": why})
         return self.finish()
+
+    def participation(self) -> None:
+        """Which configured roles made a model call. A role that never ran did not take part."""
+        executed = {r: v["provider"] for r, v in self.out["roles"].items()}
+        info = {
+            "executed": executed,
+            "executed_checkpoints": sorted(set(executed.values())),
+            "configured_not_run": sorted(set(self.council.arm.roles) - set(executed)),
+        }
+        self.out["participation"] = info
+        self.record("council_executed", {"role": "runtime", **info})
 
     def finish(self) -> dict[str, Any]:
         self.out["wall_seconds"] = round(time.perf_counter() - self.started, 1)
@@ -203,6 +215,7 @@ def gate(run: Run, final: BaseModel, rule: policy.PolicyResultV1) -> dict[str, A
     run.out["agrees_with_code_rule"] = decision in rule.allowed
     run.out["escalations"] = escalations(run.out, [d.value for d in rule.allowed])
     run.out["status"] = "awaiting_human"
+    run.participation()
     run.record(
         "human_gate",
         {
@@ -221,7 +234,7 @@ def execute(pkg: EvidencePackageV1, council: Council, trace: RunTrace) -> dict[s
     run.record(
         "run_started",
         {
-            "protocol": "m41-v1",
+            "protocol": council.spec.protocol,
             "arm": council.arm.name,
             "package_id": pkg.package_id,
             "package_sha256": payload_digest(pkg.model_dump(mode="json")),

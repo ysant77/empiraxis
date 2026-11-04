@@ -7,8 +7,15 @@ import pytest
 from assess_fakes import ROOT, finding, package
 
 from earthlab.assess import checks, policy
-from earthlab.assess.contracts import Decision, FindingV1
-from earthlab.assess.critic_bench import load_cases, rule_critique, run_bench, summary
+from earthlab.assess.contracts import CritiqueV1, Decision, FindingV1
+from earthlab.assess.critic_bench import (
+    load_cases,
+    load_seeded,
+    rule_critique,
+    run_bench,
+    score,
+    summary,
+)
 from earthlab.assess.score import load_keys
 
 
@@ -106,12 +113,45 @@ def test_coverage_check() -> None:
 
 def test_rule_critic_on_the_frozen_cases() -> None:
     cases = load_cases(Path(ROOT / "examples" / "assess" / "critic-cases.json"))
+    seeded = load_seeded(Path(ROOT / "examples" / "assess" / "critic-case-evidence.json"))
     pkgs = {p: package(p) for p in "abcd"}
-    scores, totals = run_bench(cases, pkgs, lambda c, pkg: rule_critique(c.plan, pkg))
-    assert totals["faults_detected"] == 6 and totals["clean_with_high_finding"] == 0
+    scores, totals = run_bench(cases, pkgs, lambda c, pkg: rule_critique(c.plan, pkg), seeded)
+    assert totals["faults_detected_raw"] == 6 and totals["clean_with_high_finding"] == 0
+    assert totals["faults_detected"] <= totals["faults_detected_raw"]
     assert totals["unsupported_findings"] == 0
-    unusable = run_bench(cases[:2], pkgs, lambda c, pkg: None)[1]
+    unusable = run_bench(cases[:2], pkgs, lambda c, pkg: None, seeded)[1]
     assert unusable["usable"] == 0 and summary(scores)["cases"] == 24
+
+
+def test_seeded_evidence_ids_exist_in_their_packages() -> None:
+    cases = {c.id: c for c in load_cases(Path(ROOT / "examples" / "assess" / "critic-cases.json"))}
+    seeded = load_seeded(Path(ROOT / "examples" / "assess" / "critic-case-evidence.json"))
+    assert set(seeded) == {k for k, c in cases.items() if c.label != "clean"}
+    for cid, ids in seeded.items():
+        assert set(ids) <= checks.ids_of(package(cases[cid].package)), cid
+
+
+@pytest.mark.parametrize(
+    ("evidence", "cited", "raw", "detected"),
+    [
+        (["tcn.mae"], {"tcn.mae": 4.711}, True, True),
+        (["tcn.mae"], {"tcn.mae": 9.9}, True, False),  # wrong value: unsupported
+        (["persist.mae"], {}, True, False),  # backed, but not the seeded evidence
+        (["no.such.id"], {}, True, False),  # unknown id
+    ],
+)
+def test_detection_needs_backed_seeded_evidence(
+    evidence: list[str], cited: dict[str, float], raw: bool, detected: bool
+) -> None:
+    case = next(
+        c
+        for c in load_cases(Path(ROOT / "examples" / "assess" / "critic-cases.json"))
+        if c.id == "A-f1"
+    )
+    f = finding("c1", "neural_unjustified", evidence, cited=cited)
+    crit = CritiqueV1.model_validate({"verdict": "concerns", "findings": [f]})
+    got = score(case, crit, package("a"), ["tcn.mae", "tcn.skill"])
+    assert (got.detected_raw, got.detected) == (raw, detected)
 
 
 def _s(
@@ -146,3 +186,52 @@ def test_choose_critic_follows_the_protocol() -> None:
     }
     assert choose_critic({"rules": rules, "b": s["b"]}, "muse") == ("b", False)
     assert choose_critic({"rules": rules, "muse": s["muse"]}, "muse") == (None, False)
+
+
+def _with_fact(prefix: str, fid: str, value: float | None, drop: bool = False) -> Any:
+    pkg = package(prefix)
+    facts = [f for f in pkg.facts if not (drop and f.id == fid)]
+    if not drop:
+        facts = [f.model_copy(update={"value": value}) if f.id == fid else f for f in facts]
+    return pkg.model_copy(update={"facts": facts})
+
+
+def _quality_flags(pkg: Any) -> list[list[str]]:
+    return [f.evidence for f in policy.decide(pkg).flags if "hls.clear" in f.evidence]
+
+
+def test_policy_reads_zero_as_a_value_and_reports_missing_facts() -> None:
+    # smap.rq is 0 in package D; set it to 1 so only hls.clear decides the quality flag
+    base = _with_fact("d", "smap.rq", 1.0)
+    zero = base.model_copy(
+        update={"facts": [f.model_copy(update={"value": 0.0}) if f.id == "hls.clear" else f
+                          for f in base.facts]}
+    )  # fmt: skip
+    assert _quality_flags(zero) == [["hls.clear", "smap.rq"]]
+    null = base.model_copy(
+        update={"facts": [f.model_copy(update={"value": None}) if f.id == "hls.clear" else f
+                          for f in base.facts]}
+    )  # fmt: skip
+    assert _quality_flags(null) == [] and "hls.clear" in policy.decide(null).missing_facts
+    gone = base.model_copy(update={"facts": [f for f in base.facts if f.id != "hls.clear"]})
+    result = policy.decide(gone)
+    assert _quality_flags(gone) == [] and result.missing_facts == ["hls.clear"]
+    assert all("hls.clear" not in f.evidence for f in result.flags)
+
+
+@pytest.mark.parametrize(
+    ("value", "drop", "flagged", "missing"),
+    [(0.0, False, False, False), (3.0, False, True, False), (None, False, False, True),
+     (None, True, False, True)],
+)  # fmt: skip
+def test_provenance_rule_zero_null_missing(
+    value: float | None, drop: bool, flagged: bool, missing: bool
+) -> None:
+    pkg = _with_fact("b", "file.missing_region", value, drop)
+    pkg = pkg.model_copy(
+        update={"facts": [f.model_copy(update={"value": 0.0}) if f.id == "file.conflicts" else f
+                          for f in pkg.facts]}
+    )  # fmt: skip
+    result = policy.decide(pkg)
+    got = any(f.fault_class.value == "missing_observations" for f in result.flags)
+    assert got is flagged and ("file.missing_region" in result.missing_facts) is missing

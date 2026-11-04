@@ -16,7 +16,7 @@ from earthlab.assess.contracts import EvidencePackageV1
 from earthlab.assess.council import Council, arm_of, load_spec
 from earthlab.assess.llm import HttpStructuredClient, StructuredClient
 from earthlab.assess.pipeline import execute
-from earthlab.assess.serving import SideServer, verify_identity
+from earthlab.assess.serving import SideServer, verify_identity, verify_served
 from earthlab.harness.identity import load_registry
 from earthlab.llm.providers import load_providers
 from earthlab.trace import RunTrace
@@ -25,8 +25,11 @@ PACKAGES = Path("examples/assess/packages")
 
 
 def package(prefix: str) -> EvidencePackageV1:
-    path = next(PACKAGES.glob(f"{prefix}-*.json"))
-    return EvidencePackageV1.model_validate_json(path.read_text())
+    exact = PACKAGES / f"{prefix}.json"
+    found = [exact] if exact.exists() else sorted(PACKAGES.glob(f"{prefix}-*.json"))
+    if len(found) != 1:
+        raise KeyError(f"package {prefix!r} matches {[p.name for p in found]}; give the full id")
+    return EvidencePackageV1.model_validate_json(found[0].read_text())
 
 
 def models_map(root: Path, files: dict[str, str]) -> dict[str, Path]:
@@ -59,7 +62,7 @@ def main() -> None:
     ap.add_argument("--temperature", type=float, default=None)
     ap.add_argument("--critic-contract", choices=["v1", "v2"], default=None)
     a = ap.parse_args()
-    spec = load_spec(Path("config/assess/council.yaml"))
+    spec = load_spec(Path("config/assess/council-m41-v2.yaml"))
     if a.temperature is not None:
         spec = spec.model_copy(
             update={"sampling": spec.sampling.model_copy(update={"temperature": a.temperature})}
@@ -73,6 +76,8 @@ def main() -> None:
     )
     clients = _clients(spec, providers, registry, side.base_url)
     verify_identity(providers["local-glimmer"].base_url, registry["local-glimmer"])
+    verified = {p: verify_served(providers[p].base_url, registry[p]) for p in spec.main_providers}
+    print("main checkpoints verified", verified, flush=True)
     try:
         for rep in range(a.repeat):
             for arm_name in a.arms.split(","):
@@ -83,7 +88,7 @@ def main() -> None:
                     stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
                     folder = a.out / f"{stamp}-{arm_name}-{pkg.package_id}-r{rep + 1}"
                     trace = RunTrace(folder / "trace.jsonl")
-                    out = execute(pkg, Council(spec, arm, clients, registry, side), trace)
+                    out = execute(pkg, Council(spec, arm, clients, registry, side, verified), trace)
                     out["temperature"] = spec.sampling.temperature
                     (folder / "result.json").write_text(json.dumps(out, indent=1) + "\n")
                     print(

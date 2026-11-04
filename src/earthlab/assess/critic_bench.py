@@ -1,7 +1,11 @@
-"""Critic test m41-v1: frozen Lead plans with seeded faults and clean controls.
+"""Critic test: frozen Lead plans with seeded faults and clean controls.
 
 The rule critic uses code checks and the code rule. A model critic gets the package and the
 plan, never the label. Code scores every critique the same way.
+
+Scoring m41-v2 (correction of m41-v1): a raw detection is a finding with the seeded fault
+class. A detection counts only when that finding also passes the code check and cites at
+least one id that the seeded fault concerns (`critic-case-evidence.json`). Both are reported.
 """
 
 from __future__ import annotations
@@ -42,6 +46,7 @@ class CaseScoreV1(Strict):
     label: str
     usable: bool
     detected: bool
+    detected_raw: bool = False
     high_on_clean: bool
     findings: int
     unsupported: int
@@ -49,6 +54,11 @@ class CaseScoreV1(Strict):
 
 def load_cases(path: Path) -> list[CaseV1]:
     return [CaseV1.model_validate(c) for c in json.loads(path.read_text())["cases"]]
+
+
+def load_seeded(path: Path) -> dict[str, list[str]]:
+    seeded: dict[str, list[str]] = json.loads(path.read_text())["cases"]
+    return seeded
 
 
 def _finding(n: int, fault: FaultClass, evidence: list[str], note: str) -> FindingV1:
@@ -103,7 +113,9 @@ def rule_critique(plan: LeadPlanV1, pkg: EvidencePackageV1) -> CritiqueV1:
     return CritiqueV1(verdict="concerns", findings=found[:4])
 
 
-def score(case: CaseV1, crit: Critique | None, pkg: EvidencePackageV1) -> CaseScoreV1:
+def score(
+    case: CaseV1, crit: Critique | None, pkg: EvidencePackageV1, seeded: list[str]
+) -> CaseScoreV1:
     if crit is None:
         return CaseScoreV1(
             case=case.id,
@@ -115,18 +127,18 @@ def score(case: CaseV1, crit: Critique | None, pkg: EvidencePackageV1) -> CaseSc
             unsupported=0,
         )
     backed = [f for f in crit.findings if not checks.finding_problems(f, pkg)]
-    unsupported = len(crit.findings) - len(backed)
     clean = case.label == "clean"
-    detected = not clean and any(f.fault_class.value == case.label for f in crit.findings)
-    high = clean and any(f.severity == "high" for f in crit.findings)
+    raw = [f for f in crit.findings if not clean and f.fault_class.value == case.label]
+    detected = any(f in backed and set(f.evidence) & set(seeded) for f in raw)
     return CaseScoreV1(
         case=case.id,
         label=case.label,
         usable=True,
         detected=detected,
-        high_on_clean=high,
+        detected_raw=bool(raw),
+        high_on_clean=clean and any(f.severity == "high" for f in crit.findings),
         findings=len(crit.findings),
-        unsupported=unsupported,
+        unsupported=len(crit.findings) - len(backed),
     )
 
 
@@ -138,6 +150,7 @@ def summary(scores: list[CaseScoreV1]) -> dict[str, Any]:
         "cases": len(scores),
         "usable": sum(s.usable for s in scores),
         "faults_detected": sum(s.detected for s in faults),
+        "faults_detected_raw": sum(s.detected_raw for s in faults),
         "faults": len(faults),
         "clean_with_high_finding": sum(s.high_on_clean for s in clean),
         "clean_with_any_finding": sum(s.findings > 0 for s in clean),
@@ -151,14 +164,20 @@ Critic = Callable[[CaseV1, EvidencePackageV1], Critique | None]
 
 
 def run_bench(
-    cases: list[CaseV1], packages: dict[str, EvidencePackageV1], critic: Critic
+    cases: list[CaseV1],
+    packages: dict[str, EvidencePackageV1],
+    critic: Critic,
+    seeded: dict[str, list[str]],
 ) -> tuple[list[CaseScoreV1], dict[str, Any]]:
-    scores = [score(c, critic(c, packages[c.package]), packages[c.package]) for c in cases]
+    scores = [
+        score(c, critic(c, packages[c.package]), packages[c.package], seeded.get(c.id, []))
+        for c in cases
+    ]
     return scores, summary(scores)
 
 
 def passes_gates(s: dict[str, Any], rules: dict[str, Any]) -> dict[str, bool]:
-    """Engineering gates of protocol m41-v1, section 5."""
+    """Engineering gates of protocol m41-v1, section 5, on evidence-backed detections."""
     findings = max(s["findings"], 1)
     return {
         "usable": s["usable"] >= 22,

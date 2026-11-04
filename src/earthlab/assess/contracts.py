@@ -73,6 +73,18 @@ class SourceV1(Strict):
     latency_hours: float | None = None
     sha256: str | None = Field(default=None, pattern=SHA256)
     origin: str = Field(description="Repository path or commit and path of the artifact.")
+    availability_basis: str | None = Field(
+        default=None,
+        exclude_if=lambda v: v is None,
+        max_length=80,
+        description="Why `availability` has its value (m41-v2 packages). Product latency and "
+        "per-observation availability are not the same thing.",
+    )
+    input_cutoff_hours: float | None = Field(
+        default=None,
+        exclude_if=lambda v: v is None,
+        description="Newest usable observation is at issue time minus this many hours.",
+    )
 
 
 class FactV1(Strict):

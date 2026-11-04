@@ -25,7 +25,7 @@ from earthlab.assess.score import load_keys, score_run
 from earthlab.llm.types import ProviderError, ProviderErrorKind
 from earthlab.trace import RunTrace
 
-SPEC = load_spec(ROOT / "config" / "assess" / "council.yaml")
+SPEC = load_spec(ROOT / "config" / "assess" / "council-m41-v2.yaml")
 MUSE, LLAMA, QWEN, CRITIC = (
     "local-glimmer",
     "local-llama-3-2-3b",
@@ -236,6 +236,9 @@ def test_failed_critic_leaves_the_plan(tmp_path: Path) -> None:
     }
     out, _ = _run("HC8", clients, tmp_path)
     assert out["decision"] == "retain_baseline" and out["roles"]["critic"]["state"] == "failed"
+    # the critic ran and failed; the rebuttal was configured and never ran
+    assert out["participation"]["configured_not_run"] == ["rebuttal"]
+    assert CRITIC in out["participation"]["executed_checkpoints"]
 
 
 def test_injected_package_text_stays_data(tmp_path: Path) -> None:
@@ -312,3 +315,21 @@ def test_structured_client_payload_and_errors() -> None:
         _client(lambda r: httpx.Response(200, text="<html>")).complete([], {}, Sampling())
     with pytest.raises(ProviderError, match="malformed"):
         parse_reply({"choices": []}, 0.1)
+
+
+def test_verify_file_checks_the_digest_and_caches_it(tmp_path: Path) -> None:
+    import hashlib
+
+    path = tmp_path / "m.gguf"
+    path.write_bytes(b"weights")
+    good = checkpoint("p", hashlib.sha256(b"weights").hexdigest()).model_copy(
+        update={"file": "m.gguf"}
+    )
+    first = serving.verify_file(path, good)
+    assert first["sha256_verified"] and not first["cached"]
+    assert serving.verify_file(path, good)["cached"]
+    with pytest.raises(serving.IdentityError):
+        serving.verify_file(path, good.model_copy(update={"sha256": "0" * 64}))
+    with pytest.raises(serving.IdentityError):
+        serving.verify_file(path, good.model_copy(update={"file": "other.gguf"}))
+    assert "/" not in json.dumps(first)

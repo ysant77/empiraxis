@@ -43,12 +43,19 @@ def load(name: str, root: Path = REPLAY) -> tuple[dict[str, Any], list[dict[str,
 
 
 def roster(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Configured bindings, and whether each one made a model call in this run."""
+    ran = {
+        (r["data"]["role"], r["data"]["provider"]) for r in records if r["event"] == "model_turn"
+    }
     return [
         {
             "role": ROLE_LABEL.get(r["data"]["role"], r["data"]["role"]),
             "checkpoint": r["data"]["checkpoint_file"],
             "family": r["data"]["family"],
             "sha256": r["data"]["checkpoint_sha256"][:12],
+            "ran in this run": "yes"
+            if (r["data"]["role"], r["data"]["provider"]) in ran
+            else "no (configured only)",
         }
         for r in records
         if r["event"] == "role_binding"

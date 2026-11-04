@@ -1,13 +1,20 @@
-"""Decision policy m41-v1: the code rule for each scenario, written before any M4.1 run.
+"""Decision policy m41-v2: the code rule for each scenario.
 
 The rule reads package facts only. It returns the decisions that the evidence allows and the
 rule flags that support them. The flags map to fault classes, so the rule is also the
 deterministic critic (arm F). It does not read any model text.
+
+m41-v2 (correction of m41-v1): a value of 0 is a value, not a missing fact. A fact that is
+absent or null goes to `missing_facts` and raises no flag. A flag cites only ids that exist
+in the package.
 """
 
 from __future__ import annotations
 
 from collections.abc import Callable
+from contextvars import ContextVar
+
+from pydantic import Field
 
 from earthlab.assess.contracts import (
     Availability,
@@ -29,15 +36,36 @@ class FlagV1(Strict):
 
 
 class PolicyResultV1(Strict):
-    policy: str = "m41-v1"
+    policy: str = "m41-v2"
     allowed: list[Decision]
     preferred: Decision
     flags: list[FlagV1]
     eligible_inputs: list[str]
     excluded_inputs: list[str]
+    missing_facts: list[str] = Field(default_factory=list)
+
+
+class _Reader:
+    """Fact values for one decision. Records every fact it needed and did not find."""
+
+    def __init__(self, pkg: EvidencePackageV1):
+        self.values = {f.id: f.value for f in pkg.facts}
+        self.missing: list[str] = []
+
+    def __call__(self, fid: str) -> float | None:
+        value = self.values.get(fid)
+        if value is None and fid not in self.missing:
+            self.missing.append(fid)
+        return value
+
+
+_READ: ContextVar[_Reader | None] = ContextVar("policy_reader", default=None)
 
 
 def _v(pkg: EvidencePackageV1, fid: str) -> float | None:
+    reader = _READ.get()
+    if reader is not None:
+        return reader(fid)
     return next((f.value for f in pkg.facts if f.id == fid), None)
 
 
@@ -57,6 +85,30 @@ def _inputs(pkg: EvidencePackageV1) -> tuple[list[str], list[str]]:
         ok = s.availability is Availability.ISSUE_TIME_VALID
         (usable if ok else excluded).append(s.id)
     return usable, excluded
+
+
+def _by_availability(pkg: EvidencePackageV1, kind: Availability) -> list[str]:
+    return [s.id for s in pkg.sources if s.role in INPUT_ROLES and s.availability is kind]
+
+
+def _timing_flags(pkg: EvidencePackageV1, note: str) -> list[FlagV1]:
+    """Hindsight inputs, and inputs whose time of availability is not established."""
+    late = _by_availability(pkg, Availability.HINDSIGHT)
+    unknown = _by_availability(pkg, Availability.UNKNOWN)
+    flags = []
+    if late:
+        flags.append(
+            FlagV1(fault_class=FaultClass.HINDSIGHT_AS_FORECAST, evidence=late[:3], note=note)
+        )
+    if unknown:
+        flags.append(
+            FlagV1(
+                fault_class=FaultClass.MISSING_OBSERVATIONS,
+                evidence=unknown[:3],
+                note="When these values become available is not established.",
+            )
+        )
+    return flags
 
 
 def _model_selection(pkg: EvidencePackageV1) -> tuple[list[Decision], list[FlagV1]]:
@@ -97,7 +149,8 @@ def _provenance(pkg: EvidencePackageV1) -> tuple[list[Decision], list[FlagV1]]:
                 note="API and file disagree; the cause is not in evidence.",
             )
         )
-    if (_v(pkg, "file.conflicts") or 0) > 0 or (_v(pkg, "file.missing_region") or 0) > 0:
+    conflicts, gaps = _v(pkg, "file.conflicts"), _v(pkg, "file.missing_region")
+    if (conflicts is not None and conflicts > 0) or (gaps is not None and gaps > 0):
         flags.append(
             FlagV1(
                 fault_class=FaultClass.MISSING_OBSERVATIONS,
@@ -110,18 +163,7 @@ def _provenance(pkg: EvidencePackageV1) -> tuple[list[Decision], list[FlagV1]]:
 
 
 def _sufficiency(pkg: EvidencePackageV1) -> tuple[list[Decision], list[FlagV1]]:
-    _, late = _inputs(pkg)
-    flags = (
-        [
-            FlagV1(
-                fault_class=FaultClass.HINDSIGHT_AS_FORECAST,
-                evidence=late[:3],
-                note="Hindsight inputs cannot support a T+6 prediction claim.",
-            )
-        ]
-        if late
-        else []
-    )
+    flags = _timing_flags(pkg, "Hindsight inputs cannot support a T+6 prediction claim.")
     if _need(pkg, "abl.B3.mae") > _need(pkg, "abl.B0.mae"):
         flags.append(
             FlagV1(
@@ -134,19 +176,9 @@ def _sufficiency(pkg: EvidencePackageV1) -> tuple[list[Decision], list[FlagV1]]:
 
 
 def _design(pkg: EvidencePackageV1) -> tuple[list[Decision], list[FlagV1]]:
-    _, late = _inputs(pkg)
-    flags = (
-        [
-            FlagV1(
-                fault_class=FaultClass.HINDSIGHT_AS_FORECAST,
-                evidence=late[:3],
-                note="Not available at issue time.",
-            )
-        ]
-        if late
-        else []
-    )
-    if (_v(pkg, "hls.clear") or 1) < 0.1 or _v(pkg, "smap.rq") == 0:
+    flags = _timing_flags(pkg, "Not available at issue time.")
+    clear, rq = _v(pkg, "hls.clear"), _v(pkg, "smap.rq")
+    if (clear is not None and clear < 0.1) or (rq is not None and rq == 0):
         flags.append(
             FlagV1(
                 fault_class=FaultClass.MISSING_OBSERVATIONS,
@@ -154,7 +186,8 @@ def _design(pkg: EvidencePackageV1) -> tuple[list[Decision], list[FlagV1]]:
                 note="Quality checks leave too few usable values.",
             )
         )
-    if (_v(pkg, "t19.R2_vs_R1.high") or 1) < 0:
+    high = _v(pkg, "t19.R2_vs_R1.high")
+    if high is not None and high < 0:
         flags.append(
             FlagV1(
                 fault_class=FaultClass.SUBGROUP_DETERIORATION,
@@ -173,8 +206,20 @@ RULES: dict[str, Callable[[EvidencePackageV1], tuple[list[Decision], list[FlagV1
 }
 
 
+def _cited(flags: list[FlagV1], pkg: EvidencePackageV1) -> list[FlagV1]:
+    known = {f.id for f in pkg.facts} | {s.id for s in pkg.sources}
+    return [f.model_copy(update={"evidence": [e for e in f.evidence if e in known]}) for f in flags]
+
+
 def decide(pkg: EvidencePackageV1) -> PolicyResultV1:
-    allowed, flags = RULES[pkg.scenario](pkg)
+    reader = _Reader(pkg)
+    token = _READ.set(reader)
+    try:
+        allowed, flags = RULES[pkg.scenario](pkg)
+    finally:
+        _READ.reset(token)
+    missing = reader.missing
+    flags = _cited(flags, pkg)
     usable, excluded = _inputs(pkg)
     if pkg.scenario == "design":
         excluded += [s.id for s in pkg.sources if s.availability is Availability.UNKNOWN]
@@ -186,6 +231,7 @@ def decide(pkg: EvidencePackageV1) -> PolicyResultV1:
         flags=flags,
         eligible_inputs=usable,
         excluded_inputs=sorted(set(excluded)),
+        missing_facts=missing,
     )
 
 
@@ -199,7 +245,7 @@ def flags_as_findings(result: PolicyResultV1) -> list[FindingV1]:
             evidence=f.evidence,
             severity="high",
             action="clarify",
-            uncertainty="Code rule m41-v1.",
+            uncertainty="Code rule m41-v2.",
         )
         for n, f in enumerate(result.flags, start=1)
         if f.evidence

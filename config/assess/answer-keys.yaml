@@ -61,3 +61,19 @@ keys:
       - fault_class: insufficient_evidence
         evidence: [t19.elev_days, p15.I1, p15.R2, p15.R0]
     must_exclude: [era5, imerg_final, mcd64a1, hls_archive, maiac_061, smap_l3, imerg_late]
+  # Protocol m41-v2 (2026-11-04): package E version 2, built from the same M5 package
+  # (m5-evidence-2, commit 458f297) with the m41-v2 availability rule. Written before any run on it.
+  # The FIRMS standard-product archive is not the product published at issue time, so it is
+  # excluded from a proceeding plan.
+  e-m5-handoff-v2:
+    acceptable: [proceed_with_limits, request_validation]
+    known_faults:
+      - fault_class: hindsight_as_forecast
+        evidence: [era5, imerg_final, smap_l3, mcd64a1, hls_archive, maiac_061]
+      - fault_class: missing_observations
+        evidence: [firms_modis_sp, imerg_late, smap_l3, hls_archive, mcd64a1, maiac_061]
+      - fault_class: subgroup_deterioration
+        evidence: [t19.R2_vs_R1.skill, t19.R2_vs_R1.high, t19.R2.mae, t19.R2.mae_gt55, t19.R1.mae]
+      - fault_class: insufficient_evidence
+        evidence: [t19.elev_days, p15.I1, p15.R2, p15.R0]
+    must_exclude: [era5, imerg_final, mcd64a1, hls_archive, maiac_061, smap_l3, imerg_late, firms_modis_sp]

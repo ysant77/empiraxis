@@ -18,8 +18,11 @@ SHA = "a" * 64
 
 
 def package(prefix: str) -> EvidencePackageV1:
-    path = next(PACKAGES.glob(f"{prefix}-*.json"))
-    return EvidencePackageV1.model_validate_json(path.read_text())
+    exact = PACKAGES / f"{prefix}.json"
+    found = [exact] if exact.exists() else sorted(PACKAGES.glob(f"{prefix}-*.json"))
+    if len(found) != 1:
+        raise KeyError(f"package {prefix!r} matches {[p.name for p in found]}; give the full id")
+    return EvidencePackageV1.model_validate_json(found[0].read_text())
 
 
 def config(name: str) -> ProviderConfig:
@@ -73,12 +76,14 @@ class FakeSide:
     def __init__(self) -> None:
         self.loaded: list[str] = []
         self.current: str | None = None
+        self.digests: dict[str, dict[str, object]] = {}
 
     def ensure(self, provider: str) -> float:
         if provider == self.current:
             return 0.0
         self.loaded.append(provider)
         self.current = provider
+        self.digests[provider] = {"provider": provider, "sha256_verified": True}
         return 1.5
 
     def stop(self) -> float:

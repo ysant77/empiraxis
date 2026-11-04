@@ -1,12 +1,16 @@
 """Sequential serving: Muse stays loaded; at most one small model runs beside it.
 
-Before a role uses a server, code reads the served file name from `/props` and compares it
-with the checkpoint registry. A mismatch stops the run. Load and unload times are recorded,
-so the cost of switching models is part of the evidence.
+Identity is checked twice. Before the side server starts a model, code computes the SHA-256
+of the exact file it passes to the process and compares it with the registry. Before a role
+uses a server, code reads the served file from `/props` and compares the name. For a server
+that is already running (Muse), code hashes the file that `/props` names. A mismatch stops
+the run. Digest time, load time and unload time are recorded, so these costs are evidence.
+A digest is computed once per file per process (keyed by path, size and modification time).
 """
 
 from __future__ import annotations
 
+import hashlib
 import shutil
 import subprocess
 import time
@@ -22,11 +26,49 @@ class IdentityError(RuntimeError):
     """The server does not serve the checkpoint that the registry names."""
 
 
-def served_file(base_url: str, client: httpx.Client | None = None) -> str:
+CHUNK = 1 << 24
+_DIGESTS: dict[tuple[str, int, int], str] = {}
+
+
+def served_path(base_url: str, client: httpx.Client | None = None) -> Path:
     http = client or httpx.Client(timeout=10)
     root = base_url.rstrip("/").removesuffix("/v1")
-    path = str(http.get(f"{root}/props").json().get("model_path") or "")
-    return Path(path).name
+    return Path(str(http.get(f"{root}/props").json().get("model_path") or ""))
+
+
+def served_file(base_url: str, client: httpx.Client | None = None) -> str:
+    return served_path(base_url, client).name
+
+
+def verify_file(path: Path, ckpt: CheckpointV1) -> dict[str, object]:
+    """Hash the model file and compare it with the registry. Returns the record (no path)."""
+    if path.name != ckpt.file:
+        raise IdentityError(f"{ckpt.provider}: file {path.name!r}, registry has {ckpt.file!r}")
+    stat = path.stat()
+    key = (str(path.resolve()), stat.st_size, stat.st_mtime_ns)
+    started = time.perf_counter()
+    cached = key in _DIGESTS
+    if not cached:
+        digest = hashlib.sha256()
+        with path.open("rb") as f:
+            while chunk := f.read(CHUNK):
+                digest.update(chunk)
+        _DIGESTS[key] = digest.hexdigest()
+    if _DIGESTS[key] != ckpt.sha256:
+        raise IdentityError(f"{ckpt.provider}: {path.name} SHA-256 differs from the registry")
+    return {
+        "provider": ckpt.provider,
+        "file": ckpt.file,
+        "sha256_verified": True,
+        "bytes": stat.st_size,
+        "digest_seconds": round(time.perf_counter() - started, 2),
+        "cached": cached,
+    }
+
+
+def verify_served(base_url: str, ckpt: CheckpointV1) -> dict[str, object]:
+    """For a server that is already running: hash the file it reports in `/props`."""
+    return verify_file(served_path(base_url), ckpt)
 
 
 def verify_identity(base_url: str, ckpt: CheckpointV1, client: httpx.Client | None = None) -> str:
@@ -37,6 +79,8 @@ def verify_identity(base_url: str, ckpt: CheckpointV1, client: httpx.Client | No
 
 
 class Server(Protocol):
+    digests: dict[str, dict[str, object]]
+
     def ensure(self, provider: str) -> float: ...
 
     def stop(self) -> float: ...
@@ -49,6 +93,7 @@ class SideServer:
         self.models, self.registry, self.port = models, registry, port
         self.current: str | None = None
         self._proc: subprocess.Popen[bytes] | None = None
+        self.digests: dict[str, dict[str, object]] = {}
 
     @property
     def base_url(self) -> str:
@@ -60,6 +105,7 @@ class SideServer:
         started = time.perf_counter()
         self.stop()
         path = self.models[provider]
+        self.digests[provider] = verify_file(path, self.registry[provider])
         binary = shutil.which("llama-server")
         if binary is None:
             raise FileNotFoundError("llama-server is not on PATH")

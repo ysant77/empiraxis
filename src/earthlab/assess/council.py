@@ -67,12 +67,14 @@ class Council:
         clients: dict[str, StructuredClient],
         registry: dict[str, CheckpointV1],
         side: Server | None = None,
+        verified: dict[str, dict[str, Any]] | None = None,
     ):
         missing = set(arm.roles.values()) - set(clients)
         if missing:
             raise KeyError(f"no client for providers {sorted(missing)}")
         self.spec, self.arm, self.clients = spec, arm, clients
         self.registry, self.side = registry, side
+        self.verified = verified or {}  # main-server digests, checked before the run
 
     def sampling(self, role: str) -> Sampling:
         provider = self.arm.roles[role]
@@ -91,7 +93,13 @@ class Council:
             seconds = self.side.ensure(provider)
             if seconds:
                 switch = {"to": provider, "load_seconds": seconds}
+                switch["checkpoint_verified"] = self.side.digests.get(provider)
         return self.clients[provider], switch
+
+    def _digest_note(self, provider: str) -> dict[str, Any] | str:
+        if provider not in self.spec.main_providers:
+            return "verified at model load; see the model_switch record"
+        return self.verified.get(provider, "not verified")
 
     def record_bindings(self, trace: RunTrace) -> dict[str, Any]:
         by_sha: dict[str, list[str]] = {}
@@ -111,6 +119,7 @@ class Council:
                 quantization=ckpt.quantization,
                 licence=ckpt.licence,
                 source=ckpt.source,
+                file_digest=self._digest_note(provider),
             )
             by_sha.setdefault(ckpt.sha256, []).append(role)
         summary: dict[str, Any] = {
